@@ -1,0 +1,444 @@
+#!/usr/bin/env node
+import { Command } from "commander";
+import chalk from "chalk";
+import ora from "ora";
+import * as fs from "fs";
+import * as path from "path";
+import { personaLibrary, personasByCategory } from "./personas/library.js";
+import { generatePersonasFromUrl, generatePersonasFromDescription } from "./personas/generator.js";
+import { runMultiPersonaTest, type ProgressEvent } from "./agent/orchestrator.js";
+import type { Persona } from "./personas/types.js";
+import { getAllPersonas, saveCustomPersona, deleteCustomPersona, isCustomPersona } from "./personas/custom.js";
+import { generateSystemPrompt } from "./personas/types.js";
+import * as readline from "node:readline/promises";
+
+const program = new Command();
+
+program
+  .name("mpersonas")
+  .description("AI persona-based website testing")
+  .version("0.1.0");
+
+// --- Run command ---
+
+program
+  .command("run")
+  .description("Run persona tests against a URL")
+  .argument("<url>", "URL to test")
+  .option(
+    "-p, --personas <names>",
+    "Comma-separated persona IDs (default: all)",
+    "all"
+  )
+  .option("-o, --output <path>", "Output directory", "./mpersonas-report")
+  .option("--no-axe", "Skip axe-core accessibility scan")
+  .option("--parallel", "Run personas concurrently (default)", true)
+  .option("--sequential", "Run personas one at a time")
+  .option("--count <n>", "Auto-generate N personas from the URL")
+  .option("--describe <text>", "Generate personas from a text description")
+  .action(async (url: string, options: {
+    personas: string;
+    output: string;
+    axe: boolean;
+    parallel: boolean;
+    sequential: boolean;
+    count?: string;
+    describe?: string;
+  }) => {
+    console.log("");
+    console.log(chalk.bold("  MultiPersonas v0.1.0"));
+    console.log(chalk.dim(`  Testing: ${url}`));
+    console.log("");
+
+    // Resolve personas
+    let personas: Persona[];
+
+    if (options.count) {
+      const count = parseInt(options.count, 10);
+      const genSpinner = ora(`Generating ${count} personas from URL...`).start();
+      try {
+        personas = await generatePersonasFromUrl(url, count);
+        genSpinner.succeed(`Generated ${personas.length} personas`);
+      } catch (error) {
+        genSpinner.fail(`Failed to generate personas: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    } else if (options.describe) {
+      const count = 4;
+      const genSpinner = ora(`Generating personas from description...`).start();
+      try {
+        personas = await generatePersonasFromDescription(options.describe, count);
+        genSpinner.succeed(`Generated ${personas.length} personas`);
+      } catch (error) {
+        genSpinner.fail(`Failed to generate personas: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    } else {
+      const allPersonas = getAllPersonas();
+      const personaIds =
+        options.personas === "all"
+          ? Object.keys(allPersonas)
+          : options.personas.split(",").map((s) => s.trim());
+
+      personas = personaIds.map((id) => {
+        const persona = allPersonas[id];
+        if (!persona) {
+          console.error(chalk.red(`Unknown persona: ${id}`));
+          console.error(
+            chalk.dim(
+              `Available: ${Object.keys(allPersonas).join(", ")}`
+            )
+          );
+          process.exit(1);
+        }
+        return persona;
+      });
+    }
+
+    console.log(
+      chalk.dim(
+        `  Personas: ${personas.map((p) => `${p.name} (${p.id})`).join(", ")}`
+      )
+    );
+    console.log("");
+
+    const outputDir = path.resolve(options.output);
+    const isParallel = !options.sequential;
+
+    // Track spinners per persona
+    const spinners = new Map<string, ReturnType<typeof ora>>();
+
+    const result = await runMultiPersonaTest({
+      url,
+      personas,
+      outputDir,
+      parallel: isParallel,
+      runAxe: options.axe,
+      onProgress: (event: ProgressEvent) => {
+        switch (event.type) {
+          case "axe_start": {
+            const s = ora(event.message).start();
+            spinners.set("axe", s);
+            break;
+          }
+          case "axe_complete": {
+            const s = spinners.get("axe");
+            if (s) {
+              if (event.message.includes("failed")) s.fail(event.message);
+              else s.succeed(event.message);
+            }
+            break;
+          }
+          case "persona_start": {
+            const s = ora(event.message).start();
+            if (event.persona) spinners.set(event.persona, s);
+            break;
+          }
+          case "persona_complete": {
+            const s = event.persona ? spinners.get(event.persona) : undefined;
+            if (s) {
+              if (event.message.includes("failed")) s.fail(event.message);
+              else s.succeed(event.message);
+            }
+            break;
+          }
+          case "report_start": {
+            const s = ora(event.message).start();
+            spinners.set("report", s);
+            break;
+          }
+          case "report_complete": {
+            const s = spinners.get("report");
+            if (s) s.succeed(event.message);
+            break;
+          }
+        }
+      },
+    });
+
+    console.log("");
+
+    // Print conflicts if any
+    if (result.conflicts.length > 0) {
+      console.log(chalk.yellow(`  ${result.conflicts.length} persona conflict(s) detected:`));
+      for (const c of result.conflicts.slice(0, 5)) {
+        console.log(chalk.dim(`    - ${c.description}`));
+      }
+      console.log("");
+    }
+
+    // Print summary
+    const critical = result.axeFindings.filter((f) => f.severity === "critical").length +
+      result.personas.flatMap((p) => p.agentResult.findings).filter((f) => f.severity === "critical").length;
+    const serious = result.axeFindings.filter((f) => f.severity === "serious").length +
+      result.personas.flatMap((p) => p.agentResult.findings).filter((f) => f.severity === "serious").length;
+
+    if (critical > 0) {
+      console.log(chalk.red(`  ${critical} critical issues found`));
+    }
+    if (serious > 0) {
+      console.log(chalk.yellow(`  ${serious} serious issues found`));
+    }
+    if (critical === 0 && serious === 0) {
+      console.log(chalk.green("  No critical or serious issues found"));
+    }
+    console.log(chalk.dim(`  Overall score: ${result.overallScore}/100`));
+    console.log(chalk.dim(`  Report: ${result.reportPath}`));
+    console.log("");
+  });
+
+// --- Generate command ---
+
+program
+  .command("generate")
+  .description("Generate personas for a URL without running tests")
+  .argument("<url>", "URL to generate personas for")
+  .option("--count <n>", "Number of personas to generate", "4")
+  .option("--describe <text>", "Generate personas from a text description instead of URL analysis")
+  .action(async (url: string, options: { count: string; describe?: string }) => {
+    const count = parseInt(options.count, 10);
+    const spinner = ora(`Generating ${count} personas...`).start();
+
+    try {
+      const personas = options.describe
+        ? await generatePersonasFromDescription(options.describe, count)
+        : await generatePersonasFromUrl(url, count);
+
+      spinner.succeed(`Generated ${personas.length} personas`);
+      console.log("");
+
+      for (const persona of personas) {
+        console.log(`  ${chalk.cyan(persona.id)}`);
+        console.log(`    ${persona.name} — ${persona.description}`);
+        console.log(
+          chalk.dim(
+            `    Tech: ${persona.techProficiency}/5 | Steps: ${persona.maxSteps} | ${persona.isMobile ? "Mobile" : "Desktop"} | ${persona.connectionSpeed}`
+          )
+        );
+        if (persona.accessibilityNeeds.length > 0) {
+          console.log(
+            chalk.dim(
+              `    Accessibility: ${persona.accessibilityNeeds.join(", ")}`
+            )
+          );
+        }
+        console.log(chalk.dim(`    Goals: ${persona.goals.join("; ")}`));
+        console.log("");
+      }
+    } catch (error) {
+      spinner.fail(`Failed: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+// --- List command ---
+
+program
+  .command("list")
+  .description("List available personas")
+  .option("-c, --category <category>", "Filter by category")
+  .action((options: { category?: string }) => {
+    const allPersonas = getAllPersonas();
+
+    let filteredIds: string[];
+    if (options.category) {
+      const categoryIds = personasByCategory[options.category];
+      if (!categoryIds) {
+        console.error(chalk.red(`Unknown category: ${options.category}`));
+        console.error(
+          chalk.dim(`Available categories: ${Object.keys(personasByCategory).join(", ")}`)
+        );
+        process.exit(1);
+      }
+      filteredIds = categoryIds.filter((id) => id in allPersonas);
+    } else {
+      filteredIds = Object.keys(allPersonas);
+    }
+
+    console.log("");
+    console.log(chalk.bold("  Available Personas"));
+    if (options.category) {
+      console.log(chalk.dim(`  Category: ${options.category}`));
+    }
+    console.log("");
+
+    for (const id of filteredIds) {
+      const persona = allPersonas[id];
+      const customTag = isCustomPersona(id) ? chalk.yellow(" [custom]") : "";
+      console.log(`  ${chalk.cyan(id)}${customTag}`);
+      console.log(`    ${persona.name} — ${persona.description}`);
+      console.log(
+        chalk.dim(
+          `    Tech: ${persona.techProficiency}/5 | Steps: ${persona.maxSteps} | ${persona.isMobile ? "Mobile" : "Desktop"} | ${persona.connectionSpeed}`
+        )
+      );
+      if (persona.accessibilityNeeds.length > 0) {
+        console.log(
+          chalk.dim(
+            `    Accessibility: ${persona.accessibilityNeeds.join(", ")}`
+          )
+        );
+      }
+      console.log("");
+    }
+  });
+
+// --- Create command ---
+
+function toKebabCase(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function parseConnectionSpeed(input: string): "fast" | "3g" | "slow-3g" {
+  const normalized = input.trim().toLowerCase();
+  if (normalized === "3g") return "3g";
+  if (normalized === "slow-3g") return "slow-3g";
+  return "fast";
+}
+
+function parsePatienceLevel(input: string): "low" | "medium" | "high" {
+  const normalized = input.trim().toLowerCase();
+  if (normalized === "low") return "low";
+  if (normalized === "high") return "high";
+  return "medium";
+}
+
+function parseTechProficiency(input: string): 1 | 2 | 3 | 4 | 5 {
+  const n = parseInt(input, 10);
+  if (n >= 1 && n <= 5) return n as 1 | 2 | 3 | 4 | 5;
+  return 3;
+}
+
+function parseViewport(device: string): { viewport: { width: number; height: number }; isMobile: boolean } {
+  if (device.trim().toLowerCase() === "mobile") {
+    return { viewport: { width: 390, height: 844 }, isMobile: true };
+  }
+  return { viewport: { width: 1440, height: 900 }, isMobile: false };
+}
+
+program
+  .command("create")
+  .description("Create a custom persona")
+  .option("--from-json <path>", "Import persona from a JSON file")
+  .action(async (options: { fromJson?: string }) => {
+    if (options.fromJson) {
+      try {
+        const content = fs.readFileSync(path.resolve(options.fromJson), "utf-8");
+        const data = JSON.parse(content);
+
+        // Generate system prompt if not provided
+        if (!data.systemPrompt) {
+          data.systemPrompt = generateSystemPrompt(data);
+        }
+
+        const persona: Persona = data;
+        saveCustomPersona(persona);
+        console.log(chalk.green(`Saved custom persona: ${persona.id} (${persona.name})`));
+      } catch (error) {
+        console.error(chalk.red(`Failed to import: ${error instanceof Error ? error.message : String(error)}`));
+        process.exit(1);
+      }
+      return;
+    }
+
+    // Interactive prompts
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    try {
+      const name = (await rl.question("Name (required): ")).trim();
+      if (!name) {
+        console.error(chalk.red("Name is required"));
+        process.exit(1);
+      }
+
+      const suggestedId = toKebabCase(name);
+      const idInput = (await rl.question(`ID [${suggestedId}]: `)).trim();
+      const id = idInput || suggestedId;
+
+      const description = (await rl.question("Description (required): ")).trim();
+      if (!description) {
+        console.error(chalk.red("Description is required"));
+        process.exit(1);
+      }
+
+      const goalsInput = (await rl.question("Goals (comma-separated): ")).trim();
+      const goals = goalsInput ? goalsInput.split(",").map((s) => s.trim()).filter(Boolean) : [];
+
+      const frustInput = (await rl.question("Frustrations (comma-separated): ")).trim();
+      const frustrations = frustInput ? frustInput.split(",").map((s) => s.trim()).filter(Boolean) : [];
+
+      const techInput = (await rl.question("Tech proficiency (1-5) [3]: ")).trim();
+      const techProficiency = parseTechProficiency(techInput || "3");
+
+      const deviceInput = (await rl.question("Device (desktop/mobile) [desktop]: ")).trim();
+      const { viewport, isMobile } = parseViewport(deviceInput || "desktop");
+
+      const connInput = (await rl.question("Connection speed (fast/3g/slow-3g) [fast]: ")).trim();
+      const connectionSpeed = parseConnectionSpeed(connInput || "fast");
+
+      const a11yInput = (await rl.question("Accessibility needs (comma-separated, or empty): ")).trim();
+      const accessibilityNeeds = a11yInput ? a11yInput.split(",").map((s) => s.trim()).filter(Boolean) : [];
+
+      const stepsInput = (await rl.question("Max steps [20]: ")).trim();
+      const maxSteps = parseInt(stepsInput || "20", 10) || 20;
+
+      const patienceInput = (await rl.question("Patience level (low/medium/high) [medium]: ")).trim();
+      const patienceLevel = parsePatienceLevel(patienceInput || "medium");
+
+      const partial: Omit<Persona, "systemPrompt"> = {
+        id,
+        name,
+        description,
+        goals,
+        frustrations,
+        techProficiency,
+        viewport,
+        isMobile,
+        connectionSpeed,
+        accessibilityNeeds,
+        maxSteps,
+        patienceLevel,
+      };
+
+      const persona: Persona = {
+        ...partial,
+        systemPrompt: generateSystemPrompt(partial),
+      };
+
+      saveCustomPersona(persona);
+      console.log("");
+      console.log(chalk.green(`Saved custom persona: ${id} (${name})`));
+      console.log(chalk.dim(`  File: ~/.mpersonas/personas/${id}.json`));
+    } finally {
+      rl.close();
+    }
+  });
+
+// --- Delete command ---
+
+program
+  .command("delete")
+  .description("Delete a custom persona")
+  .argument("<id>", "Persona ID to delete")
+  .action((id: string) => {
+    if (id in personaLibrary && !isCustomPersona(id)) {
+      console.error(chalk.red(`Cannot delete built-in persona: ${id}`));
+      process.exit(1);
+    }
+
+    if (!isCustomPersona(id)) {
+      console.error(chalk.red(`Custom persona not found: ${id}`));
+      process.exit(1);
+    }
+
+    deleteCustomPersona(id);
+    console.log(chalk.green(`Deleted custom persona: ${id}`));
+  });
+
+program.parse();

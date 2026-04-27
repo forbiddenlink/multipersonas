@@ -1,0 +1,29 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: AI-Powered QA
+      - heading "Test your website through the eyes of real users" [level=1] [ref=e5]
+      - paragraph [ref=e6]: AI personas with diverse backgrounds, accessibility needs, and tech proficiency levels browse your site and report what breaks.
+    - generic [ref=e9]:
+      - textbox "https://example.com" [ref=e10]
+      - button "Run Free Audit" [disabled]
+    - separator [ref=e11]
+    - generic [ref=e12]:
+      - heading "How it works" [level=2] [ref=e13]
+      - generic [ref=e14]:
+        - generic [ref=e16]:
+          - generic [ref=e17]: Built-in
+          - generic [ref=e18]: Persona Diversity
+          - generic [ref=e19]: 10+ built-in personas from screen reader users to impatient executives
+        - generic [ref=e21]:
+          - generic [ref=e22]: Automated
+          - generic [ref=e23]: Real Browser Testing
+          - generic [ref=e24]: AI agents actually browse your site, clicking, typing, and navigating
+        - generic [ref=e26]:
+          - generic [ref=e27]: WCAG
+          - generic [ref=e28]: Accessibility First
+          - generic [ref=e29]: axe-core + WCAG compliance + condition simulation built in
+    - separator [ref=e30]
+    - paragraph [ref=e32]: Trusted by X teams
+  - button "Open Next.js Dev Tools" [ref=e38] [cursor=pointer]:
+    - img [ref=e39]

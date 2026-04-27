@@ -1,0 +1,2 @@
+web:build:cd /Volumes/LizsDisk/multipersonas/web && pnpm build
+web:tsc:cd /Volumes/LizsDisk/multipersonas/web && npx tsc --noEmit

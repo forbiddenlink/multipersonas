@@ -1,0 +1,57 @@
+import { Suspense } from "react";
+import {
+  personaLibrary,
+  personasByCategory,
+} from "@engine/personas/library";
+import { PersonaCard } from "@/components/persona-card";
+import { PersonaFilter } from "@/components/persona-filter";
+import { Separator } from "@/components/ui/separator";
+
+export default async function PersonasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const { category } = await searchParams;
+  const activeCategory =
+    typeof category === "string" ? category : undefined;
+
+  const allPersonas = Object.values(personaLibrary);
+  const categoryKeys = Object.keys(personasByCategory);
+
+  const filteredPersonas =
+    activeCategory && activeCategory in personasByCategory
+      ? allPersonas.filter((p) =>
+          personasByCategory[activeCategory].includes(p.id),
+        )
+      : allPersonas;
+
+  return (
+    <div>
+      <div className="mb-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Personas</h1>
+        <p className="mt-1 text-muted-foreground">
+          Browse and manage testing personas
+        </p>
+      </div>
+
+      <Separator className="my-4" />
+
+      <Suspense fallback={null}>
+        <PersonaFilter categories={categoryKeys} />
+      </Suspense>
+
+      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {filteredPersonas.map((persona) => (
+          <PersonaCard key={persona.id} persona={persona} />
+        ))}
+      </div>
+
+      {filteredPersonas.length === 0 && (
+        <p className="mt-8 text-center text-muted-foreground">
+          No personas found in this category.
+        </p>
+      )}
+    </div>
+  );
+}

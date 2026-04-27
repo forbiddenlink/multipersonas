@@ -1,0 +1,29 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: Sign in to MultiPersonas
+      - generic [ref=e6]: Enter your credentials to continue
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - generic [ref=e9]:
+          - generic [ref=e10]: Email
+          - textbox "Email" [ref=e11]:
+            - /placeholder: you@example.com
+        - generic [ref=e12]:
+          - generic [ref=e13]: Password
+          - textbox "Password" [ref=e14]:
+            - /placeholder: Your password
+        - button "Sign in" [ref=e15]
+      - generic [ref=e16]:
+        - separator [ref=e17]
+        - generic [ref=e18]: or
+        - separator [ref=e19]
+      - button "Sign in with GitHub" [ref=e20]:
+        - img
+        - text: Sign in with GitHub
+      - paragraph [ref=e21]:
+        - text: Don't have an account?
+        - link "Sign up" [ref=e22] [cursor=pointer]:
+          - /url: /auth/signup
+  - button "Open Next.js Dev Tools" [ref=e28] [cursor=pointer]:
+    - img [ref=e29]
