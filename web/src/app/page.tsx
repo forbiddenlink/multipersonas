@@ -1,10 +1,4 @@
 import { SiteHeader } from "@/components/site-header";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AuditForm } from "@/components/audit-form";
@@ -32,7 +26,7 @@ const steps = [
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-dvh flex-col pb-[env(safe-area-inset-bottom)]">
       <SiteHeader />
 
       {/* Hero */}
@@ -58,13 +52,15 @@ export default function Home() {
 
       {/* How it works - actual steps */}
       <section className="mx-auto w-full max-w-5xl px-6 py-16">
-        <h2 className="mb-12 text-center text-2xl font-semibold tracking-tight">
+        <h2 className="mb-12 text-center text-2xl font-semibold tracking-tight font-heading">
           How it works
         </h2>
-        <div className="grid gap-8 sm:grid-cols-3">
+        <div className="relative grid gap-8 sm:grid-cols-3">
+          {/* Connecting line between steps (desktop only) */}
+          <div className="absolute top-5 left-[calc(16.67%+20px)] right-[calc(16.67%+20px)] hidden h-px bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20 sm:block" />
           {steps.map((step) => (
-            <div key={step.number} className="flex flex-col items-center text-center">
-              <div className="mb-4 flex size-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary ring-1 ring-primary/30">
+            <div key={step.number} className="relative flex flex-col items-center text-center">
+              <div className="mb-4 flex size-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary ring-1 ring-primary/30 transition-transform hover:scale-110">
                 {step.number}
               </div>
               <h3 className="text-lg font-medium">{step.title}</h3>
@@ -88,9 +84,9 @@ export default function Home() {
         </p>
         <Link
           href="/auth/signup"
-          className="mt-2 rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          className="mt-2 rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
-          Get started free
+          Start auditing free
         </Link>
       </section>
     </div>
