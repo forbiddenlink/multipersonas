@@ -14,6 +14,9 @@ const dmSerif = DM_Serif_Display({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://multipersonas.dev"
+  ),
   title: "MultiPersonas",
   description: "AI accessibility testing with simulated user personas",
   other: {

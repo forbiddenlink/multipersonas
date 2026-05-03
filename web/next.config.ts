@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    viewTransition: true,
+  },
   serverExternalPackages: ["playwright", "@axe-core/playwright"],
   webpack: (config, { isServer }) => {
     config.resolve.alias = {
