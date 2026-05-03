@@ -11,3 +11,5 @@ coverage/
 *.tsbuildinfo
 .turbo
 .vercel
+.playwright-mcp/
+*.png
