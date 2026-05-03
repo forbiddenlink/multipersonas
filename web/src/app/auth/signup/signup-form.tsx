@@ -32,13 +32,15 @@ export function SignupForm() {
       return;
     }
 
+    const errors: string[] = [];
     if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
+      errors.push("at least 8 characters");
     }
-
     if (!/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-      setError("Password must contain at least one number or special character.");
+      errors.push("a number or special character");
+    }
+    if (errors.length > 0) {
+      setError(`Password needs ${errors.join(" and ")}.`);
       return;
     }
 
@@ -114,12 +116,12 @@ export function SignupForm() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {error && (
-            <div className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div id="form-error" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSignup} className="flex flex-col gap-4">
+          <form onSubmit={handleSignup} className="flex flex-col gap-4" aria-describedby={error ? "form-error" : undefined}>
             <div className="flex flex-col gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -128,6 +130,7 @@ export function SignupForm() {
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 required
               />
             </div>
@@ -140,8 +143,10 @@ export function SignupForm() {
                 placeholder="At least 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
                 required
               />
+              <p className="text-xs text-muted-foreground">8+ characters with a number or symbol</p>
             </div>
 
             <div className="flex flex-col gap-2">
@@ -152,6 +157,7 @@ export function SignupForm() {
                 placeholder="Repeat your password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
                 required
               />
             </div>

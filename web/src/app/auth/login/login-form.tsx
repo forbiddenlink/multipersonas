@@ -72,12 +72,12 @@ export function LoginForm() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {error && (
-            <div className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div id="form-error" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleEmailLogin} className="flex flex-col gap-4">
+          <form onSubmit={handleEmailLogin} className="flex flex-col gap-4" aria-describedby={error ? "form-error" : undefined}>
             <div className="flex flex-col gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -86,6 +86,7 @@ export function LoginForm() {
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 required
               />
             </div>
@@ -98,6 +99,7 @@ export function LoginForm() {
                 placeholder="Your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
                 required
               />
             </div>
