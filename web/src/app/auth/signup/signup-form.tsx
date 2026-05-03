@@ -23,8 +23,6 @@ export function SignupForm() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const supabase = createClient();
-
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -34,13 +32,19 @@ export function SignupForm() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
+    if (!/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      setError("Password must contain at least one number or special character.");
       return;
     }
 
     setLoading(true);
 
+    const supabase = createClient();
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -61,6 +65,7 @@ export function SignupForm() {
 
   async function handleGitHubSignup() {
     setError("");
+    const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
@@ -132,7 +137,7 @@ export function SignupForm() {
               <Input
                 id="password"
                 type="password"
-                placeholder="At least 6 characters"
+                placeholder="At least 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required

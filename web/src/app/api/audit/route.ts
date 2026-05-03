@@ -4,7 +4,15 @@ import * as path from "path";
 import * as fs from "fs";
 import { prebuiltPersonas } from "@engine/personas/prebuilt";
 import { runMultiPersonaTest } from "@engine/agent/orchestrator";
+import { createClient } from "@/lib/supabase/server";
+
 export async function POST(request: Request) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  }
+
   let body: { url?: string };
   try {
     body = await request.json();
@@ -34,6 +42,28 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json(
       { error: "Invalid URL. Must be a valid http or https URL." },
+      { status: 400 }
+    );
+  }
+
+  // Block private/reserved IPs (SSRF protection)
+  const hostname = parsedUrl.hostname;
+  const blockedPatterns = [
+    /^localhost$/i,
+    /^127\./,
+    /^10\./,
+    /^172\.(1[6-9]|2\d|3[01])\./,
+    /^192\.168\./,
+    /^169\.254\./,
+    /^0\./,
+    /^\[::1\]$/,
+    /^\[fc/i,
+    /^\[fd/i,
+    /^\[fe80/i,
+  ];
+  if (blockedPatterns.some((pattern) => pattern.test(hostname))) {
+    return NextResponse.json(
+      { error: "URLs pointing to private/internal networks are not allowed." },
       { status: 400 }
     );
   }
