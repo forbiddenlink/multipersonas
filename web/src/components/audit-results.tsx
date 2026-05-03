@@ -76,6 +76,19 @@ function severityBadgeVariant(
   }
 }
 
+function severityColor(severity: string): string {
+  switch (severity) {
+    case "critical":
+      return "var(--severity-critical)";
+    case "serious":
+      return "var(--severity-serious)";
+    case "moderate":
+      return "var(--severity-moderate)";
+    default:
+      return "var(--severity-minor)";
+  }
+}
+
 function severityLabel(severity: string): string {
   return severity.charAt(0).toUpperCase() + severity.slice(1);
 }
@@ -101,15 +114,24 @@ export function AuditResults({
           Results for{" "}
           <span className="text-foreground font-medium">{results.url}</span>
         </p>
-        <div
-          className={`flex items-center justify-center size-32 rounded-full border-4 ${scoreRingColor(results.overallScore)} shadow-lg ${scoreBgGlow(results.overallScore)}`}
-        >
-          <span
-            className={`text-4xl font-bold tabular-nums ${scoreColor(results.overallScore)}`}
-          >
-            {results.overallScore}
-          </span>
-          <span className="sr-only">{scoreLabel(results.overallScore)}</span>
+        <div className="relative flex items-center justify-center size-36">
+          <svg className="absolute inset-0 -rotate-90" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" strokeWidth="6" className="text-muted/30" />
+            <circle
+              cx="60" cy="60" r="52" fill="none"
+              strokeWidth="6" strokeLinecap="round"
+              stroke={results.overallScore >= 80 ? "oklch(0.72 0.15 160)" : results.overallScore >= 50 ? "oklch(0.78 0.12 85)" : "oklch(0.65 0.20 25)"}
+              strokeDasharray={`${(results.overallScore / 100) * 327} 327`}
+              className="transition-all duration-1000 ease-out"
+              style={{ animationDelay: "200ms" }}
+            />
+          </svg>
+          <div className="flex flex-col items-center">
+            <span className={`text-4xl font-bold tabular-nums ${scoreColor(results.overallScore)}`}>
+              {results.overallScore}
+            </span>
+            <span className="sr-only">{scoreLabel(results.overallScore)}</span>
+          </div>
         </div>
         <p className="text-sm text-muted-foreground">Overall Score</p>
         <p className={`text-sm font-medium ${scoreColor(results.overallScore)}`}>{scoreLabel(results.overallScore)}</p>
@@ -118,7 +140,7 @@ export function AuditResults({
       {/* Persona Cards */}
       <div className="grid gap-6 sm:grid-cols-3">
         {results.personas.map((persona) => (
-          <Card key={persona.id}>
+          <Card key={persona.id} className="transition-all duration-200 hover:scale-[1.02] hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>{persona.name}</CardTitle>
@@ -153,6 +175,7 @@ export function AuditResults({
                       className="rounded-lg border border-border p-3 space-y-1"
                     >
                       <div className="flex items-center gap-2">
+                        <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: severityColor(finding.severity) }} />
                         <Badge variant={severityBadgeVariant(finding.severity)}>
                           {severityLabel(finding.severity)}
                         </Badge>
@@ -186,7 +209,7 @@ export function AuditResults({
             {results.axeFindings.map((finding, i) => (
               <div
                 key={i}
-                className="rounded-xl border border-border p-4 space-y-2"
+                className="rounded-xl border border-border p-4 space-y-2 transition-all duration-200 hover:border-primary/20"
               >
                 <div className="flex items-center gap-2">
                   <Badge variant={severityBadgeVariant(finding.severity)}>

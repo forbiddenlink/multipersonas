@@ -43,6 +43,24 @@ export default function Home() {
         </p>
       </section>
 
+      {/* Metrics */}
+      <div className="flex items-center justify-center gap-8 px-6 pb-8 sm:gap-12">
+        <div className="text-center">
+          <p className="text-2xl font-bold tabular-nums text-primary">3</p>
+          <p className="text-xs text-muted-foreground">AI personas</p>
+        </div>
+        <div className="h-8 w-px bg-border" />
+        <div className="text-center">
+          <p className="text-2xl font-bold tabular-nums text-primary">WCAG 2.1</p>
+          <p className="text-xs text-muted-foreground">AA compliance</p>
+        </div>
+        <div className="h-8 w-px bg-border" />
+        <div className="text-center">
+          <p className="text-2xl font-bold tabular-nums text-primary">Real</p>
+          <p className="text-xs text-muted-foreground">browser testing</p>
+        </div>
+      </div>
+
       {/* Free Audit */}
       <section className="px-6 pb-16">
         <AuditForm />
@@ -89,6 +107,19 @@ export default function Home() {
           Start auditing free
         </Link>
       </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border px-6 py-8">
+        <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 sm:flex-row sm:justify-between">
+          <p className="text-sm text-muted-foreground">
+            MultiPersonas — AI-powered accessibility testing
+          </p>
+          <div className="flex gap-6 text-sm text-muted-foreground">
+            <Link href="/auth/login" className="transition-colors hover:text-foreground">Sign in</Link>
+            <Link href="/auth/signup" className="transition-colors hover:text-foreground">Sign up</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

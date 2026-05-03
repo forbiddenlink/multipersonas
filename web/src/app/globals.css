@@ -24,6 +24,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-severity-critical: var(--severity-critical);
+  --color-severity-serious: var(--severity-serious);
+  --color-severity-moderate: var(--severity-moderate);
+  --color-severity-minor: var(--severity-minor);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -116,6 +120,13 @@
   --sidebar-accent-foreground: oklch(0.985 0.002 240);
   --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: oklch(0.72 0.12 195);
+  --severity-critical: oklch(0.65 0.20 25);
+  --severity-serious: oklch(0.72 0.16 55);
+  --severity-moderate: oklch(0.78 0.12 85);
+  --severity-minor: oklch(0.72 0.10 195);
+  --persona-screen-reader: oklch(0.68 0.14 280);
+  --persona-first-time: oklch(0.75 0.12 85);
+  --persona-mobile: oklch(0.70 0.15 160);
 }
 
 @layer base {
@@ -127,5 +138,13 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
