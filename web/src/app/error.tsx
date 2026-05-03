@@ -9,9 +9,9 @@ export default function Error({
 }) {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-4">
-      <h2 className="text-xl font-semibold">Something went wrong</h2>
+      <h2 className="text-xl font-semibold">Something broke</h2>
       <p className="text-sm text-muted-foreground">
-        {error.message || "An unexpected error occurred."}
+        {error.message || "Try refreshing the page. If this keeps happening, clear your browser cache."}
       </p>
       <button
         onClick={reset}

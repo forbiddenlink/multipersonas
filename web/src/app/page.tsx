@@ -18,9 +18,9 @@ const steps = [
   },
   {
     number: "3",
-    title: "Get actionable findings",
+    title: "Get findings you can fix",
     description:
-      "See what broke, what confused, and what failed accessibility standards — with fix suggestions",
+      "See what broke, what confused, and what failed WCAG — with fix suggestions",
   },
 ];
 
@@ -98,13 +98,13 @@ export default function Home() {
           Ready to improve your site?
         </h2>
         <p className="max-w-md text-muted-foreground">
-          Create a free account to run full audits, save results, and track improvements over time.
+          Sign up to save your audit results and track fixes over time.
         </p>
         <Link
           href="/auth/signup"
           className="mt-2 rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
-          Start auditing free
+          Start your free audit
         </Link>
       </section>
 
@@ -115,7 +115,7 @@ export default function Home() {
             MultiPersonas — AI-powered accessibility testing
           </p>
           <div className="flex gap-6 text-sm text-muted-foreground">
-            <Link href="/auth/login" className="transition-colors hover:text-foreground">Sign in</Link>
+            <Link href="/personas" className="transition-colors hover:text-foreground">Personas</Link>
             <Link href="/auth/signup" className="transition-colors hover:text-foreground">Sign up</Link>
           </div>
         </div>

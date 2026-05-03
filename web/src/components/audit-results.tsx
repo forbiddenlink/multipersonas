@@ -93,10 +93,10 @@ function severityLabel(severity: string): string {
   return severity.charAt(0).toUpperCase() + severity.slice(1);
 }
 
-const PERSONA_LABELS: Record<string, string> = {
-  "first-time-visitor": "First-Time Visitor",
-  "screen-reader-user": "Screen Reader User",
-  "mobile-slow-connection": "Mobile / Slow",
+const PERSONA_LABELS: Record<string, { name: string; role: string }> = {
+  "first-time-visitor": { name: "Sarah", role: "First-Time Visitor" },
+  "screen-reader-user": { name: "James", role: "Screen Reader User" },
+  "mobile-slow-connection": { name: "Maria", role: "Mobile / Slow" },
 };
 
 export function AuditResults({
@@ -149,7 +149,7 @@ export function AuditResults({
                 </span>
               </div>
               <CardDescription>
-                {PERSONA_LABELS[persona.id] || persona.id}
+                {PERSONA_LABELS[persona.id]?.role || persona.id}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">

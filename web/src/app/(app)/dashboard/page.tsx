@@ -58,14 +58,16 @@ export default function DashboardPage() {
     <div>
       <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
       <p className="mt-1 text-muted-foreground">
-        Run accessibility audits powered by AI personas
+        Test your site with AI personas
       </p>
 
       <Card className="mt-8 max-w-2xl">
         <CardHeader>
           <CardTitle>Run an audit</CardTitle>
           <CardDescription>
-            Enter a URL and three AI personas will browse your site, testing for accessibility, usability, and performance issues.
+            Paste a URL. Three AI personas will browse it and report what they find.
+            Your first audit takes about 2 minutes. Results include WCAG violations,
+            usability issues, and persona-specific findings.
           </CardDescription>
         </CardHeader>
         <CardContent>

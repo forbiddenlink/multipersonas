@@ -15,7 +15,7 @@ const dmSerif = DM_Serif_Display({
 
 export const metadata: Metadata = {
   title: "MultiPersonas",
-  description: "AI persona-based website testing",
+  description: "AI accessibility testing with simulated user personas",
   other: {
     "theme-color": "#1a1a2e",
   },

@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
   if (!url || typeof url !== "string") {
     return NextResponse.json(
-      { error: "Missing required field: url" },
+      { error: "Please enter a URL to audit" },
       { status: 400 }
     );
   }
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     }
   } catch {
     return NextResponse.json(
-      { error: "Invalid URL. Must be a valid http or https URL." },
+      { error: "Enter a full URL starting with https://" },
       { status: 400 }
     );
   }
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
   ];
   if (blockedPatterns.some((pattern) => pattern.test(hostname))) {
     return NextResponse.json(
-      { error: "URLs pointing to private/internal networks are not allowed." },
+      { error: "This URL points to a private network and can't be tested." },
       { status: 400 }
     );
   }
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
 
     const abortPromise = new Promise<never>((_, reject) => {
       controller.signal.addEventListener("abort", () => {
-        reject(new Error("Audit timed out after 2 minutes"));
+        reject(new Error("The site took too long to respond. Try a simpler page or check the URL is accessible."));
       });
     });
 

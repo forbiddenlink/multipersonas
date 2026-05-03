@@ -31,7 +31,7 @@ export default async function PersonasPage({
       <div className="mb-1">
         <h1 className="text-2xl font-semibold tracking-tight">Personas</h1>
         <p className="mt-1 text-muted-foreground">
-          Browse and manage testing personas
+          Explore the AI personas that test your site
         </p>
       </div>
 
