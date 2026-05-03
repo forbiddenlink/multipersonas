@@ -1,3 +1,4 @@
+import { SiteHeader } from "@/components/site-header";
 import {
   Card,
   CardHeader,
@@ -7,35 +8,37 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AuditForm } from "@/components/audit-form";
+import Link from "next/link";
 
-const features = [
+const steps = [
   {
-    title: "Persona Diversity",
-    description:
-      "10+ built-in personas from screen reader users to impatient executives",
-    badge: "Built-in",
+    number: "1",
+    title: "Enter your URL",
+    description: "Paste any website URL — public or staging",
   },
   {
-    title: "Real Browser Testing",
+    number: "2",
+    title: "AI personas browse your site",
     description:
-      "AI agents actually browse your site, clicking, typing, and navigating",
-    badge: "Automated",
+      "A screen reader user, first-time visitor, and mobile user each navigate your site independently",
   },
   {
-    title: "Accessibility First",
+    number: "3",
+    title: "Get actionable findings",
     description:
-      "axe-core + WCAG compliance + condition simulation built in",
-    badge: "WCAG",
+      "See what broke, what confused, and what failed accessibility standards — with fix suggestions",
   },
 ];
 
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
+      <SiteHeader />
+
       {/* Hero */}
-      <section className="flex flex-col items-center justify-center px-6 py-24 text-center">
+      <section className="flex flex-col items-center justify-center px-6 py-20 text-center">
         <Badge variant="secondary" className="mb-6">
-          AI-Powered QA
+          AI-Powered Accessibility Testing
         </Badge>
         <h1 className="max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
           Test your website through the eyes of real users
@@ -47,32 +50,49 @@ export default function Home() {
       </section>
 
       {/* Free Audit */}
-      <section className="px-6 pb-24">
+      <section className="px-6 pb-20">
         <AuditForm />
       </section>
 
       <Separator />
 
-      {/* Features */}
-      <section className="mx-auto w-full max-w-5xl px-6 py-24">
+      {/* How it works - actual steps */}
+      <section className="mx-auto w-full max-w-5xl px-6 py-20">
         <h2 className="mb-12 text-center text-2xl font-semibold tracking-tight">
           How it works
         </h2>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
-            <Card key={feature.title}>
-              <CardHeader>
-                <Badge variant="outline" className="mb-2 w-fit">
-                  {feature.badge}
-                </Badge>
-                <CardTitle>{feature.title}</CardTitle>
-                <CardDescription>{feature.description}</CardDescription>
-              </CardHeader>
-            </Card>
+        <div className="grid gap-8 sm:grid-cols-3">
+          {steps.map((step) => (
+            <div key={step.number} className="flex flex-col items-center text-center">
+              <div className="mb-4 flex size-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                {step.number}
+              </div>
+              <h3 className="text-lg font-medium">{step.title}</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {step.description}
+              </p>
+            </div>
           ))}
         </div>
       </section>
 
+      <Separator />
+
+      {/* Bottom CTA */}
+      <section className="flex flex-col items-center gap-4 px-6 py-20 text-center">
+        <h2 className="text-2xl font-semibold tracking-tight">
+          Ready to improve your site?
+        </h2>
+        <p className="max-w-md text-muted-foreground">
+          Create a free account to run full audits, save results, and track improvements over time.
+        </p>
+        <Link
+          href="/auth/signup"
+          className="mt-2 rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          Get started free
+        </Link>
+      </section>
     </div>
   );
 }

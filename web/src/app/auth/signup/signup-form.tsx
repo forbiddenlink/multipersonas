@@ -188,6 +188,15 @@ export function SignupForm() {
               Sign in
             </Link>
           </p>
+
+          <p className="text-center text-xs text-muted-foreground">
+            <Link
+              href="/"
+              className="hover:text-primary"
+            >
+              &larr; Back to home
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </div>

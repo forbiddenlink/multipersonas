@@ -122,7 +122,18 @@ export function AuditForm() {
       </form>
 
       {error && (
-        <p className="mt-4 text-sm text-destructive text-center">{error}</p>
+        <div className="mt-4 text-center">
+          {error === "Authentication required" ? (
+            <p className="text-sm text-muted-foreground">
+              <a href="/auth/signup" className="text-primary underline underline-offset-4 hover:text-primary/80">
+                Create a free account
+              </a>
+              {" "}to run audits and save your results.
+            </p>
+          ) : (
+            <p className="text-sm text-destructive">{error}</p>
+          )}
+        </div>
       )}
 
       {loading && (

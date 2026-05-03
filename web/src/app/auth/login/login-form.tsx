@@ -102,6 +102,15 @@ export function LoginForm() {
               />
             </div>
 
+            <div className="flex justify-end">
+              <Link
+                href="/auth/forgot-password"
+                className="text-xs text-muted-foreground hover:text-primary"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
             <Button type="submit" disabled={loading}>
               {loading ? "Signing in..." : "Sign in"}
             </Button>
@@ -132,6 +141,15 @@ export function LoginForm() {
               className="text-foreground underline underline-offset-4 hover:text-primary"
             >
               Sign up
+            </Link>
+          </p>
+
+          <p className="text-center text-xs text-muted-foreground">
+            <Link
+              href="/"
+              className="hover:text-primary"
+            >
+              &larr; Back to home
             </Link>
           </p>
         </CardContent>
