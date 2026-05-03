@@ -10,7 +10,7 @@ export default async function AppLayout({
   const { data: { user } } = await supabase.auth.getUser();
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row">
+    <div className="flex min-h-dvh flex-col md:flex-row">
       <AppNav userEmail={user?.email ?? null} />
       <main className="flex-1 p-6 md:p-8">{children}</main>
     </div>

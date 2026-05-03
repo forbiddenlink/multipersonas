@@ -109,7 +109,7 @@ export function AuditForm() {
           placeholder="https://example.com"
           required
           disabled={loading}
-          className="flex-1 h-10 rounded-lg border border-border bg-card px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50 disabled:opacity-50"
+          className="flex-1 h-10 rounded-lg border border-border bg-card px-4 text-base md:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50 disabled:opacity-50"
         />
         <Button
           type="submit"

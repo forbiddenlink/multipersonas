@@ -36,11 +36,11 @@ export default function Home() {
       <SiteHeader />
 
       {/* Hero */}
-      <section className="flex flex-col items-center justify-center px-6 py-20 text-center">
+      <section className="flex flex-col items-center justify-center px-6 py-24 sm:py-32 text-center">
         <Badge variant="secondary" className="mb-6">
           AI-Powered Accessibility Testing
         </Badge>
-        <h1 className="max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+        <h1 className="max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl font-heading">
           Test your website through the eyes of real users
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
@@ -50,21 +50,21 @@ export default function Home() {
       </section>
 
       {/* Free Audit */}
-      <section className="px-6 pb-20">
+      <section className="px-6 pb-16">
         <AuditForm />
       </section>
 
       <Separator />
 
       {/* How it works - actual steps */}
-      <section className="mx-auto w-full max-w-5xl px-6 py-20">
+      <section className="mx-auto w-full max-w-5xl px-6 py-16">
         <h2 className="mb-12 text-center text-2xl font-semibold tracking-tight">
           How it works
         </h2>
         <div className="grid gap-8 sm:grid-cols-3">
           {steps.map((step) => (
             <div key={step.number} className="flex flex-col items-center text-center">
-              <div className="mb-4 flex size-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+              <div className="mb-4 flex size-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary ring-1 ring-primary/30">
                 {step.number}
               </div>
               <h3 className="text-lg font-medium">{step.title}</h3>
@@ -79,8 +79,8 @@ export default function Home() {
       <Separator />
 
       {/* Bottom CTA */}
-      <section className="flex flex-col items-center gap-4 px-6 py-20 text-center">
-        <h2 className="text-2xl font-semibold tracking-tight">
+      <section className="flex flex-col items-center gap-4 px-6 py-24 text-center">
+        <h2 className="text-2xl font-semibold tracking-tight font-heading">
           Ready to improve your site?
         </h2>
         <p className="max-w-md text-muted-foreground">

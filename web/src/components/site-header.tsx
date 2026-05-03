@@ -14,7 +14,7 @@ export async function SiteHeader() {
         {user ? (
           <Link
             href="/dashboard"
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Dashboard
           </Link>
@@ -22,13 +22,13 @@ export async function SiteHeader() {
           <>
             <Link
               href="/auth/login"
-              className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+              className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               Sign in
             </Link>
             <Link
               href="/auth/signup"
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               Get started
             </Link>

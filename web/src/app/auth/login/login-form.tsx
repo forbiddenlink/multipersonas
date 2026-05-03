@@ -62,7 +62,7 @@ export function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
+    <div className="flex min-h-dvh items-center justify-center px-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Sign in to MultiPersonas</CardTitle>
@@ -105,7 +105,7 @@ export function LoginForm() {
             <div className="flex justify-end">
               <Link
                 href="/auth/forgot-password"
-                className="text-xs text-muted-foreground hover:text-primary"
+                className="py-1 text-sm text-muted-foreground hover:text-primary"
               >
                 Forgot password?
               </Link>
