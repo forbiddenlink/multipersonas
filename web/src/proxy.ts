@@ -40,7 +40,9 @@ export async function proxy(request: NextRequest) {
 
   if (isAppRoute && !user) {
     const url = request.nextUrl.clone();
+    const returnTo = request.nextUrl.pathname + request.nextUrl.search;
     url.pathname = "/auth/login";
+    url.searchParams.set("returnTo", returnTo);
     return NextResponse.redirect(url);
   }
 

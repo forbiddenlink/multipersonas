@@ -58,16 +58,18 @@ export function LoginForm() {
       return;
     }
 
-    router.push("/dashboard");
+    const returnTo = searchParams.get("returnTo") || "/dashboard";
+    router.push(returnTo);
   }
 
   async function handleGitHubLogin() {
     setFormError("");
+    const returnTo = searchParams.get("returnTo") || "/dashboard";
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(returnTo)}`,
       },
     });
 
