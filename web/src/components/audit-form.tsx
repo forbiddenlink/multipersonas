@@ -101,7 +101,7 @@ export function AuditForm() {
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      <form onSubmit={handleSubmit} className="flex gap-3">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row">
         <input
           type="url"
           value={url}
@@ -116,7 +116,7 @@ export function AuditForm() {
           type="submit"
           size="lg"
           disabled={loading || !url}
-          className="h-10 px-6"
+          className="h-10 px-6 shrink-0"
         >
           {loading ? "Running..." : "Run Free Audit"}
         </Button>
