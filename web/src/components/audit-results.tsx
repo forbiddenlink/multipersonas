@@ -43,6 +43,12 @@ function scoreColor(score: number): string {
   return "text-red-400";
 }
 
+function scoreLabel(score: number): string {
+  if (score >= 80) return "Good";
+  if (score >= 50) return "Needs Work";
+  return "Poor";
+}
+
 function scoreRingColor(score: number): string {
   if (score >= 80) return "border-green-400";
   if (score >= 50) return "border-yellow-400";
@@ -103,8 +109,10 @@ export function AuditResults({
           >
             {results.overallScore}
           </span>
+          <span className="sr-only">{scoreLabel(results.overallScore)}</span>
         </div>
         <p className="text-sm text-muted-foreground">Overall Score</p>
+        <p className={`text-sm font-medium ${scoreColor(results.overallScore)}`}>{scoreLabel(results.overallScore)}</p>
       </div>
 
       {/* Persona Cards */}
@@ -114,10 +122,8 @@ export function AuditResults({
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>{persona.name}</CardTitle>
-                <span
-                  className={`text-lg font-bold tabular-nums ${scoreColor(persona.score)}`}
-                >
-                  {persona.score}
+                <span className={`text-lg font-bold tabular-nums ${scoreColor(persona.score)}`}>
+                  {persona.score} <span className="text-xs font-normal">{scoreLabel(persona.score)}</span>
                 </span>
               </div>
               <CardDescription>

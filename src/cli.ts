@@ -4,6 +4,8 @@ import chalk from "chalk";
 import ora from "ora";
 import * as fs from "fs";
 import * as path from "path";
+import { fileURLToPath } from "url";
+import { z } from "zod";
 import { personaLibrary, personasByCategory } from "./personas/library.js";
 import { generatePersonasFromUrl, generatePersonasFromDescription } from "./personas/generator.js";
 import { runMultiPersonaTest, type ProgressEvent } from "./agent/orchestrator.js";
@@ -12,12 +14,41 @@ import { getAllPersonas, saveCustomPersona, deleteCustomPersona, isCustomPersona
 import { generateSystemPrompt } from "./personas/types.js";
 import * as readline from "node:readline/promises";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, "../package.json"), "utf-8"));
+
+const importedPersonaSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  goals: z.array(z.string()),
+  frustrations: z.array(z.string()),
+  techProficiency: z.union([
+    z.literal(1),
+    z.literal(2),
+    z.literal(3),
+    z.literal(4),
+    z.literal(5),
+  ]),
+  viewport: z.object({
+    width: z.number(),
+    height: z.number(),
+  }),
+  isMobile: z.boolean(),
+  connectionSpeed: z.enum(["fast", "3g", "slow-3g"]),
+  accessibilityNeeds: z.array(z.string()).default([]),
+  maxSteps: z.number(),
+  patienceLevel: z.enum(["low", "medium", "high"]),
+  systemPrompt: z.string().optional(),
+});
+
 const program = new Command();
 
 program
   .name("mpersonas")
   .description("AI persona-based website testing")
-  .version("0.1.0");
+  .version(pkg.version);
 
 // --- Run command ---
 
@@ -46,7 +77,7 @@ program
     describe?: string;
   }) => {
     console.log("");
-    console.log(chalk.bold("  MultiPersonas v0.1.0"));
+    console.log(chalk.bold(`  MultiPersonas v${pkg.version}`));
     console.log(chalk.dim(`  Testing: ${url}`));
     console.log("");
 
@@ -329,12 +360,16 @@ program
         const content = fs.readFileSync(path.resolve(options.fromJson), "utf-8");
         const data = JSON.parse(content);
 
-        // Generate system prompt if not provided
-        if (!data.systemPrompt) {
-          data.systemPrompt = generateSystemPrompt(data);
+        const parsed = importedPersonaSchema.safeParse(data);
+        if (!parsed.success) {
+          console.error(chalk.red(`Invalid persona format: ${parsed.error.message}`));
+          process.exit(1);
         }
 
-        const persona: Persona = data;
+        const persona: Persona = {
+          ...parsed.data,
+          systemPrompt: parsed.data.systemPrompt || generateSystemPrompt(parsed.data),
+        };
         saveCustomPersona(persona);
         console.log(chalk.green(`Saved custom persona: ${persona.id} (${persona.name})`));
       } catch (error) {

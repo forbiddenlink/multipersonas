@@ -148,7 +148,7 @@ export async function generatePersonasFromUrl(
     const prompt = buildPromptFromSignals(signals, count);
 
     const { object } = await generateObject({
-      model: anthropic("claude-sonnet-4-20250514"),
+      model: anthropic(process.env.MULTIPERSONAS_MODEL || "claude-sonnet-4-20250514"),
       schema: personaSchema,
       prompt,
     });
@@ -181,7 +181,7 @@ Requirements:
 - Viewports: desktop 1440x900, mobile 375x812 or 390x844.`;
 
     const { object } = await generateObject({
-      model: anthropic("claude-sonnet-4-20250514"),
+      model: anthropic(process.env.MULTIPERSONAS_MODEL || "claude-sonnet-4-20250514"),
       schema: personaSchema,
       prompt,
     });

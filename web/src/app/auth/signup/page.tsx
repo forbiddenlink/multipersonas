@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export default function SignupPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><div className="h-96 w-full max-w-sm animate-pulse rounded-xl bg-muted" /></div>}>
       <SignupForm />
     </Suspense>
   );

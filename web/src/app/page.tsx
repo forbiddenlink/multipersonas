@@ -73,14 +73,6 @@ export default function Home() {
         </div>
       </section>
 
-      <Separator />
-
-      {/* Social Proof Placeholder */}
-      <section className="py-16 text-center">
-        <p className="text-sm text-muted-foreground">
-          Trusted by X teams
-        </p>
-      </section>
     </div>
   );
 }

@@ -37,7 +37,7 @@ export default async function PersonasPage({
 
       <Separator className="my-4" />
 
-      <Suspense fallback={null}>
+      <Suspense fallback={<div className="flex gap-2 py-2">{Array.from({length: 4}).map((_, i) => <div key={i} className="h-8 w-20 animate-pulse rounded-md bg-muted" />)}</div>}>
         <PersonaFilter categories={categoryKeys} />
       </Suspense>
 

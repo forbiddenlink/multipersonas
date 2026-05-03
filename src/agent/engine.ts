@@ -286,7 +286,7 @@ export async function runPersonaAgent(
       messages.push({ role: "user", content: userContent });
 
       const result = await generateText({
-        model: anthropic("claude-sonnet-4-20250514"),
+        model: anthropic(process.env.MULTIPERSONAS_MODEL || "claude-sonnet-4-20250514"),
         system: persona.systemPrompt,
         messages,
         tools: agentTools,
