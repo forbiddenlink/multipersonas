@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { AuditResults, type AuditResponse } from "@/components/audit-results";
 import { PERSONA_DATA, PERSONA_IDS } from "@/lib/personas";
 
 const PERSONAS = PERSONA_IDS.map((id) => PERSONA_DATA[id]);
+const STORAGE_KEY = "multipersonas-last-audit";
 
 type PersonaStatus = "pending" | "running" | "complete";
 
@@ -17,6 +18,18 @@ export function AuditForm() {
   const [personaStatuses, setPersonaStatuses] = useState<
     Record<string, PersonaStatus>
   >({});
+
+  // Restore last audit results from sessionStorage on mount
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        setResults(JSON.parse(saved));
+      }
+    } catch {
+      // sessionStorage unavailable or corrupted — ignore
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -62,7 +75,16 @@ export function AuditForm() {
         completed[p.id] = "complete";
       }
       setPersonaStatuses(completed);
-      setResults(data as AuditResponse);
+
+      const auditResults = data as AuditResponse;
+      setResults(auditResults);
+
+      // Persist to sessionStorage so results survive refresh
+      try {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(auditResults));
+      } catch {
+        // Storage full or unavailable — results still shown, just won't survive refresh
+      }
     } catch {
       setError("Failed to connect to the server. Please try again.");
     } finally {
@@ -75,6 +97,11 @@ export function AuditForm() {
     setResults(null);
     setError(null);
     setPersonaStatuses({});
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore
+    }
   }
 
   if (results) {
