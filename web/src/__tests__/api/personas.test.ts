@@ -55,8 +55,7 @@ describe("GET /api/personas", () => {
     vi.resetModules();
     const mod = await import("@/app/api/personas/route");
 
-    const req = new Request("http://localhost/api/personas");
-    const res = await mod.GET(req);
+    const res = await mod.GET();
     expect(res.status).toBe(401);
   });
 });

@@ -112,7 +112,7 @@ export default function Home() {
         </h2>
         <div className="relative grid gap-8 sm:grid-cols-3">
           {/* Connecting line between steps (desktop only) */}
-          <div className="absolute top-5 left-[calc(16.67%+20px)] right-[calc(16.67%+20px)] hidden h-px bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20 sm:block" />
+          <div className="absolute top-5 left-[calc(16.67%+20px)] right-[calc(16.67%+20px)] hidden h-px bg-linear-to-r from-primary/20 via-primary/40 to-primary/20 sm:block" />
           {steps.map((step) => (
             <div key={step.number} className="relative flex flex-col items-center text-center">
               <div className="mb-4 flex size-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary ring-1 ring-primary/30 transition-transform hover:scale-110">
