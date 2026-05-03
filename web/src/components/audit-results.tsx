@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PERSONA_DATA } from "@/lib/personas";
+import { scoreColor, scoreLabel, scoreRingColor, scoreBgGlow, scoreStrokeColor } from "@/lib/score";
 
 export interface AuditResponse {
   url: string;
@@ -35,30 +37,6 @@ export interface AuditResponse {
     recommendation: string;
   }>;
   conflicts: Array<{ description: string; suggestion: string }>;
-}
-
-function scoreColor(score: number): string {
-  if (score >= 80) return "text-green-400";
-  if (score >= 50) return "text-yellow-400";
-  return "text-red-400";
-}
-
-function scoreLabel(score: number): string {
-  if (score >= 80) return "Good";
-  if (score >= 50) return "Needs Work";
-  return "Poor";
-}
-
-function scoreRingColor(score: number): string {
-  if (score >= 80) return "border-green-400";
-  if (score >= 50) return "border-yellow-400";
-  return "border-red-400";
-}
-
-function scoreBgGlow(score: number): string {
-  if (score >= 80) return "shadow-green-400/20";
-  if (score >= 50) return "shadow-yellow-400/20";
-  return "shadow-red-400/20";
 }
 
 function severityBadgeVariant(
@@ -93,12 +71,6 @@ function severityLabel(severity: string): string {
   return severity.charAt(0).toUpperCase() + severity.slice(1);
 }
 
-const PERSONA_LABELS: Record<string, { name: string; role: string }> = {
-  "first-time-visitor": { name: "Sarah", role: "First-Time Visitor" },
-  "screen-reader-user": { name: "James", role: "Screen Reader User" },
-  "mobile-slow-connection": { name: "Maria", role: "Mobile / Slow" },
-};
-
 export function AuditResults({
   results,
   onReset,
@@ -120,7 +92,7 @@ export function AuditResults({
             <circle
               cx="60" cy="60" r="52" fill="none"
               strokeWidth="6" strokeLinecap="round"
-              stroke={results.overallScore >= 80 ? "oklch(0.72 0.15 160)" : results.overallScore >= 50 ? "oklch(0.78 0.12 85)" : "oklch(0.65 0.20 25)"}
+              stroke={scoreStrokeColor(results.overallScore)}
               strokeDasharray={`${(results.overallScore / 100) * 327} 327`}
               className="transition-all duration-1000 ease-out"
               style={{ animationDelay: "200ms" }}
@@ -149,7 +121,7 @@ export function AuditResults({
                 </span>
               </div>
               <CardDescription>
-                {PERSONA_LABELS[persona.id]?.role || persona.id}
+                {PERSONA_DATA[persona.id as keyof typeof PERSONA_DATA]?.role ?? persona.id}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">

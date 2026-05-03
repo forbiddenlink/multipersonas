@@ -3,27 +3,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AuditResults, type AuditResponse } from "@/components/audit-results";
+import { PERSONA_DATA, PERSONA_IDS } from "@/lib/personas";
 
-const PERSONAS = [
-  {
-    id: "first-time-visitor",
-    name: "Sarah",
-    role: "First-Time Visitor",
-    description: "Marketing manager evaluating the product",
-  },
-  {
-    id: "screen-reader-user",
-    name: "James",
-    role: "Screen Reader User",
-    description: "Blind software engineer using assistive tech",
-  },
-  {
-    id: "mobile-slow-connection",
-    name: "Maria",
-    role: "Mobile / Slow Connection",
-    description: "Student browsing on phone with spotty signal",
-  },
-];
+const PERSONAS = PERSONA_IDS.map((id) => PERSONA_DATA[id]);
 
 type PersonaStatus = "pending" | "running" | "complete";
 
