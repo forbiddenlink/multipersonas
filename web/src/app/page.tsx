@@ -67,7 +67,7 @@ export default function Home() {
       <SiteHeader />
 
       {/* Hero */}
-      <section className="flex flex-col items-center justify-center px-6 py-24 sm:py-32 text-center">
+      <section id="main" className="flex flex-col items-center justify-center px-6 py-24 sm:py-32 text-center">
         <Badge variant="secondary" className="mb-6">
           AI-Powered Accessibility Testing
         </Badge>
@@ -230,7 +230,7 @@ export default function Home() {
                 href="https://github.com/forbiddenlink"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="transition-colors hover:text-foreground"
+                className="py-1 transition-colors hover:text-foreground"
               >
                 Elizabeth Stein
               </a>
@@ -248,10 +248,14 @@ export default function Home() {
         </p>
       </footer>
 
+      {/* Spacer for sticky CTA on mobile so footer isn't obscured */}
+      <div className="h-16 sm:hidden" aria-hidden="true" />
+
       {/* Sticky mobile CTA */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm sm:hidden">
+      <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm sm:hidden" aria-hidden="true">
         <Link
           href="/auth/signup"
+          tabIndex={-1}
           className="block w-full rounded-md bg-primary py-3 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           Start your free audit
