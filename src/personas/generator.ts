@@ -151,6 +151,7 @@ export async function generatePersonasFromUrl(
       model: anthropic(process.env.MULTIPERSONAS_MODEL || "claude-sonnet-4-20250514"),
       schema: personaSchema,
       prompt,
+      maxOutputTokens: 4096,
     });
 
     return object.personas.map((p) => ({
@@ -184,6 +185,7 @@ Requirements:
       model: anthropic(process.env.MULTIPERSONAS_MODEL || "claude-sonnet-4-20250514"),
       schema: personaSchema,
       prompt,
+      maxOutputTokens: 4096,
     });
 
     return object.personas.map((p) => ({
