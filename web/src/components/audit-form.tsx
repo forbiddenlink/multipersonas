@@ -140,6 +140,8 @@ export function AuditForm() {
               </a>
               {" "}to run audits and save your results.
             </p>
+          ) : error.includes("audit limit") ? (
+            <p className="text-sm text-yellow-400">{error}</p>
           ) : (
             <p className="text-sm text-destructive">{error}</p>
           )}

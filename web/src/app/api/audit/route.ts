@@ -36,9 +36,14 @@ export async function POST(request: Request) {
   }
 
   if (!checkRateLimit(user.id)) {
+    const entry = rateLimitMap.get(user.id);
+    const retryAfter = entry ? Math.ceil((entry.resetAt - Date.now()) / 1000) : 600;
     return NextResponse.json(
       { error: "You've reached the audit limit (3 per 10 minutes). Please wait and try again." },
-      { status: 429 }
+      {
+        status: 429,
+        headers: { "Retry-After": String(retryAfter) },
+      }
     );
   }
 
