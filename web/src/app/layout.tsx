@@ -17,8 +17,18 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL || "https://multipersonas.dev"
   ),
-  title: "MultiPersonas",
-  description: "AI accessibility testing with simulated user personas",
+  title: {
+    default: "MultiPersonas — AI Accessibility Testing",
+    template: "%s | MultiPersonas",
+  },
+  description: "Test your website through the eyes of real users. AI personas with diverse accessibility needs browse your site and report what breaks.",
+  openGraph: {
+    type: "website",
+    siteName: "MultiPersonas",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
   other: {
     "theme-color": "#1a1a2e",
   },

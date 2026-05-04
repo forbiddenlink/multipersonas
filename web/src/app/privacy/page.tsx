@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description: "How MultiPersonas handles your data, authentication, and AI-generated audit results.",
+};
 
 export default function PrivacyPage() {
   return (

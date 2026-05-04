@@ -28,3 +28,5 @@ Disallow: /dashboard
 Disallow: /personas
 Disallow: /projects
 Disallow: /settings
+
+Sitemap: https://multipersonas.dev/sitemap.xml

@@ -1,0 +1,34 @@
+# MultiPersonas
+
+> AI-powered accessibility testing that simulates diverse user personas browsing your website.
+
+## What it does
+
+MultiPersonas uses AI agents (powered by Claude) to simulate real users testing your website for accessibility and usability issues. Three distinct personas browse your site independently:
+
+- **Screen Reader User** — Tests WCAG compliance, keyboard navigation, ARIA labels, heading structure
+- **First-Time Visitor** — Tests usability, information architecture, clarity of navigation
+- **Mobile / Slow Connection** — Tests performance, responsive design, image optimization
+
+Each persona operates a real browser (Playwright) and reports findings with severity levels and fix recommendations.
+
+## Key features
+
+- Real browser testing (not static analysis)
+- WCAG 2.1 AA compliance checking via axe-core
+- Persona conflict detection (when fixing one issue breaks another persona's experience)
+- CLI tool (`mpersonas`) and web app
+
+## Tech stack
+
+- Next.js 16 (App Router)
+- Supabase (auth + database)
+- Anthropic Claude (AI agent reasoning)
+- Playwright (browser automation)
+- axe-core (accessibility scanning)
+
+## Links
+
+- Website: https://multipersonas.dev
+- Privacy: https://multipersonas.dev/privacy
+- Terms: https://multipersonas.dev/terms
