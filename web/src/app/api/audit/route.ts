@@ -6,11 +6,40 @@ import { prebuiltPersonas } from "@engine/personas/prebuilt";
 import { runMultiPersonaTest } from "@engine/agent/orchestrator";
 import { createClient } from "@/lib/supabase/server";
 
+// Simple in-memory rate limiter: max 3 audits per user per 10 minutes
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 3;
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(userId);
+
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX) {
+    return false;
+  }
+
+  entry.count++;
+  return true;
+}
+
 export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  }
+
+  if (!checkRateLimit(user.id)) {
+    return NextResponse.json(
+      { error: "You've reached the audit limit (3 per 10 minutes). Please wait and try again." },
+      { status: 429 }
+    );
   }
 
   let body: { url?: string };

@@ -28,6 +28,7 @@ describe("POST /api/audit — validation", () => {
   let POST: (req: Request) => Promise<Response>;
 
   beforeEach(async () => {
+    vi.resetModules();
     vi.clearAllMocks();
     const mod = await import("@/app/api/audit/route");
     POST = mod.POST;
