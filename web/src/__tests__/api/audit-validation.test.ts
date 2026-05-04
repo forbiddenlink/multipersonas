@@ -134,8 +134,8 @@ describe("POST /api/audit — validation", () => {
   });
 });
 
-describe("POST /api/audit — auth", () => {
-  it("rejects unauthenticated requests", async () => {
+describe("POST /api/audit — anonymous access", () => {
+  it("allows unauthenticated requests (rate limited to 1/hour)", async () => {
     // Re-mock with no user
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: vi.fn().mockResolvedValue({
@@ -157,8 +157,7 @@ describe("POST /api/audit — auth", () => {
       body: JSON.stringify({ url: "https://example.com" }),
     });
     const res = await mod.POST(req);
-    expect(res.status).toBe(401);
-    const data = await res.json();
-    expect(data.error).toBe("Authentication required");
+    // Should not be 401 — anonymous audits are allowed
+    expect(res.status).not.toBe(401);
   });
 });

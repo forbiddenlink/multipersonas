@@ -6,21 +6,25 @@ import { prebuiltPersonas } from "@engine/personas/prebuilt";
 import { runMultiPersonaTest } from "@engine/agent/orchestrator";
 import { createClient } from "@/lib/supabase/server";
 
-// Simple in-memory rate limiter: max 3 audits per user per 10 minutes
+// Rate limiting: authenticated users get 3/10min, anonymous get 1/hour
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_MAX = 3;
-const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 
-function checkRateLimit(userId: string): boolean {
+const LIMITS = {
+  authenticated: { max: 3, windowMs: 10 * 60 * 1000 },
+  anonymous: { max: 1, windowMs: 60 * 60 * 1000 },
+} as const;
+
+function checkRateLimit(key: string, type: "authenticated" | "anonymous"): boolean {
   const now = Date.now();
-  const entry = rateLimitMap.get(userId);
+  const { max, windowMs } = LIMITS[type];
+  const entry = rateLimitMap.get(key);
 
   if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    rateLimitMap.set(key, { count: 1, resetAt: now + windowMs });
     return true;
   }
 
-  if (entry.count >= RATE_LIMIT_MAX) {
+  if (entry.count >= max) {
     return false;
   }
 
@@ -28,18 +32,28 @@ function checkRateLimit(userId: string): boolean {
   return true;
 }
 
+function getClientIP(request: Request): string {
+  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || request.headers.get("x-real-ip")
+    || "unknown";
+}
+
 export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  }
 
-  if (!checkRateLimit(user.id)) {
-    const entry = rateLimitMap.get(user.id);
+  // Rate limit: authenticated by user ID, anonymous by IP
+  const rateLimitKey = user?.id || `anon:${getClientIP(request)}`;
+  const rateLimitType = user ? "authenticated" : "anonymous";
+
+  if (!checkRateLimit(rateLimitKey, rateLimitType)) {
+    const entry = rateLimitMap.get(rateLimitKey);
     const retryAfter = entry ? Math.ceil((entry.resetAt - Date.now()) / 1000) : 600;
+    const message = user
+      ? "You've reached the audit limit (3 per 10 minutes). Please wait and try again."
+      : "Free audit limit reached (1 per hour). Sign up for more audits.";
     return NextResponse.json(
-      { error: "You've reached the audit limit (3 per 10 minutes). Please wait and try again." },
+      { error: message },
       {
         status: 429,
         headers: { "Retry-After": String(retryAfter) },

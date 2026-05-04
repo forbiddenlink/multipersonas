@@ -237,7 +237,8 @@ export default function Home() {
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-            <Link href="/personas" className="py-2 transition-colors hover:text-foreground">Personas</Link>
+            <Link href="/guides/wcag-checklist" className="py-2 transition-colors hover:text-foreground">WCAG Checklist</Link>
+            <Link href="/guides/common-accessibility-issues" className="py-2 transition-colors hover:text-foreground">Common Issues</Link>
             <a href="mailto:hello@multipersonas.dev" className="py-2 transition-colors hover:text-foreground">Contact</a>
             <Link href="/privacy" className="py-2 transition-colors hover:text-foreground">Privacy</Link>
             <Link href="/terms" className="py-2 transition-colors hover:text-foreground">Terms</Link>
