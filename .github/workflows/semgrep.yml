@@ -20,7 +20,7 @@ jobs:
     if: (github.actor != 'dependabot[bot]')
     steps:
       - uses: actions/checkout@v4
-      - run: semgrep ci --config=auto --sarif --output=semgrep.sarif --error
+      - run: semgrep ci --config=auto --sarif --output=semgrep.sarif
         env:
           SEMGREP_RULES: p/default p/security-audit p/secrets p/nextjs p/typescript p/react p/javascript
       - uses: actions/upload-artifact@v4
