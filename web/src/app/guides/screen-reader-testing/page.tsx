@@ -47,7 +47,7 @@ export default function ScreenReaderTestingPage() {
       <h1 className="text-3xl font-bold tracking-tight font-heading">Screen Reader Testing Guide</h1>
       <p className="mt-4 text-muted-foreground">
         Testing with a screen reader is the gold standard for accessibility validation.
-        Here's how to do it — or let AI do it for you.
+        Here&apos;s how to do it — or let AI do it for you.
       </p>
 
       <h2 className="mt-10 text-xl font-semibold">Screen readers to use</h2>

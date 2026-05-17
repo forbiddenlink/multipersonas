@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AuditResults, type AuditResponse } from "@/components/audit-results";
 import { PERSONA_DATA, PERSONA_IDS } from "@/lib/personas";
@@ -10,26 +10,26 @@ const STORAGE_KEY = "multipersonas-last-audit";
 
 type PersonaStatus = "pending" | "running" | "complete";
 
+function readStoredResults(): AuditResponse | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    return saved ? (JSON.parse(saved) as AuditResponse) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function AuditForm() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [results, setResults] = useState<AuditResponse | null>(null);
+  // Lazy initializer reads sessionStorage once on mount without an effect,
+  // avoiding react-hooks/set-state-in-effect cascading-render warnings.
+  const [results, setResults] = useState<AuditResponse | null>(readStoredResults);
   const [personaStatuses, setPersonaStatuses] = useState<
     Record<string, PersonaStatus>
   >({});
-
-  // Restore last audit results from sessionStorage on mount
-  useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        setResults(JSON.parse(saved));
-      }
-    } catch {
-      // sessionStorage unavailable or corrupted — ignore
-    }
-  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
