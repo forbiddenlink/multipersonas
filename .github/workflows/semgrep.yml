@@ -19,12 +19,12 @@ jobs:
       image: semgrep/semgrep:latest
     if: (github.actor != 'dependabot[bot]')
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - continue-on-error: true
         run: semgrep ci --config=auto --sarif --output=semgrep.sarif
         env:
           SEMGREP_RULES: p/default p/security-audit p/secrets p/nextjs p/typescript p/react p/javascript
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: semgrep-sarif
