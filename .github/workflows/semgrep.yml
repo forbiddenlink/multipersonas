@@ -19,7 +19,7 @@ jobs:
       image: semgrep/semgrep:latest
     if: (github.actor != 'dependabot[bot]')
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
       - continue-on-error: true
         run: semgrep ci --config=auto --sarif --output=semgrep.sarif
         env:
