@@ -82,7 +82,7 @@ function renderPersonaSection(report: PersonaReport): string {
   );
   lines.push(`|-------|-------|-------|------|----------|`);
   lines.push(
-    `| **${score}/100** | ${agentResult.totalSteps}/${persona.maxSteps} | ${agentResult.pagesVisited.length} | ${agentResult.goalCompleted ? "Completed" : "Failed/Abandoned"} | ${allFindings.length} |`
+    `| **${score}/100** | ${agentResult.totalSteps}/${persona.maxSteps} | ${agentResult.pagesVisited.length} | ${agentResult.goalCompleted ? "Achieved" : "Blocked"} | ${allFindings.length} |`
   );
   lines.push("");
 
@@ -90,12 +90,16 @@ function renderPersonaSection(report: PersonaReport): string {
     lines.push("#### Issues Found");
     lines.push("");
     for (const f of allFindings) {
+      // Second layer of defence. The engine validates findings at the boundary
+      // now, but this renderer runs at the end of an expensive job and must
+      // never be the thing that loses it.
+      const severity = f.severity ?? "minor";
       lines.push(
-        `${severityEmoji(f.severity)} **[${f.severity.toUpperCase()}]** ${f.title}`
+        `${severityEmoji(severity)} **[${String(severity).toUpperCase()}]** ${f.title ?? "(untitled finding)"}`
       );
-      lines.push(`> ${f.description}`);
-      lines.push(`> **Fix:** ${f.recommendation}`);
-      lines.push(`> Page: ${f.pageUrl}`);
+      lines.push(`> ${f.description ?? ""}`);
+      lines.push(`> **Fix:** ${f.recommendation ?? ""}`);
+      lines.push(`> Page: ${f.pageUrl ?? ""}`);
       lines.push("");
     }
   } else {
@@ -109,11 +113,18 @@ function renderPersonaSection(report: PersonaReport): string {
     lines.push("| # | Action | Detail | Page |");
     lines.push("|---|--------|--------|------|");
     for (const step of agentResult.steps.slice(0, 20)) {
-      const shortDetail =
-        step.detail.length > 50
-          ? step.detail.slice(0, 50) + "..."
-          : step.detail;
-      const shortUrl = new URL(step.pageUrl).pathname;
+      // Defensive: this renders model-shaped data at the very end of an
+      // expensive run. A missing field must degrade the table, never throw away
+      // 100+ model calls. (It did exactly that on 2026-07-15 when a
+      // mark_goal_complete arrived with no summary.)
+      const detail = step.detail ?? "";
+      const shortDetail = detail.length > 50 ? detail.slice(0, 50) + "..." : detail;
+      let shortUrl: string;
+      try {
+        shortUrl = new URL(step.pageUrl).pathname;
+      } catch {
+        shortUrl = step.pageUrl ?? "";
+      }
       lines.push(
         `| ${step.step} | ${step.action} | ${shortDetail} | ${shortUrl} |`
       );

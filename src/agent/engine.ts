@@ -5,6 +5,24 @@ import { z } from "zod";
 import * as fs from "fs";
 import * as path from "path";
 import type { Persona } from "../personas/types.js";
+import { assertUrlAllowed, isUrlAllowed, isInScope, BlockedUrlError } from "../security/url-guard.js";
+
+/**
+ * Per-run guard settings threaded down to every navigation decision.
+ *
+ * Two separate concerns, deliberately not collapsed:
+ * - `allowPrivate` answers "may we touch this network at all?" (a security question)
+ * - `scopeOrigin` answers "is this the site we were hired to audit?" (a correctness one)
+ */
+export interface GuardOptions {
+  /** Forwarded to the URL guard. The hosted service must never set this. */
+  allowPrivate?: boolean;
+  /**
+   * Origin of the audit target. When set, the agent cannot leave it.
+   * Unset means unrestricted — only for tests; every real run sets it.
+   */
+  scopeOrigin?: string;
+}
 
 // --- Types ---
 
@@ -40,6 +58,39 @@ export interface AgentResult {
 function truncateSnapshot(snapshot: string, maxChars: number = 4000): string {
   if (snapshot.length <= maxChars) return snapshot;
   return snapshot.slice(0, maxChars) + "\n... [truncated]";
+}
+
+// --- Model ---
+
+/** Override with MULTIPERSONAS_MODEL. */
+export const DEFAULT_MODEL = "claude-sonnet-5";
+
+// --- Conversation window ---
+
+/**
+ * How many trailing messages to send. Each step contributes a user message plus
+ * the assistant's tool call, so this is roughly the last HISTORY_WINDOW/2 steps.
+ */
+export const HISTORY_WINDOW = 12;
+
+/**
+ * Keep only the last `window` messages, so input tokens stay flat across a run
+ * instead of growing with every step.
+ *
+ * A conversation must not begin with an assistant message (the model needs a
+ * user turn to answer), so if the cut lands on one we drop it too.
+ */
+export function trimToWindow<T extends { role: string }>(
+  messages: T[],
+  window: number,
+): T[] {
+  if (messages.length <= window) return messages;
+  const tail = messages.slice(-window);
+  let start = 0;
+  while (start < tail.length && tail[start]!.role !== "user") start++;
+  // If the window somehow held no user turn, fall back to the final message,
+  // which is always the step we just pushed.
+  return start === tail.length ? messages.slice(-1) : tail.slice(start);
 }
 
 // --- Element resolution ---
@@ -94,6 +145,29 @@ async function resolveElement(
 
 // --- Tool definitions ---
 
+/**
+ * The shape a reported finding must have to be accepted.
+ *
+ * Declared once and actually enforced at the boundary in the agent loop. The
+ * tool schema below is what the model is *asked* for; this is what we *check*.
+ * Those are not the same thing — a model can and does return a call with fields
+ * missing, and a raw cast let that undefined flow all the way into the report
+ * renderer, which crashed at the end of a full run (2026-07-15).
+ */
+export const findingSchema = z.object({
+  severity: z.enum(["critical", "serious", "moderate", "minor"]),
+  category: z.enum(["accessibility", "usability", "performance", "content"]),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  recommendation: z.string().min(1),
+});
+
+/** Validates the model's own account of how its session ended. */
+export const finishSchema = z.object({
+  outcome: z.enum(["achieved", "blocked"]),
+  summary: z.string().min(1),
+});
+
 const agentTools = {
   click: tool({
     description:
@@ -121,7 +195,8 @@ const agentTools = {
     }),
   }),
   navigate: tool({
-    description: "Navigate to a specific URL.",
+    description:
+      "Navigate to a specific URL on the site you are testing. You may not leave that site — links to other websites are out of scope and will be refused.",
     inputSchema: z.object({
       url: z.string().describe("The URL to navigate to"),
     }),
@@ -145,11 +220,16 @@ const agentTools = {
         .describe("How the issue should be fixed"),
     }),
   }),
-  mark_goal_complete: tool({
+  finish: tool({
     description:
-      "Mark your current goal as achieved and provide a summary of what you accomplished.",
+      "End your session. Call this when you have achieved your goal, or when you are blocked and cannot achieve it. Be honest about which — a session that ended without achieving the goal is a valuable result, not a failure on your part.",
     inputSchema: z.object({
-      summary: z.string().describe("Summary of what was accomplished"),
+      outcome: z
+        .enum(["achieved", "blocked"])
+        .describe(
+          "'achieved' only if you actually accomplished your goal. 'blocked' if anything stopped you from completing it.",
+        ),
+      summary: z.string().describe("Summary of what happened"),
     }),
   }),
 };
@@ -159,7 +239,8 @@ const agentTools = {
 async function executeAction(
   page: Page,
   toolName: string,
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  guard: GuardOptions = {}
 ): Promise<string> {
   const ACTION_TIMEOUT = 10_000;
 
@@ -180,17 +261,38 @@ async function executeAction(
       return `Scrolled ${input.direction as string}`;
     }
     case "navigate": {
-      await page.goto(input.url as string, {
+      // The model chose this URL after reading attacker-controlled page content,
+      // so it is untrusted input and must clear the same bar as the initial URL.
+      const target = input.url as string;
+
+      // Stay on the site we were asked to audit. Blocked on 2026-07-15 dogfood:
+      // the agent hit a login wall, followed a vendor link to the public
+      // marketing site, and reported that site's pricing page as a finding.
+      if (guard.scopeOrigin && !isInScope(target, guard.scopeOrigin)) {
+        return `Navigation to "${target}" was refused: it is outside ${guard.scopeOrigin}, which is the site under test. Stay on that site. If you cannot get past a blocker, report what stopped you and finish.`;
+      }
+
+      try {
+        await assertUrlAllowed(target, guard);
+      } catch (error) {
+        if (error instanceof BlockedUrlError) {
+          // Reported back to the model as a normal tool failure so it reroutes
+          // rather than retrying — never echo why, which would just teach it to probe.
+          return `Navigation to "${target}" was refused. That destination is out of scope for this audit. Continue with the site you are testing.`;
+        }
+        throw error;
+      }
+      await page.goto(target, {
         timeout: ACTION_TIMEOUT,
         waitUntil: "domcontentloaded",
       });
-      return `Navigated to ${input.url as string}`;
+      return `Navigated to ${target}`;
     }
     case "report_finding": {
       return `Finding reported: ${input.title as string}`;
     }
-    case "mark_goal_complete": {
-      return `Goal marked complete: ${input.summary as string}`;
+    case "finish": {
+      return `Session finished (${input.outcome as string}): ${input.summary as string}`;
     }
     default:
       return `Unknown action: ${toolName}`;
@@ -237,7 +339,8 @@ function isStuck(
 export async function runPersonaAgent(
   url: string,
   persona: Persona,
-  outputDir: string
+  outputDir: string,
+  guard: GuardOptions = {}
 ): Promise<AgentResult> {
   const screenshotDir = path.join(outputDir, "screenshots");
   fs.mkdirSync(screenshotDir, { recursive: true });
@@ -250,6 +353,11 @@ export async function runPersonaAgent(
   let browser: Browser | undefined;
 
   try {
+    // Resolve the target before launching anything: its origin defines the audit's
+    // scope, and every navigation below is checked against it.
+    const safeUrl = await assertUrlAllowed(url, guard);
+    const scope: GuardOptions = { ...guard, scopeOrigin: guard.scopeOrigin ?? safeUrl.origin };
+
     browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({
       viewport: persona.viewport,
@@ -258,10 +366,26 @@ export async function runPersonaAgent(
         : undefined,
       isMobile: persona.isMobile,
     });
+    // Belt-and-braces against SSRF: assertUrlAllowed() vets a URL before we ask
+    // for it, but page.goto follows 3xx itself, so a clean host can still bounce
+    // us to 169.254.169.254. Vetting every document request catches each hop.
+    //
+    // Scope is enforced here too, not just in the navigate tool: a plain click on
+    // an outbound link is a document request the tool never sees, and it walked
+    // the agent onto a different website entirely (2026-07-15).
+    await context.route("**/*", async (route, request) => {
+      if (request.resourceType() !== "document") return route.continue();
+      if (scope.scopeOrigin && !isInScope(request.url(), scope.scopeOrigin)) {
+        return route.abort("blockedbyclient");
+      }
+      if (await isUrlAllowed(request.url(), scope)) return route.continue();
+      return route.abort("blockedbyclient");
+    });
+
     const page = await context.newPage();
 
     // Navigate to target
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
+    await page.goto(safeUrl.href, { waitUntil: "domcontentloaded", timeout: 30_000 });
     pagesVisited.add(page.url());
 
     // Take initial screenshot
@@ -286,10 +410,17 @@ export async function runPersonaAgent(
 
       messages.push({ role: "user", content: userContent });
 
+      // Only the recent window goes to the model. Page snapshots are ~1k tokens
+      // each and every step appended one forever, so input grew quadratically:
+      // a 30-step persona sent ~535k input tokens, ~914k for a full 3-persona
+      // audit. The agent needs recent context to avoid looping, not the whole
+      // history — isStuck() already guards repetition from the full step log.
+      const windowed = trimToWindow(messages, HISTORY_WINDOW);
+
       const result = await generateText({
-        model: anthropic(process.env.MULTIPERSONAS_MODEL || "claude-sonnet-4-20250514"),
+        model: anthropic(process.env.MULTIPERSONAS_MODEL || DEFAULT_MODEL),
         system: persona.systemPrompt,
-        messages,
+        messages: windowed,
         tools: agentTools,
         maxOutputTokens: 1024,
         toolChoice: "required",
@@ -307,7 +438,7 @@ export async function runPersonaAgent(
       }
 
       const toolName = toolCall.toolName;
-      const input = toolCall.input as Record<string, unknown>;
+      const input = (toolCall.input ?? {}) as Record<string, unknown>;
 
       // Record assistant message with the tool call
       messages.push({
@@ -324,13 +455,30 @@ export async function runPersonaAgent(
 
       // Handle report_finding
       if (toolName === "report_finding") {
-        const f = input as unknown as {
-          severity: Finding["severity"];
-          category: Finding["category"];
-          title: string;
-          description: string;
-          recommendation: string;
-        };
+        // Validate rather than cast. The model does not always fill every field,
+        // and an unchecked cast puts `undefined` into the report where it later
+        // explodes — far from here, after all the expensive work is done.
+        const parsed = findingSchema.safeParse(input);
+        if (!parsed.success) {
+          messages.push({
+            role: "tool",
+            content: [
+              {
+                type: "tool-result",
+                toolCallId: toolCall.toolCallId,
+                toolName,
+                output: {
+                  type: "text" as const,
+                  value: `Finding rejected — it was missing required fields (${parsed.error.issues
+                    .map((i) => i.path.join("."))
+                    .join(", ")}). Re-report it with every field filled in, or continue browsing.`,
+                },
+              },
+            ],
+          });
+          continue;
+        }
+        const f = parsed.data;
         const screenshotPath = path.join(
           screenshotDir,
           `step-${String(step).padStart(3, "0")}.png`
@@ -346,7 +494,7 @@ export async function runPersonaAgent(
         steps.push({
           step,
           action: "report_finding",
-          detail: f.title,
+          detail: String(f.title ?? "finding reported"),
           pageUrl: page.url(),
           screenshotPath,
           timestamp: Date.now(),
@@ -367,9 +515,16 @@ export async function runPersonaAgent(
         continue;
       }
 
-      // Handle mark_goal_complete
-      if (toolName === "mark_goal_complete") {
-        goalCompleted = true;
+      // Handle finish
+      if (toolName === "finish") {
+        // The model reports the outcome; we do not infer it from the fact that
+        // it stopped. Conflating "the session ended" with "the goal was met"
+        // printed "Goal: Completed" on a report whose own summary read "I was
+        // unable to accomplish my goals" (2026-07-15). Anything but an explicit
+        // "achieved" counts as not achieved.
+        const finish = finishSchema.safeParse(input);
+        goalCompleted = finish.success && finish.data.outcome === "achieved";
+
         const screenshotPath = path.join(
           screenshotDir,
           `step-${String(step).padStart(3, "0")}.png`
@@ -378,8 +533,10 @@ export async function runPersonaAgent(
 
         steps.push({
           step,
-          action: "mark_goal_complete",
-          detail: (input as { summary: string }).summary,
+          action: "finish",
+          detail: finish.success
+            ? finish.data.summary
+            : String((input as { summary?: string }).summary ?? "session finished"),
           pageUrl: page.url(),
           screenshotPath,
           timestamp: Date.now(),
@@ -395,7 +552,7 @@ export async function runPersonaAgent(
       );
 
       try {
-        actionResult = await executeAction(page, toolName, input);
+        actionResult = await executeAction(page, toolName, input, scope);
         // Wait briefly for page to settle after action
         await page.waitForTimeout(500);
         await page.screenshot({ path: screenshotPath, fullPage: false });
@@ -421,7 +578,7 @@ export async function runPersonaAgent(
               ? `${String(input.selector)}: "${String(input.text)}"`
               : toolName === "scroll"
                 ? String(input.direction)
-                : JSON.stringify(input);
+                : (JSON.stringify(input) ?? toolName);
 
       steps.push({
         step,

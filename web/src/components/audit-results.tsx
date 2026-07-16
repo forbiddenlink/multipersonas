@@ -129,7 +129,7 @@ export function AuditResults({
                 <Badge
                   variant={persona.goalCompleted ? "secondary" : "destructive"}
                 >
-                  {persona.goalCompleted ? "Goal completed" : "Goal failed"}
+                  {persona.goalCompleted ? "Goal achieved" : "Blocked"}
                 </Badge>
                 <span className="text-xs text-muted-foreground">
                   {persona.totalSteps} steps
