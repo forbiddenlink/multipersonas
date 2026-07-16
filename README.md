@@ -113,8 +113,9 @@ pnpm dev -- delete <id>
 observations, and the same axe defects `scan` produces. Personas live in `./mpersonas/`
 in your repo, so they are diffable, reviewable, and picked up automatically.
 
-Built (`pnpm build`) the binary is `mpersonas`, so the same commands work as
-`mpersonas run <url>`.
+The npm package is **`multipersonas`**; the command it installs is **`mpersonas`**.
+After `npm install -g multipersonas` (or `pnpm build` locally) the same commands work as
+`mpersonas scan <url>`.
 
 ## How it works
 
