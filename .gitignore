@@ -17,3 +17,5 @@ coverage/
 *.log
 supabase/.temp/
 supabase/.branches/
+.audit-report.md
+mpersonas-report/
