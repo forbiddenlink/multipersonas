@@ -92,11 +92,9 @@ export function PersonaCard({ persona }: { persona: Persona }) {
           </Badge>
           <Badge variant="outline">{patienceLabels[persona.patienceLevel]}</Badge>
           <Badge variant="outline">{persona.maxSteps} steps</Badge>
-          {persona.accessibilityNeeds.map((need) => (
-            <Badge key={need} variant="destructive">
-              {need}
-            </Badge>
-          ))}
+          {persona.inputModality === "keyboard" && (
+            <Badge variant="outline">keyboard only</Badge>
+          )}
         </div>
 
         <div>

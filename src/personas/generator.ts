@@ -3,6 +3,8 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { chromium } from "playwright";
 import { Persona, generateSystemPrompt } from "./types.js";
+import { DEFAULT_MODEL } from "../agent/engine.js";
+import { assertUrlAllowed } from "../security/url-guard.js";
 
 const personaSchema = z.object({
   personas: z.array(
@@ -22,7 +24,6 @@ const personaSchema = z.object({
       viewport: z.object({ width: z.number(), height: z.number() }),
       isMobile: z.boolean(),
       connectionSpeed: z.enum(["fast", "3g", "slow-3g"]),
-      accessibilityNeeds: z.array(z.string()),
       maxSteps: z.number(),
       patienceLevel: z.enum(["low", "medium", "high"]),
     })
@@ -42,11 +43,12 @@ interface WebsiteSignals {
 }
 
 async function extractWebsiteSignals(url: string): Promise<WebsiteSignals> {
+  const safeUrl = await assertUrlAllowed(url);
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
 
   try {
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
+    await page.goto(safeUrl.href, { waitUntil: "domcontentloaded", timeout: 30000 });
 
     const signals = await page.evaluate(() => {
       const title = document.title || "";
@@ -129,14 +131,20 @@ Website signals:
 - Has auth/signup: ${signals.hasAuth}
 
 Requirements:
-- Generate exactly ${count} personas with diversity across: tech proficiency (1-5), age range, accessibility needs, device usage (mobile vs desktop), and goals.
-- At least 1 persona MUST have accessibility needs (screen reader, colorblind, motor impairment, etc.).
+- Generate exactly ${count} personas with diversity across: tech proficiency (1-5), age range, device usage (mobile vs desktop), and goals.
 - At least 1 persona should be on mobile with slow connection.
 - At least 1 persona should have low tech proficiency.
 - Each persona should have realistic goals related to what this specific website offers.
 - Use realistic names, ages, and backgrounds.
 - Set maxSteps between 10-30 based on patience level.
-- Viewports: desktop 1440x900, mobile 375x812 or 390x844.`;
+- Viewports: desktop 1440x900, mobile 375x812 or 390x844.
+
+DO NOT give any persona a disability, impairment, or assistive-technology need.
+These personas report usability opinion only. Accessibility is measured separately
+by a deterministic scanner (axe-core) at every state reached, and by the
+keyboard-traversal profile — never by a model roleplaying a disabled person, which
+is both inaccurate and harmful. Do not mention screen readers, blindness, colour
+blindness, or motor impairment.`;
 }
 
 export async function generatePersonasFromUrl(
@@ -148,16 +156,20 @@ export async function generatePersonasFromUrl(
     const prompt = buildPromptFromSignals(signals, count);
 
     const { object } = await generateObject({
-      model: anthropic(process.env.MULTIPERSONAS_MODEL || "claude-sonnet-4-20250514"),
+      model: anthropic(process.env.MULTIPERSONAS_MODEL || DEFAULT_MODEL),
       schema: personaSchema,
       prompt,
       maxOutputTokens: 4096,
     });
 
-    return object.personas.map((p) => ({
-      ...p,
-      systemPrompt: generateSystemPrompt(p),
-    }));
+    return object.personas.map((p) => {
+      const persona = {
+        ...p,
+        kind: "ux" as const,
+        inputModality: "pointer" as const,
+      };
+      return { ...persona, systemPrompt: generateSystemPrompt(persona) };
+    });
   } catch (error) {
     console.error("Persona generation from URL failed:", error);
     return getDefaultPersonas(count);
@@ -173,25 +185,35 @@ export async function generatePersonasFromDescription(
 
 Requirements:
 - Include a range of tech proficiency levels (1-5).
-- At least one persona with accessibility needs (screen reader, colorblind, motor impairment, etc.).
 - Mix of mobile and desktop users.
 - At least one persona on a slow connection.
 - At least one persona with low patience.
 - Realistic names, ages, backgrounds, and goals specific to this product.
 - Set maxSteps between 10-30 based on patience level.
-- Viewports: desktop 1440x900, mobile 375x812 or 390x844.`;
+- Viewports: desktop 1440x900, mobile 375x812 or 390x844.
+
+DO NOT give any persona a disability, impairment, or assistive-technology need.
+These personas report usability opinion only. Accessibility is measured separately
+by a deterministic scanner (axe-core) at every state reached, and by the
+keyboard-traversal profile — never by a model roleplaying a disabled person, which
+is both inaccurate and harmful. Do not mention screen readers, blindness, colour
+blindness, or motor impairment.`;
 
     const { object } = await generateObject({
-      model: anthropic(process.env.MULTIPERSONAS_MODEL || "claude-sonnet-4-20250514"),
+      model: anthropic(process.env.MULTIPERSONAS_MODEL || DEFAULT_MODEL),
       schema: personaSchema,
       prompt,
       maxOutputTokens: 4096,
     });
 
-    return object.personas.map((p) => ({
-      ...p,
-      systemPrompt: generateSystemPrompt(p),
-    }));
+    return object.personas.map((p) => {
+      const persona = {
+        ...p,
+        kind: "ux" as const,
+        inputModality: "pointer" as const,
+      };
+      return { ...persona, systemPrompt: generateSystemPrompt(persona) };
+    });
   } catch (error) {
     console.error("Persona generation from description failed:", error);
     return getDefaultPersonas(count);
@@ -210,7 +232,8 @@ function getDefaultPersonas(count: number): Persona[] {
       viewport: { width: 1440, height: 900 },
       isMobile: false,
       connectionSpeed: "fast",
-      accessibilityNeeds: [],
+      kind: "ux",
+      inputModality: "pointer",
       maxSteps: 20,
       patienceLevel: "medium",
     },
@@ -224,21 +247,35 @@ function getDefaultPersonas(count: number): Persona[] {
       viewport: { width: 375, height: 812 },
       isMobile: true,
       connectionSpeed: "3g",
-      accessibilityNeeds: [],
+      kind: "ux",
+      inputModality: "pointer",
       maxSteps: 15,
       patienceLevel: "low",
     },
     {
-      id: "default-accessibility-user",
-      name: "Robert",
-      description: "a 50-year-old with low vision using screen magnification",
-      goals: ["Navigate with screen magnifier", "Read content at 200% zoom", "Complete primary action"],
-      frustrations: ["Small text", "Low contrast", "Content that breaks at zoom"],
-      techProficiency: 2,
+      // Replaced "Robert, a 50-year-old with low vision using screen
+      // magnification". Zoom reflow is a real thing to test, but it is a
+      // deterministic viewport check, not a character. No fake disabled users.
+      id: "default-keyboard-traversal",
+      name: "Keyboard traversal",
+      description:
+        "an automated harness that drives the site using only the keyboard, so axe can scan the states it reaches",
+      kind: "traversal",
+      goals: [
+        "Reach the main content region and enumerate landmark and heading structure",
+        "Complete the primary action using only the keyboard",
+        "Open and dismiss any dialog or expandable region, so each state gets scanned",
+      ],
+      frustrations: [
+        "Controls that cannot be reached or operated with the keyboard",
+        "Focus that becomes trapped and cannot move onward",
+        "Focus order that does not follow the visual or DOM order",
+      ],
+      techProficiency: 5,
       viewport: { width: 1440, height: 900 },
       isMobile: false,
       connectionSpeed: "fast",
-      accessibilityNeeds: ["low-vision", "screen-magnification"],
+      inputModality: "keyboard",
       maxSteps: 25,
       patienceLevel: "high",
     },
@@ -252,7 +289,8 @@ function getDefaultPersonas(count: number): Persona[] {
       viewport: { width: 1440, height: 900 },
       isMobile: false,
       connectionSpeed: "fast",
-      accessibilityNeeds: [],
+      kind: "ux",
+      inputModality: "pointer",
       maxSteps: 20,
       patienceLevel: "low",
     },
@@ -266,7 +304,8 @@ function getDefaultPersonas(count: number): Persona[] {
       viewport: { width: 1440, height: 900 },
       isMobile: false,
       connectionSpeed: "fast",
-      accessibilityNeeds: [],
+      kind: "ux",
+      inputModality: "pointer",
       maxSteps: 25,
       patienceLevel: "high",
     },

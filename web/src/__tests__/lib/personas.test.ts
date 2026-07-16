@@ -18,7 +18,7 @@ describe("PERSONA_DATA", () => {
 
   it("has the expected persona IDs", () => {
     expect(PERSONA_IDS).toContain("first-time-visitor");
-    expect(PERSONA_IDS).toContain("screen-reader-user");
+    expect(PERSONA_IDS).toContain("keyboard-traversal");
     expect(PERSONA_IDS).toContain("mobile-slow-connection");
   });
 

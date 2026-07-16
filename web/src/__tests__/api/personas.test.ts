@@ -15,10 +15,10 @@ vi.mock("@/lib/supabase/server", () => ({
 vi.mock("@engine/personas/library", () => ({
   personaLibrary: {
     "first-time-visitor": { id: "first-time-visitor", name: "First-Time Visitor" },
-    "screen-reader-user": { id: "screen-reader-user", name: "Screen Reader User" },
+    "keyboard-traversal": { id: "keyboard-traversal", name: "Keyboard traversal" },
   },
   personasByCategory: {
-    accessibility: ["screen-reader-user"],
+    reachability: ["keyboard-traversal"],
     general: ["first-time-visitor"],
   },
 }));

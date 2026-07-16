@@ -1,7 +1,7 @@
 import { Persona, generateSystemPrompt } from "./types.js";
 import {
   firstTimeVisitor,
-  screenReaderUser,
+  keyboardTraversal,
   mobileSlowConnection,
 } from "./prebuilt.js";
 
@@ -14,6 +14,7 @@ function buildPersona(partial: Omit<Persona, "systemPrompt">): Persona {
 
 export const elderlyUser: Persona = buildPersona({
   id: "elderly-user",
+  kind: "ux",
   name: "Margaret",
   description:
     "a 74-year-old retired librarian who uses her desktop computer with large font settings",
@@ -33,13 +34,14 @@ export const elderlyUser: Persona = buildPersona({
   viewport: { width: 1440, height: 900 },
   isMobile: false,
   connectionSpeed: "fast",
-  accessibilityNeeds: [],
+  inputModality: "pointer",
   maxSteps: 25,
   patienceLevel: "high",
 });
 
 export const nonNativeEnglish: Persona = buildPersona({
   id: "non-native-english",
+  kind: "ux",
   name: "Yuki",
   description:
     "a 31-year-old Japanese software engineer working in the US who reads English well but struggles with idioms and casual language",
@@ -59,13 +61,14 @@ export const nonNativeEnglish: Persona = buildPersona({
   viewport: { width: 1440, height: 900 },
   isMobile: false,
   connectionSpeed: "fast",
-  accessibilityNeeds: [],
+  inputModality: "pointer",
   maxSteps: 20,
   patienceLevel: "medium",
 });
 
 export const powerUserDeveloper: Persona = buildPersona({
   id: "power-user-developer",
+  kind: "ux",
   name: "Alex",
   description:
     "a 29-year-old senior frontend developer evaluating tools for their tech stack",
@@ -85,87 +88,14 @@ export const powerUserDeveloper: Persona = buildPersona({
   viewport: { width: 1440, height: 900 },
   isMobile: false,
   connectionSpeed: "fast",
-  accessibilityNeeds: [],
+  inputModality: "pointer",
   maxSteps: 15,
   patienceLevel: "low",
 });
 
-export const colorBlindUser: Persona = (() => {
-  const partial: Omit<Persona, "systemPrompt"> = {
-    id: "color-blind-user",
-    name: "David",
-    description:
-      "a 38-year-old graphic designer with deuteranopia (red-green color blindness)",
-    goals: [
-      "Complete tasks that may rely on color coding or color-based indicators",
-      "Distinguish between success, warning, and error states",
-      "Use the interface without missing information conveyed only through color",
-    ],
-    frustrations: [
-      "Color-only indicators without icons, patterns, or text alternatives",
-      "Red/green status lights with no secondary signal",
-      "Charts and graphs that rely solely on color differentiation",
-      "Form validation that uses only red/green without icons or text",
-      "Links distinguished from body text only by color",
-    ],
-    techProficiency: 4,
-    viewport: { width: 1440, height: 900 },
-    isMobile: false,
-    connectionSpeed: "fast",
-    accessibilityNeeds: ["colorblind-deutan"],
-    maxSteps: 20,
-    patienceLevel: "medium",
-  };
-
-  const persona: Persona = {
-    ...partial,
-    systemPrompt: `You are David, a 38-year-old graphic designer with deuteranopia (red-green color blindness). You are browsing a website on a desktop browser (1440x900) over a fast broadband connection.
-
-Your technical proficiency is high. You understand design and web interfaces very well, which makes accessibility failures even more frustrating because you know how easy they are to fix.
-
-CRITICAL: You CANNOT reliably distinguish between red and green, or colors that contain red/green components (like orange vs. olive, pink vs. gray, certain purples vs. blues). When evaluating the interface:
-- Flag ANY element that uses color as the SOLE means of conveying information
-- Check status indicators: do they use icons or text in addition to color?
-- Check form validation: are errors indicated by more than just a red border?
-- Check charts/graphs: do they use patterns, labels, or shapes alongside color?
-- Check links: are they distinguishable from body text without relying on color alone?
-- Check buttons: can you tell primary from secondary actions without color?
-
-Your goals for this session are:
-  1. Complete tasks that may rely on color coding or color-based indicators
-  2. Distinguish between success, warning, and error states
-  3. Use the interface without missing information conveyed only through color
-
-Things that frustrate you:
-  - Color-only indicators without icons, patterns, or text alternatives
-  - Red/green status lights with no secondary signal
-  - Charts and graphs that rely solely on color differentiation
-  - Form validation that uses only red/green without icons or text
-  - Links distinguished from body text only by color
-
-You have moderate patience. You'll try multiple approaches, but you report every color accessibility issue you find.
-
-As you browse, you MUST:
-1. Narrate what you can and cannot distinguish visually.
-2. Flag every instance where color is the only differentiator (WCAG 1.4.1 Use of Color violation).
-3. Note where the site does well — using icons, patterns, underlines, or text alongside color.
-4. Rate each interaction for color-independence on a scale of 1-5.
-5. Suggest specific fixes for each color-only issue found.
-
-You have a budget of 20 steps. Each navigation, click, or form submission counts as a step.
-
-When you finish, provide a structured summary:
-- Color accessibility score (1-10) based on WCAG 1.4.1 compliance
-- Elements that fail color-independence (with specific fix suggestions)
-- Elements that handle color well (good examples to replicate)
-- Overall experience score (1-10) for a deuteranopic user`,
-  };
-
-  return persona;
-})();
-
 export const impatientExecutive: Persona = buildPersona({
   id: "impatient-executive",
+  kind: "ux",
   name: "Rachel",
   description:
     "a 47-year-old VP of Product at a Series B startup browsing on her phone during her commute",
@@ -186,13 +116,14 @@ export const impatientExecutive: Persona = buildPersona({
   viewport: { width: 390, height: 844 },
   isMobile: true,
   connectionSpeed: "fast",
-  accessibilityNeeds: [],
+  inputModality: "pointer",
   maxSteps: 10,
   patienceLevel: "low",
 });
 
 export const budgetConsciousStudent: Persona = buildPersona({
   id: "budget-conscious-student",
+  kind: "ux",
   name: "Jamal",
   description:
     "a 21-year-old CS student on a tight budget browsing on his phone over a slow connection",
@@ -212,13 +143,14 @@ export const budgetConsciousStudent: Persona = buildPersona({
   viewport: { width: 375, height: 812 },
   isMobile: true,
   connectionSpeed: "slow-3g",
-  accessibilityNeeds: [],
+  inputModality: "pointer",
   maxSteps: 20,
   patienceLevel: "medium",
 });
 
 export const anxiousFirstTimer: Persona = buildPersona({
   id: "anxious-first-timer",
+  kind: "ux",
   name: "Linda",
   description:
     "a 55-year-old small business owner making her first SaaS purchase, very cautious about online transactions",
@@ -239,7 +171,7 @@ export const anxiousFirstTimer: Persona = buildPersona({
   viewport: { width: 1440, height: 900 },
   isMobile: false,
   connectionSpeed: "fast",
-  accessibilityNeeds: [],
+  inputModality: "pointer",
   maxSteps: 25,
   patienceLevel: "high",
 });
@@ -247,23 +179,25 @@ export const anxiousFirstTimer: Persona = buildPersona({
 // Export all personas as a record
 export const personaLibrary: Record<string, Persona> = {
   "first-time-visitor": firstTimeVisitor,
-  "screen-reader-user": screenReaderUser,
+  "keyboard-traversal": keyboardTraversal,
   "mobile-slow-connection": mobileSlowConnection,
   "elderly-user": elderlyUser,
   "non-native-english": nonNativeEnglish,
   "power-user-developer": powerUserDeveloper,
-  "color-blind-user": colorBlindUser,
   "impatient-executive": impatientExecutive,
   "budget-conscious-student": budgetConsciousStudent,
   "anxious-first-timer": anxiousFirstTimer,
 };
 
-// Categorized persona IDs for easy filtering
+// Categorized persona IDs for easy filtering.
+//
+// Note there is no "accessibility" category of *personas*, deliberately. The
+// accessibility verdict comes from axe-core at every state, not from a profile
+// claiming to be a disabled user. `reachability` holds the traversal profiles
+// whose job is to get axe somewhere it could not otherwise scan.
 export const personasByCategory: Record<string, string[]> = {
-  accessibility: [
-    "screen-reader-user",
-    "color-blind-user",
-    "elderly-user",
+  reachability: [
+    "keyboard-traversal",
   ],
   mobile: [
     "mobile-slow-connection",
@@ -277,7 +211,6 @@ export const personasByCategory: Record<string, string[]> = {
   technical: [
     "power-user-developer",
     "non-native-english",
-    "screen-reader-user",
   ],
   "low-tech": [
     "elderly-user",

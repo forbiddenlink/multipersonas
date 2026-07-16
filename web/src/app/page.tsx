@@ -33,10 +33,11 @@ const sampleFindings = [
     severity: "serious" as const,
   },
   {
-    persona: "James",
-    role: "Screen Reader User",
+    persona: "Keyboard traversal",
+    role: "Reachability",
     score: 45,
-    finding: "Form inputs missing associated labels — screen reader announces 'edit text' with no context",
+    finding:
+      "Checkout step 2 is reachable only by pointer — axe never scanned it, and it has 3 unlabelled inputs",
     severity: "critical" as const,
   },
   {
