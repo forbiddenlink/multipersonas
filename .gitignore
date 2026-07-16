@@ -19,3 +19,7 @@ supabase/.temp/
 supabase/.branches/
 .audit-report.md
 mpersonas-report/
+
+# Saved login sessions — live cookies, credential-equivalent
+.mpersonas-session.json
+*.session.json

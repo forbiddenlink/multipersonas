@@ -21,6 +21,8 @@ export interface TestOptions {
    * you can scan your own localhost/staging. The hosted service must never set it.
    */
   allowPrivate?: boolean;
+  /** Path to a saved session, so personas audit the app instead of its login page. */
+  sessionFile?: string;
 }
 
 export interface ProgressEvent {
@@ -148,6 +150,7 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
     onProgress,
     runAxe = true,
     allowPrivate = false,
+    sessionFile,
   } = options;
 
   // Vet the target before doing anything else, and let a refusal propagate.
@@ -165,7 +168,11 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
     try {
       const safeUrl = validatedUrl;
       const browser = await chromium.launch({ headless: true });
-      const context = await browser.newContext();
+      // The session applies here too: otherwise axe scans the login form and
+      // reports its violations as though they were the application's.
+      const context = await browser.newContext(
+        sessionFile ? { storageState: sessionFile } : {},
+      );
       const page = await context.newPage();
       await page.goto(safeUrl.href, { waitUntil: "domcontentloaded", timeout: 30_000 });
       axeFindings = await runAxeScan(page);
@@ -184,7 +191,7 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
     fs.mkdirSync(personaOutputDir, { recursive: true });
 
     try {
-      const agentResult = await runPersonaAgent(url, persona, personaOutputDir, { allowPrivate });
+      const agentResult = await runPersonaAgent(url, persona, personaOutputDir, { allowPrivate, sessionFile });
       const allFindings = [...agentResult.findings, ...axeFindings];
       const score = computePersonaScore(allFindings, agentResult.goalCompleted);
 

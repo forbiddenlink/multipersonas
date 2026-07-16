@@ -14,6 +14,7 @@ import type { Persona } from "./personas/types.js";
 import { getAllPersonas, saveCustomPersona, deleteCustomPersona, isCustomPersona } from "./personas/custom.js";
 import { generateSystemPrompt } from "./personas/types.js";
 import { assertUrlAllowed, BlockedUrlError } from "./security/url-guard.js";
+import { captureSession, resolveSessionFile, sessionIsLive, SessionError } from "./auth/session.js";
 import * as readline from "node:readline/promises";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -56,6 +57,45 @@ program
 // --- Run command ---
 
 program
+  .command("auth")
+  .description("Log in to a site once and save the session, so personas can test past the login wall")
+  .argument("<url>", "URL of the site's login page")
+  .option("-s, --save <file>", "Where to save the session", "./.mpersonas-session.json")
+  .option(
+    "--allow-private",
+    "Allow localhost / private-network targets. For your own app or staging box."
+  )
+  .action(async (url: string, options: { save: string; allowPrivate?: boolean }) => {
+    console.log("");
+    console.log(chalk.bold(`  MultiPersonas v${pkg.version}`));
+    console.log(chalk.dim(`  Opening ${url} in a browser.`));
+    console.log("");
+    console.log("  Sign in yourself, however you normally do — password, SSO, 2FA, a magic link.");
+    console.log(chalk.dim("  Your password is never sent to the AI. Only the resulting session is saved."));
+
+    try {
+      await captureSession(url, options.save, { allowPrivate: options.allowPrivate });
+    } catch (error) {
+      console.error("");
+      if (error instanceof BlockedUrlError || error instanceof SessionError) {
+        console.error(chalk.red(`  ${error.message}`));
+        if (error instanceof BlockedUrlError && /private network/.test(error.message)) {
+          console.error(chalk.dim("  If this is your own app or staging box, re-run with --allow-private"));
+        }
+        console.error("");
+        process.exit(1);
+      }
+      throw error;
+    }
+
+    console.log("");
+    console.log(chalk.green(`  Session saved to ${options.save}`));
+    console.log(chalk.yellow("  Treat that file like a password — anyone who has it is signed in as you."));
+    console.log(chalk.dim(`  Use it:  mpersonas run ${url} --session ${options.save}`));
+    console.log("");
+  });
+
+program
   .command("run")
   .description("Run persona tests against a URL")
   .argument("<url>", "URL to test")
@@ -74,6 +114,10 @@ program
     "--allow-private",
     "Allow localhost / private-network targets. For scanning your own app or staging box — only pass this for a site you own."
   )
+  .option(
+    "--session <file>",
+    "Saved session from `mpersonas auth`, so personas test the app itself instead of its login page."
+  )
   .action(async (url: string, options: {
     personas: string;
     output: string;
@@ -83,6 +127,7 @@ program
     count?: string;
     describe?: string;
     allowPrivate?: boolean;
+    session?: string;
   }) => {
     // Vet the target first. runMultiPersonaTest checks again, but persona
     // generation runs before it and costs model calls — no reason to spend them
@@ -102,9 +147,37 @@ program
       throw error;
     }
 
+    // Validate the session before persona generation spends model calls, and
+    // warn on a stale one: a run with an expired session silently audits the
+    // login page and reports its problems as the application's.
+    if (options.session) {
+      try {
+        resolveSessionFile(options.session);
+      } catch (error) {
+        if (error instanceof SessionError) {
+          console.error("");
+          console.error(chalk.red(`  ${error.message}`));
+          console.error("");
+          process.exit(1);
+        }
+        throw error;
+      }
+
+      const live = await sessionIsLive(url, options.session, { allowPrivate: options.allowPrivate });
+      if (!live) {
+        console.error("");
+        console.error(chalk.red("  That session no longer signs you in — it has probably expired."));
+        console.error(chalk.dim(`  Refresh it with:  mpersonas auth ${url} --save ${options.session}`));
+        console.error(chalk.dim("  Continuing would audit the login page and report its issues as your app's."));
+        console.error("");
+        process.exit(1);
+      }
+    }
+
     console.log("");
     console.log(chalk.bold(`  MultiPersonas v${pkg.version}`));
     console.log(chalk.dim(`  Testing: ${url}`));
+    if (options.session) console.log(chalk.dim(`  Signed in via: ${options.session}`));
     console.log("");
 
     // Resolve personas
@@ -184,6 +257,7 @@ program
       parallel: isParallel,
       runAxe: options.axe,
       allowPrivate: options.allowPrivate,
+      sessionFile: options.session,
       onProgress: (event: ProgressEvent) => {
         switch (event.type) {
           case "axe_start": {
