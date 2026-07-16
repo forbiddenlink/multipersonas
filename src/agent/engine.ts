@@ -221,6 +221,14 @@ const agentTools = {
       direction: z.enum(["up", "down"]).describe("Direction to scroll"),
     }),
   }),
+  select_option: tool({
+    description:
+      "Choose an option from a dropdown / <select> menu. Use this for native select menus (sort orders, country pickers) — clicking and typing does not work on them.",
+    inputSchema: z.object({
+      selector: z.string().describe("Accessibility name or label of the select menu"),
+      option: z.string().describe("The visible text of the option to choose"),
+    }),
+  }),
   navigate: tool({
     description:
       "Navigate to a specific URL on the site you are testing. You may not leave that site — links to other websites are out of scope and will be refused.",
@@ -286,6 +294,20 @@ async function executeAction(
       const distance = input.direction === "down" ? 600 : -600;
       await page.evaluate((d: number) => window.scrollBy(0, d), distance);
       return `Scrolled ${input.direction as string}`;
+    }
+    case "select_option": {
+      // Native <select> ignores click/type. Try the accessible label first, then
+      // fall back to a raw locator, and select by visible option text.
+      const selector = input.selector as string;
+      const option = input.option as string;
+      let el;
+      try {
+        el = await resolveElement(page, selector);
+      } catch {
+        el = page.locator("select").filter({ hasText: option }).first();
+      }
+      await el.selectOption({ label: option }, { timeout: ACTION_TIMEOUT });
+      return `Selected "${option}" in "${selector}"`;
     }
     case "navigate": {
       // The model chose this URL after reading attacker-controlled page content,
@@ -629,7 +651,9 @@ export async function runPersonaAgent(
               ? `${String(input.selector)}: "${String(input.text)}"`
               : toolName === "scroll"
                 ? String(input.direction)
-                : (JSON.stringify(input) ?? toolName);
+                : toolName === "select_option"
+                  ? `${String(input.selector)} -> "${String(input.option)}"`
+                  : (JSON.stringify(input) ?? toolName);
 
       steps.push({
         step,
