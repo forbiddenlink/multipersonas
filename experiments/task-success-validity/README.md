@@ -188,4 +188,54 @@ support "the verdict generalizes enough to build on", still not "launch".
 
 ### Result — 2026-07-16
 
-_To be filled in after the run. Nothing above may change once data exists._
+**PRIMARY: SURVIVES. `falseAchieved` = 0% (0 of 5 impossible goals reported as achieved).
+SECONDARY: agreement = 90%, trustworthy.** Identical profile to run 1, on a completely
+different app.
+
+| goal | label | verdict | |
+|---|---|---|---|
+| add-to-cart | achievable | achieved | ok (2 steps) |
+| view-cart | achievable | achieved | ok (3 steps) |
+| complete-checkout | achievable | achieved | ok (10 steps) |
+| sort-products | achievable | **blocked** | false-blocked (hit 20-step cap) |
+| view-product-detail | achievable | achieved | ok (2 steps) |
+| apply-coupon | impossible | blocked | ok |
+| order-history | impossible | blocked | ok |
+| edit-account | impossible | blocked | ok |
+| wishlist | impossible | blocked | ok |
+| track-shipping | impossible | blocked | ok |
+
+```
+agreement      = 9/10 = 90%   (trustworthy)
+falseAchieved  = 0/5  =  0%   (SURVIVES)
+falseBlocked   = 1/5  = 20%
+```
+
+**The verdict generalizes.** Two targets, one a BI dashboard and one an e-commerce
+checkout, same result: zero hallucinated successes, 90% agreement, and the only error
+the safe kind. Most tellingly, `complete-checkout` — a real multi-step flow (cart →
+info form → overview → confirm) — was driven to completion and correctly recognised as a
+success in 10 steps. The impossible goals (coupon, order history, account edit, wishlist,
+tracking) were all correctly reported as blocked despite the persona spending many steps
+looking for features that do not exist.
+
+**The one miss is a known agent limitation, not a bad label.** `sort-products` exhausted
+its 20-step budget without operating the sort control, which is a native `<select>`
+element. The agent's click/type tools handle custom widgets better than native selects,
+so it could not change the sort order in time and (correctly, conservatively) recorded no
+success. The sort control demonstrably exists, so the label stands and this is the safe
+error — a false alarm, not false confidence. Native-`<select>` handling is a real product
+gap worth fixing; it does not touch the trust question this experiment measures.
+
+### Verdict across both runs
+
+Task success is validated at **n=2 targets**, both clean: the persona verdict does not
+manufacture false confidence, on materially different apps. That is enough to build the
+persona layer on task success — still not a launch claim, but the pillar is real and the
+one experiment that could have killed it did not. Contrast with the accessibility
+differentiator, which n=1 was enough to kill.
+
+Remaining honest limits: each goal still run once (point estimates), and both targets are
+"feature absent" for the impossible set — a valuable future run would test *permission*-
+blocked goals on a checkout app, and repeated runs for error bars. The native-`<select>`
+gap is logged as a product fix.
