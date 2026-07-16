@@ -12,7 +12,7 @@ import { generatePersonasFromUrl, generatePersonasFromDescription } from "./pers
 import { runMultiPersonaTest, type ProgressEvent } from "./agent/orchestrator.js";
 import { groupAxeByRule } from "./report/generator.js";
 import type { Persona } from "./personas/types.js";
-import { getAllPersonas, saveCustomPersona, deleteCustomPersona, isCustomPersona } from "./personas/custom.js";
+import { getAllPersonas, saveCustomPersona, deleteCustomPersona, isCustomPersona, personaSource, hasProjectPersonas, PROJECT_DIR } from "./personas/custom.js";
 import { generateSystemPrompt } from "./personas/types.js";
 import { assertUrlAllowed, BlockedUrlError } from "./security/url-guard.js";
 import { captureSession, resolveSessionFile, sessionIsLive, SessionError } from "./auth/session.js";
@@ -209,10 +209,21 @@ program
       }
     } else {
       const allPersonas = getAllPersonas();
+
+      // "all" means this project's personas when it has any. The built-in
+      // library describes generic web users, and generic users find generic
+      // problems; a project that has written down its own users has said who
+      // matters, so mixing the library back in only dilutes the run. Name them
+      // explicitly with --personas to get a built-in anyway.
+      const useProject = options.personas === "all" && hasProjectPersonas();
       const personaIds =
         options.personas === "all"
-          ? Object.keys(allPersonas)
+          ? Object.keys(allPersonas).filter((id) => !useProject || personaSource(id) === "project")
           : options.personas.split(",").map((s) => s.trim());
+
+      if (useProject) {
+        console.log(chalk.dim(`  Using ${personaIds.length} personas from ./${PROJECT_DIR}/`));
+      }
 
       personas = personaIds.map((id) => {
         const persona = allPersonas[id];
@@ -353,7 +364,8 @@ program
   .option("--describe <text>", "Generate personas from a text description instead of URL analysis")
   .option("--allow-private", "Allow localhost / private-network targets. For your own app or staging box.")
   .option("--session <file>", "Saved session from `mpersonas auth`, so personas are derived from the signed-in app.")
-  .action(async (url: string, options: { count: string; describe?: string; allowPrivate?: boolean; session?: string }) => {
+  .option("--save", "Write the personas into ./mpersonas/ so you can edit and commit them")
+  .action(async (url: string, options: { count: string; describe?: string; allowPrivate?: boolean; session?: string; save?: boolean }) => {
     const count = parseInt(options.count, 10);
     const spinner = ora(`Generating ${count} personas...`).start();
 
@@ -368,7 +380,9 @@ program
       spinner.succeed(`Generated ${personas.length} personas`);
       console.log("");
 
+      const saved: string[] = [];
       for (const persona of personas) {
+        if (options.save) saved.push(saveCustomPersona(persona));
         console.log(`  ${chalk.cyan(persona.id)}`);
         console.log(`    ${persona.name} — ${persona.description}`);
         console.log(
@@ -382,6 +396,17 @@ program
         console.log(chalk.dim(`    Goals: ${persona.goals.join("; ")}`));
         console.log("");
       }
+
+      // Generated personas are a first draft. You know your users; the model
+      // only saw your markup. Editing them is the point, so say so.
+      if (options.save) {
+        console.log(chalk.green(`  Saved ${saved.length} personas to ./${PROJECT_DIR}/`));
+        console.log(chalk.dim("  Edit their goals to match what you actually care about, then commit them."));
+        console.log(chalk.dim(`  They are picked up automatically by:  mpersonas run ${url}`));
+      } else {
+        console.log(chalk.dim(`  Re-run with --save to write these into ./${PROJECT_DIR}/ so you can edit and commit them.`));
+      }
+      console.log("");
     } catch (error) {
       spinner.fail(`Failed: ${error instanceof Error ? error.message : String(error)}`);
       process.exit(1);
@@ -572,10 +597,11 @@ program
         systemPrompt: generateSystemPrompt(partial),
       };
 
-      saveCustomPersona(persona);
+      const savedTo = saveCustomPersona(persona);
       console.log("");
-      console.log(chalk.green(`Saved custom persona: ${id} (${name})`));
-      console.log(chalk.dim(`  File: ~/.mpersonas/personas/${id}.json`));
+      console.log(chalk.green(`Saved persona: ${id} (${name})`));
+      console.log(chalk.dim(`  File: ${savedTo}`));
+      console.log(chalk.dim("  Commit it — personas belong with the code they describe."));
     } finally {
       rl.close();
     }
