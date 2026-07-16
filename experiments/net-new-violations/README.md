@@ -209,3 +209,54 @@ pnpm exec tsx experiments/net-new-violations/run.ts saucedemo  # one target
 
 Writes `experiments/net-new-violations/results/<target>.json` and prints a verdict
 against the kill criterion.
+
+---
+
+## Run 3 — 2026-07-16, first run with authentication
+
+**This is the first measurement of the actual question.** Runs 1 and 2 could not log in,
+so they compared a page scan against an agent that was also stuck outside the login wall.
+That measured the marketing page of a product, not the product.
+
+Target: local Metabase fixture (`docs/TESTING.md`), signed in as a non-admin user.
+Personas generated from the *authenticated* app. axe run at every state reached.
+
+| measure | value |
+|---|---|
+| distinct axe rules violated | 16 |
+| affected elements | 85 |
+| elements reachable from the entry page | 19 |
+| **elements only reachable in deeper states** | **66 (78%)** |
+| states reached | 4 (`/`, `/browse/databases`, `/browse/databases/1-sample-database`, `/table/2-orders`) |
+| states a crawler reaches without a session | 1 (`/auth/login`) |
+
+Signed out, the entire audit sees the login form: **2 violations**. Signed in and walking,
+it sees 16 rules across 85 elements. The states carrying most of the defects — a sample
+database browser, a table view — have no inbound link from the entry page and no URL a
+crawler could guess.
+
+### What this does and does not establish
+
+**Does:** the surface behind a login wall carries defects that no unauthenticated scan can
+reach, on a real application, by a large margin. That is the premise the product is priced
+on, and until this run it was an assumption.
+
+**Does not:** show that *persona agents* are the best way to reach those states. A
+hand-written Playwright script with a session and axe would have found the same 66. The
+honest claim is "authenticated scanning finds far more", not "AI personas find more". The
+agent's contribution is that nobody had to write or maintain that script — which is a real
+benefit and a much more modest one than the pitch implies.
+
+**Still unmeasured:** whether personas reach states a *scripted* crawler-with-a-session
+would miss. That is the actual differentiator and it is the pre-registered question for
+run 4. The filter-applied dashboard state
+(`/dashboard/1-e-commerce-insights?product_category=Doohickey&tab=1-overview`) is the kind
+of evidence that would support it — no link points there — but one URL is an anecdote, not
+a measurement.
+
+### Metric iteration, again
+
+Note this run changed *what* is counted (rules and elements, not "blocking violations")
+because axe now runs per state and per element. That is the third metric in three runs.
+Consistent with the warning above: treat the 78% as a strong first signal, not a
+publishable figure, and pre-register run 4 before looking at its data.
