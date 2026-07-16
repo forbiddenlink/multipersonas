@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+# Least privilege: CI only reads the code. No token should be able to write.
+permissions:
+  contents: read
+
 jobs:
   ci:
     runs-on: ubuntu-latest
