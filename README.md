@@ -1,15 +1,30 @@
 # multipersonas
 
-Point it at a URL. It launches a real browser, runs an axe-core accessibility scan,
-and sends LLM-driven profiles to browse the site and report what they hit.
+Point it at a URL — including one behind a login. It crawls the site and checks
+every state it reaches for accessibility defects.
 
-Two different things come out, and the distinction is the whole design:
+Two commands, and the split reflects what the evidence actually supports:
+
+- **`scan`** is the core. It crawls the site (with a saved session, behind the login
+  wall) and runs **axe-core** at every state, reporting deterministic, citable rule
+  violations. This is the part nothing free replaces: the `axe` CLI does not crawl and
+  does not hold a session.
+- **`run`** adds LLM **UX personas** (a first-time visitor, a mobile user on slow 3G)
+  that browse toward a goal. Its unique output is **task success** — did a real-shaped
+  user actually complete the flow? — which a crawler cannot produce at all. Its finding
+  output is *opinion*: jargon, buried pricing, tap targets. Useful, never compliance.
+
+**Honest status of the persona layer:** we tested whether personas find accessibility
+defects a scripted crawler misses. They do not — a head-to-head on a real app
+(`experiments/personas-vs-crawler/`) found the crawler reached 4x more states for zero
+model cost. So personas are **not** pitched as an accessibility tool. Their surviving,
+distinct value is task-success and reaching states behind an interaction (open a menu,
+a dialog). That value is real and not yet independently validated.
 
 - **Accessibility violations** come from **axe-core** — deterministic, citable, and
   the only thing here that touches compliance.
-- **Usability friction** comes from **UX personas** (a first-time visitor, a mobile
-  user on slow 3G). That output is *opinion*: jargon, buried pricing, tap targets.
-  Useful, never compliance.
+- **Usability friction and task success** come from **UX personas**. Opinion and
+  outcome, never compliance.
 
 **We do not simulate disabled users.** There is no "blind user" persona and there
 will not be one. An LLM roleplaying a disability is inaccurate (LLM accessibility
@@ -23,11 +38,14 @@ input constraint is a WCAG 2.1.1 test. A costume is not.
 **This does not replace testing with disabled people.** Nothing automated does. If
 you need that, use [Fable](https://makeitfable.com/), who pay disabled testers.
 
-**Status: prototype, and the premise is under test.** The CLI works. The web app is
-not deployed and cannot be deployed to Vercel as written — see
-[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Whether the core bet (deep states hold
-violations a URL scan misses) is even true is currently unmeasured — see
-[docs/PLAN-2026-07-15-repositioning.md](docs/PLAN-2026-07-15-repositioning.md).
+**Status: prototype. The core bet is measured; the product shape changed because of
+it.** Deep states behind auth *do* hold violations a front-page scan misses (78% of
+them on the test app — `experiments/net-new-violations/`), and `scan` is built around
+that. Personas do *not* beat a crawler at finding them
+(`experiments/personas-vs-crawler/`), so the pitch shifted from "AI personas find what
+crawlers can't" to "authenticated accessibility scanning, plus a persona task-success
+layer." The web app is not deployed and cannot be as written — see
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Install
 
@@ -39,27 +57,40 @@ pnpm exec playwright install chromium
 
 ## Use
 
+### Scan (the core — deterministic, free, no AI)
+
 ```bash
-# Run the three built-in profiles against a URL
-pnpm dev -- run https://example.com
+# Crawl a public site and check every page for accessibility defects
+pnpm dev -- scan https://example.com
 
-# Pick profiles, choose an output dir, skip the axe scan
-pnpm dev -- run https://example.com --personas keyboard-traversal,first-time-visitor
-pnpm dev -- run https://example.com --output ./report --no-axe
+# Scan behind a login: authenticate once, then scan with the saved session
+pnpm dev -- auth https://app.example.com --save ./session.json
+pnpm dev -- scan https://app.example.com --session ./session.json --max-pages 60
+```
 
-# Generate personas tailored to the site instead of using the built-ins
-pnpm dev -- run https://example.com --count 4
-pnpm dev -- run https://example.com --describe "B2B buyers evaluating enterprise software"
+`scan` writes a Markdown report of axe-core rule violations, grouped by rule, each
+listing its elements and every state it appeared in. No model calls.
 
-# Persona management
-pnpm dev -- list                        # built-in + custom personas
-pnpm dev -- generate https://example.com --count 4
+### Run (personas — task success + usability opinion)
+
+```bash
+# Personas tailored to the site browse toward a goal
+pnpm dev -- run https://app.example.com --session ./session.json --count 4
+
+# Author personas your team owns: generate a draft, edit it, commit it
+pnpm dev -- generate https://app.example.com --session ./session.json --count 4 --save
+$EDITOR mpersonas/*.json        # edit goals to match users you care about
+pnpm dev -- run https://app.example.com --session ./session.json   # picks up ./mpersonas/
+
+# Manage personas
+pnpm dev -- list
 pnpm dev -- create --from-json ./persona.json
 pnpm dev -- delete <id>
 ```
 
-Output is a Markdown + JSON report with per-persona scores, findings tagged by
-severity and category, and screenshots of each step.
+`run` reports task success (how many personas achieved their goal), usability
+observations, and the same axe defects `scan` produces. Personas live in `./mpersonas/`
+in your repo, so they are diffable, reviewable, and picked up automatically.
 
 Built (`pnpm build`) the binary is `mpersonas`, so the same commands work as
 `mpersonas run <url>`.
@@ -67,20 +98,26 @@ Built (`pnpm build`) the binary is `mpersonas`, so the same commands work as
 ## How it works
 
 ```
-URL ──> url-guard ──> Chromium ──> axe-core scan ─────────────┐
-                          │                                    ├──> merged report
-                          └──> persona agent (LLM) x N ────────┘
-                               loop: snapshot page -> choose
-                               tool -> act -> report findings
+scan:  URL ──> url-guard ──> Chromium (+session) ──> BFS crawl same-origin
+                                                        └─> axe-core at each state ──> merged report
+
+run:   URL ──> url-guard ──> Chromium (+session) ──> persona agent (LLM) x N ──> report
+                                                        loop: snapshot -> choose tool ->
+                                                        act -> axe-core at each state
 ```
+
+Both merge axe findings by a stable defect key (`src/agent/defect-key.ts`) that
+collapses framework-generated element ids, so one broken component is one defect across
+every state it appears in — not one per page.
 
 Each profile gets a system prompt built from its `kind`, goals, viewport, and input
 modality (`src/personas/types.ts`). `kind: "ux"` produces a person with goals whose
 output is opinion; `kind: "traversal"` produces a harness that is explicitly told it
 is not a person and must not judge accessibility. The agent loop
 (`src/agent/engine.ts`) hands the model an accessibility-tree snapshot each step and
-lets it call `click`, `type`, `scroll`, `navigate`, `report_finding`, or
-`mark_goal_complete`.
+lets it call `click`, `type`, `scroll`, `navigate`, `report_finding`, or `finish`
+(with an explicit `achieved`/`blocked` outcome — the report never infers success from the
+fact that the agent stopped).
 
 `src/personas/framing.test.ts` enforces the above: no profile may claim a disability,
 and none may be asked for a WCAG verdict. Those tests are a product constraint.
@@ -107,8 +144,8 @@ durable rate limiting, a spend cap, and network isolation.
 
 ## Cost
 
-One audit with the three built-in personas is 65 sequential model calls (20 + 30 + 15
-steps). The agent sends a bounded window of recent history rather than the full
+`scan` costs zero model calls. A `run` with three personas is on the order of 65 model
+calls (per-persona step budgets). The agent sends a bounded window of recent history rather than the full
 transcript (`HISTORY_WINDOW` in `src/agent/engine.ts`), which keeps input tokens flat
 across a run instead of growing with every step. There is no global spend cap yet.
 
