@@ -7,11 +7,13 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 import { z } from "zod";
 import { personaLibrary, personasByCategory } from "./personas/library.js";
+import { RETIRED_PERSONA_IDS } from "./personas/prebuilt.js";
 import { generatePersonasFromUrl, generatePersonasFromDescription } from "./personas/generator.js";
 import { runMultiPersonaTest, type ProgressEvent } from "./agent/orchestrator.js";
 import type { Persona } from "./personas/types.js";
 import { getAllPersonas, saveCustomPersona, deleteCustomPersona, isCustomPersona } from "./personas/custom.js";
 import { generateSystemPrompt } from "./personas/types.js";
+import { assertUrlAllowed, BlockedUrlError } from "./security/url-guard.js";
 import * as readline from "node:readline/promises";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -37,7 +39,8 @@ const importedPersonaSchema = z.object({
   }),
   isMobile: z.boolean(),
   connectionSpeed: z.enum(["fast", "3g", "slow-3g"]),
-  accessibilityNeeds: z.array(z.string()).default([]),
+  kind: z.enum(["ux", "traversal"]).default("ux"),
+  inputModality: z.enum(["pointer", "keyboard"]).default("pointer"),
   maxSteps: z.number(),
   patienceLevel: z.enum(["low", "medium", "high"]),
   systemPrompt: z.string().optional(),
@@ -67,6 +70,10 @@ program
   .option("--sequential", "Run personas one at a time")
   .option("--count <n>", "Auto-generate N personas from the URL")
   .option("--describe <text>", "Generate personas from a text description")
+  .option(
+    "--allow-private",
+    "Allow localhost / private-network targets. For scanning your own app or staging box — only pass this for a site you own."
+  )
   .action(async (url: string, options: {
     personas: string;
     output: string;
@@ -75,7 +82,26 @@ program
     sequential: boolean;
     count?: string;
     describe?: string;
+    allowPrivate?: boolean;
   }) => {
+    // Vet the target first. runMultiPersonaTest checks again, but persona
+    // generation runs before it and costs model calls — no reason to spend them
+    // on a URL we are going to refuse.
+    try {
+      await assertUrlAllowed(url, { allowPrivate: options.allowPrivate });
+    } catch (error) {
+      if (error instanceof BlockedUrlError) {
+        console.error("");
+        console.error(chalk.red(`  ${error.message}`));
+        if (/private network/.test(error.message)) {
+          console.error(chalk.dim(`  If this is your own app or staging box, re-run with --allow-private`));
+        }
+        console.error("");
+        process.exit(1);
+      }
+      throw error;
+    }
+
     console.log("");
     console.log(chalk.bold(`  MultiPersonas v${pkg.version}`));
     console.log(chalk.dim(`  Testing: ${url}`));
@@ -114,6 +140,18 @@ program
       personas = personaIds.map((id) => {
         const persona = allPersonas[id];
         if (!persona) {
+          const replacement = RETIRED_PERSONA_IDS[id];
+          if (replacement !== undefined) {
+            console.error(chalk.red(`Persona "${id}" has been retired.`));
+            console.error(
+              chalk.dim(
+                replacement
+                  ? `  Use "${replacement}" instead. We no longer simulate disabled users —\n  accessibility is measured by axe-core at every state reached.\n  See docs/PLAN-2026-07-15-repositioning.md`
+                  : `  It was removed: colour contrast is checked deterministically by axe-core,\n  which is more reliable than a model roleplaying a disability.\n  See docs/PLAN-2026-07-15-repositioning.md`
+              )
+            );
+            process.exit(1);
+          }
           console.error(chalk.red(`Unknown persona: ${id}`));
           console.error(
             chalk.dim(
@@ -145,6 +183,7 @@ program
       outputDir,
       parallel: isParallel,
       runAxe: options.axe,
+      allowPrivate: options.allowPrivate,
       onProgress: (event: ProgressEvent) => {
         switch (event.type) {
           case "axe_start": {
@@ -246,12 +285,8 @@ program
             `    Tech: ${persona.techProficiency}/5 | Steps: ${persona.maxSteps} | ${persona.isMobile ? "Mobile" : "Desktop"} | ${persona.connectionSpeed}`
           )
         );
-        if (persona.accessibilityNeeds.length > 0) {
-          console.log(
-            chalk.dim(
-              `    Accessibility: ${persona.accessibilityNeeds.join(", ")}`
-            )
-          );
+        if (persona.inputModality === "keyboard") {
+          console.log(chalk.dim(`    Input: keyboard only`));
         }
         console.log(chalk.dim(`    Goals: ${persona.goals.join("; ")}`));
         console.log("");
@@ -303,12 +338,8 @@ program
           `    Tech: ${persona.techProficiency}/5 | Steps: ${persona.maxSteps} | ${persona.isMobile ? "Mobile" : "Desktop"} | ${persona.connectionSpeed}`
         )
       );
-      if (persona.accessibilityNeeds.length > 0) {
-        console.log(
-          chalk.dim(
-            `    Accessibility: ${persona.accessibilityNeeds.join(", ")}`
-          )
-        );
+      if (persona.inputModality === "keyboard") {
+        console.log(chalk.dim(`    Input: keyboard only`));
       }
       console.log("");
     }
@@ -417,8 +448,11 @@ program
       const connInput = (await rl.question("Connection speed (fast/3g/slow-3g) [fast]: ")).trim();
       const connectionSpeed = parseConnectionSpeed(connInput || "fast");
 
-      const a11yInput = (await rl.question("Accessibility needs (comma-separated, or empty): ")).trim();
-      const accessibilityNeeds = a11yInput ? a11yInput.split(",").map((s) => s.trim()).filter(Boolean) : [];
+      // Deliberately no "accessibility needs" prompt. Custom personas are UX
+      // opinion profiles; accessibility comes from axe at every state and the
+      // keyboard-traversal profile, never from a persona claiming a disability.
+      const keyboardInput = (await rl.question("Keyboard-only navigation? (y/N): ")).trim().toLowerCase();
+      const inputModality = keyboardInput === "y" || keyboardInput === "yes" ? "keyboard" : "pointer";
 
       const stepsInput = (await rl.question("Max steps [20]: ")).trim();
       const maxSteps = parseInt(stepsInput || "20", 10) || 20;
@@ -433,10 +467,11 @@ program
         goals,
         frustrations,
         techProficiency,
+        kind: "ux",
         viewport,
         isMobile,
         connectionSpeed,
-        accessibilityNeeds,
+        inputModality,
         maxSteps,
         patienceLevel,
       };

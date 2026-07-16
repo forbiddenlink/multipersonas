@@ -4,19 +4,47 @@ import * as path from "path";
 import * as fs from "fs";
 import { prebuiltPersonas } from "@engine/personas/prebuilt";
 import { runMultiPersonaTest } from "@engine/agent/orchestrator";
+import { assertUrlAllowed, BlockedUrlError } from "@engine/security/url-guard";
 import { createClient } from "@/lib/supabase/server";
 
-// Rate limiting: authenticated users get 3/10min, anonymous get 1/hour
+// Rate limiting: authenticated users get 3/10min, anonymous get 1/hour.
+//
+// ⚠️ NOT A REAL LIMIT YET. This Map is per-process: every serverless instance
+// keeps its own copy and loses it on recycle, so the ceiling is really
+// (limit x instances) and resets constantly. It also trusts X-Forwarded-For,
+// which a client can set freely.
+//
+// That is tolerable only while this route is unreachable in production (it
+// launches Chromium, which cannot run on Vercel — see docs/DEPLOYMENT.md).
+// Durable, shared rate limiting is a hard prerequisite for the public deploy
+// and is tracked as a Phase 1 blocker alongside the worker split, because the
+// enforcement point moves to the queue.
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+/** Cap on distinct keys held, so a spray of forged IPs can't grow the Map without bound. */
+const MAX_TRACKED_KEYS = 10_000;
 
 const LIMITS = {
   authenticated: { max: 3, windowMs: 10 * 60 * 1000 },
   anonymous: { max: 1, windowMs: 60 * 60 * 1000 },
 } as const;
 
+/** Drop expired entries; if still over the cap, evict oldest-expiring first. */
+function evict(now: number): void {
+  for (const [key, entry] of rateLimitMap) {
+    if (now > entry.resetAt) rateLimitMap.delete(key);
+  }
+  if (rateLimitMap.size <= MAX_TRACKED_KEYS) return;
+  const byExpiry = [...rateLimitMap.entries()].sort((a, b) => a[1].resetAt - b[1].resetAt);
+  for (const [key] of byExpiry.slice(0, rateLimitMap.size - MAX_TRACKED_KEYS)) {
+    rateLimitMap.delete(key);
+  }
+}
+
 function checkRateLimit(key: string, type: "authenticated" | "anonymous"): boolean {
   const now = Date.now();
   const { max, windowMs } = LIMITS[type];
+  evict(now);
   const entry = rateLimitMap.get(key);
 
   if (!entry || now > entry.resetAt) {
@@ -80,40 +108,19 @@ export async function POST(request: Request) {
     );
   }
 
-  // Validate URL format
+  // Validate scheme + destination. This resolves the hostname and judges the
+  // resolved addresses, which the previous hostname-regex could not do: it let
+  // through localtest.me, metadata.google.internal, and [::ffff:169.254.169.254].
+  // The engine re-checks every navigation, so this is the outer gate, not the
+  // only one.
   let parsedUrl: URL;
   try {
-    parsedUrl = new URL(url);
-    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-      throw new Error("Invalid protocol");
+    parsedUrl = await assertUrlAllowed(url);
+  } catch (error) {
+    if (error instanceof BlockedUrlError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
-  } catch {
-    return NextResponse.json(
-      { error: "Enter a full URL starting with https://" },
-      { status: 400 }
-    );
-  }
-
-  // Block private/reserved IPs (SSRF protection)
-  const hostname = parsedUrl.hostname;
-  const blockedPatterns = [
-    /^localhost$/i,
-    /^127\./,
-    /^10\./,
-    /^172\.(1[6-9]|2\d|3[01])\./,
-    /^192\.168\./,
-    /^169\.254\./,
-    /^0\./,
-    /^\[::1\]$/,
-    /^\[fc/i,
-    /^\[fd/i,
-    /^\[fe80/i,
-  ];
-  if (blockedPatterns.some((pattern) => pattern.test(hostname))) {
-    return NextResponse.json(
-      { error: "This URL points to a private network and can't be tested." },
-      { status: 400 }
-    );
+    throw error;
   }
 
   // Create temp directory for output
@@ -126,7 +133,7 @@ export async function POST(request: Request) {
     // Select the 3 built-in personas
     const personaIds = [
       "first-time-visitor",
-      "screen-reader-user",
+      "keyboard-traversal",
       "mobile-slow-connection",
     ] as const;
 

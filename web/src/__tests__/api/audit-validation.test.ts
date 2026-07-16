@@ -15,7 +15,7 @@ vi.mock("@/lib/supabase/server", () => ({
 vi.mock("@engine/personas/prebuilt", () => ({
   prebuiltPersonas: {
     "first-time-visitor": { id: "first-time-visitor", name: "Test" },
-    "screen-reader-user": { id: "screen-reader-user", name: "Test" },
+    "keyboard-traversal": { id: "keyboard-traversal", name: "Test" },
     "mobile-slow-connection": { id: "mobile-slow-connection", name: "Test" },
   },
 }));

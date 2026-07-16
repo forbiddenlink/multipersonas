@@ -5,6 +5,7 @@ import type { Persona } from "../personas/types.js";
 import { runPersonaAgent, type AgentResult, type Finding } from "./engine.js";
 import { runAxeScan } from "./axe-scan.js";
 import { generateMarkdownReport, type PersonaReport } from "../report/generator.js";
+import { assertUrlAllowed } from "../security/url-guard.js";
 
 // --- Types ---
 
@@ -15,6 +16,11 @@ export interface TestOptions {
   parallel?: boolean;
   onProgress?: (event: ProgressEvent) => void;
   runAxe?: boolean;
+  /**
+   * Permit private/loopback targets. The CLI sets this from --allow-private so
+   * you can scan your own localhost/staging. The hosted service must never set it.
+   */
+  allowPrivate?: boolean;
 }
 
 export interface ProgressEvent {
@@ -121,7 +127,7 @@ function detectConflicts(personaResults: PersonaTestResult[]): PersonaConflict[]
               name: successful.persona.name,
               outcome: "no issues",
             },
-            suggestion: `Review this page for accessibility/usability gaps affecting ${problematic.persona.name}'s needs (${problematic.persona.accessibilityNeeds.join(", ") || "general usability"})`,
+            suggestion: `Review this page for usability gaps affecting ${problematic.persona.name}'s goals`,
           });
         }
       }
@@ -141,7 +147,14 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
     parallel = true,
     onProgress,
     runAxe = true,
+    allowPrivate = false,
   } = options;
+
+  // Vet the target before doing anything else, and let a refusal propagate.
+  // The per-persona and axe paths below both swallow errors into a scored
+  // "failed" result, so validating only in there would report a blocked URL as
+  // a passing audit instead of refusing it.
+  const validatedUrl = await assertUrlAllowed(url, { allowPrivate });
 
   fs.mkdirSync(outputDir, { recursive: true });
 
@@ -150,10 +163,11 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
   if (runAxe) {
     onProgress?.({ type: "axe_start", message: "Running axe-core accessibility scan..." });
     try {
+      const safeUrl = validatedUrl;
       const browser = await chromium.launch({ headless: true });
       const context = await browser.newContext();
       const page = await context.newPage();
-      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
+      await page.goto(safeUrl.href, { waitUntil: "domcontentloaded", timeout: 30_000 });
       axeFindings = await runAxeScan(page);
       await browser.close();
       onProgress?.({ type: "axe_complete", message: `axe-core: ${axeFindings.length} accessibility issues found` });
@@ -170,11 +184,11 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
     fs.mkdirSync(personaOutputDir, { recursive: true });
 
     try {
-      const agentResult = await runPersonaAgent(url, persona, personaOutputDir);
+      const agentResult = await runPersonaAgent(url, persona, personaOutputDir, { allowPrivate });
       const allFindings = [...agentResult.findings, ...axeFindings];
       const score = computePersonaScore(allFindings, agentResult.goalCompleted);
 
-      const status = agentResult.goalCompleted ? "goal completed" : "abandoned";
+      const status = agentResult.goalCompleted ? "goal achieved" : "blocked";
       onProgress?.({
         type: "persona_complete",
         persona: persona.id,
@@ -243,11 +257,30 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
     axeFindings,
   }));
 
-  const reportMarkdown = generateMarkdownReport(url, personaReports);
-  const reportPath = path.join(outputDir, "report.md");
-  fs.writeFileSync(reportPath, reportMarkdown);
+  // Persist the raw results BEFORE rendering anything. Every persona run above
+  // costs real model calls; a formatting bug in the renderer must never be able
+  // to throw that away. (On 2026-07-15 it did: a missing field crashed report
+  // generation and destroyed a completed 9-persona run.)
+  const resultsPath = path.join(outputDir, "results.json");
+  fs.writeFileSync(
+    resultsPath,
+    JSON.stringify({ url, personas: personaResults, axeFindings, conflicts }, null, 2),
+  );
 
-  onProgress?.({ type: "report_complete", message: `Report saved to ${reportPath}` });
+  const reportPath = path.join(outputDir, "report.md");
+  let renderedPath = resultsPath;
+  try {
+    fs.writeFileSync(reportPath, generateMarkdownReport(url, personaReports));
+    renderedPath = reportPath;
+    onProgress?.({ type: "report_complete", message: `Report saved to ${reportPath}` });
+  } catch (error) {
+    // The run succeeded; only the rendering failed. Say so, keep the data, and
+    // return normally rather than throwing away everything that was paid for.
+    onProgress?.({
+      type: "report_complete",
+      message: `Report rendering failed (${error instanceof Error ? error.message : String(error)}). Raw results kept at ${resultsPath}`,
+    });
+  }
 
   return {
     url,
@@ -256,6 +289,7 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
     personas: personaResults,
     axeFindings,
     conflicts,
-    reportPath,
+    // Points at the raw JSON if rendering failed — never at a file that is not there.
+    reportPath: renderedPath,
   };
 }
