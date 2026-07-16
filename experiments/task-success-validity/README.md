@@ -166,3 +166,26 @@ value.**
 3. **A second target** with heavier interaction (a checkout / multi-step form), the case
    where task success is most valuable and most likely to be hard.
 4. Metric and thresholds unchanged, so runs stay comparable.
+
+---
+
+## Run 2 — SauceDemo (PRE-REGISTERED 2026-07-16, before this run's data)
+
+Second target, per the run-1 pre-registration's "next run" plan: an
+interaction-heavy public app where task success matters most. SauceDemo
+(https://www.saucedemo.com, `standard_user`) is an add-to-cart → checkout
+sandbox. Goals and labels are in `saucedemo-goals.ts`, committed before the run.
+
+**Metric and thresholds are unchanged from run 1** (primary `falseAchieved`, kill
+> 20%; secondary `agreement`), so the two runs are directly comparable. Ground
+truth was verified against the live site before committing: the account menu is
+only All Items / About / Logout / Reset, and there is no coupon, order-history,
+wishlist, or account-settings surface — so the five "impossible" goals are
+genuinely absent, and the five "achievable" goals map to controls that exist.
+
+Same caveats: each goal once (point estimate), n now = 2 targets. Two passes
+support "the verdict generalizes enough to build on", still not "launch".
+
+### Result — 2026-07-16
+
+_To be filled in after the run. Nothing above may change once data exists._
