@@ -10,7 +10,8 @@ import { personaLibrary, personasByCategory } from "./personas/library.js";
 import { RETIRED_PERSONA_IDS } from "./personas/prebuilt.js";
 import { generatePersonasFromUrl, generatePersonasFromDescription } from "./personas/generator.js";
 import { runMultiPersonaTest, type ProgressEvent } from "./agent/orchestrator.js";
-import { groupAxeByRule } from "./report/generator.js";
+import { crawl } from "./crawler/crawl.js";
+import { groupAxeByRule, generateScanReport } from "./report/generator.js";
 import type { Persona } from "./personas/types.js";
 import { getAllPersonas, saveCustomPersona, deleteCustomPersona, isCustomPersona, personaSource, hasProjectPersonas, PROJECT_DIR } from "./personas/custom.js";
 import { generateSystemPrompt } from "./personas/types.js";
@@ -54,6 +55,82 @@ program
   .name("mpersonas")
   .description("AI persona-based website testing")
   .version(pkg.version);
+
+// --- Scan command ---
+
+program
+  .command("scan")
+  .description("Crawl a site and check every page for accessibility defects (no AI personas — deterministic and free)")
+  .argument("<url>", "URL to scan")
+  .option("-o, --output <path>", "Output directory", "./mpersonas-report")
+  .option("--session <file>", "Saved session from `mpersonas auth`, to scan behind a login")
+  .option("--max-pages <n>", "How many states to crawl", "40")
+  .option("--allow-private", "Allow localhost / private-network targets. For your own app or staging box.")
+  .action(async (url: string, options: { output: string; session?: string; maxPages: string; allowPrivate?: boolean }) => {
+    // Vet the target up front; crawl() checks again but this fails fast with a
+    // readable message before launching a browser.
+    try {
+      await assertUrlAllowed(url, { allowPrivate: options.allowPrivate });
+    } catch (error) {
+      if (error instanceof BlockedUrlError) {
+        console.error("");
+        console.error(chalk.red(`  ${error.message}`));
+        if (/private network/.test(error.message)) {
+          console.error(chalk.dim("  If this is your own app or staging box, re-run with --allow-private"));
+        }
+        console.error("");
+        process.exit(1);
+      }
+      throw error;
+    }
+
+    if (options.session) {
+      try {
+        resolveSessionFile(options.session);
+      } catch (error) {
+        if (error instanceof SessionError) {
+          console.error("");
+          console.error(chalk.red(`  ${error.message}`));
+          console.error("");
+          process.exit(1);
+        }
+        throw error;
+      }
+    }
+
+    console.log("");
+    console.log(chalk.bold(`  MultiPersonas v${pkg.version}`));
+    console.log(chalk.dim(`  Scanning: ${url}`));
+    if (options.session) console.log(chalk.dim(`  Signed in via: ${options.session}`));
+    console.log("");
+
+    const spinner = ora("Crawling...").start();
+    const result = await crawl(url, {
+      sessionFile: options.session,
+      maxPages: parseInt(options.maxPages, 10),
+      allowPrivate: options.allowPrivate,
+      onPage: (pageUrl, i) => {
+        spinner.text = `Crawling... ${i + 1} states, at ${pageUrl}`;
+      },
+    });
+    spinner.succeed(`Scanned ${result.pagesVisited.length} states`);
+
+    const groups = groupAxeByRule(result.findings);
+    const groupSev = (sev: string) => groups.filter((g) => g.severity === sev).length;
+
+    fs.mkdirSync(options.output, { recursive: true });
+    const reportPath = path.join(options.output, "scan.md");
+    fs.writeFileSync(reportPath, generateScanReport(url, result.findings, result.pagesVisited, result.skipped));
+
+    console.log("");
+    console.log(`  Accessibility: ${groups.length} defects` +
+      chalk.dim(` (${groupSev("critical")} critical, ${groupSev("serious")} serious) across ${result.findings.length} elements`));
+    if (result.skipped.length > 0) {
+      console.log(chalk.yellow(`  Budget reached: ${result.skipped.length} more states not scanned (raise --max-pages)`));
+    }
+    console.log(chalk.dim(`  Report: ${reportPath}`));
+    console.log("");
+  });
 
 // --- Run command ---
 

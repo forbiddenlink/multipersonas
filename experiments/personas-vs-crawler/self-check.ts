@@ -12,7 +12,7 @@
  *   npx tsx experiments/personas-vs-crawler/self-check.ts
  */
 import * as fs from "fs";
-import { crawl } from "./crawler.js";
+import { crawl } from "../../src/crawler/crawl.js";
 import { defectSet } from "./compare.js";
 
 const TARGET = process.env.MP_FIXTURE_URL ?? "http://localhost:3010";
@@ -28,11 +28,11 @@ async function main() {
   console.log(`Self-check: two identical crawls of ${TARGET}\n`);
 
   console.log("Crawl A...");
-  const a = await crawl(TARGET, SESSION, PAGES);
+  const a = await crawl(TARGET, { sessionFile: SESSION, maxPages: PAGES, allowPrivate: true });
   console.log(`  ${a.pagesVisited.length} pages, ${a.findings.length} findings`);
 
   console.log("Crawl B...");
-  const b = await crawl(TARGET, SESSION, PAGES);
+  const b = await crawl(TARGET, { sessionFile: SESSION, maxPages: PAGES, allowPrivate: true });
   console.log(`  ${b.pagesVisited.length} pages, ${b.findings.length} findings`);
 
   const A = defectSet(a.findings);

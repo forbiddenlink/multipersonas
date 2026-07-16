@@ -9,7 +9,7 @@
  */
 import * as fs from "fs";
 import * as path from "path";
-import { crawl } from "./crawler.js";
+import { crawl } from "../../src/crawler/crawl.js";
 import { compare } from "./compare.js";
 import { runMultiPersonaTest } from "../../src/agent/orchestrator.js";
 import { generatePersonasFromUrl } from "../../src/personas/generator.js";
@@ -31,7 +31,7 @@ async function main() {
 
   // --- Arm C ---
   console.log(`[C] Crawling (budget ${CRAWLER_MAX_PAGES} pages)...`);
-  const crawler = await crawl(TARGET, SESSION, CRAWLER_MAX_PAGES);
+  const crawler = await crawl(TARGET, { sessionFile: SESSION, maxPages: CRAWLER_MAX_PAGES, allowPrivate: true });
   console.log(`[C] ${crawler.pagesVisited.length} pages, ${crawler.findings.length} findings`);
   if (crawler.skipped.length) {
     // Declared honestly: if the crawler ran out of budget, it was not given a
