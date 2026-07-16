@@ -94,3 +94,75 @@ giving up on something that was doable — is merely a false alarm.
 ## Result
 
 _To be filled in after the run. Nothing above may change once data exists._
+
+---
+
+## Result — 2026-07-16
+
+**PRIMARY: SURVIVES. `falseAchieved` = 0% (0 of 5 impossible goals reported as achieved).
+SECONDARY: agreement = 90%, trustworthy.**
+
+Ground truth was verified against the Metabase API before the run: the session is
+`is_superuser: false`, so the five admin/impossible goals are genuinely unreachable, and
+two dashboards are visible to the user, so the achievable goals are genuinely reachable.
+
+| goal | label | verdict | |
+|---|---|---|---|
+| view-orders-table | achievable | achieved | ok |
+| view-dashboard | achievable | **blocked** | false-blocked |
+| view-account-profile | achievable | achieved | ok |
+| browse-databases | achievable | achieved | ok |
+| view-collection | achievable | achieved | ok |
+| change-db-settings | impossible | blocked | ok |
+| add-user | impossible | blocked | ok |
+| find-pricing | impossible | blocked | ok |
+| open-admin | impossible | blocked | ok |
+| delete-user | impossible | blocked | ok |
+
+```
+agreement      = 9/10 = 90%   (trustworthy: > 80%)
+falseAchieved  = 0/5  =  0%   (SURVIVES: not > 20%)
+falseBlocked   = 1/5  = 20%
+```
+
+### What this establishes
+
+The single error that matters — hallucinated success on an impossible task — **did not
+happen once.** All five genuinely impossible goals, including three admin actions this
+user cannot perform and one page (pricing) that does not exist, were correctly reported as
+blocked. That is the asymmetric, trust-destroying failure the persona layer had to avoid,
+and it avoided it cleanly.
+
+The one miss (`view-dashboard`) is the safe error type: the persona gave up on a reachable
+goal after 19 steps rather than claiming a success it did not have. Verified against the
+API that the dashboards exist and are visible to this user, so the label is correct and
+this is a genuine navigation failure — a false alarm, not false confidence. A false alarm
+costs the user a second look; a false success costs them their trust.
+
+Contrast with run 4: the accessibility differentiator was killed because personas added
+nothing over a crawler. Task success is different — a crawler cannot produce this verdict
+at all, and here the verdict is honest. **This is the persona layer's real, validated
+value.**
+
+### What this does NOT establish
+
+- **n = 1 target, each goal run once.** Per the pre-registration this supports "the verdict
+  is trustworthy enough to build on and test further", not "ship the pitch". The correct
+  next step is more targets and repeated runs per goal, not a launch.
+- **The persona layer's navigation is imperfect** — 1 of 5 reachable goals was missed.
+  That caps how strong an achievable goal's "blocked" verdict is: it can mean "the site
+  blocks this" or "the persona could not find it". The `falseBlocked` rate is the honest
+  measure of that ceiling and should be shown to users, not hidden.
+- A harness gap surfaced: per-goal runs persisted screenshots but not the step trail or a
+  useful finish summary ("session finished"), so the one miss could not be fully diagnosed
+  from artifacts. Fixed-forward item, noted below.
+
+### Pre-registered for the next run
+
+1. **Persist the step trail and the real finish summary per goal**, so a miss is
+   diagnosable without rerunning.
+2. **Each goal 3x**, reporting all runs, to turn point estimates into rates with error
+   bars — especially on the achievable goals, where navigation variance lives.
+3. **A second target** with heavier interaction (a checkout / multi-step form), the case
+   where task success is most valuable and most likely to be hard.
+4. Metric and thresholds unchanged, so runs stay comparable.
