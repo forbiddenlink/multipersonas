@@ -6,8 +6,40 @@ import { Persona, generateSystemPrompt } from "./types.js";
 import { DEFAULT_MODEL } from "../agent/engine.js";
 import { assertUrlAllowed } from "../security/url-guard.js";
 
+export class PersonaGenerationError extends Error {
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = "PersonaGenerationError";
+  }
+}
+
+/**
+ * The model sometimes returns the persona list as a JSON *string* rather than an
+ * array — `{"personas": "{\"personas\": [...]}"}`, double-encoded and sometimes
+ * re-wrapped. Observed against a real target on 2026-07-16; strict validation
+ * rejected a perfectly good set of personas and the caller silently fell back to
+ * generic ones. Unwrap it here rather than lose the work.
+ */
+export function coercePersonaList(value: unknown): unknown {
+  let v = value;
+  for (let i = 0; i < 3 && typeof v === "string"; i++) {
+    try {
+      v = JSON.parse(v);
+    } catch {
+      return value; // not JSON — hand it back and let validation report properly
+    }
+  }
+  // Unwrap a re-nested {personas: [...]} envelope.
+  while (v && typeof v === "object" && !Array.isArray(v) && "personas" in v) {
+    v = (v as { personas: unknown }).personas;
+  }
+  return v;
+}
+
 const personaSchema = z.object({
-  personas: z.array(
+  personas: z.preprocess(
+    coercePersonaList,
+    z.array(
     z.object({
       id: z.string().describe("kebab-case unique identifier"),
       name: z.string(),
@@ -26,7 +58,8 @@ const personaSchema = z.object({
       connectionSpeed: z.enum(["fast", "3g", "slow-3g"]),
       maxSteps: z.number(),
       patienceLevel: z.enum(["low", "medium", "high"]),
-    })
+    }),
+    ),
   ),
 });
 
@@ -42,10 +75,19 @@ interface WebsiteSignals {
   language: string;
 }
 
-async function extractWebsiteSignals(url: string): Promise<WebsiteSignals> {
-  const safeUrl = await assertUrlAllowed(url);
+async function extractWebsiteSignals(
+  url: string,
+  options: GenerateOptions = {},
+): Promise<WebsiteSignals> {
+  const safeUrl = await assertUrlAllowed(url, { allowPrivate: options.allowPrivate });
   const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
+  // Generate from the app, not from its login form. Without the session the
+  // model only ever sees "Sign in", so it invents prospective-buyer personas who
+  // then hunt for a pricing page inside a dashboard (observed 2026-07-16).
+  const context = await browser.newContext(
+    options.sessionFile ? { storageState: options.sessionFile } : {},
+  );
+  const page = await context.newPage();
 
   try {
     await page.goto(safeUrl.href, { waitUntil: "domcontentloaded", timeout: 30000 });
@@ -147,12 +189,20 @@ is both inaccurate and harmful. Do not mention screen readers, blindness, colour
 blindness, or motor impairment.`;
 }
 
+export interface GenerateOptions {
+  /** Forwarded to the URL guard; CLI-only, never set by the hosted service. */
+  allowPrivate?: boolean;
+  /** Saved session, so personas are derived from the signed-in app. */
+  sessionFile?: string;
+}
+
 export async function generatePersonasFromUrl(
   url: string,
-  count: number = 5
+  count: number = 5,
+  options: GenerateOptions = {},
 ): Promise<Persona[]> {
   try {
-    const signals = await extractWebsiteSignals(url);
+    const signals = await extractWebsiteSignals(url, options);
     const prompt = buildPromptFromSignals(signals, count);
 
     const { object } = await generateObject({
@@ -171,8 +221,15 @@ export async function generatePersonasFromUrl(
       return { ...persona, systemPrompt: generateSystemPrompt(persona) };
     });
   } catch (error) {
-    console.error("Persona generation from URL failed:", error);
-    return getDefaultPersonas(count);
+    // Do not quietly hand back generic personas. They are written for a public
+    // marketing page, so against an application they hunt for a pricing page
+    // inside a dashboard and file findings about its absence — which is what
+    // happened on 2026-07-16, while the run still looked successful. A caller
+    // that wants the generic set can ask for it; it must not arrive by accident.
+    throw new PersonaGenerationError(
+      `Could not build personas from ${url}: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
+    );
   }
 }
 
@@ -215,104 +272,13 @@ blindness, or motor impairment.`;
       return { ...persona, systemPrompt: generateSystemPrompt(persona) };
     });
   } catch (error) {
-    console.error("Persona generation from description failed:", error);
-    return getDefaultPersonas(count);
+    // Same reasoning as generatePersonasFromUrl: silently substituting generic
+    // personas for the ones the caller described produces a plausible-looking
+    // report about the wrong user entirely.
+    throw new PersonaGenerationError(
+      `Could not build personas from that description: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
+    );
   }
 }
 
-function getDefaultPersonas(count: number): Persona[] {
-  const defaults: Omit<Persona, "systemPrompt">[] = [
-    {
-      id: "default-general-user",
-      name: "Jordan",
-      description: "a 30-year-old professional evaluating this product",
-      goals: ["Understand what the product does", "Find pricing", "Evaluate fit for their needs"],
-      frustrations: ["Confusing navigation", "Hidden information", "Slow load times"],
-      techProficiency: 3,
-      viewport: { width: 1440, height: 900 },
-      isMobile: false,
-      connectionSpeed: "fast",
-      kind: "ux",
-      inputModality: "pointer",
-      maxSteps: 20,
-      patienceLevel: "medium",
-    },
-    {
-      id: "default-mobile-user",
-      name: "Priya",
-      description: "a 26-year-old browsing on mobile with limited time",
-      goals: ["Quickly find key information", "Complete a task on mobile"],
-      frustrations: ["Tiny tap targets", "Slow loading", "Desktop-only features"],
-      techProficiency: 3,
-      viewport: { width: 375, height: 812 },
-      isMobile: true,
-      connectionSpeed: "3g",
-      kind: "ux",
-      inputModality: "pointer",
-      maxSteps: 15,
-      patienceLevel: "low",
-    },
-    {
-      // Replaced "Robert, a 50-year-old with low vision using screen
-      // magnification". Zoom reflow is a real thing to test, but it is a
-      // deterministic viewport check, not a character. No fake disabled users.
-      id: "default-keyboard-traversal",
-      name: "Keyboard traversal",
-      description:
-        "an automated harness that drives the site using only the keyboard, so axe can scan the states it reaches",
-      kind: "traversal",
-      goals: [
-        "Reach the main content region and enumerate landmark and heading structure",
-        "Complete the primary action using only the keyboard",
-        "Open and dismiss any dialog or expandable region, so each state gets scanned",
-      ],
-      frustrations: [
-        "Controls that cannot be reached or operated with the keyboard",
-        "Focus that becomes trapped and cannot move onward",
-        "Focus order that does not follow the visual or DOM order",
-      ],
-      techProficiency: 5,
-      viewport: { width: 1440, height: 900 },
-      isMobile: false,
-      connectionSpeed: "fast",
-      inputModality: "keyboard",
-      maxSteps: 25,
-      patienceLevel: "high",
-    },
-    {
-      id: "default-power-user",
-      name: "Chen",
-      description: "a 35-year-old developer looking for technical details",
-      goals: ["Find API documentation", "Check integrations", "Evaluate technical architecture"],
-      frustrations: ["Marketing fluff", "No code examples", "Required signup for docs"],
-      techProficiency: 5,
-      viewport: { width: 1440, height: 900 },
-      isMobile: false,
-      connectionSpeed: "fast",
-      kind: "ux",
-      inputModality: "pointer",
-      maxSteps: 20,
-      patienceLevel: "low",
-    },
-    {
-      id: "default-non-technical",
-      name: "Barbara",
-      description: "a 62-year-old retiree unfamiliar with modern web apps",
-      goals: ["Understand what this is", "Find help or support", "Feel safe giving personal info"],
-      frustrations: ["Jargon", "Complex forms", "No phone support", "Unclear pricing"],
-      techProficiency: 1,
-      viewport: { width: 1440, height: 900 },
-      isMobile: false,
-      connectionSpeed: "fast",
-      kind: "ux",
-      inputModality: "pointer",
-      maxSteps: 25,
-      patienceLevel: "high",
-    },
-  ];
-
-  return defaults.slice(0, count).map((p) => ({
-    ...p,
-    systemPrompt: generateSystemPrompt(p),
-  }));
-}

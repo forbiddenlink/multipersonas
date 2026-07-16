@@ -187,7 +187,10 @@ program
       const count = parseInt(options.count, 10);
       const genSpinner = ora(`Generating ${count} personas from URL...`).start();
       try {
-        personas = await generatePersonasFromUrl(url, count);
+        personas = await generatePersonasFromUrl(url, count, {
+          allowPrivate: options.allowPrivate,
+          sessionFile: options.session,
+        });
         genSpinner.succeed(`Generated ${personas.length} personas`);
       } catch (error) {
         genSpinner.fail(`Failed to generate personas: ${error instanceof Error ? error.message : String(error)}`);
@@ -339,14 +342,19 @@ program
   .argument("<url>", "URL to generate personas for")
   .option("--count <n>", "Number of personas to generate", "4")
   .option("--describe <text>", "Generate personas from a text description instead of URL analysis")
-  .action(async (url: string, options: { count: string; describe?: string }) => {
+  .option("--allow-private", "Allow localhost / private-network targets. For your own app or staging box.")
+  .option("--session <file>", "Saved session from `mpersonas auth`, so personas are derived from the signed-in app.")
+  .action(async (url: string, options: { count: string; describe?: string; allowPrivate?: boolean; session?: string }) => {
     const count = parseInt(options.count, 10);
     const spinner = ora(`Generating ${count} personas...`).start();
 
     try {
       const personas = options.describe
         ? await generatePersonasFromDescription(options.describe, count)
-        : await generatePersonasFromUrl(url, count);
+        : await generatePersonasFromUrl(url, count, {
+            allowPrivate: options.allowPrivate,
+            sessionFile: options.session,
+          });
 
       spinner.succeed(`Generated ${personas.length} personas`);
       console.log("");
