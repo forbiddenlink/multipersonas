@@ -3,7 +3,7 @@ import * as path from "path";
 import { chromium } from "playwright";
 import type { Persona } from "../personas/types.js";
 import { runPersonaAgent, type AgentResult, type Finding } from "./engine.js";
-import { runAxeScan } from "./axe-scan.js";
+import { mergeAxeFindings } from "./axe-scan.js";
 import { generateMarkdownReport, type PersonaReport } from "../report/generator.js";
 import { assertUrlAllowed } from "../security/url-guard.js";
 
@@ -34,8 +34,10 @@ export interface ProgressEvent {
 export interface TestResult {
   url: string;
   date: string;
-  overallScore: number;
+  /** How many personas achieved their goal. The headline number. */
+  taskSuccess: TaskSuccess;
   personas: PersonaTestResult[];
+  /** Every distinct axe defect, merged across all states all personas reached. */
   axeFindings: Finding[];
   conflicts: PersonaConflict[];
   reportPath: string;
@@ -44,7 +46,6 @@ export interface TestResult {
 export interface PersonaTestResult {
   persona: Persona;
   agentResult: AgentResult;
-  score: number;
 }
 
 export interface PersonaConflict {
@@ -55,28 +56,29 @@ export interface PersonaConflict {
   suggestion: string;
 }
 
-// --- Score computation ---
+/**
+ * Task success: of the personas who tried, how many got what they came for.
+ *
+ * This replaces a 0-100 composite that subtracted 20 per critical finding from
+ * a nominal 100. That number was fabricated precision and, worse, useless: any
+ * real application trips enough axe rules to floor it, so a healthy Metabase
+ * scored 0/100 and so would everything else. A metric that is always zero
+ * cannot show you improved.
+ *
+ * This is an observation instead of a judgement — the same thing moderated
+ * usability testing has always measured — so it moves when the site gets better
+ * and it means the same thing to everyone reading it.
+ */
+export interface TaskSuccess {
+  achieved: number;
+  total: number;
+}
 
-function computePersonaScore(findings: Finding[], goalCompleted: boolean): number {
-  let score = 100;
-  for (const f of findings) {
-    switch (f.severity) {
-      case "critical":
-        score -= 20;
-        break;
-      case "serious":
-        score -= 10;
-        break;
-      case "moderate":
-        score -= 5;
-        break;
-      case "minor":
-        score -= 2;
-        break;
-    }
-  }
-  if (!goalCompleted) score -= 15;
-  return Math.max(0, Math.min(100, score));
+function computeTaskSuccess(results: PersonaTestResult[]): TaskSuccess {
+  return {
+    achieved: results.filter((r) => r.agentResult.goalCompleted).length,
+    total: results.length,
+  };
 }
 
 // --- Conflict detection ---
@@ -161,27 +163,10 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
 
   fs.mkdirSync(outputDir, { recursive: true });
 
-  // 1. Run axe-core scan (shared across all personas)
+  // axe now runs inside each persona run, at every state that persona reaches,
+  // and results are merged below. A single scan of the entry page here would
+  // only re-measure what a free tool already measures.
   let axeFindings: Finding[] = [];
-  if (runAxe) {
-    onProgress?.({ type: "axe_start", message: "Running axe-core accessibility scan..." });
-    try {
-      const safeUrl = validatedUrl;
-      const browser = await chromium.launch({ headless: true });
-      // The session applies here too: otherwise axe scans the login form and
-      // reports its violations as though they were the application's.
-      const context = await browser.newContext(
-        sessionFile ? { storageState: sessionFile } : {},
-      );
-      const page = await context.newPage();
-      await page.goto(safeUrl.href, { waitUntil: "domcontentloaded", timeout: 30_000 });
-      axeFindings = await runAxeScan(page);
-      await browser.close();
-      onProgress?.({ type: "axe_complete", message: `axe-core: ${axeFindings.length} accessibility issues found` });
-    } catch (error) {
-      onProgress?.({ type: "axe_complete", message: `axe-core scan failed: ${error instanceof Error ? error.message : String(error)}` });
-    }
-  }
 
   // 2. Run persona agents
   const runSinglePersona = async (persona: Persona): Promise<PersonaTestResult> => {
@@ -191,21 +176,20 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
     fs.mkdirSync(personaOutputDir, { recursive: true });
 
     try {
-      const agentResult = await runPersonaAgent(url, persona, personaOutputDir, { allowPrivate, sessionFile });
-      const allFindings = [...agentResult.findings, ...axeFindings];
-      const score = computePersonaScore(allFindings, agentResult.goalCompleted);
+      const agentResult = await runPersonaAgent(url, persona, personaOutputDir, { allowPrivate, sessionFile, runAxe });
 
       const status = agentResult.goalCompleted ? "goal achieved" : "blocked";
       onProgress?.({
         type: "persona_complete",
         persona: persona.id,
-        message: `${persona.name}: ${agentResult.totalSteps} steps, ${allFindings.length} issues, ${status}`,
+        message: `${persona.name}: ${agentResult.totalSteps} steps, ${agentResult.pagesVisited.length} states, ${agentResult.findings.length} UX issues, ${status}`,
       });
 
-      return { persona, agentResult, score };
+      return { persona, agentResult };
     } catch (error) {
       const failedResult: AgentResult = {
         findings: [],
+        axeFindings: [],
         steps: [],
         pagesVisited: [url],
         goalCompleted: false,
@@ -218,11 +202,7 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
         message: `${persona.name} failed: ${error instanceof Error ? error.message : String(error)}`,
       });
 
-      return {
-        persona,
-        agentResult: failedResult,
-        score: computePersonaScore(axeFindings, false),
-      };
+      return { persona, agentResult: failedResult };
     }
   };
 
@@ -235,8 +215,7 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
       // Should not happen since runSinglePersona catches internally, but handle anyway
       return {
         persona: personas[i],
-        agentResult: { findings: [], steps: [], pagesVisited: [url], goalCompleted: false, totalSteps: 0 },
-        score: 0,
+        agentResult: { findings: [], axeFindings: [], steps: [], pagesVisited: [url], goalCompleted: false, totalSteps: 0 },
       };
     });
   } else {
@@ -250,10 +229,15 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
   // 3. Detect conflicts
   const conflicts = detectConflicts(personaResults);
 
-  // 4. Compute overall score
-  const overallScore = personaResults.length > 0
-    ? Math.round(personaResults.reduce((sum, r) => sum + r.score, 0) / personaResults.length)
-    : 0;
+  // Merge every persona's axe results into one list of distinct defects. Without
+  // this the same nav-bar violation is reported once per persona per page, and
+  // the issue count measures how many personas you hired (the report claimed 30
+  // issues where there were 14 — 2026-07-16).
+  axeFindings = runAxe
+    ? mergeAxeFindings(personaResults.flatMap((r) => r.agentResult.axeFindings))
+    : [];
+
+  const taskSuccess = computeTaskSuccess(personaResults);
 
   // 5. Generate report
   onProgress?.({ type: "report_start", message: "Generating report..." });
@@ -261,7 +245,6 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
   const personaReports: PersonaReport[] = personaResults.map((pr) => ({
     persona: pr.persona,
     agentResult: pr.agentResult,
-    axeFindings,
   }));
 
   // Persist the raw results BEFORE rendering anything. Every persona run above
@@ -271,13 +254,13 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
   const resultsPath = path.join(outputDir, "results.json");
   fs.writeFileSync(
     resultsPath,
-    JSON.stringify({ url, personas: personaResults, axeFindings, conflicts }, null, 2),
+    JSON.stringify({ url, taskSuccess, personas: personaResults, axeFindings, conflicts }, null, 2),
   );
 
   const reportPath = path.join(outputDir, "report.md");
   let renderedPath = resultsPath;
   try {
-    fs.writeFileSync(reportPath, generateMarkdownReport(url, personaReports));
+    fs.writeFileSync(reportPath, generateMarkdownReport(url, personaReports, axeFindings));
     renderedPath = reportPath;
     onProgress?.({ type: "report_complete", message: `Report saved to ${reportPath}` });
   } catch (error) {
@@ -292,7 +275,7 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
   return {
     url,
     date: new Date().toISOString().split("T")[0],
-    overallScore,
+    taskSuccess,
     personas: personaResults,
     axeFindings,
     conflicts,

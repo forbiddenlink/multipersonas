@@ -6,6 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import type { Persona } from "../personas/types.js";
 import { assertUrlAllowed, isUrlAllowed, isInScope, BlockedUrlError } from "../security/url-guard.js";
+import { runAxeScan, mergeAxeFindings } from "./axe-scan.js";
 
 /**
  * Per-run guard settings threaded down to every navigation decision.
@@ -29,6 +30,8 @@ export interface GuardOptions {
    * Unset means unrestricted — only for tests; every real run sets it.
    */
   scopeOrigin?: string;
+  /** Scan each reached state with axe. Default true; --no-axe turns it off. */
+  runAxe?: boolean;
 }
 
 // --- Types ---
@@ -41,6 +44,18 @@ export interface Finding {
   recommendation: string;
   pageUrl: string;
   screenshotPath?: string;
+
+  // Set for axe findings only. They make a defect identifiable across the many
+  // states a persona walks through, so the same broken component is one finding
+  // rather than one per page.
+  /** axe rule id, e.g. "color-contrast". */
+  ruleId?: string;
+  /** CSS path of the offending element. */
+  target?: string;
+  /** Markup snippet, for locating it in source. */
+  html?: string;
+  /** Every state this defect was observed in. */
+  seenOn?: string[];
 }
 
 export interface StepRecord {
@@ -54,6 +69,11 @@ export interface StepRecord {
 
 export interface AgentResult {
   findings: Finding[];
+  /**
+   * axe violations from every state this persona reached — the deterministic
+   * half of the report, and the reason reaching deep states is worth paying for.
+   */
+  axeFindings: Finding[];
   steps: StepRecord[];
   pagesVisited: string[];
   goalCompleted: boolean;
@@ -353,6 +373,7 @@ export async function runPersonaAgent(
   fs.mkdirSync(screenshotDir, { recursive: true });
 
   const findings: Finding[] = [];
+  const axeFindings: Finding[] = [];
   const steps: StepRecord[] = [];
   const pagesVisited = new Set<string>();
   let goalCompleted = false;
@@ -397,6 +418,7 @@ export async function runPersonaAgent(
     // Navigate to target
     await page.goto(safeUrl.href, { waitUntil: "domcontentloaded", timeout: 30_000 });
     pagesVisited.add(page.url());
+    if (guard.runAxe !== false) axeFindings.push(...(await runAxeScan(page)));
 
     // Take initial screenshot
     const initialScreenshot = path.join(screenshotDir, "step-000.png");
@@ -586,6 +608,18 @@ export async function runPersonaAgent(
 
       pagesVisited.add(page.url());
 
+      // Scan the state this action produced. Cheap next to a model call, and it
+      // is the whole reason for walking this far in: a filtered dashboard or an
+      // open dialog is a state no crawler reaches, so nothing else will ever
+      // scan it. Deduped by (rule, element) at the end.
+      if (guard.runAxe !== false && toolName !== "report_finding") {
+        try {
+          axeFindings.push(...(await runAxeScan(page)));
+        } catch {
+          // A failed scan must not end a paid-for session.
+        }
+      }
+
       const detail =
         toolName === "navigate"
           ? String(input.url)
@@ -627,6 +661,7 @@ export async function runPersonaAgent(
 
   return {
     findings,
+    axeFindings: mergeAxeFindings(axeFindings),
     steps,
     pagesVisited: [...pagesVisited],
     goalCompleted,

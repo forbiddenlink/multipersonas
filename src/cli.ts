@@ -10,6 +10,7 @@ import { personaLibrary, personasByCategory } from "./personas/library.js";
 import { RETIRED_PERSONA_IDS } from "./personas/prebuilt.js";
 import { generatePersonasFromUrl, generatePersonasFromDescription } from "./personas/generator.js";
 import { runMultiPersonaTest, type ProgressEvent } from "./agent/orchestrator.js";
+import { groupAxeByRule } from "./report/generator.js";
 import type { Persona } from "./personas/types.js";
 import { getAllPersonas, saveCustomPersona, deleteCustomPersona, isCustomPersona } from "./personas/custom.js";
 import { generateSystemPrompt } from "./personas/types.js";
@@ -314,22 +315,30 @@ program
       console.log("");
     }
 
-    // Print summary
-    const critical = result.axeFindings.filter((f) => f.severity === "critical").length +
-      result.personas.flatMap((p) => p.agentResult.findings).filter((f) => f.severity === "critical").length;
-    const serious = result.axeFindings.filter((f) => f.severity === "serious").length +
-      result.personas.flatMap((p) => p.agentResult.findings).filter((f) => f.severity === "serious").length;
+    // Lead with task success: it is the number that means something and the
+    // one that moves when the site improves.
+    const { achieved, total } = result.taskSuccess;
+    const uxFindings = result.personas.flatMap((p) => p.agentResult.findings);
+    const states = new Set(result.personas.flatMap((p) => p.agentResult.pagesVisited));
+    const sev = (list: typeof uxFindings, s: string) => list.filter((f) => f.severity === s).length;
 
-    if (critical > 0) {
-      console.log(chalk.red(`  ${critical} critical issues found`));
-    }
-    if (serious > 0) {
-      console.log(chalk.yellow(`  ${serious} serious issues found`));
-    }
-    if (critical === 0 && serious === 0) {
-      console.log(chalk.green("  No critical or serious issues found"));
-    }
-    console.log(chalk.dim(`  Overall score: ${result.overallScore}/100`));
+    console.log("");
+    const successColour = achieved === total ? chalk.green : achieved === 0 ? chalk.red : chalk.yellow;
+    console.log(successColour(`  Task success: ${achieved}/${total} personas achieved their goal`));
+    console.log(chalk.dim(`  States reached: ${states.size}`));
+    // Count distinct rules, matching the report. Counting elements says "94
+    // defects" where the report says 15, and two numbers for one thing is how a
+    // buyer decides neither is true.
+    const axeGroups = groupAxeByRule(result.axeFindings);
+    const groupSev = (s: string) => axeGroups.filter((g) => g.severity === s).length;
+    console.log(
+      `  Accessibility: ${axeGroups.length} defects` +
+        chalk.dim(` (${groupSev("critical")} critical, ${groupSev("serious")} serious) across ${result.axeFindings.length} elements — axe-core`),
+    );
+    console.log(
+      `  UX observations: ${uxFindings.length}` +
+        chalk.dim(` (${sev(uxFindings, "critical")} critical, ${sev(uxFindings, "serious")} serious) — AI judgement`),
+    );
     console.log(chalk.dim(`  Report: ${result.reportPath}`));
     console.log("");
   });

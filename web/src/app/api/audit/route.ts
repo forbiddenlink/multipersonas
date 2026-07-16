@@ -167,14 +167,14 @@ export async function POST(request: Request) {
     // Transform to simplified response (no file paths)
     const response = {
       url: result.url,
-      overallScore: result.overallScore,
+      taskSuccess: result.taskSuccess,
       personas: result.personas.map((pr) => ({
         id: pr.persona.id,
         name: pr.persona.name,
         description: pr.persona.description,
-        score: pr.score,
         goalCompleted: pr.agentResult.goalCompleted,
         totalSteps: pr.agentResult.totalSteps,
+        statesReached: pr.agentResult.pagesVisited.length,
         findings: pr.agentResult.findings.map((f) => ({
           severity: f.severity,
           category: f.category,

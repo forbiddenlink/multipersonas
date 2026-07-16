@@ -10,18 +10,22 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PERSONA_DATA } from "@/lib/personas";
-import { scoreColor, scoreLabel, scoreRingColor, scoreBgGlow, scoreStrokeColor } from "@/lib/score";
+import { scoreColor, scoreStrokeColor } from "@/lib/score";
 
 export interface AuditResponse {
   url: string;
-  overallScore: number;
+  /**
+   * How many personas got what they came for. This replaced a 0-100 composite
+   * that was always 0 on any real application — see the orchestrator.
+   */
+  taskSuccess: { achieved: number; total: number };
   personas: Array<{
     id: string;
     name: string;
     description: string;
-    score: number;
     goalCompleted: boolean;
     totalSteps: number;
+    statesReached: number;
     findings: Array<{
       severity: string;
       category: string;
@@ -78,6 +82,12 @@ export function AuditResults({
   results: AuditResponse;
   onReset: () => void;
 }) {
+  // Drives the arc and its colour only. The label shows the real fraction —
+  // "0 of 3" is the finding, and rounding it to a percentage would hide that.
+  const successPct =
+    results.taskSuccess.total === 0
+      ? 0
+      : Math.round((results.taskSuccess.achieved / results.taskSuccess.total) * 100);
   return (
     <div className="w-full max-w-5xl mx-auto space-y-10">
       {/* Overall Score */}
@@ -87,26 +97,26 @@ export function AuditResults({
           <span className="text-foreground font-medium">{results.url}</span>
         </p>
         <div className="relative flex items-center justify-center size-36">
-          <svg className="absolute inset-0 -rotate-90" viewBox="0 0 120 120">
+          <svg className="absolute inset-0 -rotate-90" viewBox="0 0 120 120" aria-hidden="true">
             <circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" strokeWidth="6" className="text-muted/30" />
             <circle
               cx="60" cy="60" r="52" fill="none"
               strokeWidth="6" strokeLinecap="round"
-              stroke={scoreStrokeColor(results.overallScore)}
-              strokeDasharray={`${(results.overallScore / 100) * 327} 327`}
+              stroke={scoreStrokeColor(successPct)}
+              strokeDasharray={`${(successPct / 100) * 327} 327`}
               className="transition-all duration-1000 ease-out"
               style={{ animationDelay: "200ms" }}
             />
           </svg>
           <div className="flex flex-col items-center">
-            <span className={`text-4xl font-bold tabular-nums ${scoreColor(results.overallScore)}`}>
-              {results.overallScore}
+            <span className={`text-4xl font-bold tabular-nums ${scoreColor(successPct)}`}>
+              {results.taskSuccess.achieved}<span className="text-muted-foreground">/{results.taskSuccess.total}</span>
             </span>
-            <span className="sr-only">{scoreLabel(results.overallScore)}</span>
           </div>
         </div>
-        <p className="text-sm text-muted-foreground">Overall Score</p>
-        <p className={`text-sm font-medium ${scoreColor(results.overallScore)}`}>{scoreLabel(results.overallScore)}</p>
+        <p className="text-sm text-muted-foreground">
+          Personas who achieved their goal
+        </p>
       </div>
 
       {/* Persona Cards */}
@@ -116,9 +126,6 @@ export function AuditResults({
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>{persona.name}</CardTitle>
-                <span className={`text-lg font-bold tabular-nums ${scoreColor(persona.score)}`}>
-                  {persona.score} <span className="text-xs font-normal">{scoreLabel(persona.score)}</span>
-                </span>
               </div>
               <CardDescription>
                 {PERSONA_DATA[persona.id as keyof typeof PERSONA_DATA]?.role ?? persona.id}
@@ -132,14 +139,14 @@ export function AuditResults({
                   {persona.goalCompleted ? "Goal achieved" : "Blocked"}
                 </Badge>
                 <span className="text-xs text-muted-foreground">
-                  {persona.totalSteps} steps
+                  {persona.totalSteps} steps · {persona.statesReached} states
                 </span>
               </div>
 
               {persona.findings.length > 0 ? (
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-muted-foreground">
-                    Top findings ({persona.findings.length} total)
+                    UX observations ({persona.findings.length}) &mdash; AI judgement
                   </p>
                   {persona.findings.slice(0, 3).map((finding, i) => (
                     <div
