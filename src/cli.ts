@@ -11,6 +11,7 @@ import { RETIRED_PERSONA_IDS } from "./personas/prebuilt.js";
 import { generatePersonasFromUrl, generatePersonasFromDescription } from "./personas/generator.js";
 import { runMultiPersonaTest, type ProgressEvent } from "./agent/orchestrator.js";
 import { crawl } from "./crawler/crawl.js";
+import { evaluateGate, baselineFromFindings, type Severity } from "./crawler/gate.js";
 import { groupAxeByRule, generateScanReport } from "./report/generator.js";
 import type { Persona } from "./personas/types.js";
 import { getAllPersonas, saveCustomPersona, deleteCustomPersona, isCustomPersona, personaSource, hasProjectPersonas, PROJECT_DIR } from "./personas/custom.js";
@@ -66,7 +67,15 @@ program
   .option("--session <file>", "Saved session from `mpersonas auth`, to scan behind a login")
   .option("--max-pages <n>", "How many states to crawl", "40")
   .option("--allow-private", "Allow localhost / private-network targets. For your own app or staging box.")
-  .action(async (url: string, options: { output: string; session?: string; maxPages: string; allowPrivate?: boolean }) => {
+  .option("--fail-on <severity>", "Exit non-zero if a NEW defect at/above this severity is found (critical|serious|moderate|minor). For CI.")
+  .option("--baseline <file>", "Compare against this baseline; only defects not in it count as new")
+  .option("--update-baseline", "Write the current defects to --baseline (or ./mpersonas-baseline.json) and exit 0")
+  .action(async (url: string, options: { output: string; session?: string; maxPages: string; allowPrivate?: boolean; failOn?: string; baseline?: string; updateBaseline?: boolean }) => {
+    const VALID_SEVERITIES = ["critical", "serious", "moderate", "minor"];
+    if (options.failOn && !VALID_SEVERITIES.includes(options.failOn)) {
+      console.error(chalk.red(`  --fail-on must be one of: ${VALID_SEVERITIES.join(", ")}`));
+      process.exit(1);
+    }
     // Vet the target up front; crawl() checks again but this fails fast with a
     // readable message before launching a browser.
     try {
@@ -129,6 +138,50 @@ program
       console.log(chalk.yellow(`  Budget reached: ${result.skipped.length} more states not scanned (raise --max-pages)`));
     }
     console.log(chalk.dim(`  Report: ${reportPath}`));
+
+    // --update-baseline: snapshot current defects, exit clean.
+    if (options.updateBaseline) {
+      const baselinePath = options.baseline ?? "./mpersonas-baseline.json";
+      fs.writeFileSync(
+        baselinePath,
+        JSON.stringify(baselineFromFindings(result.findings, { url, createdAt: new Date().toISOString() }), null, 2),
+      );
+      console.log(chalk.green(`  Baseline written to ${baselinePath} (${groups.length} defects)`));
+      console.log("");
+      return;
+    }
+
+    // --fail-on: the CI gate. Fail only on NEW defects at/above the threshold.
+    if (options.failOn) {
+      let baseline = null;
+      if (options.baseline && fs.existsSync(options.baseline)) {
+        try {
+          baseline = JSON.parse(fs.readFileSync(options.baseline, "utf8"));
+        } catch {
+          console.error(chalk.red(`  Could not read baseline ${options.baseline}`));
+          process.exit(1);
+        }
+      } else if (options.baseline) {
+        console.log(chalk.yellow(`  No baseline at ${options.baseline} yet — every current defect counts as new. Create one with --update-baseline.`));
+      }
+
+      const gate = evaluateGate(result.findings, { failOn: options.failOn as Severity, baseline });
+      console.log("");
+      if (gate.fixed.length > 0) console.log(chalk.green(`  ${gate.fixed.length} defect(s) fixed since the baseline`));
+      if (gate.passed) {
+        console.log(chalk.green(`  Gate passed: no new defects at/above ${options.failOn}` + (gate.newDefects.length ? ` (${gate.newDefects.length} new below threshold)` : "")));
+        console.log("");
+        return;
+      }
+      console.log(chalk.red(`  Gate FAILED: ${gate.failing.length} new defect(s) at/above ${options.failOn}`));
+      for (const d of gate.failing.slice(0, 10)) {
+        console.log(chalk.dim(`    [${d.severity}] ${d.title}  ${d.target ?? ""}`));
+      }
+      if (gate.failing.length > 10) console.log(chalk.dim(`    …and ${gate.failing.length - 10} more`));
+      console.log("");
+      process.exit(gate.exitCode);
+    }
+
     console.log("");
   });
 

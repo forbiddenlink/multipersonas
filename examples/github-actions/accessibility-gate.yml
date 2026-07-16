@@ -1,0 +1,51 @@
+# Accessibility gate for pull requests.
+#
+# Crawls your app behind its login and fails the build on NEW accessibility
+# defects — not your existing backlog. Deterministic and keyless: `scan` runs
+# with no ANTHROPIC_API_KEY, so nothing secret is needed for the gate itself.
+#
+# Setup:
+#   1. Commit a baseline once, against your deployed app or a preview:
+#        npx mpersonas scan "$URL" --session session.json --baseline mpersonas-baseline.json --update-baseline
+#      Commit mpersonas-baseline.json.
+#   2. Provide a session for behind-login scanning. Capture it locally with
+#        npx mpersonas auth "$URL" --save session.json
+#      then store its CONTENTS as the MPERSONAS_SESSION secret. It holds live
+#      cookies — treat it like a password, and rotate it when it expires.
+#
+# For a public site with no login, drop the session steps entirely.
+
+name: Accessibility gate
+on: pull_request
+
+jobs:
+  a11y:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install -g mpersonas
+      - run: npx playwright install --with-deps chromium
+
+      # Session is optional — omit for a public site.
+      - name: Restore session
+        if: ${{ secrets.MPERSONAS_SESSION != '' }}
+        run: printf '%s' "$MPERSONAS_SESSION" > session.json && chmod 600 session.json
+        env:
+          MPERSONAS_SESSION: ${{ secrets.MPERSONAS_SESSION }}
+
+      - name: Scan and gate on new critical/serious defects
+        run: |
+          mpersonas scan "${{ vars.MPERSONAS_TARGET_URL }}" \
+            ${{ secrets.MPERSONAS_SESSION != '' && '--session session.json' || '' }} \
+            --baseline mpersonas-baseline.json \
+            --fail-on serious
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-report
+          path: mpersonas-report/scan.md

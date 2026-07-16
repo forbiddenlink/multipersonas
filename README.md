@@ -74,6 +74,24 @@ pnpm dev -- scan https://app.example.com --session ./session.json --max-pages 60
 `scan` writes a Markdown report of axe-core rule violations, grouped by rule, each
 listing its elements and every state it appeared in. No model calls.
 
+**Gate a build on it.** `scan` is deterministic and needs no `ANTHROPIC_API_KEY`, so it
+drops into CI. Baseline your current defects once, then fail only on new regressions:
+
+```bash
+# One time: snapshot today's defects as the accepted baseline, and commit it
+mpersonas scan https://app.example.com --session ./session.json \
+  --baseline mpersonas-baseline.json --update-baseline
+
+# In CI: exit non-zero only on NEW defects at/above a severity (existing backlog ignored)
+mpersonas scan https://app.example.com --session ./session.json \
+  --baseline mpersonas-baseline.json --fail-on serious
+```
+
+The baseline keys defects by a render-stable id, so framework-generated element ids
+(`#mantine-…`) don't read as regressions. A ready-to-use GitHub Action is in
+[`examples/github-actions/`](examples/github-actions/accessibility-gate.yml). Exit codes:
+`0` pass, `2` gate failed, `1` usage/runtime error.
+
 ### Run (personas — task success + usability opinion)
 
 ```bash
