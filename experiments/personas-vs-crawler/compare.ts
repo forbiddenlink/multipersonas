@@ -1,14 +1,16 @@
 import type { Finding } from "../../src/agent/engine.js";
+import { defectKey } from "../../src/agent/defect-key.js";
 
 /**
  * The pre-registered comparison. See README.md — the metric and the kill
  * criterion were committed before the crawler existed and must not move.
+ *
+ * Run 5 fix: the defect key now normalizes framework-generated selectors (the
+ * shared defectKey from the product), so the same element in two runs is one
+ * defect. Run 4 used a raw-selector key and its number is unreliable — this is
+ * the pre-registered correction, validated by self-check.ts.
  */
-
-/** A defect is a rule violated by a specific element. Not per page. */
-export function defectKey(f: Finding): string {
-  return `${f.ruleId ?? f.title}|${f.target ?? ""}`;
-}
+export { defectKey };
 
 export function defectSet(findings: Finding[]): Set<string> {
   return new Set(findings.map(defectKey));

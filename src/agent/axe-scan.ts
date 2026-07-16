@@ -1,6 +1,7 @@
 import { AxeBuilder } from "@axe-core/playwright";
 import type { Page } from "playwright";
 import type { Finding } from "./engine.js";
+import { defectKey } from "./defect-key.js";
 
 /**
  * Deterministic accessibility scanning.
@@ -80,9 +81,10 @@ export function mergeAxeFindings(findings: Finding[]): Finding[] {
   const byDefect = new Map<string, Finding>();
 
   for (const f of findings) {
-    // Fall back to the title for anything lacking a rule id, so a non-axe
-    // finding routed through here still dedupes on something meaningful.
-    const key = `${f.ruleId ?? f.title}|${f.target ?? f.pageUrl}`;
+    // Keyed on the normalized selector, so a component with a per-render random
+    // id (Mantine, Emotion, React useId) is one defect across states rather than
+    // a new one each time it renders. See defect-key.ts.
+    const key = defectKey(f);
     const existing = byDefect.get(key);
 
     if (!existing) {
