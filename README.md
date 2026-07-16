@@ -18,8 +18,11 @@ Two commands, and the split reflects what the evidence actually supports:
 defects a scripted crawler misses. They do not — a head-to-head on a real app
 (`experiments/personas-vs-crawler/`) found the crawler reached 4x more states for zero
 model cost. So personas are **not** pitched as an accessibility tool. Their surviving,
-distinct value is task-success and reaching states behind an interaction (open a menu,
-a dialog). That value is real and not yet independently validated.
+distinct value is task-success — a crawler cannot tell you whether a real-shaped user
+completed a flow — and it is **validated**: on a labelled probe set
+(`experiments/task-success-validity/`) the verdict never once claimed success on a
+genuinely impossible task (0% false-success, 90% agreement). n=1 target so far, so the
+next step is more targets, not a launch.
 
 - **Accessibility violations** come from **axe-core** — deterministic, citable, and
   the only thing here that touches compliance.
