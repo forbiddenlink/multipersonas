@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import * as os from "os";
 import * as path from "path";
 import * as fs from "fs";
-import { prebuiltPersonas } from "@engine/personas/prebuilt";
+import { personaLibrary } from "@engine/personas/library";
 import { runMultiPersonaTest } from "@engine/agent/orchestrator";
 import { assertUrlAllowed, BlockedUrlError } from "@engine/security/url-guard";
 import { createClient } from "@/lib/supabase/server";
+import { saveAudit } from "@/lib/audits";
+import { DEFAULT_PERSONA_IDS, MAX_PERSONAS } from "@/lib/personas";
 
 // Rate limiting: authenticated users get 3/10min, anonymous get 1/hour.
 //
@@ -89,7 +91,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { url?: string };
+  let body: { url?: string; personaIds?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -130,15 +132,20 @@ export async function POST(request: Request) {
   );
 
   try {
-    // Select the 3 built-in personas
-    const personaIds = [
-      "first-time-visitor",
-      "keyboard-traversal",
-      "mobile-slow-connection",
-    ] as const;
+    // Pick the personas to run. The client may request a subset by id; anything not
+    // in the engine library is dropped, and the count is capped (each persona is a
+    // full agent loop — model cost + wall-clock). Empty/absent -> the core three.
+    const requested = Array.isArray(body.personaIds)
+      ? body.personaIds.filter((id): id is string => typeof id === "string")
+      : [];
+    const validIds = [...new Set(requested)].filter((id) => id in personaLibrary);
+    const chosenIds = (validIds.length > 0 ? validIds : DEFAULT_PERSONA_IDS).slice(
+      0,
+      MAX_PERSONAS,
+    );
 
-    const personas = personaIds.map((id) => {
-      const persona = prebuiltPersonas[id];
+    const personas = chosenIds.map((id) => {
+      const persona = personaLibrary[id];
       if (!persona) throw new Error(`Persona ${id} not found`);
       return persona;
     });
@@ -195,7 +202,18 @@ export async function POST(request: Request) {
       })),
     };
 
-    return NextResponse.json(response);
+    // Persist for signed-in users so it shows in their history. Best-effort:
+    // a failed save must not fail the audit — the result is already in hand.
+    let savedId: string | null = null;
+    if (user) {
+      try {
+        savedId = await saveAudit(supabase, user.id, response);
+      } catch {
+        savedId = null;
+      }
+    }
+
+    return NextResponse.json({ ...response, id: savedId });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown error occurred";

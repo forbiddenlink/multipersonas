@@ -12,8 +12,8 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 // Mock the engine imports to avoid loading Playwright
-vi.mock("@engine/personas/prebuilt", () => ({
-  prebuiltPersonas: {
+vi.mock("@engine/personas/library", () => ({
+  personaLibrary: {
     "first-time-visitor": { id: "first-time-visitor", name: "Test" },
     "keyboard-traversal": { id: "keyboard-traversal", name: "Test" },
     "mobile-slow-connection": { id: "mobile-slow-connection", name: "Test" },
