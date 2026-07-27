@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { WaitlistForm } from "@/components/waitlist-form";
 import { Reveal } from "@/components/reveal";
+import { AuditTerminal } from "@/components/audit-terminal";
 
 export const metadata: Metadata = {
   title: "For agencies — one audit trail for every client site",
@@ -16,13 +17,6 @@ const SITES = [
   { domain: "meridian-clinic.com", status: "3 findings", note: "checkout · behind login", ok: false },
   { domain: "harborview-realty.com", status: "clean", note: "0 new · scanned 1h ago", ok: true },
   { domain: "atlas-freight.io", status: "1 finding", note: "contrast · dashboard", ok: false },
-];
-
-const AUDIT_ROWS = [
-  { code: "1.1.1", where: "/checkout — behind login", label: "Image button, no name", fail: true },
-  { code: "4.1.2", where: "/account settings", label: "Menu not keyboard-reachable", fail: true },
-  { code: "1.4.3", where: "/pricing", label: "Contrast 3.9:1 on helper text", fail: true },
-  { code: "task", where: "first-time visitor", label: "Blocked at step 2 of checkout", fail: true },
 ];
 
 export default function ForAgenciesPage() {
@@ -65,42 +59,10 @@ export default function ForAgenciesPage() {
           </div>
         </div>
 
-        {/* Audit receipt — real WCAG codes, offset like a printout */}
-        <div className="relative lg:pl-4">
-          <div className="pointer-events-none absolute -inset-4 -z-10 rounded-3xl bg-primary/[0.04] blur-2xl" aria-hidden="true" />
-          <div className="rotate-[0.6deg] rounded-xl border border-border bg-card shadow-[0_24px_60px_-24px_rgba(0,0,0,0.45)]">
-            <div className="flex items-center justify-between border-b border-border px-5 py-3">
-              <span className="font-mono text-xs text-muted-foreground">
-                audit-log · meridian-clinic.com
-              </span>
-              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <span className="size-1.5 rounded-full bg-primary motion-safe:animate-pulse" />
-                live
-              </span>
-            </div>
-            <ul className="divide-y divide-dashed divide-border/70">
-              {AUDIT_ROWS.map((r) => (
-                <li key={r.code + r.where} className="flex items-start gap-3 px-5 py-3.5">
-                  <span
-                    className="mt-0.5 shrink-0 rounded px-1.5 py-0.5 font-mono text-[11px] font-medium tabular-nums"
-                    style={{
-                      color: "var(--severity-serious)",
-                      backgroundColor: "color-mix(in oklch, var(--severity-serious) 12%, transparent)",
-                    }}
-                  >
-                    {r.code}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm text-foreground">{r.label}</span>
-                    <span className="block font-mono text-xs text-muted-foreground">{r.where}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <div className="border-t border-border px-5 py-3 text-xs text-muted-foreground">
-              3 accessibility violations · 1 blocked task · report ready to export
-            </div>
-          </div>
+        {/* The product, visibly working — a persona auditing behind the login, live. */}
+        <div className="relative lg:pl-2">
+          <div className="pointer-events-none absolute -inset-6 -z-10 rounded-[2rem] bg-primary/[0.06] blur-3xl" aria-hidden="true" />
+          <AuditTerminal />
         </div>
       </section>
 
