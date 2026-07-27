@@ -24,3 +24,7 @@ mpersonas-report/
 .mpersonas-session.json
 *.session.json
 .saucedemo-session.json
+
+# workspace members share the root lockfile
+web/pnpm-lock.yaml
+worker/pnpm-lock.yaml
