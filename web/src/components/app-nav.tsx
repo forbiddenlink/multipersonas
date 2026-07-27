@@ -5,10 +5,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Personas", href: "/personas" },
+  { label: "Settings", href: "/settings" },
 ];
 
 export function AppNav({ userEmail }: { userEmail: string | null }) {
@@ -27,13 +29,16 @@ export function AppNav({ userEmail }: { userEmail: string | null }) {
       {/* Mobile header */}
       <div className="flex items-center justify-between border-b border-border bg-card px-4 py-3 md:hidden">
         <span className="text-lg font-semibold tracking-tight">MultiPersonas</span>
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
-          aria-label={mobileOpen ? "Close menu" : "Open menu"}
-        >
-          {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-        </button>
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+          >
+            {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile nav dropdown */}
@@ -91,6 +96,10 @@ export function AppNav({ userEmail }: { userEmail: string | null }) {
             </Link>
           ))}
         </nav>
+        <div className="flex items-center justify-between border-t border-border px-4 py-2">
+          <span className="text-xs text-muted-foreground">Theme</span>
+          <ThemeToggle />
+        </div>
         {userEmail && (
           <div className="border-t border-border p-3">
             <p className="truncate px-3 py-1 text-xs text-muted-foreground">{userEmail}</p>

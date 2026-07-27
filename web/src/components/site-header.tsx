@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export async function SiteHeader() {
   const supabase = await createClient();
@@ -11,6 +12,7 @@ export async function SiteHeader() {
         MultiPersonas
       </Link>
       <nav className="flex items-center gap-3">
+        <ThemeToggle />
         {user ? (
           <Link
             href="/dashboard"
