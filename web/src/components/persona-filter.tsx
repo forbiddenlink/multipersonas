@@ -41,6 +41,7 @@ export function PersonaFilter({
           variant={active === cat ? "default" : "secondary"}
           size="sm"
           onClick={() => handleClick(cat)}
+          aria-pressed={active === cat}
           className="rounded-full"
         >
           {categoryLabels[cat] ?? cat}

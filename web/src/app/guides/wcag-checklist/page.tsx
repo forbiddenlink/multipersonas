@@ -75,7 +75,7 @@ export default function WcagChecklistPage() {
       <div className="mt-12 rounded-xl border border-primary/20 bg-primary/5 p-6 text-center">
         <h2 className="text-lg font-semibold">Test your site automatically</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          MultiPersonas checks these criteria using AI personas that actually browse your site.
+          Personaudit checks these criteria using AI personas that actually browse your site.
         </p>
         <Link
           href="/"

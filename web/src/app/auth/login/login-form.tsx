@@ -22,9 +22,13 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [formError, setFormError] = useState(
-    searchParams.get("error") ? "Authentication failed. Check your email and password, or try GitHub." : ""
-  );
+  const [formError, setFormError] = useState(() => {
+    const err = searchParams.get("error");
+    if (err === "reset_expired")
+      return "That password reset link has expired or was already used. Request a new one from “Forgot password?” below.";
+    if (err) return "Authentication failed. Check your email and password, or try GitHub.";
+    return "";
+  });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -82,14 +86,14 @@ export function LoginForm() {
     <div className="flex min-h-dvh items-center justify-center px-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Sign in to MultiPersonas</CardTitle>
+          <CardTitle className="text-xl">Sign in to Personaudit</CardTitle>
           <CardDescription>
             Enter your credentials to continue
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {formError && (
-            <div id="form-error" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div id="form-error" role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {formError}
             </div>
           )}
@@ -128,7 +132,6 @@ export function LoginForm() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   aria-label={showPassword ? "Hide password" : "Show password"}
-                  tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>

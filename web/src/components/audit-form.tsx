@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { AuditResults, type AuditResponse } from "@/components/audit-results";
@@ -12,9 +12,16 @@ import {
   type PersonaId,
 } from "@/lib/personas";
 
-const STORAGE_KEY = "multipersonas-last-audit";
+const STORAGE_KEY = "personaudit-last-audit";
+const ACTIVE_JOB_KEY = "personaudit-active-job";
+const JOB_QUERY_PARAM = "job";
 
 type PersonaStatus = "pending" | "running" | "complete";
+
+interface ActiveJob {
+  jobId: string;
+  personaIds: string[];
+}
 
 function readStoredResults(): AuditResponse | null {
   if (typeof window === "undefined") return null;
@@ -26,9 +33,61 @@ function readStoredResults(): AuditResponse | null {
   }
 }
 
-/** Poll a queued audit job until it completes or fails. The run happens in a worker,
- * not the request, so the browser can take as long as it needs. */
-async function pollAuditJob(jobId: string): Promise<AuditResponse> {
+/** Read an in-flight job's id, preferring sessionStorage (survives a refresh) and
+ * falling back to the ?job= URL param (survives a copy/pasted or shared link). */
+function readActiveJob(): ActiveJob | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const saved = sessionStorage.getItem(ACTIVE_JOB_KEY);
+    if (saved) return JSON.parse(saved) as ActiveJob;
+  } catch {
+    // ignore malformed storage
+  }
+  try {
+    const jobId = new URLSearchParams(window.location.search).get(JOB_QUERY_PARAM);
+    if (jobId) return { jobId, personaIds: [...DEFAULT_PERSONA_IDS] };
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+/** Persist (or clear) the active job so neither a refresh nor the ~3-min client
+ * poll deadline can strand an anon scan the 1/hour quota won't let you resubmit. */
+function persistActiveJob(job: ActiveJob | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (job) {
+      sessionStorage.setItem(ACTIVE_JOB_KEY, JSON.stringify(job));
+    } else {
+      sessionStorage.removeItem(ACTIVE_JOB_KEY);
+    }
+  } catch {
+    // Storage full or unavailable — resume-on-refresh just won't work this session
+  }
+  try {
+    const url = new URL(window.location.href);
+    if (job) {
+      url.searchParams.set(JOB_QUERY_PARAM, job.jobId);
+    } else {
+      url.searchParams.delete(JOB_QUERY_PARAM);
+    }
+    window.history.replaceState(null, "", url);
+  } catch {
+    // ignore (e.g. a test environment without a full History API)
+  }
+}
+
+type PollOutcome =
+  | { status: "completed"; result: AuditResponse }
+  | { status: "failed"; error: string }
+  | { status: "timeout" };
+
+/** Poll a queued audit job until it completes, fails, or the client-side deadline
+ * passes. The run happens in a worker, not the request, so the browser can take as
+ * long as it needs — a "timeout" outcome means we stopped watching, not that the job
+ * died, so the caller decides whether to keep the jobId around for a manual re-check. */
+async function pollAuditJob(jobId: string): Promise<PollOutcome> {
   const deadlineMs = Date.now() + 3 * 60 * 1000;
   while (Date.now() < deadlineMs) {
     await new Promise((r) => setTimeout(r, 2500));
@@ -36,15 +95,16 @@ async function pollAuditJob(jobId: string): Promise<AuditResponse> {
     if (!res.ok) continue;
     const data = await res.json();
     if (data.status === "completed" && data.result) {
-      return data.result as AuditResponse;
+      return { status: "completed", result: data.result as AuditResponse };
     }
     if (data.status === "failed") {
-      throw new Error(data.error || "The audit failed. Please try again.");
+      return {
+        status: "failed",
+        error: data.error || "The audit failed. Please try again.",
+      };
     }
   }
-  throw new Error(
-    "The audit is taking longer than usual. If you're signed in, it'll appear in your history when it finishes.",
-  );
+  return { status: "timeout" };
 }
 
 export function AuditForm() {
@@ -52,15 +112,32 @@ export function AuditForm() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<Set<string>>(
-    () => new Set<string>(DEFAULT_PERSONA_IDS),
-  );
-  // Lazy initializer reads sessionStorage once on mount without an effect,
-  // avoiding react-hooks/set-state-in-effect cascading-render warnings.
-  const [results, setResults] = useState<AuditResponse | null>(readStoredResults);
+  // Lazy initializer reads sessionStorage once on mount without an effect, avoiding
+  // react-hooks/set-state-in-effect cascading-render warnings. An active job is only
+  // relevant when there isn't already a completed result to show.
+  const [init] = useState(() => {
+    const storedResults = readStoredResults();
+    const activeJob = storedResults ? null : readActiveJob();
+    return { storedResults, activeJob };
+  });
+  const [selected, setSelected] = useState<Set<string>>(() => {
+    const personaIds = init.activeJob?.personaIds.length
+      ? init.activeJob.personaIds
+      : DEFAULT_PERSONA_IDS;
+    return new Set<string>(personaIds);
+  });
+  const [results, setResults] = useState<AuditResponse | null>(() => init.storedResults);
   const [personaStatuses, setPersonaStatuses] = useState<
     Record<string, PersonaStatus>
   >({});
+  // Set once a job is enqueued (or resumed after a refresh) and cleared on a
+  // terminal state. A non-null value lets "Check status" re-poll the SAME job
+  // instead of re-submitting, which matters because anon audits are capped at 1/hour.
+  const [pendingJobId, setPendingJobId] = useState<string | null>(
+    () => init.activeJob?.jobId ?? null,
+  );
+  // The ~3-min client poll deadline was hit; the job is still running server-side.
+  const [timedOut, setTimedOut] = useState(false);
 
   // Selected personas in display order — drives both the request and the loading cards.
   const selectedPersonas = PERSONA_IDS.filter((id) => selected.has(id)).map(
@@ -79,34 +156,110 @@ export function AuditForm() {
     });
   }
 
+  /** Animate persona cards: all start pending, then stagger into "running". */
+  function animatePersonaStatuses(personaIds: string[]) {
+    const statuses: Record<string, PersonaStatus> = {};
+    for (const id of personaIds) {
+      statuses[id] = "pending";
+    }
+    setPersonaStatuses(statuses);
+
+    personaIds.forEach((id, i) => {
+      setTimeout(() => {
+        setPersonaStatuses((prev) => ({ ...prev, [id]: "running" }));
+      }, i * 600);
+    });
+  }
+
+  /** Poll `jobId` to completion. Shared by a fresh submit, a mount-time resume, and
+   * a manual "Check status" click so none of those paths can ever re-submit. */
+  async function watchJob(jobId: string, personaIds: string[]) {
+    setLoading(true);
+    setTimedOut(false);
+    setError(null);
+    animatePersonaStatuses(personaIds);
+
+    const outcome = await pollAuditJob(jobId);
+
+    if (outcome.status === "timeout") {
+      // Keep the jobId persisted — the scan is still running server-side, and
+      // discarding it here would strand the anon hourly quota unrecoverably.
+      setLoading(false);
+      setTimedOut(true);
+      return;
+    }
+
+    // Terminal state (completed or failed): nothing left to resume.
+    setLoading(false);
+    setPendingJobId(null);
+    persistActiveJob(null);
+
+    if (outcome.status === "failed") {
+      setError(outcome.error);
+      return;
+    }
+
+    const completed: Record<string, PersonaStatus> = {};
+    for (const id of personaIds) {
+      completed[id] = "complete";
+    }
+    setPersonaStatuses(completed);
+
+    setResults(outcome.result);
+
+    // Persist to sessionStorage so results survive refresh
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(outcome.result));
+    } catch {
+      // Storage full or unavailable — results still shown, just won't survive refresh
+    }
+
+    // Refresh server components so a signed-in user's new audit appears in
+    // their dashboard history immediately. No-op cost on the public landing.
+    router.refresh();
+  }
+
+  // On mount, resume an in-flight job (refresh mid-scan, or the deadline having
+  // been hit last visit) instead of showing a fresh empty form. `selected` and
+  // `pendingJobId` are already seeded from the same job via lazy initializers above;
+  // this effect only starts the actual poll (an external network operation), so it
+  // has nothing to set synchronously itself.
+  useEffect(() => {
+    if (!init.activeJob) return;
+    const { jobId, personaIds: storedPersonaIds } = init.activeJob;
+    const personaIds = storedPersonaIds.length ? storedPersonaIds : [...DEFAULT_PERSONA_IDS];
+    // Deferred a tick: watchJob sets state synchronously at its start (to show the
+    // loading UI without a stale-content frame), which react-hooks/set-state-in-effect
+    // flags when called directly from an effect body — queueMicrotask moves the call
+    // into its own callback, matching the rule's "setState in a callback" escape hatch.
+    queueMicrotask(() => {
+      void watchJob(jobId, personaIds);
+    });
+    // Resume-on-mount only — intentionally run once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleCheckStatus() {
+    if (!pendingJobId) return;
+    void watchJob(
+      pendingJobId,
+      selectedPersonas.map((p) => p.id),
+    );
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setResults(null);
     setLoading(true);
 
-    // Animate persona cards: all start pending, then go to running
-    const statuses: Record<string, PersonaStatus> = {};
-    for (const p of selectedPersonas) {
-      statuses[p.id] = "pending";
-    }
-    setPersonaStatuses({ ...statuses });
-
-    // Stagger the "running" state for visual effect
-    for (let i = 0; i < selectedPersonas.length; i++) {
-      setTimeout(() => {
-        setPersonaStatuses((prev) => ({
-          ...prev,
-          [selectedPersonas[i].id]: "running",
-        }));
-      }, i * 600);
-    }
+    const personaIds = selectedPersonas.map((p) => p.id);
 
     try {
       const res = await fetch("/api/audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, personaIds: [...selected] }),
+        body: JSON.stringify({ url, personaIds }),
       });
 
       const data = await res.json();
@@ -123,35 +276,19 @@ export function AuditForm() {
         return;
       }
 
+      const jobId = data.jobId as string;
+      setPendingJobId(jobId);
+      persistActiveJob({ jobId, personaIds });
+
       // The audit runs in a worker; poll until it finishes.
-      const auditResults = await pollAuditJob(data.jobId as string);
-
-      const completed: Record<string, PersonaStatus> = {};
-      for (const p of selectedPersonas) {
-        completed[p.id] = "complete";
-      }
-      setPersonaStatuses(completed);
-
-      setResults(auditResults);
-
-      // Persist to sessionStorage so results survive refresh
-      try {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(auditResults));
-      } catch {
-        // Storage full or unavailable — results still shown, just won't survive refresh
-      }
-
-      // Refresh server components so a signed-in user's new audit appears in
-      // their dashboard history immediately. No-op cost on the public landing.
-      router.refresh();
+      await watchJob(jobId, personaIds);
     } catch (err) {
+      setLoading(false);
       setError(
         err instanceof Error
           ? err.message
           : "Failed to connect to the server. Please try again.",
       );
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -160,6 +297,9 @@ export function AuditForm() {
     setResults(null);
     setError(null);
     setPersonaStatuses({});
+    setPendingJobId(null);
+    setTimedOut(false);
+    persistActiveJob(null);
     try {
       sessionStorage.removeItem(STORAGE_KEY);
     } catch {
@@ -233,23 +373,33 @@ export function AuditForm() {
 
       {error && (
         <div className="mt-4 text-center">
-          {error === "Authentication required" ? (
-            <p className="text-sm text-muted-foreground">
-              <a href="/auth/signup" className="text-primary underline underline-offset-4 hover:text-primary/80">
-                Create a free account
-              </a>
-              {" "}to run audits and save your results.
-            </p>
-          ) : error.includes("audit limit") ? (
-            <p className="text-sm text-yellow-400">{error}</p>
+          {error.includes("audit limit") ? (
+            <p className="text-sm" style={{ color: "var(--severity-moderate)" }}>{error}</p>
           ) : (
             <p className="text-sm text-destructive">{error}</p>
           )}
         </div>
       )}
 
+      {timedOut && (
+        <div role="status" className="mt-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            Still running — this can take a few minutes. Check back or refresh; we&apos;ll pick it up.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-2"
+            onClick={handleCheckStatus}
+          >
+            Check status
+          </Button>
+        </div>
+      )}
+
       {loading && (
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        <div role="status" aria-live="polite" className="mt-8 grid gap-4 sm:grid-cols-3">
           {selectedPersonas.map((persona) => {
             const status = personaStatuses[persona.id] || "pending";
             return (

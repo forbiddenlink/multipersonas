@@ -108,7 +108,7 @@ export default function CommonIssuesPage() {
       <div className="mt-12 rounded-xl border border-primary/20 bg-primary/5 p-6 text-center">
         <h2 className="text-lg font-semibold">Find these automatically — even behind a login</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          MultiPersonas runs axe-core at every state it reaches, including authenticated pages a
+          Personaudit runs axe-core at every state it reaches, including authenticated pages a
           single-URL scan never sees. No signup required.
         </p>
         <Link

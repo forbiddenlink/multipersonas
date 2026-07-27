@@ -32,6 +32,8 @@ export interface AuditResponse {
       title: string;
       description: string;
       recommendation: string;
+      /** The state (page URL) the finding was observed in, when known. */
+      location?: string;
     }>;
   }>;
   axeFindings: Array<{
@@ -39,6 +41,8 @@ export interface AuditResponse {
     title: string;
     description: string;
     recommendation: string;
+    /** The state(s) the finding was observed in, when known. */
+    location?: string;
   }>;
   conflicts: Array<{ description: string; suggestion: string }>;
 }
@@ -109,7 +113,7 @@ export function AuditResults({
             />
           </svg>
           <div className="flex flex-col items-center">
-            <span className={`text-4xl font-bold tabular-nums ${scoreColor(successPct)}`}>
+            <span className="text-4xl font-bold tabular-nums" style={{ color: scoreColor(successPct) }}>
               {results.taskSuccess.achieved}<span className="text-muted-foreground">/{results.taskSuccess.total}</span>
             </span>
           </div>
@@ -165,6 +169,11 @@ export function AuditResults({
                       <p className="text-xs text-muted-foreground line-clamp-2">
                         {finding.description}
                       </p>
+                      {finding.location && (
+                        <p className="text-xs text-muted-foreground/70">
+                          Found at: {finding.location}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -202,6 +211,11 @@ export function AuditResults({
                 <p className="text-xs text-muted-foreground/70">
                   {finding.recommendation}
                 </p>
+                {finding.location && (
+                  <p className="text-xs text-muted-foreground/70">
+                    Found at: {finding.location}
+                  </p>
+                )}
               </div>
             ))}
           </div>

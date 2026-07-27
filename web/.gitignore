@@ -41,3 +41,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .audit-report.md
+
+# agent scratch cache
+.claude/

@@ -21,5 +21,9 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/auth/login?error=auth`);
+  // A failed exchange whose destination was the password-reset page means the recovery
+  // link is expired/used — surface that distinctly so login shows reset-specific copy
+  // instead of a misleading "check your password" message.
+  const errorCode = redirectPath.startsWith("/auth/update-password") ? "reset_expired" : "auth";
+  return NextResponse.redirect(`${origin}/auth/login?error=${errorCode}`);
 }

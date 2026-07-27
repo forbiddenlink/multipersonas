@@ -15,6 +15,8 @@ declare module "multipersonas/orchestrator" {
     title: string;
     description: string;
     recommendation: string;
+    pageUrl: string;
+    seenOn?: string[];
   }
   export interface EnginePersonaResult {
     persona: { id: string; name: string; description: string };
@@ -34,6 +36,8 @@ declare module "multipersonas/orchestrator" {
       title: string;
       description: string;
       recommendation: string;
+      pageUrl: string;
+      seenOn?: string[];
     }[];
     conflicts: { description: string; suggestion: string }[];
   }

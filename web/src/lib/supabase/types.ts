@@ -7,6 +7,8 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
@@ -323,13 +325,40 @@ export type Database = {
         }
         Relationships: []
       }
+      waitlist: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          note: string | null
+          sites_count: string | null
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          note?: string | null
+          sites_count?: string | null
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          note?: string | null
+          sites_count?: string | null
+          source?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       claim_audit_job: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           attempts: number
           completed_at: string | null
@@ -342,6 +371,12 @@ export type Database = {
           status: string
           url: string
           user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "audit_jobs"
+          isOneToOne: true
+          isSetofReturn: false
         }
       }
       consume_rate_limit: {

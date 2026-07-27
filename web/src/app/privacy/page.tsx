@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "How MultiPersonas handles your data, authentication, and AI-generated audit results.",
+  description: "How Personaudit handles your data, authentication, and AI-generated audit results.",
 };
 
 export default function PrivacyPage() {
@@ -12,7 +12,7 @@ export default function PrivacyPage() {
       <h1 className="text-2xl font-semibold tracking-tight font-heading">Privacy Policy</h1>
       <div className="mt-6 space-y-4 text-sm text-muted-foreground">
         <p>
-          MultiPersonas collects your email address and password hash for authentication.
+          Personaudit collects your email address and password hash for authentication.
           We use Supabase for auth and data storage.
         </p>
         <p>

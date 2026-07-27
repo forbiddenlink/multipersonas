@@ -8,19 +8,19 @@ import {
 } from "@/lib/score";
 
 describe("scoreColor", () => {
-  it("returns green for scores >= 80", () => {
-    expect(scoreColor(80)).toBe("text-green-400");
-    expect(scoreColor(100)).toBe("text-green-400");
+  it("returns the minor severity token for scores >= 80", () => {
+    expect(scoreColor(80)).toBe("var(--severity-minor)");
+    expect(scoreColor(100)).toBe("var(--severity-minor)");
   });
 
-  it("returns yellow for scores 50-79", () => {
-    expect(scoreColor(50)).toBe("text-yellow-400");
-    expect(scoreColor(79)).toBe("text-yellow-400");
+  it("returns the moderate severity token for scores 50-79", () => {
+    expect(scoreColor(50)).toBe("var(--severity-moderate)");
+    expect(scoreColor(79)).toBe("var(--severity-moderate)");
   });
 
-  it("returns red for scores < 50", () => {
-    expect(scoreColor(0)).toBe("text-red-400");
-    expect(scoreColor(49)).toBe("text-red-400");
+  it("returns the critical severity token for scores < 50", () => {
+    expect(scoreColor(0)).toBe("var(--severity-critical)");
+    expect(scoreColor(49)).toBe("var(--severity-critical)");
   });
 });
 

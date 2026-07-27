@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import {
   personaLibrary,
@@ -6,6 +7,10 @@ import {
 import { PersonaCard } from "@/components/persona-card";
 import { PersonaFilter } from "@/components/persona-filter";
 import { Separator } from "@/components/ui/separator";
+
+export const metadata: Metadata = {
+  title: "Personas",
+};
 
 export default async function PersonasPage({
   searchParams,

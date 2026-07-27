@@ -15,16 +15,16 @@ const dmSerif = DM_Serif_Display({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://multipersonas.dev"
+    process.env.NEXT_PUBLIC_SITE_URL || "https://personaudit.com"
   ),
   title: {
-    default: "MultiPersonas — Accessibility scanning behind your login",
-    template: "%s | MultiPersonas",
+    default: "Personaudit — accessibility scanning, plus a persona task-success layer",
+    template: "%s | Personaudit",
   },
-  description: "Crawl your site with a saved session and run axe-core at every state — including checkout, dashboards, and authenticated flows a page-level scanner never reaches. Deterministic findings; credentials never leave your machine.",
+  description: "Scan a public URL with axe-core for deterministic accessibility violations, and run UX personas that browse toward a goal to measure whether a real-shaped user completes the flow. To scan behind your login, use the CLI — your credentials never leave your machine.",
   openGraph: {
     type: "website",
-    siteName: "MultiPersonas",
+    siteName: "Personaudit",
   },
   twitter: {
     card: "summary_large_image",
