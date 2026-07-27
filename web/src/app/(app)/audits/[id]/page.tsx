@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { PERSONA_DATA } from "@/lib/personas";
 import { scoreColor, scoreStrokeColor } from "@/lib/score";
+import { formatLocation } from "@/lib/format-location";
 
 export const metadata: Metadata = {
   title: "Audit details",
@@ -179,9 +180,9 @@ export default async function AuditDetailPage({
                         <p className="text-xs text-muted-foreground line-clamp-2">
                           {f.description}
                         </p>
-                        {f.page_url && (
+                        {formatLocation(f.page_url) && (
                           <p className="text-xs text-muted-foreground/70">
-                            Found at: {f.page_url}
+                            Found at: {formatLocation(f.page_url)}
                           </p>
                         )}
                       </div>
@@ -216,9 +217,9 @@ export default async function AuditDetailPage({
                 <p className="text-xs text-muted-foreground/70">
                   {f.recommendation}
                 </p>
-                {f.page_url && (
+                {formatLocation(f.page_url) && (
                   <p className="text-xs text-muted-foreground/70">
-                    Found at: {f.page_url}
+                    Found at: {formatLocation(f.page_url)}
                   </p>
                 )}
               </div>

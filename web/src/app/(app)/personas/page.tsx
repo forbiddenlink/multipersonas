@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import {
   personaLibrary,
@@ -33,11 +34,19 @@ export default async function PersonasPage({
 
   return (
     <div>
-      <div className="mb-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Personas</h1>
-        <p className="mt-1 text-muted-foreground">
-          Explore the AI personas that test your site
-        </p>
+      <div className="mb-1 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Personas</h1>
+          <p className="mt-1 text-muted-foreground">
+            Explore the AI personas that test your site
+          </p>
+        </div>
+        <Link
+          href="/dashboard"
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          Run an audit &rarr;
+        </Link>
       </div>
 
       <Separator className="my-4" />

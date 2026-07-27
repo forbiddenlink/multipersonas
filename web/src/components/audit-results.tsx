@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PERSONA_DATA } from "@/lib/personas";
+import { formatLocation } from "@/lib/format-location";
 import { scoreColor, scoreStrokeColor } from "@/lib/score";
 
 export interface AuditResponse {
@@ -169,9 +170,9 @@ export function AuditResults({
                       <p className="text-xs text-muted-foreground line-clamp-2">
                         {finding.description}
                       </p>
-                      {finding.location && (
+                      {formatLocation(finding.location) && (
                         <p className="text-xs text-muted-foreground/70">
-                          Found at: {finding.location}
+                          Found at: {formatLocation(finding.location)}
                         </p>
                       )}
                     </div>
@@ -211,9 +212,9 @@ export function AuditResults({
                 <p className="text-xs text-muted-foreground/70">
                   {finding.recommendation}
                 </p>
-                {finding.location && (
+                {formatLocation(finding.location) && (
                   <p className="text-xs text-muted-foreground/70">
-                    Found at: {finding.location}
+                    Found at: {formatLocation(finding.location)}
                   </p>
                 )}
               </div>
