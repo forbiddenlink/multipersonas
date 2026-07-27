@@ -1,6 +1,5 @@
 import * as fs from "fs";
 import * as path from "path";
-import { chromium } from "playwright";
 import type { Persona } from "../personas/types.js";
 import { runPersonaAgent, type AgentResult, type Finding } from "./engine.js";
 import { mergeAxeFindings } from "./axe-scan.js";
@@ -159,7 +158,7 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
   // The per-persona and axe paths below both swallow errors into a scored
   // "failed" result, so validating only in there would report a blocked URL as
   // a passing audit instead of refusing it.
-  const validatedUrl = await assertUrlAllowed(url, { allowPrivate });
+  await assertUrlAllowed(url, { allowPrivate });
 
   fs.mkdirSync(outputDir, { recursive: true });
 
