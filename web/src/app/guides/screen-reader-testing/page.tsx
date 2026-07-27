@@ -46,8 +46,9 @@ export default function ScreenReaderTestingPage() {
     <div className="mx-auto max-w-3xl px-6 py-16">
       <h1 className="text-3xl font-bold tracking-tight font-heading">Screen Reader Testing Guide</h1>
       <p className="mt-4 text-muted-foreground">
-        Testing with a screen reader is the gold standard for accessibility validation.
-        Here&apos;s how to do it — or let AI do it for you.
+        Testing with a real screen reader — ideally with disabled testers — is the gold
+        standard for accessibility validation. Nothing automated replaces it. Here&apos;s how
+        to do it, and where automated tooling can clear the deterministic issues first.
       </p>
 
       <h2 className="mt-10 text-xl font-semibold">Screen readers to use</h2>
@@ -76,10 +77,12 @@ export default function ScreenReaderTestingPage() {
       </div>
 
       <div className="mt-12 rounded-xl border border-primary/20 bg-primary/5 p-6 text-center">
-        <h2 className="text-lg font-semibold">Automate screen reader testing</h2>
+        <h2 className="text-lg font-semibold">Clear the automatable issues first</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          MultiPersonas simulates a screen reader user browsing your site — checking headings,
-          labels, ARIA, and keyboard navigation automatically.
+          MultiPersonas does <strong>not</strong> simulate a screen reader user. It drives your
+          site keyboard-only and runs axe-core at every state it reaches — including flows behind
+          your login — so the deterministic violations are fixed before your manual screen-reader
+          pass. It complements that pass; it never replaces it.
         </p>
         <Link
           href="/"

@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "MultiPersonas — AI accessibility testing with simulated user personas";
+export const alt = "MultiPersonas — accessibility scanning for the pages behind your login";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -59,7 +59,7 @@ export default function OGImage() {
             letterSpacing: "-0.03em",
           }}
         >
-          Test your website through the eyes of real users
+          Scan the pages a crawler can&apos;t reach
         </div>
         <div
           style={{
@@ -70,7 +70,7 @@ export default function OGImage() {
             maxWidth: "600px",
           }}
         >
-          AI personas with diverse accessibility needs browse your site and report what breaks
+          Crawls behind your login and runs axe-core at every state a page-level scan never sees
         </div>
         <div
           style={{
@@ -79,7 +79,7 @@ export default function OGImage() {
             marginTop: "48px",
           }}
         >
-          {["Screen Reader User", "First-Time Visitor", "Mobile / Slow"].map((name) => (
+          {["Behind login", "axe-core verdicts", "CI-gated"].map((name) => (
             <div
               key={name}
               style={{

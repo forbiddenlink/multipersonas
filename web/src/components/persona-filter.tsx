@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 const categoryLabels: Record<string, string> = {
   all: "All",
-  accessibility: "Accessibility",
+  reachability: "Reachability",
   mobile: "Mobile",
   enterprise: "Enterprise",
   technical: "Technical",

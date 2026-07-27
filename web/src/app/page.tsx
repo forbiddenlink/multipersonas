@@ -7,55 +7,51 @@ import Link from "next/link";
 const steps = [
   {
     number: "1",
-    title: "Enter your URL",
-    description: "Paste any website URL — public or staging",
+    title: "Point it at a URL",
+    description:
+      "Public, or behind a login using a saved browser session — your credentials never leave your machine",
   },
   {
     number: "2",
-    title: "AI personas browse your site",
+    title: "It crawls every reachable state",
     description:
-      "A screen reader user, first-time visitor, and mobile user each navigate your site independently",
+      "Authenticated pages, checkout, and multi-step flows a single-URL scanner never sees",
   },
   {
     number: "3",
-    title: "Get findings you can fix",
+    title: "axe-core renders the verdict",
     description:
-      "See what broke, what confused, and what failed WCAG — with fix suggestions",
+      "Deterministic, citable violations at each state — plus a persona task-success check. Gate CI on new defects.",
   },
 ];
 
-const sampleFindings = [
+// axe-core violations — the deterministic core. These mirror the real report shape
+// (rule, severity, where it was found), not an invented per-persona score.
+const sampleViolations = [
   {
-    persona: "Sarah",
-    role: "First-Time Visitor",
-    score: 72,
-    finding: "Navigation menu has no visible focus indicators — keyboard users can't tell where they are",
-    severity: "serious" as const,
-  },
-  {
-    persona: "Keyboard traversal",
-    role: "Reachability",
-    score: 45,
-    finding:
-      "Checkout step 2 is reachable only by pointer — axe never scanned it, and it has 3 unlabelled inputs",
+    title: "Form inputs have no associated label",
     severity: "critical" as const,
+    where: "Checkout step 2 — reached only behind the login",
   },
   {
-    persona: "Maria",
-    role: "Mobile / Slow Connection",
-    score: 81,
-    finding: "Hero image is 2.4 MB with no lazy loading — takes 8 seconds on 3G",
+    title: "Interactive control not reachable by keyboard",
+    severity: "serious" as const,
+    where: "Account settings — dropdown menu",
+  },
+  {
+    title: "Insufficient text contrast (3.9:1)",
     severity: "moderate" as const,
+    where: "Dashboard — muted helper text",
   },
 ];
 
-function severityDot(severity: "critical" | "serious" | "moderate") {
-  const colors = {
-    critical: "bg-[oklch(0.65_0.20_25)]",
-    serious: "bg-[oklch(0.72_0.16_55)]",
-    moderate: "bg-[oklch(0.78_0.12_85)]",
-  };
-  return colors[severity];
+function severityDotStyle(severity: "critical" | "serious" | "moderate") {
+  const token = {
+    critical: "var(--severity-critical)",
+    serious: "var(--severity-serious)",
+    moderate: "var(--severity-moderate)",
+  }[severity];
+  return { backgroundColor: token };
 }
 
 function severityLabel(severity: "critical" | "serious" | "moderate") {
@@ -70,32 +66,33 @@ export default function Home() {
       {/* Hero */}
       <section id="main" className="flex flex-col items-center justify-center px-6 py-24 sm:py-32 text-center">
         <Badge variant="secondary" className="mb-6">
-          AI-Powered Accessibility Testing
+          Accessibility testing · behind your login
         </Badge>
         <h1 className="max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl font-heading">
-          Test your website through the eyes of real users
+          Scan the pages a crawler can&apos;t reach
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-          AI personas with diverse backgrounds, accessibility needs, and tech
-          proficiency levels browse your site and report what breaks.
+          MultiPersonas crawls your site with a saved session — through checkout, dashboards, and
+          multi-step flows a page-level scanner never reaches — and runs <strong className="text-foreground">axe-core</strong> at
+          every state. Deterministic findings. Your credentials never leave your machine.
         </p>
       </section>
 
       {/* Metrics */}
       <div className="flex items-center justify-center gap-8 px-6 pb-8 sm:gap-12">
         <div className="text-center">
-          <p className="text-2xl font-bold tabular-nums text-primary">3</p>
-          <p className="text-xs text-muted-foreground">AI personas</p>
+          <p className="text-2xl font-bold tabular-nums text-primary">axe-core</p>
+          <p className="text-xs text-muted-foreground">the verdict engine</p>
         </div>
         <div className="h-8 w-px bg-border" />
         <div className="text-center">
-          <p className="text-2xl font-bold tabular-nums text-primary">WCAG 2.1</p>
-          <p className="text-xs text-muted-foreground">AA compliance</p>
+          <p className="text-2xl font-bold tabular-nums text-primary">Behind login</p>
+          <p className="text-xs text-muted-foreground">states a crawler skips</p>
         </div>
         <div className="h-8 w-px bg-border" />
         <div className="text-center">
-          <p className="text-2xl font-bold tabular-nums text-primary">Real</p>
-          <p className="text-xs text-muted-foreground">browser testing</p>
+          <p className="text-2xl font-bold tabular-nums text-primary">CI-ready</p>
+          <p className="text-xs text-muted-foreground">gate builds on new defects</p>
         </div>
       </div>
 
@@ -130,66 +127,97 @@ export default function Home() {
 
       <Separator />
 
-      {/* Sample Report */}
+      {/* What honesty looks like */}
+      <section className="mx-auto w-full max-w-3xl px-6 py-16">
+        <h2 className="mb-4 text-center text-2xl font-semibold tracking-tight font-heading">
+          Two outputs, never blurred
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-xl border border-border p-5">
+            <p className="font-medium">Accessibility violations</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              From <strong className="text-foreground">axe-core</strong> — deterministic, citable,
+              per state. This is the only output that touches compliance.
+            </p>
+          </div>
+          <div className="rounded-xl border border-border p-5">
+            <p className="font-medium">Usability &amp; task success</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              From UX personas — did a real-shaped user complete the flow? Opinion and outcome,
+              clearly labeled. Never a compliance verdict.
+            </p>
+          </div>
+        </div>
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          We don&apos;t simulate disabled users, and nothing here replaces testing with them —
+          for that, use{" "}
+          <a
+            href="https://makeitfable.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-4 hover:text-foreground"
+          >
+            Fable
+          </a>
+          .
+        </p>
+      </section>
+
+      <Separator />
+
+      {/* Sample Report — mirrors the real output shape */}
       <section className="mx-auto w-full max-w-5xl px-6 py-20" id="example">
         <h2 className="mb-4 text-center text-2xl font-semibold tracking-tight font-heading">
           What you get
         </h2>
         <p className="mx-auto mb-10 max-w-lg text-center text-sm text-muted-foreground">
-          Each persona browses your site independently and reports issues from their perspective.
-          Here&apos;s a sample from a real audit.
+          Deterministic axe-core violations grouped by rule and the states they appeared in,
+          plus how many personas reached their goal. Sample shown; real reports vary.
         </p>
 
-        {/* Score ring */}
-        <div className="mb-10 flex flex-col items-center gap-2">
-          <div className="relative flex items-center justify-center size-24">
-            <svg className="-rotate-90" viewBox="0 0 120 120" width="96" height="96">
-              <circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" strokeWidth="6" className="text-muted/30" />
-              <circle
-                cx="60" cy="60" r="52" fill="none"
-                strokeWidth="6" strokeLinecap="round"
-                stroke="oklch(0.78 0.12 85)"
-                strokeDasharray={`${(66 / 100) * 327} 327`}
-              />
-            </svg>
-            <span className="absolute text-2xl font-bold tabular-nums text-yellow-400">66</span>
-          </div>
-          <p className="text-xs text-muted-foreground">Overall Score</p>
-          <p className="text-xs font-medium text-yellow-400">Needs Work</p>
-        </div>
-
-        {/* Persona findings */}
-        <div className="grid gap-4 sm:grid-cols-3">
-          {sampleFindings.map((item) => (
-            <div
-              key={item.persona}
-              className="rounded-xl border border-border p-5 space-y-3 transition-all duration-200 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{item.persona}</p>
-                  <p className="text-xs text-muted-foreground">{item.role}</p>
-                </div>
-                <span className={`text-lg font-bold tabular-nums ${
-                  item.score >= 80 ? "text-green-400" : item.score >= 50 ? "text-yellow-400" : "text-red-400"
-                }`}>
-                  {item.score}
-                </span>
-              </div>
-              <div className="rounded-lg bg-muted/50 p-3">
-                <div className="mb-1 flex items-center gap-2">
-                  <span className={`size-2 shrink-0 rounded-full ${severityDot(item.severity)}`} />
-                  <span className="text-xs font-medium">{severityLabel(item.severity)}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">{item.finding}</p>
-              </div>
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:items-start">
+          {/* Task success — the real metric: a fraction, not a 0-100 score */}
+          <div className="flex flex-col items-center gap-2 rounded-xl border border-border p-6">
+            <div className="relative flex items-center justify-center size-24">
+              <svg className="-rotate-90" viewBox="0 0 120 120" width="96" height="96" aria-hidden="true">
+                <circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" strokeWidth="6" className="text-muted/30" />
+                <circle
+                  cx="60" cy="60" r="52" fill="none"
+                  strokeWidth="6" strokeLinecap="round"
+                  stroke="var(--severity-serious)"
+                  strokeDasharray={`${(2 / 3) * 327} 327`}
+                />
+              </svg>
+              <span className="absolute text-2xl font-bold tabular-nums">
+                2<span className="text-muted-foreground">/3</span>
+              </span>
             </div>
-          ))}
-        </div>
+            <p className="text-sm font-medium">Personas reached their goal</p>
+            <p className="text-center text-xs text-muted-foreground">
+              One was blocked at checkout — a task a crawler can&apos;t measure at all.
+            </p>
+          </div>
 
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-          Sample data from a real audit — your results will vary.
-        </p>
+          {/* axe violations — the deterministic core */}
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-muted-foreground">
+              Accessibility violations (axe-core)
+            </p>
+            {sampleViolations.map((v) => (
+              <div
+                key={v.title}
+                className="rounded-xl border border-border p-4 space-y-2 transition-all duration-200 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="size-2 shrink-0 rounded-full" style={severityDotStyle(v.severity)} />
+                  <span className="text-xs font-medium">{severityLabel(v.severity)}</span>
+                  <span className="text-sm font-medium">{v.title}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Found at: {v.where}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       <Separator />
@@ -197,10 +225,10 @@ export default function Home() {
       {/* Bottom CTA */}
       <section className="flex flex-col items-center gap-4 px-6 py-24 text-center">
         <h2 className="text-2xl font-semibold tracking-tight font-heading">
-          Ready to improve your site?
+          Ready to see what&apos;s behind your login?
         </h2>
         <p className="max-w-md text-muted-foreground">
-          Sign up to save your audit results and track fixes over time.
+          Sign up to save your reports and track which defects you&apos;ve cleared over time.
         </p>
         <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row">
           <Link
@@ -246,7 +274,8 @@ export default function Home() {
           </div>
         </div>
         <p className="mx-auto mt-4 max-w-5xl text-center text-xs text-muted-foreground/60">
-          Audit findings are generated by AI and should be verified manually.
+          Persona usability notes are generated by AI and should be verified manually. Accessibility
+          violations come from axe-core and are deterministic.
         </p>
       </footer>
 
