@@ -1,7 +1,7 @@
 export function scoreColor(score: number): string {
-  if (score >= 80) return "text-green-400";
-  if (score >= 50) return "text-yellow-400";
-  return "text-red-400";
+  if (score >= 80) return "var(--severity-minor)";
+  if (score >= 50) return "var(--severity-moderate)";
+  return "var(--severity-critical)";
 }
 
 export function scoreLabel(score: number): string {

@@ -22,19 +22,21 @@ export function AppNav({ userEmail }: { userEmail: string | null }) {
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/");
+    router.refresh();
   }
 
   return (
     <>
       {/* Mobile header */}
       <div className="flex items-center justify-between border-b border-border bg-card px-4 py-3 md:hidden">
-        <span className="text-lg font-semibold tracking-tight">MultiPersonas</span>
+        <span className="text-lg font-semibold tracking-tight">Personaudit</span>
         <div className="flex items-center gap-1">
           <ThemeToggle />
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
           >
             {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
@@ -77,7 +79,7 @@ export function AppNav({ userEmail }: { userEmail: string | null }) {
       <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-card md:flex">
         <div className="px-6 py-5">
           <Link href="/" className="text-lg font-semibold tracking-tight hover:text-primary">
-            MultiPersonas
+            Personaudit
           </Link>
         </div>
         <div className="mx-3 h-px bg-border" />

@@ -32,7 +32,11 @@ function hashString(str: string): number {
 
 function TechDots({ level }: { level: number }) {
   return (
-    <div className="flex items-center gap-1">
+    <div
+      className="flex items-center gap-1"
+      role="img"
+      aria-label={`Tech proficiency: ${level} of 5`}
+    >
       <span className="text-xs text-muted-foreground mr-1">Tech</span>
       {Array.from({ length: 5 }, (_, i) => (
         <span

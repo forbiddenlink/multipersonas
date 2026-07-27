@@ -79,7 +79,7 @@ export default function ScreenReaderTestingPage() {
       <div className="mt-12 rounded-xl border border-primary/20 bg-primary/5 p-6 text-center">
         <h2 className="text-lg font-semibold">Clear the automatable issues first</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          MultiPersonas does <strong>not</strong> simulate a screen reader user. It drives your
+          Personaudit does <strong>not</strong> simulate a screen reader user. It drives your
           site keyboard-only and runs axe-core at every state it reaches — including flows behind
           your login — so the deterministic violations are fixed before your manual screen-reader
           pass. It complements that pass; it never replaces it.

@@ -53,6 +53,7 @@ function toResponse(result: TestResult) {
         title: f.title,
         description: f.description,
         recommendation: f.recommendation,
+        location: f.pageUrl,
       })),
     })),
     axeFindings: result.axeFindings.map((f) => ({
@@ -60,6 +61,9 @@ function toResponse(result: TestResult) {
       title: f.title,
       description: f.description,
       recommendation: f.recommendation,
+      // seenOn holds every state the defect was de-duped across; fall back to
+      // pageUrl for the (rare) finding that never went through that grouping.
+      location: f.seenOn && f.seenOn.length > 0 ? f.seenOn.join(", ") : f.pageUrl,
     })),
     conflicts: result.conflicts.map((c) => ({
       description: c.description,

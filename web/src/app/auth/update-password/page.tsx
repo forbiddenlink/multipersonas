@@ -97,7 +97,7 @@ export default function UpdatePasswordPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {error && (
-            <div className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div id="update-password-error" role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {error}
             </div>
           )}
@@ -113,6 +113,7 @@ export default function UpdatePasswordPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="new-password"
+                  aria-describedby={error ? "update-password-error" : undefined}
                   className="pr-10"
                   required
                 />
@@ -121,7 +122,6 @@ export default function UpdatePasswordPage() {
                   onClick={() => setShow(!show)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   aria-label={show ? "Hide password" : "Show password"}
-                  tabIndex={-1}
                 >
                   {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>

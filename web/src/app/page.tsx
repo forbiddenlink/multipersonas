@@ -9,7 +9,7 @@ const steps = [
     number: "1",
     title: "Point it at a URL",
     description:
-      "Public, or behind a login using a saved browser session — your credentials never leave your machine",
+      "A public URL here in the browser, or behind a login using a saved session from the CLI — where your credentials never leave your machine",
   },
   {
     number: "2",
@@ -72,9 +72,10 @@ export default function Home() {
           Scan the pages a crawler can&apos;t reach
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-          MultiPersonas crawls your site with a saved session — through checkout, dashboards, and
+          Personaudit crawls your site with a saved session — through checkout, dashboards, and
           multi-step flows a page-level scanner never reaches — and runs <strong className="text-foreground">axe-core</strong> at
-          every state. Deterministic findings. Your credentials never leave your machine.
+          every state. Deterministic findings. Behind-login scanning runs from the CLI, so your
+          credentials never leave your machine.
         </p>
       </section>
 
@@ -225,10 +226,11 @@ export default function Home() {
       {/* Bottom CTA */}
       <section className="flex flex-col items-center gap-4 px-6 py-24 text-center">
         <h2 className="text-2xl font-semibold tracking-tight font-heading">
-          Ready to see what&apos;s behind your login?
+          Keep every audit you run.
         </h2>
         <p className="max-w-md text-muted-foreground">
-          Sign up to save your reports and track which defects you&apos;ve cleared over time.
+          Create an account and every scan you run from here on is saved to your dashboard,
+          so you can track which defects you&apos;ve cleared over time.
         </p>
         <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row">
           <Link
@@ -251,7 +253,7 @@ export default function Home() {
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 sm:flex-row sm:justify-between">
           <div className="text-center sm:text-left">
             <p className="text-sm text-muted-foreground">
-              MultiPersonas
+              Personaudit
             </p>
             <p className="text-xs text-muted-foreground/60">
               Built by{" "}
@@ -266,9 +268,11 @@ export default function Home() {
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+            <Link href="/for-agencies" className="py-2 transition-colors hover:text-foreground">For agencies</Link>
             <Link href="/guides/wcag-checklist" className="py-2 transition-colors hover:text-foreground">WCAG Checklist</Link>
             <Link href="/guides/common-accessibility-issues" className="py-2 transition-colors hover:text-foreground">Common Issues</Link>
-            <a href="mailto:hello@multipersonas.dev" className="py-2 transition-colors hover:text-foreground">Contact</a>
+            <Link href="/guides/screen-reader-testing" className="py-2 transition-colors hover:text-foreground">Screen Reader Testing</Link>
+            <a href="mailto:hello@personaudit.com" className="py-2 transition-colors hover:text-foreground">Contact</a>
             <Link href="/privacy" className="py-2 transition-colors hover:text-foreground">Privacy</Link>
             <Link href="/terms" className="py-2 transition-colors hover:text-foreground">Terms</Link>
           </div>
@@ -283,10 +287,9 @@ export default function Home() {
       <div className="h-16 sm:hidden" aria-hidden="true" />
 
       {/* Sticky mobile CTA */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm sm:hidden" aria-hidden="true">
+      <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm sm:hidden">
         <Link
           href="/auth/signup"
-          tabIndex={-1}
           className="block w-full rounded-md bg-primary py-3 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           Start your free audit

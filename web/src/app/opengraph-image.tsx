@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "MultiPersonas — accessibility scanning for the pages behind your login";
+export const alt = "Personaudit — accessibility scanning for the pages behind your login";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -46,7 +46,7 @@ export default function OGImage() {
             M
           </div>
           <span style={{ fontSize: "28px", fontWeight: 600, letterSpacing: "-0.02em" }}>
-            MultiPersonas
+            Personaudit
           </span>
         </div>
         <div

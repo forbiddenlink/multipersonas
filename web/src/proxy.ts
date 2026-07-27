@@ -36,7 +36,13 @@ export async function proxy(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/settings") ||
     request.nextUrl.pathname.startsWith("/personas");
 
-  const isAuthRoute = request.nextUrl.pathname.startsWith("/auth");
+  // /auth/update-password must stay reachable while authenticated: the password-reset
+  // recovery link lands there with a live session, and Settings → Change password sends an
+  // authed user there directly. /auth/callback must run to exchange the code — never bounce
+  // either, or both the reset-completion and change-password flows dead-end to /dashboard.
+  const isAuthRoute = request.nextUrl.pathname.startsWith("/auth") &&
+    !request.nextUrl.pathname.startsWith("/auth/update-password") &&
+    !request.nextUrl.pathname.startsWith("/auth/callback");
 
   if (isAppRoute && !user) {
     const url = request.nextUrl.clone();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ type FieldErrors = {
 };
 
 export function SignupForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -101,7 +103,7 @@ export function SignupForm() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -112,6 +114,15 @@ export function SignupForm() {
     if (error) {
       setFormError(error.message);
       setLoading(false);
+      return;
+    }
+
+    // If the project has email confirmation disabled, signUp returns an active session and
+    // the user is already logged in — send them straight to the dashboard instead of the
+    // (dead-end) "check your email" screen.
+    if (data.session) {
+      router.push("/dashboard");
+      router.refresh();
       return;
     }
 
@@ -166,11 +177,11 @@ export function SignupForm() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Create your account</CardTitle>
-          <CardDescription>Get started with MultiPersonas</CardDescription>
+          <CardDescription>Get started with Personaudit</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {formError && (
-            <div id="form-error" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div id="form-error" role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {formError}
             </div>
           )}
@@ -218,7 +229,6 @@ export function SignupForm() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   aria-label={showPassword ? "Hide password" : "Show password"}
-                  tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
@@ -252,7 +262,6 @@ export function SignupForm() {
                   onClick={() => setShowConfirm(!showConfirm)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   aria-label={showConfirm ? "Hide password" : "Show password"}
-                  tabIndex={-1}
                 >
                   {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
