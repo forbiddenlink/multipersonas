@@ -1,0 +1,19 @@
+# Railway service config for the audit worker (worker/README.md).
+#
+# The build context is the repo ROOT (the Dockerfile pulls in the engine + the worker
+# package), so this file lives at the root, not in worker/. The worker is a background
+# process — no HTTP port, no health check.
+#
+# Set these variables on the Railway service (never commit them):
+#   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY
+#   WORKER_POLL_MS (optional)
+
+[build]
+builder = "dockerfile"
+dockerfilePath = "worker/Dockerfile"
+
+[deploy]
+startCommand = "pnpm --filter worker start"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+numReplicas = 1
