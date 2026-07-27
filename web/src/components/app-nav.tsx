@@ -7,16 +7,23 @@ import { Menu, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-const navItems = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Personas", href: "/personas" },
-  { label: "Settings", href: "/settings" },
-];
-
-export function AppNav({ userEmail }: { userEmail: string | null }) {
+export function AppNav({
+  userEmail,
+  isAdmin = false,
+}: {
+  userEmail: string | null;
+  isAdmin?: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const navItems = [
+    { label: "Dashboard", href: "/dashboard" },
+    { label: "Personas", href: "/personas" },
+    { label: "Settings", href: "/settings" },
+    ...(isAdmin ? [{ label: "Waitlist", href: "/waitlist" }] : []),
+  ];
 
   async function handleSignOut() {
     const supabase = createClient();
