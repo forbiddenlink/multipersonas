@@ -59,3 +59,34 @@ pnpm dev -- <url>             # CLI
 ```
 
 For the web app, copy `.env.example` to `web/.env.local` and `cd web && pnpm dev`.
+
+## Deploying the worker to Railway
+
+Config is in `railway.toml` (root) — Dockerfile build from the repo root, background
+service, no port. Steps (run from the repo root; the `railway` CLI is already
+authenticated):
+
+```bash
+railway link                       # pick/create the project + service (interactive)
+railway variables --set SUPABASE_URL=... \
+                   --set SUPABASE_SERVICE_ROLE_KEY=... \
+                   --set ANTHROPIC_API_KEY=...          # secrets stay in Railway
+railway up                         # build worker/Dockerfile + deploy
+railway logs                       # expect "[worker] started; polling every 3000ms"
+```
+
+Set the SAME `SUPABASE_SERVICE_ROLE_KEY` on the Vercel app (so `/api/audit` can enqueue).
+
+### ⚠️ Network isolation on Railway (blocker #3 — not fully closed)
+
+Browserbase would give egress isolation for free; **Railway does not** — its containers
+have unrestricted outbound. The in-process `src/security/url-guard.ts` (rejects
+loopback/RFC1918/link-local/metadata and re-checks redirects) is the mitigation, but DNS
+rebinding — resolve here, Chromium re-resolves on connect — cannot be fully closed in
+process. So on Railway:
+
+- **Acceptable now** for trusted/first-party target URLs or a gated (non-public) rollout.
+- **Before fully-public anonymous audits:** either put the worker behind an egress firewall
+  that denies link-local + RFC1918, or route the browser through Browserbase (connect over
+  CDP) from the Railway worker. Until then, an attacker-supplied URL that rebinds DNS to an
+  internal address is a residual risk.
