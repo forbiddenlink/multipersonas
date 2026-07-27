@@ -8,59 +8,13 @@ import { assertUrlAllowed, BlockedUrlError } from "@engine/security/url-guard";
 import { createClient } from "@/lib/supabase/server";
 import { saveAudit } from "@/lib/audits";
 import { DEFAULT_PERSONA_IDS, MAX_PERSONAS } from "@/lib/personas";
+import { killSwitchEnabled } from "@/lib/limits";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import { reserveSpend } from "@/lib/spend";
 
-// Rate limiting: authenticated users get 3/10min, anonymous get 1/hour.
-//
-// ⚠️ NOT A REAL LIMIT YET. This Map is per-process: every serverless instance
-// keeps its own copy and loses it on recycle, so the ceiling is really
-// (limit x instances) and resets constantly. It also trusts X-Forwarded-For,
-// which a client can set freely.
-//
-// That is tolerable only while this route is unreachable in production (it
-// launches Chromium, which cannot run on Vercel — see docs/DEPLOYMENT.md).
-// Durable, shared rate limiting is a hard prerequisite for the public deploy
-// and is tracked as a Phase 1 blocker alongside the worker split, because the
-// enforcement point moves to the queue.
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-/** Cap on distinct keys held, so a spray of forged IPs can't grow the Map without bound. */
-const MAX_TRACKED_KEYS = 10_000;
-
-const LIMITS = {
-  authenticated: { max: 3, windowMs: 10 * 60 * 1000 },
-  anonymous: { max: 1, windowMs: 60 * 60 * 1000 },
-} as const;
-
-/** Drop expired entries; if still over the cap, evict oldest-expiring first. */
-function evict(now: number): void {
-  for (const [key, entry] of rateLimitMap) {
-    if (now > entry.resetAt) rateLimitMap.delete(key);
-  }
-  if (rateLimitMap.size <= MAX_TRACKED_KEYS) return;
-  const byExpiry = [...rateLimitMap.entries()].sort((a, b) => a[1].resetAt - b[1].resetAt);
-  for (const [key] of byExpiry.slice(0, rateLimitMap.size - MAX_TRACKED_KEYS)) {
-    rateLimitMap.delete(key);
-  }
-}
-
-function checkRateLimit(key: string, type: "authenticated" | "anonymous"): boolean {
-  const now = Date.now();
-  const { max, windowMs } = LIMITS[type];
-  evict(now);
-  const entry = rateLimitMap.get(key);
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + windowMs });
-    return true;
-  }
-
-  if (entry.count >= max) {
-    return false;
-  }
-
-  entry.count++;
-  return true;
-}
+// Rate limiting + spend cap are enforced durably in Postgres (lib/rate-limit.ts,
+// lib/spend.ts) — shared across instances and not resettable, unlike the in-process
+// Map this replaced. See docs/DEPLOYMENT.md and docs/PLAN-2026-07-26-phase2-deploy-infra.md.
 
 function getClientIP(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
@@ -69,24 +23,31 @@ function getClientIP(request: Request): string {
 }
 
 export async function POST(request: Request) {
+  // Global kill switch — freezes all runs regardless of limits (spend emergency stop).
+  if (killSwitchEnabled()) {
+    return NextResponse.json(
+      { error: "Audits are temporarily unavailable. Please try again later." },
+      { status: 503, headers: { "Retry-After": "3600" } },
+    );
+  }
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Rate limit: authenticated by user ID, anonymous by IP
+  // Rate limit: authenticated by user ID, anonymous by IP. Durable + shared (Postgres).
   const rateLimitKey = user?.id || `anon:${getClientIP(request)}`;
   const rateLimitType = user ? "authenticated" : "anonymous";
 
-  if (!checkRateLimit(rateLimitKey, rateLimitType)) {
-    const entry = rateLimitMap.get(rateLimitKey);
-    const retryAfter = entry ? Math.ceil((entry.resetAt - Date.now()) / 1000) : 600;
+  const rateLimit = await consumeRateLimit(rateLimitKey, rateLimitType);
+  if (!rateLimit.allowed) {
     const message = user
-      ? "You've reached the audit limit (3 per 10 minutes). Please wait and try again."
+      ? "You've reached the audit limit (5 per 10 minutes). Please wait and try again."
       : "Free audit limit reached (1 per hour). Sign up for more audits.";
     return NextResponse.json(
       { error: message },
       {
         status: 429,
-        headers: { "Retry-After": String(retryAfter) },
+        headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
       }
     );
   }
@@ -149,6 +110,15 @@ export async function POST(request: Request) {
       if (!persona) throw new Error(`Persona ${id} not found`);
       return persona;
     });
+
+    // Reserve this run's estimated model-call budget against the global daily cap,
+    // atomically, before spending anything. If we can't reserve, refuse the run.
+    if (!(await reserveSpend(personas.length))) {
+      return NextResponse.json(
+        { error: "Daily audit capacity reached. Please try again tomorrow." },
+        { status: 429, headers: { "Retry-After": "3600" } },
+      );
+    }
 
     // Run with a 2-minute timeout
     const controller = new AbortController();

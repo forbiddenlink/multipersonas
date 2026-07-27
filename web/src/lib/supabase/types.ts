@@ -182,6 +182,24 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          count: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          key: string
+          window_start?: string
+        }
+        Update: {
+          count?: number
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       test_runs: {
         Row: {
           completed_at: string | null
@@ -239,12 +257,37 @@ export type Database = {
           },
         ]
       }
+      usage_counters: {
+        Row: {
+          day: string
+          model_calls: number
+          runs: number
+        }
+        Insert: {
+          day: string
+          model_calls?: number
+          runs?: number
+        }
+        Update: {
+          day?: string
+          model_calls?: number
+          runs?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      consume_rate_limit: {
+        Args: { p_key: string; p_max: number; p_window_seconds: number }
+        Returns: boolean
+      }
+      reserve_model_calls: {
+        Args: { p_calls: number; p_cap: number }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
