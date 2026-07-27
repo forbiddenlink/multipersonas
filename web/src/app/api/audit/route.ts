@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
-import * as os from "os";
-import * as path from "path";
-import * as fs from "fs";
 import { personaLibrary } from "@engine/personas/library";
-import { runMultiPersonaTest } from "@engine/agent/orchestrator";
 import { assertUrlAllowed, BlockedUrlError } from "@engine/security/url-guard";
 import { createClient } from "@/lib/supabase/server";
-import { saveAudit } from "@/lib/audits";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { DEFAULT_PERSONA_IDS, MAX_PERSONAS } from "@/lib/personas";
 import { killSwitchEnabled } from "@/lib/limits";
 import { consumeRateLimit } from "@/lib/rate-limit";
@@ -86,114 +82,54 @@ export async function POST(request: Request) {
     throw error;
   }
 
-  // Create temp directory for output
-  const tmpDir = path.join(
-    os.tmpdir(),
-    `multipersonas-audit-${Date.now()}`
+  // Pick the personas to run. The client may request a subset by id; anything not in
+  // the engine library is dropped, and the count is capped (each persona is a full agent
+  // loop — model cost + wall-clock). Empty/absent -> the core three.
+  const requested = Array.isArray(body.personaIds)
+    ? body.personaIds.filter((id): id is string => typeof id === "string")
+    : [];
+  const validIds = [...new Set(requested)].filter((id) => id in personaLibrary);
+  const chosenIds = (validIds.length > 0 ? validIds : DEFAULT_PERSONA_IDS).slice(
+    0,
+    MAX_PERSONAS,
   );
 
-  try {
-    // Pick the personas to run. The client may request a subset by id; anything not
-    // in the engine library is dropped, and the count is capped (each persona is a
-    // full agent loop — model cost + wall-clock). Empty/absent -> the core three.
-    const requested = Array.isArray(body.personaIds)
-      ? body.personaIds.filter((id): id is string => typeof id === "string")
-      : [];
-    const validIds = [...new Set(requested)].filter((id) => id in personaLibrary);
-    const chosenIds = (validIds.length > 0 ? validIds : DEFAULT_PERSONA_IDS).slice(
-      0,
-      MAX_PERSONAS,
+  // Reserve this run's estimated model-call budget against the global daily cap,
+  // atomically, before queuing. If we can't reserve, refuse.
+  if (!(await reserveSpend(chosenIds.length))) {
+    return NextResponse.json(
+      { error: "Daily audit capacity reached. Please try again tomorrow." },
+      { status: 429, headers: { "Retry-After": "3600" } },
     );
-
-    const personas = chosenIds.map((id) => {
-      const persona = personaLibrary[id];
-      if (!persona) throw new Error(`Persona ${id} not found`);
-      return persona;
-    });
-
-    // Reserve this run's estimated model-call budget against the global daily cap,
-    // atomically, before spending anything. If we can't reserve, refuse the run.
-    if (!(await reserveSpend(personas.length))) {
-      return NextResponse.json(
-        { error: "Daily audit capacity reached. Please try again tomorrow." },
-        { status: 429, headers: { "Retry-After": "3600" } },
-      );
-    }
-
-    // Run with a 2-minute timeout
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120_000);
-
-    const resultPromise = runMultiPersonaTest({
-      url: parsedUrl.href,
-      personas,
-      outputDir: tmpDir,
-      parallel: true,
-      runAxe: true,
-    });
-
-    const abortPromise = new Promise<never>((_, reject) => {
-      controller.signal.addEventListener("abort", () => {
-        reject(new Error("The site took too long to respond. Try a simpler page or check the URL is accessible."));
-      });
-    });
-
-    const result = await Promise.race([resultPromise, abortPromise]);
-    clearTimeout(timeout);
-
-    // Transform to simplified response (no file paths)
-    const response = {
-      url: result.url,
-      taskSuccess: result.taskSuccess,
-      personas: result.personas.map((pr) => ({
-        id: pr.persona.id,
-        name: pr.persona.name,
-        description: pr.persona.description,
-        goalCompleted: pr.agentResult.goalCompleted,
-        totalSteps: pr.agentResult.totalSteps,
-        statesReached: pr.agentResult.pagesVisited.length,
-        findings: pr.agentResult.findings.map((f) => ({
-          severity: f.severity,
-          category: f.category,
-          title: f.title,
-          description: f.description,
-          recommendation: f.recommendation,
-        })),
-      })),
-      axeFindings: result.axeFindings.map((f) => ({
-        severity: f.severity,
-        title: f.title,
-        description: f.description,
-        recommendation: f.recommendation,
-      })),
-      conflicts: result.conflicts.map((c) => ({
-        description: c.description,
-        suggestion: c.suggestion,
-      })),
-    };
-
-    // Persist for signed-in users so it shows in their history. Best-effort:
-    // a failed save must not fail the audit — the result is already in hand.
-    let savedId: string | null = null;
-    if (user) {
-      try {
-        savedId = await saveAudit(supabase, user.id, response);
-      } catch {
-        savedId = null;
-      }
-    }
-
-    return NextResponse.json({ ...response, id: savedId });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: message }, { status: 500 });
-  } finally {
-    // Clean up temp directory
-    try {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-    } catch {
-      // ignore cleanup errors
-    }
   }
+
+  // Enqueue for the worker. The browser cannot run in this serverless route (no Chromium,
+  // exceeds size/time limits — docs/DEPLOYMENT.md); a persistent worker claims the job and
+  // runs it. Insert with the service client since audit_jobs has no client insert policy.
+  const admin = createAdminClient();
+  if (!admin) {
+    return NextResponse.json(
+      { error: "Audits are not configured on this environment (missing service key)." },
+      { status: 503 },
+    );
+  }
+
+  const { data: job, error: enqueueError } = await admin
+    .from("audit_jobs")
+    .insert({
+      user_id: user?.id ?? null,
+      url: parsedUrl.href,
+      persona_ids: chosenIds,
+    })
+    .select("id")
+    .single();
+
+  if (enqueueError || !job) {
+    return NextResponse.json(
+      { error: "Could not queue the audit. Please try again." },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json({ jobId: job.id, status: "queued" }, { status: 202 });
 }

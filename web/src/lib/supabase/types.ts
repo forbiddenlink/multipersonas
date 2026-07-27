@@ -7,13 +7,61 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
+      audit_jobs: {
+        Row: {
+          attempts: number
+          completed_at: string | null
+          created_at: string
+          error: string | null
+          id: string
+          persona_ids: string[]
+          result: Json | null
+          started_at: string | null
+          status: string
+          url: string
+          user_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          persona_ids?: string[]
+          result?: Json | null
+          started_at?: string | null
+          status?: string
+          url: string
+          user_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          persona_ids?: string[]
+          result?: Json | null
+          started_at?: string | null
+          status?: string
+          url?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_jobs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       findings: {
         Row: {
           category: string
@@ -280,6 +328,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_audit_job: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          attempts: number
+          completed_at: string | null
+          created_at: string
+          error: string | null
+          id: string
+          persona_ids: string[]
+          result: Json | null
+          started_at: string | null
+          status: string
+          url: string
+          user_id: string | null
+        }
+      }
       consume_rate_limit: {
         Args: { p_key: string; p_max: number; p_window_seconds: number }
         Returns: boolean

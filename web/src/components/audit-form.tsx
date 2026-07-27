@@ -26,6 +26,27 @@ function readStoredResults(): AuditResponse | null {
   }
 }
 
+/** Poll a queued audit job until it completes or fails. The run happens in a worker,
+ * not the request, so the browser can take as long as it needs. */
+async function pollAuditJob(jobId: string): Promise<AuditResponse> {
+  const deadlineMs = Date.now() + 3 * 60 * 1000;
+  while (Date.now() < deadlineMs) {
+    await new Promise((r) => setTimeout(r, 2500));
+    const res = await fetch(`/api/audit/${jobId}`);
+    if (!res.ok) continue;
+    const data = await res.json();
+    if (data.status === "completed" && data.result) {
+      return data.result as AuditResponse;
+    }
+    if (data.status === "failed") {
+      throw new Error(data.error || "The audit failed. Please try again.");
+    }
+  }
+  throw new Error(
+    "The audit is taking longer than usual. If you're signed in, it'll appear in your history when it finishes.",
+  );
+}
+
 export function AuditForm() {
   const router = useRouter();
   const [url, setUrl] = useState("");
@@ -96,14 +117,21 @@ export function AuditForm() {
         return;
       }
 
-      // All complete
+      if (!data.jobId) {
+        setError("Could not queue the audit. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // The audit runs in a worker; poll until it finishes.
+      const auditResults = await pollAuditJob(data.jobId as string);
+
       const completed: Record<string, PersonaStatus> = {};
       for (const p of selectedPersonas) {
         completed[p.id] = "complete";
       }
       setPersonaStatuses(completed);
 
-      const auditResults = data as AuditResponse;
       setResults(auditResults);
 
       // Persist to sessionStorage so results survive refresh
@@ -116,8 +144,12 @@ export function AuditForm() {
       // Refresh server components so a signed-in user's new audit appears in
       // their dashboard history immediately. No-op cost on the public landing.
       router.refresh();
-    } catch {
-      setError("Failed to connect to the server. Please try again.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to connect to the server. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
