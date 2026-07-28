@@ -1,0 +1,177 @@
+/* The report is a compliance document, not an app screen: it renders on white paper with
+ * dark ink regardless of the app theme (print === paper). On screen it reads as a document
+ * card; in print we hide everything but the report itself (the classic visibility trick,
+ * so the app nav never leaks onto the page without targeting its markup). */
+
+.report {
+  max-width: 60rem;
+  margin: 0 auto;
+  color: #111827;
+  background: #ffffff;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media screen {
+  .report {
+    padding: 2.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+}
+
+.header {
+  border-bottom: 2px solid #111827;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+}
+
+.meta {
+  color: #4b5563;
+  font-size: 0.8125rem;
+  margin: 0.125rem 0;
+}
+
+.section {
+  margin: 1.5rem 0;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #374151;
+}
+
+.disclaimer {
+  background: #f9fafb;
+  border-left: 3px solid #6b7280;
+  padding: 0.75rem 1rem;
+  color: #374151;
+  font-size: 0.8125rem;
+}
+
+.disclaimer a {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.count {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  min-width: 5.5rem;
+}
+
+.countNum {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.countLabel {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.table th {
+  text-align: left;
+  border-bottom: 1px solid #d1d5db;
+  padding: 0.5rem 0.5rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+.table td {
+  border-bottom: 1px solid #f3f4f6;
+  padding: 0.5rem 0.5rem;
+  vertical-align: top;
+}
+
+/* Keep a finding's row from splitting across a page break. */
+.table tr {
+  break-inside: avoid;
+}
+
+.ruleTitle {
+  font-weight: 600;
+  color: #111827;
+}
+
+.ruleId {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.desc {
+  color: #4b5563;
+  margin-top: 0.125rem;
+}
+
+.rec {
+  color: #374151;
+}
+
+.sc {
+  color: #374151;
+  white-space: nowrap;
+}
+
+.scDash {
+  color: #9ca3af;
+}
+
+.sev {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.footer {
+  border-top: 1px solid #d1d5db;
+  margin-top: 2rem;
+  padding-top: 0.75rem;
+  color: #6b7280;
+  font-size: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.empty {
+  color: #374151;
+  font-size: 0.9375rem;
+  padding: 1rem 0;
+}
+
+.noPrint {
+  margin: 0 auto 1rem;
+  max-width: 60rem;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+/* Print show/hide lives in globals.css (`@media print`, `.report-print-root` /
+ * `.report-print-hide`): CSS Modules reject the bare `:global(body)` selectors the
+ * "print only this element" trick needs. This module keeps the screen + paper styling. */

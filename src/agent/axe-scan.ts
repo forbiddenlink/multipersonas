@@ -23,6 +23,7 @@ interface AxeViolation {
   description: string;
   help: string;
   helpUrl: string;
+  tags: string[];
   nodes: { html: string; target: string[] }[];
 }
 
@@ -59,6 +60,7 @@ export async function runAxeScan(page: Page): Promise<Finding[]> {
         target: node.target.join(" > "),
         html: node.html.slice(0, 200),
         seenOn: [url],
+        wcagTags: violation.tags,
       })),
     );
   } catch (error) {

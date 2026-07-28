@@ -38,6 +38,10 @@ declare module "multipersonas/orchestrator" {
       recommendation: string;
       pageUrl: string;
       seenOn?: string[];
+      /** axe rule id, e.g. "color-contrast" — carried for the Report export. */
+      ruleId?: string;
+      /** axe tags incl. WCAG success criteria (e.g. "wcag143"). */
+      wcagTags?: string[];
     }[];
     conflicts: { description: string; suggestion: string }[];
   }

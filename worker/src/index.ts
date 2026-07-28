@@ -64,6 +64,10 @@ function toResponse(result: TestResult) {
       // seenOn holds every state the defect was de-duped across; fall back to
       // pageUrl for the (rare) finding that never went through that grouping.
       location: f.seenOn && f.seenOn.length > 0 ? f.seenOn.join(", ") : f.pageUrl,
+      // Carried for the Report export (VPAT-lite): the axe rule id + its WCAG tags
+      // let the report cite success criteria. null for the odd finding lacking them.
+      ruleId: f.ruleId ?? null,
+      wcagTags: f.wcagTags ?? null,
     })),
     conflicts: result.conflicts.map((c) => ({
       description: c.description,
@@ -109,6 +113,8 @@ async function persistHistory(userId: string, audit: AuditResponse): Promise<voi
       description: f.description,
       recommendation: f.recommendation,
       page_url: audit.url,
+      rule_id: f.ruleId,
+      wcag_tags: f.wcagTags,
     })),
     ...audit.personas.flatMap((p) =>
       p.findings.map((f) => ({
