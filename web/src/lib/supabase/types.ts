@@ -74,11 +74,13 @@ export type Database = {
           page_url: string
           persona_id: string
           recommendation: string
+          rule_id: string | null
           screenshot_url: string | null
           severity: string
           source: string
           test_run_id: string
           title: string
+          wcag_tags: string[] | null
         }
         Insert: {
           category: string
@@ -89,11 +91,13 @@ export type Database = {
           page_url: string
           persona_id: string
           recommendation: string
+          rule_id?: string | null
           screenshot_url?: string | null
           severity: string
           source?: string
           test_run_id: string
           title: string
+          wcag_tags?: string[] | null
         }
         Update: {
           category?: string
@@ -104,11 +108,13 @@ export type Database = {
           page_url?: string
           persona_id?: string
           recommendation?: string
+          rule_id?: string | null
           screenshot_url?: string | null
           severity?: string
           source?: string
           test_run_id?: string
           title?: string
+          wcag_tags?: string[] | null
         }
         Relationships: [
           {

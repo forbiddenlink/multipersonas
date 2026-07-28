@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { PERSONA_DATA } from "@/lib/personas";
 import { scoreColor, scoreStrokeColor } from "@/lib/score";
 import { formatLocation } from "@/lib/format-location";
@@ -100,6 +102,14 @@ export default async function AuditDetailPage({
             day: "numeric",
           })}
         </p>
+        {axeFindings.length > 0 && (
+          <Link
+            href={`/audits/${run.id}/report`}
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            Export accessibility report
+          </Link>
+        )}
         <div className="relative flex items-center justify-center size-36">
           <svg
             className="absolute inset-0 -rotate-90"

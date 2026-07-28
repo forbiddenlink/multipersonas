@@ -152,3 +152,36 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Report export (audits/[id]/report): print only the report document, never the app
+ * chrome. The "hide everything, then reveal the report" trick needs bare `body`/`body *`
+ * selectors that CSS Modules forbid, so it lives here keyed on stable global classes
+ * (report.module.css handles the on-screen + paper styling). */
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+  body * {
+    visibility: hidden !important;
+  }
+  .report-print-root,
+  .report-print-root * {
+    visibility: visible !important;
+  }
+  .report-print-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  .report-print-hide {
+    display: none !important;
+  }
+  @page {
+    margin: 18mm;
+  }
+}

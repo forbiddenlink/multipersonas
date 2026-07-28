@@ -56,6 +56,9 @@ export interface Finding {
   html?: string;
   /** Every state this defect was observed in. */
   seenOn?: string[];
+  /** axe tags for the rule, e.g. ["wcag2aa", "wcag143", "cat.color"]. The
+   * `wcagNNN` entries map to WCAG success criteria; the report cites those. */
+  wcagTags?: string[];
 }
 
 export interface StepRecord {
