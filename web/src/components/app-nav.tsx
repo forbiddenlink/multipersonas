@@ -21,6 +21,7 @@ export function AppNav({
 
   const navItems = [
     { label: "Dashboard", href: "/dashboard" },
+    { label: "Projects", href: "/projects" },
     { label: "Personas", href: "/personas" },
     { label: "Settings", href: "/settings" },
     ...(isAdmin ? [{ label: "Waitlist", href: "/waitlist" }] : []),

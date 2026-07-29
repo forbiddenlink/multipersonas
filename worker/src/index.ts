@@ -28,6 +28,7 @@ interface AuditJob {
   url: string;
   persona_ids: string[];
   status: string;
+  project_id: string | null;
 }
 
 const SEVERITIES = ["critical", "serious", "moderate", "minor"];
@@ -79,13 +80,20 @@ function toResponse(result: TestResult) {
 type AuditResponse = ReturnType<typeof toResponse>;
 
 /** Persist history for a signed-in user's job: one test_run + its findings, with the
- * axe-vs-persona source split. Best-effort — never fail the job on a history write. */
-async function persistHistory(userId: string, audit: AuditResponse): Promise<void> {
+ * axe-vs-persona source split. Best-effort — never fail the job on a history write.
+ * `projectId` links the run to a project when the audit was queued from one — see
+ * app/api/audit/route.ts, which verifies ownership before it ever reaches a job row. */
+async function persistHistory(
+  userId: string,
+  audit: AuditResponse,
+  projectId?: string | null,
+): Promise<void> {
   const now = new Date().toISOString();
   const { data: run, error } = await supabase
     .from("test_runs")
     .insert({
       user_id: userId,
+      project_id: projectId ?? null,
       url: audit.url,
       status: "completed",
       task_success_achieved: audit.taskSuccess.achieved,
@@ -102,6 +110,9 @@ async function persistHistory(userId: string, audit: AuditResponse): Promise<voi
     return;
   }
 
+  // `location` already carries the specific page each finding was seen on (see
+  // toResponse: axe's seenOn/pageUrl and persona's pageUrl) — falling back to the
+  // top-level audit URL here collapsed every finding onto the entry page.
   const rows = [
     ...audit.axeFindings.map((f) => ({
       test_run_id: run.id,
@@ -112,7 +123,7 @@ async function persistHistory(userId: string, audit: AuditResponse): Promise<voi
       title: f.title,
       description: f.description,
       recommendation: f.recommendation,
-      page_url: audit.url,
+      page_url: f.location || audit.url,
       rule_id: f.ruleId,
       wcag_tags: f.wcagTags,
     })),
@@ -126,7 +137,7 @@ async function persistHistory(userId: string, audit: AuditResponse): Promise<voi
         title: f.title,
         description: f.description,
         recommendation: f.recommendation,
-        page_url: audit.url,
+        page_url: f.location || audit.url,
       })),
     ),
   ];
@@ -162,7 +173,7 @@ async function claimAndRun(): Promise<boolean> {
     });
     const response = toResponse(result);
 
-    if (claimed.user_id) await persistHistory(claimed.user_id, response);
+    if (claimed.user_id) await persistHistory(claimed.user_id, response, claimed.project_id);
 
     await supabase
       .from("audit_jobs")

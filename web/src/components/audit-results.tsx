@@ -117,7 +117,10 @@ export function AuditResults({
                     className="space-y-1.5 rounded-md border border-border p-3"
                   >
                     <div className="flex flex-wrap items-center gap-2">
-                      <SeverityChip severity={finding.severity} />
+                      {/* Opinion tier — never use SeverityChip / axe severity. */}
+                      <span className="inline-flex items-center rounded-sm border border-border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                        AI observation
+                      </span>
                       <span className="text-xs font-medium truncate">
                         {finding.title}
                       </span>

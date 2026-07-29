@@ -107,9 +107,18 @@ async function pollAuditJob(jobId: string): Promise<PollOutcome> {
   return { status: "timeout" };
 }
 
-export function AuditForm() {
+export function AuditForm({
+  projectId,
+  defaultUrl,
+}: {
+  /** When set, included on the queued job so the worker links the saved run back to
+   * this project (see app/api/audit/route.ts, which verifies ownership server-side). */
+  projectId?: string;
+  /** Prefills the URL field — e.g. a project's own URL on its detail page. */
+  defaultUrl?: string;
+} = {}) {
   const router = useRouter();
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(defaultUrl ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Lazy initializer reads sessionStorage once on mount without an effect, avoiding
@@ -259,7 +268,11 @@ export function AuditForm() {
       const res = await fetch("/api/audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, personaIds }),
+        body: JSON.stringify({
+          url,
+          personaIds,
+          ...(projectId ? { projectId } : {}),
+        }),
       });
 
       const data = await res.json();

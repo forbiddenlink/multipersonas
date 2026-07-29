@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { url?: string; personaIds?: unknown };
+  let body: { url?: string; personaIds?: unknown; projectId?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -103,6 +103,30 @@ export async function POST(request: Request) {
     );
   }
 
+  // Optional project association. Verified against the caller's own RLS-scoped view
+  // (not the admin client) so this can never confirm — or deny — the existence of a
+  // project owned by someone else. Anonymous callers have no projects, so the field
+  // is silently ignored rather than rejected.
+  let projectId: string | null = null;
+  if (typeof body.projectId === "string" && body.projectId) {
+    if (!user) {
+      projectId = null;
+    } else {
+      const { data: project } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("id", body.projectId)
+        .single();
+      if (!project) {
+        return NextResponse.json(
+          { error: "Project not found." },
+          { status: 400 },
+        );
+      }
+      projectId = project.id;
+    }
+  }
+
   // Enqueue for the worker. The browser cannot run in this serverless route (no Chromium,
   // exceeds size/time limits — docs/DEPLOYMENT.md); a persistent worker claims the job and
   // runs it. Insert with the service client since audit_jobs has no client insert policy.
@@ -120,6 +144,7 @@ export async function POST(request: Request) {
       user_id: user?.id ?? null,
       url: parsedUrl.href,
       persona_ids: chosenIds,
+      project_id: projectId,
     })
     .select("id")
     .single();

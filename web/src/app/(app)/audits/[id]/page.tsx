@@ -134,7 +134,10 @@ export default async function AuditDetailPage({
                         className="space-y-1.5 rounded-md border border-border p-3"
                       >
                         <div className="flex flex-wrap items-center gap-2">
-                          <SeverityChip severity={f.severity} />
+                          {/* Opinion tier — never SeverityChip (axe severity vocab). */}
+                          <span className="inline-flex items-center rounded-sm border border-border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                            AI observation
+                          </span>
                           <span className="text-xs font-medium truncate">
                             {f.title}
                           </span>
