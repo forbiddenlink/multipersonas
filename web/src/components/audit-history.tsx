@@ -41,7 +41,7 @@ export function AuditHistory({ audits }: { audits: AuditListItem[] }) {
       <div className="border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
         <span className="select-none text-[var(--primary)]">┌─ </span>
         recent runs
-        <span className="ml-2 tabular-nums text-muted-foreground/60">{audits.length}</span>
+        <span className="ml-2 tabular-nums text-muted-foreground">{audits.length}</span>
       </div>
       <ul className="divide-y divide-border">
         {audits.map((a) => {
@@ -61,7 +61,7 @@ export function AuditHistory({ audits }: { audits: AuditListItem[] }) {
                     <span className="select-none text-[var(--primary)]">›&nbsp;</span>
                     {hostname(a.url)}
                   </p>
-                  <p className="truncate pl-3.5 text-xs text-muted-foreground/60">
+                  <p className="truncate pl-3.5 text-xs text-muted-foreground">
                     {new Date(a.created_at).toLocaleDateString(undefined, {
                       year: "numeric",
                       month: "short",
@@ -79,7 +79,7 @@ export function AuditHistory({ audits }: { audits: AuditListItem[] }) {
                     {a.task_success_achieved ?? 0}
                     <span className="text-muted-foreground">/{a.task_success_total ?? 0}</span>
                   </span>
-                  <p className="text-xs text-muted-foreground/60">reached goal</p>
+                  <p className="text-xs text-muted-foreground">reached goal</p>
                 </div>
               </Link>
             </li>

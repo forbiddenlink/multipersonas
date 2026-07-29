@@ -341,7 +341,7 @@ export function AuditForm() {
       <fieldset className="mt-4" disabled={loading}>
         <legend className="mb-2 text-xs font-medium text-muted-foreground">
           Who tests your site{" "}
-          <span className="text-muted-foreground/60">
+          <span className="text-muted-foreground">
             ({selected.size} selected, max {MAX_PERSONAS})
           </span>
         </legend>
@@ -428,7 +428,7 @@ export function AuditForm() {
                 <p className="text-xs text-muted-foreground">
                   {persona.role}
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground/70">
+                <p className="mt-1 text-xs text-muted-foreground">
                   {status === "pending" && "Waiting..."}
                   {status === "running" && "Browsing your site..."}
                   {status === "complete" && "Done"}

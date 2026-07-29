@@ -9,7 +9,7 @@ export function BoxDivider({
 }) {
   return (
     <div
-      className={`flex items-center gap-3 font-mono text-xs text-muted-foreground/60 ${className}`}
+      className={`flex items-center gap-3 font-mono text-xs text-muted-foreground ${className}`}
       aria-hidden="true"
     >
       <span className="select-none">└</span>

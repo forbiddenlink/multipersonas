@@ -17,7 +17,7 @@ function CardHeaderBar() {
         ›
       </span>
       <Wordmark className="text-foreground" />
-      <span className="text-muted-foreground/60">/ reset-password</span>
+      <span className="text-muted-foreground">/ reset-password</span>
     </div>
   );
 }

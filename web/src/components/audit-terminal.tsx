@@ -138,11 +138,11 @@ export function AuditTerminal() {
         <span className="select-none text-white/40" aria-hidden="true">
           ┌─
         </span>
-        <span className="text-white/50">personaudit</span>
-        <span className="text-white/25" aria-hidden="true">
+        <span className="text-white/65">personaudit</span>
+        <span className="text-white/55" aria-hidden="true">
           ~/audit
         </span>
-        <span className="ml-auto flex items-center gap-1.5 text-white/45">
+        <span className="ml-auto flex items-center gap-1.5 text-white/60">
           <span
             className="size-1.5 rounded-full motion-safe:animate-pulse"
             style={{ backgroundColor: done ? "var(--severity-serious)" : TEAL }}
@@ -180,7 +180,7 @@ export function AuditTerminal() {
           </div>
         ) : null}
         <div className="flex items-center justify-between text-xs">
-          <span className="text-white/40">task success</span>
+          <span className="text-white/60">task success</span>
           <span className="tabular-nums text-white/70">
             {done ? "0 / 1 — blocked" : "auditing…"}
           </span>

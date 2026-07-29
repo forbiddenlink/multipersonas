@@ -30,17 +30,17 @@ export default async function SettingsPage() {
 
       <div className="mt-8 space-y-4">
         {/* Account */}
-        <section className="rounded-xl border border-border p-5">
-          <h2 className="text-sm font-medium">Account</h2>
+        <section className="rounded-md border border-border bg-card p-5">
+          <h2 className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Account</h2>
           <dl className="mt-3 space-y-3 text-sm">
             <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground">Email</dt>
-              <dd className="truncate font-medium">{user.email}</dd>
+              <dt className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Email</dt>
+              <dd className="truncate font-mono text-sm font-medium text-foreground">{user.email}</dd>
             </div>
             <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground">Plan</dt>
+              <dt className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Plan</dt>
               <dd>
-                <Badge variant="secondary" className="capitalize">
+                <Badge variant="secondary" className="rounded-sm capitalize">
                   {profile?.plan ?? "free"}
                 </Badge>
               </dd>
@@ -49,23 +49,23 @@ export default async function SettingsPage() {
         </section>
 
         {/* Security */}
-        <section className="rounded-xl border border-border p-5">
-          <h2 className="text-sm font-medium">Security</h2>
+        <section className="rounded-md border border-border bg-card p-5">
+          <h2 className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Security</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             Change the password you use to sign in.
           </p>
           <Link
             href="/auth/update-password"
-            className="mt-3 inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-medium transition-colors hover:border-foreground/20 hover:text-foreground"
+            className="mt-3 inline-flex items-center justify-center rounded-sm border border-border px-4 py-2 text-sm font-medium transition-colors hover:border-foreground/20 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
           >
             Change password
           </Link>
         </section>
 
         {/* Session */}
-        <section className="flex items-center justify-between rounded-xl border border-border p-5">
+        <section className="flex items-center justify-between rounded-md border border-border bg-card p-5">
           <div>
-            <h2 className="text-sm font-medium">Sign out</h2>
+            <h2 className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Sign out</h2>
             <p className="mt-1 text-sm text-muted-foreground">End your session on this device.</p>
           </div>
           <SignOutButton />

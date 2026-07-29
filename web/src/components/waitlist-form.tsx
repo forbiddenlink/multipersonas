@@ -59,7 +59,7 @@ export function WaitlistForm() {
       <div
         role="status"
         aria-live="polite"
-        className="rounded-2xl border border-primary/30 bg-primary/[0.04] p-8"
+        className="rounded-md border border-border bg-card p-8"
       >
         <p className="font-heading text-2xl text-foreground">
           {status === "already" ? "You're already on the list." : "You're on the list."}
@@ -72,7 +72,7 @@ export function WaitlistForm() {
         <p className="mt-5 text-sm">
           <Link
             href="/"
-            className="font-medium text-primary underline-offset-4 hover:underline"
+            className="rounded-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
           >
             Try the free scan while you wait &rarr;
           </Link>
@@ -84,7 +84,10 @@ export function WaitlistForm() {
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-5">
       <div>
-        <label htmlFor={emailId} className="block text-sm font-medium">
+        <label
+          htmlFor={emailId}
+          className="block font-mono text-xs uppercase tracking-wide text-muted-foreground"
+        >
           Work email
         </label>
         <input
@@ -96,19 +99,25 @@ export function WaitlistForm() {
           placeholder="you@youragency.com"
           aria-describedby={error ? `${emailId}-err` : undefined}
           aria-invalid={status === "error" || undefined}
-          className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+          className="mt-2 w-full rounded-sm border border-input bg-background px-4 py-3 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         />
       </div>
 
       <div>
-        <label htmlFor={sitesId} className="block text-sm font-medium">
-          Scale <span className="font-normal text-muted-foreground">(optional, but it helps us prioritise)</span>
+        <label
+          htmlFor={sitesId}
+          className="block font-mono text-xs uppercase tracking-wide text-muted-foreground"
+        >
+          Scale{" "}
+          <span className="normal-case font-sans text-muted-foreground/80">
+            (optional, but it helps us prioritise)
+          </span>
         </label>
         <select
           id={sitesId}
           name="sitesCount"
           defaultValue=""
-          className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+          className="mt-2 w-full rounded-sm border border-input bg-background px-4 py-3 text-sm outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
           {SITE_BANDS.map((b) => (
             <option key={b.value} value={b.value} disabled={b.value === ""}>
@@ -119,9 +128,12 @@ export function WaitlistForm() {
       </div>
 
       <div>
-        <label htmlFor={noteId} className="block text-sm font-medium">
+        <label
+          htmlFor={noteId}
+          className="block font-mono text-xs uppercase tracking-wide text-muted-foreground"
+        >
           What would make this a no-brainer for you?{" "}
-          <span className="font-normal text-muted-foreground">(optional)</span>
+          <span className="normal-case font-sans text-muted-foreground/80">(optional)</span>
         </label>
         <textarea
           id={noteId}
@@ -129,7 +141,7 @@ export function WaitlistForm() {
           rows={3}
           maxLength={500}
           placeholder="e.g. one report I can white-label per client, scheduled monthly re-scans, a CI check my devs can't ignore…"
-          className="mt-2 w-full resize-y rounded-lg border border-input bg-background px-4 py-3 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+          className="mt-2 w-full resize-y rounded-sm border border-input bg-background px-4 py-3 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         />
       </div>
 
@@ -142,7 +154,7 @@ export function WaitlistForm() {
       <button
         type="submit"
         disabled={status === "submitting"}
-        className="inline-flex w-full items-center justify-center rounded-lg bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-[background-color,transform] hover:bg-primary/90 active:translate-y-px disabled:opacity-70 sm:w-auto"
+        className="inline-flex w-full items-center justify-center rounded-sm bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-[background-color,transform] hover:bg-primary/90 active:translate-y-px disabled:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] sm:w-auto"
       >
         {status === "submitting" ? "Joining…" : "Get early access"}
       </button>

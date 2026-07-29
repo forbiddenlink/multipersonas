@@ -19,7 +19,7 @@ function CardHeaderBar({ route }: { route: string }) {
         ›
       </span>
       <Wordmark className="text-foreground" />
-      <span className="text-muted-foreground/60">/ {route}</span>
+      <span className="text-muted-foreground">/ {route}</span>
     </div>
   );
 }

@@ -279,7 +279,7 @@ export default function ForAgenciesPage() {
       {/* ── Footnotes + footer ─────────────────────────────────────────── */}
       <footer className="border-t border-border px-6 py-10">
         <div className="mx-auto max-w-6xl">
-          <ol className="space-y-1 text-xs text-muted-foreground/70">
+          <ol className="space-y-1 text-xs text-muted-foreground">
             <li>1. FTC v. accessiBe, settlement announced January 2025 (ftc.gov).</li>
             <li>2. European Accessibility Act, enforcement from 28 June 2025.</li>
             <li>3. Projection based on Q1 2025 federal ADA Title III web filings (accessible.org / UsableNet trend data). Figures are directional.</li>

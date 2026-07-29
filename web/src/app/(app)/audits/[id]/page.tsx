@@ -84,7 +84,7 @@ export default async function AuditDetailPage({
           Results for{" "}
           <span className="font-mono text-foreground">{run.url}</span>
         </p>
-        <p className="font-mono text-xs text-muted-foreground/60">
+        <p className="font-mono text-xs text-muted-foreground">
           {new Date(run.created_at).toLocaleDateString(undefined, {
             year: "numeric",
             month: "short",
@@ -143,7 +143,7 @@ export default async function AuditDetailPage({
                           {f.description}
                         </p>
                         {formatLocation(f.page_url) && (
-                          <p className="font-mono text-xs text-muted-foreground/60">
+                          <p className="font-mono text-xs text-muted-foreground">
                             found at {formatLocation(f.page_url)}
                           </p>
                         )}
@@ -183,11 +183,11 @@ export default async function AuditDetailPage({
                   <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted-foreground">
                     {f.description}
                   </p>
-                  <p className="mt-1 max-w-prose text-xs text-muted-foreground/70">
+                  <p className="mt-1 max-w-prose text-xs text-muted-foreground">
                     {f.recommendation}
                   </p>
                   {formatLocation(f.page_url) && (
-                    <p className="mt-2 font-mono text-xs text-muted-foreground/60">
+                    <p className="mt-2 font-mono text-xs text-muted-foreground">
                       <span className="select-none">found at&nbsp;</span>
                       {formatLocation(f.page_url)}
                     </p>

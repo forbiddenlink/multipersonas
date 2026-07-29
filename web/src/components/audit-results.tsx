@@ -96,8 +96,7 @@ export function AuditResults({
                 className="inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium"
                 style={{
                   color: persona.goalCompleted ? "var(--severity-minor)" : "var(--severity-critical)",
-                  borderColor: `color-mix(in oklch, ${persona.goalCompleted ? "var(--severity-minor)" : "var(--severity-critical)"} 40%, transparent)`,
-                  backgroundColor: `color-mix(in oklch, ${persona.goalCompleted ? "var(--severity-minor)" : "var(--severity-critical)"} 10%, transparent)`,
+                  borderColor: `color-mix(in oklch, ${persona.goalCompleted ? "var(--severity-minor)" : "var(--severity-critical)"} 55%, transparent)`,
                 }}
               >
                 {persona.goalCompleted ? "Goal achieved" : "Blocked"}
@@ -127,7 +126,7 @@ export function AuditResults({
                       {finding.description}
                     </p>
                     {formatLocation(finding.location) && (
-                      <p className="font-mono text-xs text-muted-foreground/60">
+                      <p className="font-mono text-xs text-muted-foreground">
                         found at {formatLocation(finding.location)}
                       </p>
                     )}
@@ -167,11 +166,11 @@ export function AuditResults({
                   <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted-foreground">
                     {finding.description}
                   </p>
-                  <p className="mt-1 max-w-prose text-xs text-muted-foreground/70">
+                  <p className="mt-1 max-w-prose text-xs text-muted-foreground">
                     {finding.recommendation}
                   </p>
                   {formatLocation(finding.location) && (
-                    <p className="mt-2 font-mono text-xs text-muted-foreground/60">
+                    <p className="mt-2 font-mono text-xs text-muted-foreground">
                       <span className="select-none">found at&nbsp;</span>
                       {formatLocation(finding.location)}
                     </p>

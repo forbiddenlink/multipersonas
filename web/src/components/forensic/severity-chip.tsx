@@ -16,9 +16,11 @@ export function SeverityChip({
     <span
       className={`inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium ${className}`}
       style={{
+        // Severity token as text is WCAG-AA on the theme background (verified in the token
+        // spec). No fill tint — a faint tint lowers that contrast below AA, so the chip is
+        // an outline chip: colored border + glyph + text on the surface behind it.
         color: meta.token,
-        borderColor: `color-mix(in oklch, ${meta.token} 40%, transparent)`,
-        backgroundColor: `color-mix(in oklch, ${meta.token} 10%, transparent)`,
+        borderColor: `color-mix(in oklch, ${meta.token} 55%, transparent)`,
       }}
     >
       <span aria-hidden="true" className="text-[0.7em] leading-none">
@@ -26,7 +28,7 @@ export function SeverityChip({
       </span>
       {meta.label}
       {ruleId ? (
-        <span className="ml-0.5 font-mono tabular-nums opacity-80">{ruleId}</span>
+        <span className="ml-0.5 font-mono tabular-nums">{ruleId}</span>
       ) : null}
     </span>
   );
