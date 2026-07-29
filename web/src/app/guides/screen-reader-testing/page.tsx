@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BoxDivider } from "@/components/forensic/divider";
 
 export const metadata: Metadata = {
   title: "Screen Reader Testing Guide",
@@ -43,42 +44,49 @@ const whatToTest = [
 
 export default function ScreenReaderTestingPage() {
   return (
-    <div className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight font-heading">Screen Reader Testing Guide</h1>
-      <p className="mt-4 text-muted-foreground">
+    <div className="mx-auto max-w-2xl px-6 py-16">
+      <p className="font-mono text-xs text-muted-foreground">
+        <span className="rounded-sm border border-border px-2.5 py-1">guide · manual testing</span>
+      </p>
+      <h1 className="mt-6 text-3xl font-bold tracking-tight sm:text-4xl">Screen Reader Testing Guide</h1>
+      <p className="mt-4 font-serif text-lg leading-relaxed text-muted-foreground">
         Testing with a real screen reader — ideally with disabled testers — is the gold
         standard for accessibility validation. Nothing automated replaces it. Here&apos;s how
         to do it, and where automated tooling can clear the deterministic issues first.
       </p>
 
-      <h2 className="mt-10 text-xl font-semibold">Screen readers to use</h2>
-      <div className="mt-4 grid gap-4">
+      <BoxDivider label="screen readers to use" className="mt-10" />
+
+      <div className="mt-6 grid gap-4">
         {screenReaders.map((sr) => (
-          <div key={sr.name} className="rounded-lg border border-border p-4">
+          <div key={sr.name} className="rounded-md border border-border p-4">
             <div className="flex items-center gap-3">
-              <h3 className="font-medium">{sr.name}</h3>
-              <span className="rounded bg-muted px-2 py-0.5 text-xs">{sr.platform}</span>
-              {sr.free && <span className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary">Free</span>}
+              <h2 className="font-medium tracking-tight">{sr.name}</h2>
+              <span className="rounded-sm border border-border px-2 py-0.5 font-mono text-xs text-muted-foreground">{sr.platform}</span>
+              {sr.free && (
+                <span className="rounded-sm border border-border px-2 py-0.5 font-mono text-xs text-muted-foreground">Free</span>
+              )}
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">{sr.setup}</p>
-            <p className="mt-1 text-sm text-muted-foreground"><strong className="text-foreground">Key commands:</strong> {sr.keyCommands}</p>
+            <p className="mt-2 font-serif text-sm leading-relaxed text-muted-foreground">{sr.setup}</p>
+            <p className="mt-1 font-serif text-sm leading-relaxed text-muted-foreground"><strong className="font-medium text-foreground">Key commands:</strong> {sr.keyCommands}</p>
           </div>
         ))}
       </div>
 
-      <h2 className="mt-10 text-xl font-semibold">What to check</h2>
-      <div className="mt-4 space-y-3">
+      <BoxDivider label="what to check" className="mt-10" />
+
+      <div className="mt-6 space-y-3">
         {whatToTest.map((item) => (
-          <div key={item.check} className="rounded-lg border border-border p-4">
-            <h3 className="font-medium">{item.check}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{item.why}</p>
+          <div key={item.check} className="rounded-md border border-border p-4">
+            <h3 className="font-medium tracking-tight">{item.check}</h3>
+            <p className="mt-1 font-serif text-sm leading-relaxed text-muted-foreground">{item.why}</p>
           </div>
         ))}
       </div>
 
-      <div className="mt-12 rounded-xl border border-primary/20 bg-primary/5 p-6 text-center">
-        <h2 className="text-lg font-semibold">Clear the automatable issues first</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
+      <div className="mt-12 rounded-md border border-border bg-card p-6 text-center">
+        <h2 className="text-lg font-semibold tracking-tight">Clear the automatable issues first</h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           Personaudit does <strong>not</strong> simulate a screen reader user. It drives your
           site keyboard-only and runs axe-core at every state it reaches — including flows behind
           your login — so the deterministic violations are fixed before your manual screen-reader
@@ -86,14 +94,17 @@ export default function ScreenReaderTestingPage() {
         </p>
         <Link
           href="/"
-          className="mt-4 inline-block rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          className="mt-4 inline-block rounded-sm bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
           Run a free audit
         </Link>
       </div>
 
       <div className="mt-8">
-        <Link href="/" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+        <Link
+          href="/"
+          className="rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+        >
           &larr; Back to home
         </Link>
       </div>

@@ -5,17 +5,24 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Wordmark } from "@/components/forensic/wordmark";
 import { Eye, EyeOff } from "lucide-react";
+
+// Terminal header bar — frames the auth card as tool output (forensic-terminal spec).
+function CardHeaderBar({ route }: { route: string }) {
+  return (
+    <div className="flex items-center gap-2 border-b border-border px-5 py-3 font-mono text-xs text-muted-foreground">
+      <span aria-hidden="true" className="select-none text-[var(--primary)]">
+        ›
+      </span>
+      <Wordmark className="text-foreground" />
+      <span className="text-muted-foreground/60">/ {route}</span>
+    </div>
+  );
+}
 
 type FieldErrors = {
   email?: string;
@@ -148,47 +155,49 @@ export function SignupForm() {
   if (success) {
     return (
       <div className="flex min-h-dvh items-center justify-center px-4">
-        <Card className="w-full max-w-sm">
-          <CardHeader className="text-center">
-            <CardTitle className="text-xl">Check your email</CardTitle>
-            <CardDescription>
-              We sent a confirmation link to <strong>{email}</strong>. Click it
+        <div className="w-full max-w-sm rounded-md border border-border bg-card">
+          <CardHeaderBar route="create-account" />
+          <div className="px-5 py-6 text-center">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">Check your email</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              We sent a confirmation link to <strong className="font-medium text-foreground">{email}</strong>. Click it
               to activate your account.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-center text-sm text-muted-foreground">
+            </p>
+            <p className="mt-5 text-sm text-muted-foreground">
               Already confirmed?{" "}
               <Link
                 href="/auth/login"
-                className="text-foreground underline underline-offset-4 hover:text-primary"
+                className="rounded-sm text-foreground underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
               >
                 Sign in
               </Link>
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex min-h-dvh items-center justify-center px-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="text-xl">Create your account</CardTitle>
-          <CardDescription>Get started with Personaudit</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+      <div className="w-full max-w-sm rounded-md border border-border bg-card">
+        <CardHeaderBar route="create-account" />
+        <div className="px-5 py-6">
+          <div className="text-center">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">Create your account</h1>
+            <p className="mt-2 text-sm text-muted-foreground">Get started with Personaudit</p>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-4">
           {formError && (
-            <div id="form-error" role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div id="form-error" role="alert" className="rounded-sm border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {formError}
             </div>
           )}
 
           <form onSubmit={handleSignup} aria-describedby={formError ? "form-error" : undefined} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="email">Email</Label>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="email" className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Email</Label>
               <Input
                 ref={emailRef}
                 id="email"
@@ -201,14 +210,15 @@ export function SignupForm() {
                 aria-invalid={!!fieldErrors.email}
                 aria-describedby={fieldErrors.email ? "email-error" : undefined}
                 required
+                className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
               />
               {fieldErrors.email && (
                 <p id="email-error" className="text-xs text-destructive">{fieldErrors.email}</p>
               )}
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="password">Password</Label>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="password" className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Password</Label>
               <div className="relative">
                 <Input
                   ref={passwordRef}
@@ -221,13 +231,13 @@ export function SignupForm() {
                   autoComplete="new-password"
                   aria-invalid={!!fieldErrors.password}
                   aria-describedby={fieldErrors.password ? "password-error" : "password-hint"}
-                  className="pr-10"
+                  className="pr-10 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -240,8 +250,8 @@ export function SignupForm() {
               )}
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="confirm-password">Confirm password</Label>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="confirm-password" className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Confirm password</Label>
               <div className="relative">
                 <Input
                   ref={confirmRef}
@@ -254,13 +264,13 @@ export function SignupForm() {
                   autoComplete="new-password"
                   aria-invalid={!!fieldErrors.confirmPassword}
                   aria-describedby={fieldErrors.confirmPassword ? "confirm-error" : undefined}
-                  className="pr-10"
+                  className="pr-10 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
                   aria-label={showConfirm ? "Hide password" : "Show password"}
                 >
                   {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -271,18 +281,18 @@ export function SignupForm() {
               )}
             </div>
 
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
               {loading ? "Creating account..." : "Create account"}
             </Button>
           </form>
 
           <div className="flex items-center gap-3">
             <Separator className="flex-1" />
-            <span className="text-xs text-muted-foreground">or</span>
+            <span className="font-mono text-xs text-muted-foreground">or</span>
             <Separator className="flex-1" />
           </div>
 
-          <Button variant="outline" onClick={handleGitHubSignup}>
+          <Button variant="outline" onClick={handleGitHubSignup} className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -298,18 +308,19 @@ export function SignupForm() {
             Already have an account?{" "}
             <Link
               href="/auth/login"
-              className="text-foreground underline underline-offset-4 hover:text-primary"
+              className="rounded-sm text-foreground underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               Sign in
             </Link>
           </p>
           <p className="text-center text-xs text-muted-foreground">
-            <Link href="/" className="hover:text-primary">
+            <Link href="/" className="rounded-sm hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
               &larr; Back to home
             </Link>
           </p>
-        </CardContent>
-      </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

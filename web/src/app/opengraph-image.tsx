@@ -5,6 +5,14 @@ export const alt = "Personaudit — accessibility scanning for the pages behind 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
+// Forensic-terminal warm-dark palette — literal values (Satori/ImageResponse doesn't
+// resolve CSS custom properties or oklch()), mirrored from globals.css .dark block.
+const BG = "#17130e";
+const FG = "#f4f1ec";
+const MUTED = "#a39e95";
+const BORDER = "rgba(244, 241, 236, 0.14)";
+const TEAL = "#4ecdc0"; // demoted accent — used once, not per-chip
+
 export default function OGImage() {
   return new ImageResponse(
     (
@@ -16,38 +24,34 @@ export default function OGImage() {
           justifyContent: "center",
           width: "100%",
           height: "100%",
-          backgroundColor: "#1a1a2e",
-          color: "#f5f5f5",
+          backgroundColor: BG,
+          color: FG,
           fontFamily: "system-ui, sans-serif",
         }}
       >
         <div
           style={{
             display: "flex",
-            alignItems: "center",
-            gap: "16px",
+            alignItems: "baseline",
+            gap: "2px",
             marginBottom: "32px",
+            fontSize: "28px",
+            fontWeight: 600,
+            letterSpacing: "-0.02em",
           }}
         >
-          <div
+          <span>Person</span>
+          <span style={{ color: MUTED }}>audit</span>
+          <span
             style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "12px",
-              backgroundColor: "#3bb8a8",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "24px",
-              fontWeight: 700,
-              color: "#1a1a2e",
+              display: "inline-block",
+              width: "10px",
+              height: "26px",
+              marginLeft: "4px",
+              backgroundColor: TEAL,
+              borderRadius: "1px",
             }}
-          >
-            M
-          </div>
-          <span style={{ fontSize: "28px", fontWeight: 600, letterSpacing: "-0.02em" }}>
-            Personaudit
-          </span>
+          />
         </div>
         <div
           style={{
@@ -64,7 +68,7 @@ export default function OGImage() {
         <div
           style={{
             fontSize: "22px",
-            color: "#9ca3af",
+            color: MUTED,
             marginTop: "24px",
             textAlign: "center",
             maxWidth: "600px",
@@ -75,7 +79,7 @@ export default function OGImage() {
         <div
           style={{
             display: "flex",
-            gap: "32px",
+            gap: "16px",
             marginTop: "48px",
           }}
         >
@@ -87,11 +91,10 @@ export default function OGImage() {
                 alignItems: "center",
                 gap: "8px",
                 padding: "8px 16px",
-                borderRadius: "8px",
-                border: "1px solid rgba(59, 184, 168, 0.3)",
-                backgroundColor: "rgba(59, 184, 168, 0.1)",
+                borderRadius: "4px",
+                border: `1px solid ${BORDER}`,
                 fontSize: "14px",
-                color: "#3bb8a8",
+                color: MUTED,
               }}
             >
               {name}

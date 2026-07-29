@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BoxDivider } from "@/components/forensic/divider";
 
 export const metadata: Metadata = {
   title: "10 Most Common Accessibility Issues",
@@ -71,15 +72,18 @@ const issues = [
 
 export default function CommonIssuesPage() {
   return (
-    <div className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight font-heading">10 Most Common Accessibility Issues</h1>
-      <p className="mt-4 text-muted-foreground">
+    <div className="mx-auto max-w-2xl px-6 py-16">
+      <p className="font-mono text-xs text-muted-foreground">
+        <span className="rounded-sm border border-border px-2.5 py-1">reference · top 10</span>
+      </p>
+      <h1 className="mt-6 text-3xl font-bold tracking-tight sm:text-4xl">10 Most Common Accessibility Issues</h1>
+      <p className="mt-4 font-serif text-lg leading-relaxed text-muted-foreground">
         These mirror the failures found most often across the web. The{" "}
         <a
           href="https://webaim.org/projects/million/"
           target="_blank"
           rel="noopener noreferrer"
-          className="underline underline-offset-4 hover:text-foreground"
+          className="rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
           WebAIM Million
         </a>{" "}
@@ -88,39 +92,44 @@ export default function CommonIssuesPage() {
         deterministically — the hard part is running it on the states behind your login.
       </p>
 
-      <div className="mt-10 space-y-8">
+      <BoxDivider label="ranked by frequency" className="mt-10" />
+
+      <div className="mt-10 space-y-6">
         {issues.map((issue) => (
-          <div key={issue.rank} className="rounded-lg border border-border p-5">
+          <div key={issue.rank} className="rounded-md border border-border p-5">
             <div className="flex items-start gap-4">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-sm border border-border font-mono text-sm font-bold tabular-nums text-muted-foreground">
                 {issue.rank}
               </span>
               <div>
-                <h2 className="text-lg font-medium">{issue.title}</h2>
-                <p className="mt-3 text-sm text-muted-foreground"><strong className="text-foreground">Impact:</strong> {issue.impact}</p>
-                <p className="mt-2 text-sm text-muted-foreground"><strong className="text-foreground">Fix:</strong> {issue.fix}</p>
+                <h2 className="text-lg font-medium tracking-tight">{issue.title}</h2>
+                <p className="mt-3 font-serif text-sm leading-relaxed text-muted-foreground"><strong className="font-medium text-foreground">Impact:</strong> {issue.impact}</p>
+                <p className="mt-2 font-serif text-sm leading-relaxed text-muted-foreground"><strong className="font-medium text-foreground">Fix:</strong> {issue.fix}</p>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="mt-12 rounded-xl border border-primary/20 bg-primary/5 p-6 text-center">
-        <h2 className="text-lg font-semibold">Find these automatically — even behind a login</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
+      <div className="mt-12 rounded-md border border-border bg-card p-6 text-center">
+        <h2 className="text-lg font-semibold tracking-tight">Find these automatically — even behind a login</h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           Personaudit runs axe-core at every state it reaches, including authenticated pages a
           single-URL scan never sees. No signup required.
         </p>
         <Link
           href="/"
-          className="mt-4 inline-block rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          className="mt-4 inline-block rounded-sm bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
           Run a free audit
         </Link>
       </div>
 
       <div className="mt-8">
-        <Link href="/" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+        <Link
+          href="/"
+          className="rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+        >
           &larr; Back to home
         </Link>
       </div>

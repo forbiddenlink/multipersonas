@@ -1,7 +1,6 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 
 const categoryLabels: Record<string, string> = {
   all: "All",
@@ -35,18 +34,24 @@ export function PersonaFilter({
 
   return (
     <div className="flex flex-wrap gap-2">
-      {["all", ...categories].map((cat) => (
-        <Button
-          key={cat}
-          variant={active === cat ? "default" : "secondary"}
-          size="sm"
-          onClick={() => handleClick(cat)}
-          aria-pressed={active === cat}
-          className="rounded-full"
-        >
-          {categoryLabels[cat] ?? cat}
-        </Button>
-      ))}
+      {["all", ...categories].map((cat) => {
+        const isActive = active === cat;
+        return (
+          <button
+            key={cat}
+            type="button"
+            onClick={() => handleClick(cat)}
+            aria-pressed={isActive}
+            className={`rounded-sm border px-2.5 py-1 font-mono text-xs uppercase tracking-wide transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
+              isActive
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border text-muted-foreground hover:border-foreground/25 hover:text-foreground"
+            }`}
+          >
+            {categoryLabels[cat] ?? cat}
+          </button>
+        );
+      })}
     </div>
   );
 }

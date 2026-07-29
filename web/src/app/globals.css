@@ -8,9 +8,10 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-display, var(--font-sans));
-  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+  /* Headings are Inter tight; the document voice (serif) is font-serif, applied explicitly. */
+  --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -53,84 +54,92 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* ============================================================================
+ * FORENSIC EVIDENCE TERMINAL — token system (spec 2026-07-28 §5).
+ * Warm near-neutral (hue 70). Teal is DEMOTED to active/live/cursor ONLY; it is
+ * NOT a blanket CTA color. Severity is axe vocabulary, hue-distant + colorblind-
+ * safe, always used as color + icon + text. All pairs verified WCAG AA, both
+ * themes, in sRGB gamut. Light = "paper lab" variant; dark (below) is default.
+ * ==========================================================================*/
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  /* Brand teal (hue 195), darkened for AA contrast against white button text. */
-  --primary: oklch(0.52 0.13 195);
+  --background: oklch(0.99 0.003 70);
+  --foreground: oklch(0.18 0.006 70);
+  --card: oklch(0.985 0.003 70);
+  --card-foreground: oklch(0.18 0.006 70);
+  --popover: oklch(0.985 0.003 70);
+  --popover-foreground: oklch(0.18 0.006 70);
+  /* Teal (hue 195), chroma-clamped to stay in sRGB gamut; AA against white text. */
+  --primary: oklch(0.52 0.087 195);
   --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.96 0.02 195);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.60 0 0);
-  --ring: oklch(0.52 0.13 195);
-  --chart-1: oklch(0.55 0.13 195);
-  --chart-2: oklch(0.60 0.10 220);
-  --chart-3: oklch(0.65 0.09 250);
-  --chart-4: oklch(0.70 0.08 210);
-  --chart-5: oklch(0.75 0.06 230);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.52 0.13 195);
+  --secondary: oklch(0.96 0.004 70);
+  --secondary-foreground: oklch(0.24 0.006 70);
+  --muted: oklch(0.96 0.004 70);
+  --muted-foreground: oklch(0.50 0.01 70);
+  --accent: oklch(0.95 0.012 195);
+  --accent-foreground: oklch(0.24 0.006 70);
+  --destructive: oklch(0.52 0.20 25);
+  --border: oklch(0.90 0.004 70);
+  --input: oklch(0.60 0.01 70);
+  --ring: oklch(0.52 0.087 195);
+  /* Chart ramp = teal + the four severities (cohesive with the evidence vocabulary). */
+  --chart-1: oklch(0.52 0.087 195);
+  --chart-2: oklch(0.55 0.134 55);
+  --chart-3: oklch(0.56 0.113 85);
+  --chart-4: oklch(0.50 0.14 250);
+  --chart-5: oklch(0.52 0.20 25);
+  --radius: 0.375rem;
+  --sidebar: oklch(0.97 0.003 70);
+  --sidebar-foreground: oklch(0.18 0.006 70);
+  --sidebar-primary: oklch(0.52 0.087 195);
   --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.96 0.02 195);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.52 0.13 195);
-  /* Severity tokens were previously only defined in .dark, leaving light mode
-     with undefined var()s. Darkened variants for AA contrast on a light background. */
+  --sidebar-accent: oklch(0.95 0.012 195);
+  --sidebar-accent-foreground: oklch(0.24 0.006 70);
+  --sidebar-border: oklch(0.90 0.004 70);
+  --sidebar-ring: oklch(0.52 0.087 195);
+  /* Severity — light "paper lab" variant, AA as text. Minor pulled to hue 250 so
+     it never collides with active-teal (195). */
   --severity-critical: oklch(0.52 0.20 25);
-  --severity-serious: oklch(0.58 0.15 55);
-  --severity-moderate: oklch(0.60 0.13 85);
-  --severity-minor: oklch(0.52 0.10 195);
+  --severity-serious: oklch(0.55 0.134 55);
+  --severity-moderate: oklch(0.56 0.113 85);
+  --severity-minor: oklch(0.50 0.14 250);
 }
 
 .dark {
-  --background: oklch(0.13 0.004 240);
-  --foreground: oklch(0.985 0.002 240);
-  --card: oklch(0.17 0.005 240);
-  --card-foreground: oklch(0.985 0.002 240);
-  --popover: oklch(0.17 0.005 240);
-  --popover-foreground: oklch(0.985 0.002 240);
+  --background: oklch(0.15 0.006 70);
+  --foreground: oklch(0.96 0.004 70);
+  --card: oklch(0.19 0.006 70);
+  --card-foreground: oklch(0.96 0.004 70);
+  --popover: oklch(0.19 0.006 70);
+  --popover-foreground: oklch(0.96 0.004 70);
   --primary: oklch(0.72 0.12 195);
   --primary-foreground: oklch(0.15 0.01 195);
-  --secondary: oklch(0.22 0.008 240);
-  --secondary-foreground: oklch(0.985 0.002 240);
-  --muted: oklch(0.22 0.008 240);
-  --muted-foreground: oklch(0.65 0.01 240);
-  --accent: oklch(0.22 0.008 240);
-  --accent-foreground: oklch(0.985 0.002 240);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 8%);
-  --input: oklch(1 0 0 / 12%);
+  --secondary: oklch(0.24 0.008 70);
+  --secondary-foreground: oklch(0.96 0.004 70);
+  --muted: oklch(0.24 0.008 70);
+  --muted-foreground: oklch(0.68 0.01 70);
+  --accent: oklch(0.24 0.008 70);
+  --accent-foreground: oklch(0.96 0.004 70);
+  --destructive: oklch(0.65 0.20 25);
+  --border: oklch(0.98 0.004 70 / 10%);
+  --input: oklch(0.98 0.004 70 / 14%);
   --ring: oklch(0.72 0.12 195);
   --chart-1: oklch(0.72 0.12 195);
-  --chart-2: oklch(0.65 0.10 220);
-  --chart-3: oklch(0.55 0.08 250);
-  --chart-4: oklch(0.45 0.06 210);
-  --chart-5: oklch(0.35 0.04 230);
-  --sidebar: oklch(0.15 0.005 240);
-  --sidebar-foreground: oklch(0.985 0.002 240);
+  --chart-2: oklch(0.72 0.16 55);
+  --chart-3: oklch(0.80 0.13 85);
+  --chart-4: oklch(0.70 0.12 250);
+  --chart-5: oklch(0.65 0.20 25);
+  --sidebar: oklch(0.17 0.006 70);
+  --sidebar-foreground: oklch(0.96 0.004 70);
   --sidebar-primary: oklch(0.72 0.12 195);
-  --sidebar-primary-foreground: oklch(0.985 0.002 240);
-  --sidebar-accent: oklch(0.22 0.008 240);
-  --sidebar-accent-foreground: oklch(0.985 0.002 240);
-  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-primary-foreground: oklch(0.15 0.01 195);
+  --sidebar-accent: oklch(0.24 0.008 70);
+  --sidebar-accent-foreground: oklch(0.96 0.004 70);
+  --sidebar-border: oklch(0.98 0.004 70 / 10%);
   --sidebar-ring: oklch(0.72 0.12 195);
   --severity-critical: oklch(0.65 0.20 25);
   --severity-serious: oklch(0.72 0.16 55);
-  --severity-moderate: oklch(0.78 0.12 85);
-  --severity-minor: oklch(0.72 0.10 195);
+  --severity-moderate: oklch(0.80 0.13 85);
+  --severity-minor: oklch(0.70 0.12 250);
 }
 
 @layer base {
@@ -151,6 +160,24 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Grain — subtle fractal-noise overlay to stop banding on large dark fills. Sits
+ * BEHIND content on its own layer; text lives on solid card backgrounds above it,
+ * so grain never lowers text contrast below the verified AA values. Apply `.grain`
+ * to a `position: relative` container; give real content `position: relative; z-index: 1`. */
+.grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+:root:not(.dark) .grain::before {
+  opacity: 0.025;
 }
 
 /* Report export (audits/[id]/report): print only the report document, never the app

@@ -20,11 +20,14 @@ export default async function DashboardPage() {
       </p>
 
       <div className="mt-8 max-w-2xl">
+        <p className="mb-3 font-mono text-xs text-muted-foreground">
+          <span className="select-none text-[var(--primary)]">›&nbsp;</span>new scan — point it at any public URL
+        </p>
         <AuditForm />
       </div>
 
       <section className="mt-12 max-w-2xl">
-        <h2 className="mb-3 text-sm font-medium text-muted-foreground">Recent audits</h2>
+        <h2 className="mb-3 text-lg font-semibold tracking-tight">Recent audits</h2>
         <AuditHistory audits={audits} />
       </section>
     </div>

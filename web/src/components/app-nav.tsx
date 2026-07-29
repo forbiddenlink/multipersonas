@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Wordmark } from "@/components/forensic/wordmark";
 
 export function AppNav({
   userEmail,
@@ -36,7 +37,7 @@ export function AppNav({
     <>
       {/* Mobile header */}
       <div className="flex items-center justify-between border-b border-border bg-card px-4 py-3 md:hidden">
-        <span className="text-lg font-semibold tracking-tight">Personaudit</span>
+        <Wordmark className="text-lg text-foreground" />
         <div className="flex items-center gap-1">
           <ThemeToggle />
           <button
@@ -58,10 +59,10 @@ export function AppNav({
               key={item.href}
               href={item.href}
               onClick={() => setMobileOpen(false)}
-              className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              className={`rounded-sm border-l-2 px-3 py-2 font-mono text-[13px] tracking-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
                 pathname === item.href || pathname.startsWith(item.href + "/")
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "border-[var(--primary)] bg-muted text-foreground"
+                  : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
               {item.label}
@@ -85,8 +86,11 @@ export function AppNav({
       {/* Desktop sidebar */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-card md:flex">
         <div className="px-6 py-5">
-          <Link href="/" className="text-lg font-semibold tracking-tight hover:text-primary">
-            Personaudit
+          <Link
+            href="/"
+            className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+          >
+            <Wordmark className="text-lg text-foreground" />
           </Link>
         </div>
         <div className="mx-3 h-px bg-border" />
@@ -95,10 +99,10 @@ export function AppNav({
             <Link
               key={item.href}
               href={item.href}
-              className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              className={`rounded-sm border-l-2 px-3 py-2 font-mono text-[13px] tracking-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
                 pathname === item.href || pathname.startsWith(item.href + "/")
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "border-[var(--primary)] bg-muted text-foreground"
+                  : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
               {item.label}

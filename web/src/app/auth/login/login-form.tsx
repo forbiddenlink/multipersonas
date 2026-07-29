@@ -5,17 +5,24 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Wordmark } from "@/components/forensic/wordmark";
 import { Eye, EyeOff } from "lucide-react";
+
+// Terminal header bar — frames the auth card as tool output (forensic-terminal spec).
+function CardHeaderBar({ route }: { route: string }) {
+  return (
+    <div className="flex items-center gap-2 border-b border-border px-5 py-3 font-mono text-xs text-muted-foreground">
+      <span aria-hidden="true" className="select-none text-[var(--primary)]">
+        ›
+      </span>
+      <Wordmark className="text-foreground" />
+      <span className="text-muted-foreground/60">/ {route}</span>
+    </div>
+  );
+}
 
 export function LoginForm() {
   const router = useRouter();
@@ -84,23 +91,24 @@ export function LoginForm() {
 
   return (
     <div className="flex min-h-dvh items-center justify-center px-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="text-xl">Sign in to Personaudit</CardTitle>
-          <CardDescription>
-            Enter your credentials to continue
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+      <div className="w-full max-w-sm rounded-md border border-border bg-card">
+        <CardHeaderBar route="sign-in" />
+        <div className="px-5 py-6">
+          <div className="text-center">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">Sign in to Personaudit</h1>
+            <p className="mt-2 text-sm text-muted-foreground">Enter your credentials to continue</p>
+          </div>
+
+          <div className="mt-6 flex flex-col gap-4">
           {formError && (
-            <div id="form-error" role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <div id="form-error" role="alert" className="rounded-sm border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {formError}
             </div>
           )}
 
           <form onSubmit={handleEmailLogin} aria-describedby={formError ? "form-error" : undefined} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="email">Email</Label>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="email" className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Email</Label>
               <Input
                 ref={emailRef}
                 id="email"
@@ -110,11 +118,12 @@ export function LoginForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 required
+                className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="password">Password</Label>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="password" className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Password</Label>
               <div className="relative">
                 <Input
                   ref={passwordRef}
@@ -124,13 +133,13 @@ export function LoginForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
-                  className="pr-10"
+                  className="pr-10 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -139,25 +148,25 @@ export function LoginForm() {
               <div className="flex justify-end">
                 <Link
                   href="/auth/forgot-password"
-                  className="text-sm py-1 text-muted-foreground hover:text-primary"
+                  className="rounded-sm py-1 text-sm text-muted-foreground hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
                 >
                   Forgot password?
                 </Link>
               </div>
             </div>
 
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
               {loading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
 
           <div className="flex items-center gap-3">
             <Separator className="flex-1" />
-            <span className="text-xs text-muted-foreground">or</span>
+            <span className="font-mono text-xs text-muted-foreground">or</span>
             <Separator className="flex-1" />
           </div>
 
-          <Button variant="outline" onClick={handleGitHubLogin}>
+          <Button variant="outline" onClick={handleGitHubLogin} className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -173,18 +182,19 @@ export function LoginForm() {
             Don&apos;t have an account?{" "}
             <Link
               href="/auth/signup"
-              className="text-foreground underline underline-offset-4 hover:text-primary"
+              className="rounded-sm text-foreground underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               Sign up
             </Link>
           </p>
           <p className="text-center text-xs text-muted-foreground">
-            <Link href="/" className="hover:text-primary">
+            <Link href="/" className="rounded-sm hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
               &larr; Back to home
             </Link>
           </p>
-        </CardContent>
-      </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -2,48 +2,32 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { PERSONA_DATA } from "@/lib/personas";
-import { scoreColor, scoreStrokeColor } from "@/lib/score";
 import { formatLocation } from "@/lib/format-location";
+import { SeverityChip } from "@/components/forensic/severity-chip";
+import { Meter } from "@/components/forensic/meter";
+import { SEVERITY_ORDER, type Severity } from "@/components/forensic/severity";
 
 export const metadata: Metadata = {
   title: "Audit details",
 };
 
-// Mirrors the severity treatment in audit-results.tsx (kept local — same pattern as
-// audit-history.tsx's own successColor — rather than importing from a "use client" module).
-function severityBadgeVariant(
-  severity: string
-): "destructive" | "secondary" | "outline" {
-  switch (severity) {
-    case "critical":
-      return "destructive";
-    case "serious":
-      return "destructive";
-    case "moderate":
-      return "secondary";
-    default:
-      return "outline";
-  }
+// Task-success is a fraction of real-shaped users, not a compliance verdict — this
+// borrows the same red/amber/green ramp the Meter component's `tone` prop uses for the
+// same non-axe metric, not the SeverityChip vocabulary (that's axe-only).
+function successTone(achieved: number, total: number): "minor" | "moderate" | "critical" | "muted" {
+  if (total === 0) return "muted";
+  const pct = achieved / total;
+  if (pct >= 0.8) return "minor";
+  if (pct >= 0.5) return "moderate";
+  return "critical";
 }
 
-function severityColor(severity: string): string {
-  switch (severity) {
-    case "critical":
-      return "var(--severity-critical)";
-    case "serious":
-      return "var(--severity-serious)";
-    case "moderate":
-      return "var(--severity-moderate)";
-    default:
-      return "var(--severity-minor)";
-  }
-}
-
-function severityLabel(severity: string): string {
-  return severity.charAt(0).toUpperCase() + severity.slice(1);
+// Unknown/legacy severities sort last rather than first — mirrors lib/report.ts.
+function severityRank(value: string): number {
+  const i = SEVERITY_ORDER.indexOf(value as Severity);
+  return i === -1 ? SEVERITY_ORDER.length : i;
 }
 
 export default async function AuditDetailPage({
@@ -83,19 +67,24 @@ export default async function AuditDetailPage({
     byPersona.set(f.persona_id, list);
   }
 
+  // Most-severe first — same wall as the report export: axe findings are the
+  // compliance verdict, ordered critical → serious → moderate → minor.
+  const sortedAxeFindings = [...axeFindings].sort(
+    (a, b) => severityRank(a.severity) - severityRank(b.severity),
+  );
+
   const total = run.task_success_total ?? 0;
   const achieved = run.task_success_achieved ?? 0;
-  const successPct = total === 0 ? 0 : Math.round((achieved / total) * 100);
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-10">
       {/* Header */}
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-4 text-center">
         <p className="text-sm text-muted-foreground">
           Results for{" "}
-          <span className="text-foreground font-medium">{run.url}</span>
+          <span className="font-mono text-foreground">{run.url}</span>
         </p>
-        <p className="text-xs text-muted-foreground">
+        <p className="font-mono text-xs text-muted-foreground/60">
           {new Date(run.created_at).toLocaleDateString(undefined, {
             year: "numeric",
             month: "short",
@@ -110,58 +99,27 @@ export default async function AuditDetailPage({
             Export accessibility report
           </Link>
         )}
-        <div className="relative flex items-center justify-center size-36">
-          <svg
-            className="absolute inset-0 -rotate-90"
-            viewBox="0 0 120 120"
-            aria-hidden="true"
-          >
-            <circle
-              cx="60"
-              cy="60"
-              r="52"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="6"
-              className="text-muted/30"
-            />
-            <circle
-              cx="60"
-              cy="60"
-              r="52"
-              fill="none"
-              strokeWidth="6"
-              strokeLinecap="round"
-              stroke={scoreStrokeColor(successPct)}
-              strokeDasharray={`${(successPct / 100) * 327} 327`}
-            />
-          </svg>
-          <div className="flex flex-col items-center">
-            <span
-              className="text-4xl font-bold tabular-nums"
-              style={{ color: scoreColor(successPct) }}
-            >
-              {achieved}
-              <span className="text-muted-foreground">/{total}</span>
-            </span>
-          </div>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Personas who achieved their goal
-        </p>
+        <Meter
+          className="w-full max-w-xs"
+          value={achieved}
+          total={total}
+          label="task success"
+          unit="personas reached their goal"
+          tone={successTone(achieved, total)}
+        />
       </div>
 
       {/* Persona findings */}
       {byPersona.size > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Persona findings</h3>
+          <h3 className="text-lg font-semibold tracking-tight">Persona findings</h3>
           <div className="grid gap-6 sm:grid-cols-3">
             {[...byPersona.entries()].map(([personaId, list]) => {
               const meta = PERSONA_DATA[personaId as keyof typeof PERSONA_DATA];
               return (
                 <div
                   key={personaId}
-                  className="rounded-xl border border-border p-4 space-y-3"
+                  className="space-y-3 rounded-md border border-border p-4"
                 >
                   <div>
                     <p className="text-sm font-medium">{meta?.name ?? personaId}</p>
@@ -173,16 +131,10 @@ export default async function AuditDetailPage({
                     {list.map((f) => (
                       <div
                         key={f.id}
-                        className="rounded-lg border border-border p-3 space-y-1"
+                        className="space-y-1.5 rounded-md border border-border p-3"
                       >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="size-2 shrink-0 rounded-full"
-                            style={{ backgroundColor: severityColor(f.severity) }}
-                          />
-                          <Badge variant={severityBadgeVariant(f.severity)}>
-                            {severityLabel(f.severity)}
-                          </Badge>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <SeverityChip severity={f.severity} />
                           <span className="text-xs font-medium truncate">
                             {f.title}
                           </span>
@@ -191,8 +143,8 @@ export default async function AuditDetailPage({
                           {f.description}
                         </p>
                         {formatLocation(f.page_url) && (
-                          <p className="text-xs text-muted-foreground/70">
-                            Found at: {formatLocation(f.page_url)}
+                          <p className="font-mono text-xs text-muted-foreground/60">
+                            found at {formatLocation(f.page_url)}
                           </p>
                         )}
                       </div>
@@ -206,34 +158,43 @@ export default async function AuditDetailPage({
       )}
 
       {/* Axe findings */}
-      {axeFindings.length > 0 && (
+      {sortedAxeFindings.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">
-            Accessibility Issues (axe-core)
+          <h3 className="text-lg font-semibold tracking-tight">
+            Accessibility issues (axe-core)
           </h3>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {axeFindings.map((f) => (
-              <div
-                key={f.id}
-                className="rounded-xl border border-border p-4 space-y-2"
-              >
-                <div className="flex items-center gap-2">
-                  <Badge variant={severityBadgeVariant(f.severity)}>
-                    {severityLabel(f.severity)}
-                  </Badge>
-                  <span className="text-sm font-medium">{f.title}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">{f.description}</p>
-                <p className="text-xs text-muted-foreground/70">
-                  {f.recommendation}
-                </p>
-                {formatLocation(f.page_url) && (
-                  <p className="text-xs text-muted-foreground/70">
-                    Found at: {formatLocation(f.page_url)}
+          <div className="overflow-hidden rounded-md border border-border bg-card">
+            <div className="flex items-center gap-2 border-b border-border px-4 py-2.5 font-mono text-xs text-muted-foreground">
+              <span className="text-[var(--primary)]">›</span>
+              <span>verdicts — deterministic, cited to WCAG</span>
+              <span className="ml-auto rounded-sm border border-border px-1.5 py-0.5 tabular-nums">
+                {sortedAxeFindings.length}
+              </span>
+            </div>
+            <div className="divide-y divide-border">
+              {sortedAxeFindings.map((f) => (
+                <div key={f.id} className="px-4 py-4 sm:px-5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <SeverityChip severity={f.severity} />
+                    <span className="text-sm font-medium text-card-foreground">
+                      {f.title}
+                    </span>
+                  </div>
+                  <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted-foreground">
+                    {f.description}
                   </p>
-                )}
-              </div>
-            ))}
+                  <p className="mt-1 max-w-prose text-xs text-muted-foreground/70">
+                    {f.recommendation}
+                  </p>
+                  {formatLocation(f.page_url) && (
+                    <p className="mt-2 font-mono text-xs text-muted-foreground/60">
+                      <span className="select-none">found at&nbsp;</span>
+                      {formatLocation(f.page_url)}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

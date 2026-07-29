@@ -66,6 +66,16 @@ const TAG_TO_CRITERION: Record<string, Criterion> = {
   wcag413: { code: "4.1.3", name: "Status Messages" },
 };
 
+/** Same criteria, keyed by SC code ("1.4.3") for citation lookups by number. */
+export const CRITERION_BY_CODE: Record<string, Criterion> = Object.fromEntries(
+  Object.values(TAG_TO_CRITERION).map((c) => [c.code, c]),
+);
+
+/** Human name for a success-criterion code, or null if the code is not a known SC. */
+export function criterionName(code: string): string | null {
+  return CRITERION_BY_CODE[code]?.name ?? null;
+}
+
 function compareCode(a: string, b: string): number {
   const pa = a.split(".").map(Number);
   const pb = b.split(".").map(Number);
