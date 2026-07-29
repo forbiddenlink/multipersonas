@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { buttonVariants } from "@/components/ui/button";
 import { PERSONA_DATA } from "@/lib/personas";
 import { buildReport, type Severity } from "@/lib/report";
+import { SeverityChip } from "@/components/forensic/severity-chip";
+import { severityMeta, SEVERITY_ORDER } from "@/components/forensic/severity";
 import { ExportButton } from "./export-button";
 import styles from "./report.module.css";
 
@@ -12,14 +14,20 @@ export const metadata: Metadata = {
   title: "Accessibility report",
 };
 
+// The report card is a literal paper preview — fixed white background, dark ink,
+// REGARDLESS of the app theme (see report.module.css header comment). So severity
+// color here stays a print-safe hardcoded hex, never the themed `var(--severity-*)`
+// tokens: those flip value with light/dark mode and are only verified AA against
+// their own theme's background, not against a background that ignores the theme.
+// The glyph (from the shared severity vocabulary) is a plain static character, so
+// it's safe to reuse here for the same color+icon+text treatment as the rest of
+// the design system.
 const SEVERITY_META: Record<Severity, { label: string; color: string }> = {
   critical: { label: "Critical", color: "#b91c1c" },
   serious: { label: "Serious", color: "#c2410c" },
   moderate: { label: "Moderate", color: "#a16207" },
   minor: { label: "Minor", color: "#4b5563" },
 };
-
-const SEVERITY_ORDER: Severity[] = ["critical", "serious", "moderate", "minor"];
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -49,12 +57,35 @@ export default async function ReportPage({
 
   return (
     <div>
-      {/* Screen-only controls — hidden in print. */}
-      <div className={`${styles.noPrint} report-print-hide`}>
-        <Link href={`/audits/${id}`} className={buttonVariants({ variant: "outline" })}>
-          Back to audit
-        </Link>
-        <ExportButton />
+      {/* On-screen frame — a console-toolbar header, entirely hidden in print
+          (report-print-hide). The report paper below is a fixed white/black
+          preview independent of the app theme, so themed components (SeverityChip)
+          live here in the chrome, never inside the print root. */}
+      <div className={`${styles.toolbar} report-print-hide`}>
+        <div className="flex items-center gap-2 border-b border-border px-4 py-2.5 font-mono text-xs text-muted-foreground">
+          <span className="text-[var(--primary)]">›</span>
+          <span>report — accessibility compliance record</span>
+          <span className="ml-auto rounded-sm border border-border px-1.5 py-0.5 tabular-nums">
+            {report.runId}
+          </span>
+        </div>
+        {totalViolations > 0 && (
+          <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
+            {SEVERITY_ORDER.filter((sev) => report.severityCounts[sev] > 0).map((sev) => (
+              <SeverityChip
+                key={sev}
+                severity={sev}
+                ruleId={String(report.severityCounts[sev])}
+              />
+            ))}
+          </div>
+        )}
+        <div className="flex items-center gap-3 px-4 py-3">
+          <Link href={`/audits/${id}`} className={buttonVariants({ variant: "outline" })}>
+            Back to audit
+          </Link>
+          <ExportButton />
+        </div>
       </div>
 
       <article className={`${styles.report} report-print-root`}>
@@ -109,6 +140,9 @@ export default async function ReportPage({
                     className={styles.countNum}
                     style={{ color: SEVERITY_META[sev].color }}
                   >
+                    <span aria-hidden="true" className={styles.countGlyph}>
+                      {severityMeta(sev).glyph}
+                    </span>
                     {report.severityCounts[sev]}
                   </div>
                   <div className={styles.countLabel}>{SEVERITY_META[sev].label}</div>
@@ -134,6 +168,7 @@ export default async function ReportPage({
                 {report.verdicts.map((v) => {
                   const meta =
                     SEVERITY_META[v.severity as Severity] ?? SEVERITY_META.minor;
+                  const glyph = severityMeta(v.severity).glyph;
                   return (
                     <tr key={v.id}>
                       <td>
@@ -147,7 +182,7 @@ export default async function ReportPage({
                         {v.criteria.length > 0 ? (
                           v.criteria.map((c) => (
                             <div key={c.code} title={c.name}>
-                              {c.code} {c.name}
+                              <span className={styles.scCode}>{c.code}</span> {c.name}
                             </div>
                           ))
                         ) : (
@@ -155,6 +190,9 @@ export default async function ReportPage({
                         )}
                       </td>
                       <td className={styles.sev} style={{ color: meta.color }}>
+                        <span aria-hidden="true" className={styles.sevGlyph}>
+                          {glyph}
+                        </span>
                         {meta.label}
                       </td>
                       <td className={styles.rec}>{v.recommendation}</td>

@@ -1,15 +1,22 @@
 import type { Metadata } from "next";
-import { Inter, DM_Serif_Display } from "next/font/google";
+import { Inter, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 
+// Sans — copy, CTAs, UI, and tight headings.
 const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const dmSerif = DM_Serif_Display({
-  variable: "--font-display",
-  weight: "400",
+// Mono — the evidence face: logs, rule IDs, counts, meters, tool labels, host names.
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+});
+
+// Serif — the document voice: report verdict body, WCAG citations, guide prose.
+const sourceSerif = Source_Serif_4({
+  variable: "--font-serif",
   subsets: ["latin"],
 });
 
@@ -30,7 +37,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
   },
   other: {
-    "theme-color": "#1a1a2e",
+    "theme-color": "#17130e",
   },
 };
 
@@ -42,7 +49,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${dmSerif.variable} antialiased`}
+      className={`${inter.variable} ${jetbrainsMono.variable} ${sourceSerif.variable} antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-dvh bg-background text-foreground font-sans">
@@ -54,6 +61,11 @@ export default function RootLayout({
               "(function(){try{var t=localStorage.getItem('theme');document.documentElement.classList.toggle('dark',t!=='light');}catch(e){document.documentElement.classList.add('dark');}})();",
           }}
         />
+        {/* Scroll-reveal sections default to hidden and are revealed by JS. Without JS,
+            force them visible so no-JS users never lose content (spec §8). */}
+        <noscript>
+          <style>{`[data-reveal]{opacity:1 !important;transform:none !important}`}</style>
+        </noscript>
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground">
           Skip to main content
         </a>

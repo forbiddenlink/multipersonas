@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { WaitlistForm } from "@/components/waitlist-form";
 import { Reveal } from "@/components/reveal";
 import { AuditTerminal } from "@/components/audit-terminal";
+import { Wordmark } from "@/components/forensic/wordmark";
 
 export const metadata: Metadata = {
   title: "For agencies — one audit trail for every client site",
@@ -46,13 +47,13 @@ export default function ForAgenciesPage() {
           <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
               href="#early-access"
-              className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-[background-color,transform] hover:bg-primary/90 active:translate-y-px"
+              className="inline-flex items-center justify-center rounded-sm bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-[background-color] hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               Get early access
             </Link>
             <Link
               href="/"
-              className="inline-flex items-center justify-center rounded-lg px-4 py-3.5 text-sm font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+              className="inline-flex items-center justify-center rounded-sm px-4 py-3 text-sm font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               Try the free scan first
             </Link>
@@ -60,8 +61,7 @@ export default function ForAgenciesPage() {
         </div>
 
         {/* The product, visibly working — a persona auditing behind the login, live. */}
-        <div className="relative lg:pl-2">
-          <div className="pointer-events-none absolute -inset-6 -z-10 rounded-[2rem] bg-primary/[0.06] blur-3xl" aria-hidden="true" />
+        <div className="lg:pl-2">
           <AuditTerminal />
         </div>
       </section>
@@ -80,23 +80,23 @@ export default function ForAgenciesPage() {
             they get named.
           </p>
 
-          <div className="mt-12 grid gap-8 border-t border-border pt-10 sm:grid-cols-3">
-            <div>
-              <p className="font-heading text-3xl tabular-nums">$1,000,000</p>
+          <div className="mt-12 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-md border border-border bg-background p-5">
+              <p className="font-mono text-3xl tabular-nums">$1,000,000</p>
               <p className="mt-2 text-sm text-muted-foreground">
                 FTC fine against an overlay vendor for claiming a script makes a site
                 compliant.<sup>1</sup>
               </p>
             </div>
-            <div>
-              <p className="font-heading text-3xl tabular-nums">Jun 28, 2025</p>
+            <div className="rounded-md border border-border bg-background p-5">
+              <p className="font-mono text-3xl tabular-nums">Jun 28, 2025</p>
               <p className="mt-2 text-sm text-muted-foreground">
                 The EU Accessibility Act is enforceable — not a future deadline, already in
                 force.<sup>2</sup>
               </p>
             </div>
-            <div>
-              <p className="font-heading text-3xl tabular-nums">5,500+</p>
+            <div className="rounded-md border border-border bg-background p-5">
+              <p className="font-mono text-3xl tabular-nums">5,500+</p>
               <p className="mt-2 text-sm text-muted-foreground">
                 Projected US federal ADA web-accessibility filings in 2026, most against
                 companies under $25M revenue.<sup>3</sup>
@@ -147,7 +147,7 @@ export default function ForAgenciesPage() {
 
           {/* WCAG diff motif */}
           <Reveal delay={80}>
-            <div className="overflow-hidden rounded-xl border border-border bg-card font-mono text-xs">
+            <div className="overflow-hidden rounded-md border border-border bg-card font-mono text-xs">
               <div className="border-b border-border px-4 py-2.5 text-muted-foreground">
                 1.1.1 — Non-text Content · /product/hero
               </div>
@@ -194,7 +194,7 @@ export default function ForAgenciesPage() {
             {SITES.map((s) => (
               <li
                 key={s.domain}
-                className="flex items-center justify-between rounded-lg border border-border bg-background py-3.5 pr-4 pl-0"
+                className="flex items-center justify-between rounded-md border border-border bg-background py-3.5 pr-4 pl-0"
               >
                 <span className="flex items-center gap-3">
                   <span
@@ -279,13 +279,13 @@ export default function ForAgenciesPage() {
       {/* ── Footnotes + footer ─────────────────────────────────────────── */}
       <footer className="border-t border-border px-6 py-10">
         <div className="mx-auto max-w-6xl">
-          <ol className="space-y-1 text-xs text-muted-foreground/70">
+          <ol className="space-y-1 text-xs text-muted-foreground">
             <li>1. FTC v. accessiBe, settlement announced January 2025 (ftc.gov).</li>
             <li>2. European Accessibility Act, enforcement from 28 June 2025.</li>
             <li>3. Projection based on Q1 2025 federal ADA Title III web filings (accessible.org / UsableNet trend data). Figures are directional.</li>
           </ol>
           <div className="mt-8 flex flex-col items-start justify-between gap-4 border-t border-border pt-6 sm:flex-row sm:items-center">
-            <p className="text-sm text-muted-foreground">Personaudit</p>
+            <Wordmark className="text-sm text-foreground" />
             <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
               <Link href="/" className="transition-colors hover:text-foreground">Home</Link>
               <Link href="/guides/wcag-checklist" className="transition-colors hover:text-foreground">WCAG Checklist</Link>

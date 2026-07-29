@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminEmail } from "@/lib/admin-access";
+import { BoxDivider } from "@/components/forensic/divider";
 
 export const metadata: Metadata = {
   title: "Waitlist",
@@ -48,7 +49,7 @@ export default async function WaitlistPage() {
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-2xl font-semibold tracking-tight">Waitlist</h1>
-        <p className="font-heading text-3xl tabular-nums text-primary">{signups.length}</p>
+        <p className="font-mono text-3xl tabular-nums text-foreground">{signups.length}</p>
       </div>
       <p className="mt-1 text-muted-foreground">
         Agency signups from{" "}
@@ -62,18 +63,20 @@ export default async function WaitlistPage() {
       )}
 
       {signups.length === 0 ? (
-        <div className="mt-8 rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">
+        <div className="mt-8 rounded-md border border-dashed border-border p-8 text-center text-muted-foreground">
           No signups yet. Drive agency traffic to{" "}
           <span className="font-mono text-sm">/for-agencies</span> and they&apos;ll appear here.
         </div>
       ) : (
         <>
+          <BoxDivider label="signups" className="mt-8 mb-4" />
+
           {Object.keys(bands).length > 0 && (
-            <div className="mt-6 flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2">
               {Object.entries(bands).map(([band, n]) => (
                 <span
                   key={band}
-                  className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground"
+                  className="rounded-sm border border-border bg-card px-2.5 py-1 font-mono text-xs text-muted-foreground"
                 >
                   {band === "—" ? "no scale given" : `${band} sites`}:{" "}
                   <span className="font-medium text-foreground tabular-nums">{n}</span>
@@ -82,9 +85,9 @@ export default async function WaitlistPage() {
             </div>
           )}
 
-          <div className="mt-6 overflow-x-auto rounded-xl border border-border">
+          <div className="mt-6 overflow-x-auto rounded-md border border-border">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-border bg-card text-xs text-muted-foreground">
+              <thead className="border-b border-border bg-card font-mono text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2 font-medium">Email</th>
                   <th className="px-4 py-2 font-medium">Scale</th>
@@ -95,7 +98,7 @@ export default async function WaitlistPage() {
               <tbody>
                 {signups.map((r) => (
                   <tr key={r.email} className="border-b border-border/60 last:border-0 align-top">
-                    <td className="px-4 py-2.5 font-medium">{r.email}</td>
+                    <td className="px-4 py-2.5 font-mono font-medium text-foreground">{r.email}</td>
                     <td className="px-4 py-2.5 whitespace-nowrap text-muted-foreground">
                       {r.sites_count ?? "—"}
                     </td>

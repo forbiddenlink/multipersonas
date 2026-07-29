@@ -7,7 +7,7 @@ import {
 } from "@engine/personas/library";
 import { PersonaCard } from "@/components/persona-card";
 import { PersonaFilter } from "@/components/persona-filter";
-import { Separator } from "@/components/ui/separator";
+import { BoxDivider } from "@/components/forensic/divider";
 
 export const metadata: Metadata = {
   title: "Personas",
@@ -43,15 +43,15 @@ export default async function PersonasPage({
         </div>
         <Link
           href="/dashboard"
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          className="rounded-sm bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
           Run an audit &rarr;
         </Link>
       </div>
 
-      <Separator className="my-4" />
+      <BoxDivider label="persona library" className="my-5" />
 
-      <Suspense fallback={<div className="flex gap-2 py-2">{Array.from({length: 4}).map((_, i) => <div key={i} className="h-8 w-20 animate-pulse rounded-md bg-muted" />)}</div>}>
+      <Suspense fallback={<div className="flex gap-2 py-2">{Array.from({length: 4}).map((_, i) => <div key={i} className="h-6 w-20 animate-pulse rounded-sm bg-muted" />)}</div>}>
         <PersonaFilter categories={categoryKeys} />
       </Suspense>
 

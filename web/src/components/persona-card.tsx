@@ -1,54 +1,9 @@
 import type { Persona } from "@engine/personas/types";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Monogram } from "@/components/forensic/monogram";
 
-const avatarColors = [
-  "bg-blue-600",
-  "bg-emerald-600",
-  "bg-violet-600",
-  "bg-amber-600",
-  "bg-rose-600",
-  "bg-cyan-600",
-  "bg-pink-600",
-  "bg-teal-600",
-  "bg-indigo-600",
-  "bg-orange-600",
-];
-
-function hashString(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
-function TechDots({ level }: { level: number }) {
-  return (
-    <div
-      className="flex items-center gap-1"
-      role="img"
-      aria-label={`Tech proficiency: ${level} of 5`}
-    >
-      <span className="text-xs text-muted-foreground mr-1">Tech</span>
-      {Array.from({ length: 5 }, (_, i) => (
-        <span
-          key={i}
-          className={`inline-block size-2 rounded-full ${
-            i < level ? "bg-foreground" : "bg-muted-foreground/30"
-          }`}
-        />
-      ))}
-    </div>
-  );
-}
+// Instrument-panel persona card: monogram tile (deterministic, severity-free) +
+// mono label/value readout rows instead of colorful badges. Personas are a UX
+// opinion layer, never a compliance verdict — no severity tint here.
 
 const connectionLabels: Record<string, string> = {
   fast: "Fast",
@@ -57,61 +12,62 @@ const connectionLabels: Record<string, string> = {
 };
 
 const patienceLabels: Record<string, string> = {
-  low: "Impatient",
+  low: "Low",
   medium: "Moderate",
-  high: "Patient",
+  high: "High",
 };
 
-export function PersonaCard({ persona }: { persona: Persona }) {
-  const colorIndex = hashString(persona.id) % avatarColors.length;
-  const avatarColor = avatarColors[colorIndex];
-
+function Readout({ label, value }: { label: string; value: string }) {
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-start gap-3">
-          <div
-            className={`flex size-10 shrink-0 items-center justify-center rounded-full text-white font-semibold text-lg ${avatarColor}`}
-          >
-            {persona.name[0]}
-          </div>
-          <div className="min-w-0">
-            <CardTitle>{persona.name}</CardTitle>
-            <CardDescription className="mt-0.5 line-clamp-2 capitalize">
-              {persona.description}
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
+    <div className="flex items-baseline justify-between gap-3 py-1.5">
+      <span className="font-mono text-[0.7rem] uppercase tracking-wide text-muted-foreground">
+        {label}
+      </span>
+      <span className="font-mono text-xs tabular-nums text-card-foreground">{value}</span>
+    </div>
+  );
+}
 
-      <CardContent className="flex flex-col gap-3">
-        <TechDots level={persona.techProficiency} />
-
-        <div className="flex flex-wrap gap-1.5">
-          <Badge variant="secondary">
-            {persona.isMobile ? "Mobile" : "Desktop"}
-          </Badge>
-          <Badge variant="secondary">
-            {connectionLabels[persona.connectionSpeed]}
-          </Badge>
-          <Badge variant="outline">{patienceLabels[persona.patienceLevel]}</Badge>
-          <Badge variant="outline">{persona.maxSteps} steps</Badge>
-          {persona.inputModality === "keyboard" && (
-            <Badge variant="outline">keyboard only</Badge>
-          )}
+export function PersonaCard({ persona }: { persona: Persona }) {
+  return (
+    <div className="rounded-md border border-border bg-card">
+      <div className="flex items-start gap-3 border-b border-border p-4">
+        <Monogram name={persona.name} size={40} />
+        <div className="min-w-0">
+          <p className="font-medium text-card-foreground">{persona.name}</p>
+          <p className="mt-0.5 line-clamp-2 text-sm capitalize text-muted-foreground">
+            {persona.description}
+          </p>
         </div>
+      </div>
 
-        <div>
-          <p className="text-xs font-medium text-muted-foreground mb-1">Goals</p>
-          <ul className="list-disc list-inside text-sm text-foreground/80 space-y-0.5">
-            {persona.goals.slice(0, 2).map((goal) => (
-              <li key={goal} className="line-clamp-1">
-                {goal}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </CardContent>
-    </Card>
+      <div className="divide-y divide-border/60 px-4">
+        <Readout label="Tech" value={`${persona.techProficiency} / 5`} />
+        <Readout label="Device" value={persona.isMobile ? "Mobile" : "Desktop"} />
+        <Readout label="Connection" value={connectionLabels[persona.connectionSpeed]} />
+        <Readout label="Patience" value={patienceLabels[persona.patienceLevel]} />
+        <Readout
+          label="Input"
+          value={persona.inputModality === "keyboard" ? "Keyboard only" : "Pointer"}
+        />
+        <Readout label="Steps" value={`${persona.maxSteps}`} />
+      </div>
+
+      <div className="p-4 pt-3">
+        <p className="font-mono text-[0.7rem] uppercase tracking-wide text-muted-foreground">
+          Goals
+        </p>
+        <ul className="mt-1.5 space-y-0.5 text-sm text-card-foreground/80">
+          {persona.goals.slice(0, 2).map((goal) => (
+            <li
+              key={goal}
+              className="line-clamp-1 before:mr-1.5 before:text-muted-foreground/50 before:content-['·']"
+            >
+              {goal}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 }

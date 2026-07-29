@@ -1,17 +1,10 @@
 "use client";
 
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PERSONA_DATA } from "@/lib/personas";
 import { formatLocation } from "@/lib/format-location";
-import { scoreColor, scoreStrokeColor } from "@/lib/score";
+import { SeverityChip } from "@/components/forensic/severity-chip";
+import { Meter } from "@/components/forensic/meter";
 
 export interface AuditResponse {
   url: string;
@@ -48,36 +41,15 @@ export interface AuditResponse {
   conflicts: Array<{ description: string; suggestion: string }>;
 }
 
-function severityBadgeVariant(
-  severity: string
-): "destructive" | "secondary" | "outline" {
-  switch (severity) {
-    case "critical":
-      return "destructive";
-    case "serious":
-      return "destructive";
-    case "moderate":
-      return "secondary";
-    default:
-      return "outline";
-  }
-}
-
-function severityColor(severity: string): string {
-  switch (severity) {
-    case "critical":
-      return "var(--severity-critical)";
-    case "serious":
-      return "var(--severity-serious)";
-    case "moderate":
-      return "var(--severity-moderate)";
-    default:
-      return "var(--severity-minor)";
-  }
-}
-
-function severityLabel(severity: string): string {
-  return severity.charAt(0).toUpperCase() + severity.slice(1);
+// Task-success is a fraction of real-shaped users, not a compliance verdict — this
+// borrows the same red/amber/green ramp the Meter component's `tone` prop uses for the
+// same non-axe metric, not the SeverityChip vocabulary (that's axe-only).
+function successTone(achieved: number, total: number): "minor" | "moderate" | "critical" | "muted" {
+  if (total === 0) return "muted";
+  const pct = achieved / total;
+  if (pct >= 0.8) return "minor";
+  if (pct >= 0.5) return "moderate";
+  return "critical";
 }
 
 export function AuditResults({
@@ -87,138 +59,125 @@ export function AuditResults({
   results: AuditResponse;
   onReset: () => void;
 }) {
-  // Drives the arc and its colour only. The label shows the real fraction —
-  // "0 of 3" is the finding, and rounding it to a percentage would hide that.
-  const successPct =
-    results.taskSuccess.total === 0
-      ? 0
-      : Math.round((results.taskSuccess.achieved / results.taskSuccess.total) * 100);
   return (
     <div className="w-full max-w-5xl mx-auto space-y-10">
       {/* Overall Score */}
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-4 text-center">
         <p className="text-sm text-muted-foreground">
           Results for{" "}
-          <span className="text-foreground font-medium">{results.url}</span>
+          <span className="font-mono text-foreground">{results.url}</span>
         </p>
-        <div className="relative flex items-center justify-center size-36">
-          <svg className="absolute inset-0 -rotate-90" viewBox="0 0 120 120" aria-hidden="true">
-            <circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" strokeWidth="6" className="text-muted/30" />
-            <circle
-              cx="60" cy="60" r="52" fill="none"
-              strokeWidth="6" strokeLinecap="round"
-              stroke={scoreStrokeColor(successPct)}
-              strokeDasharray={`${(successPct / 100) * 327} 327`}
-              className="transition-all duration-1000 ease-out"
-              style={{ animationDelay: "200ms" }}
-            />
-          </svg>
-          <div className="flex flex-col items-center">
-            <span className="text-4xl font-bold tabular-nums" style={{ color: scoreColor(successPct) }}>
-              {results.taskSuccess.achieved}<span className="text-muted-foreground">/{results.taskSuccess.total}</span>
-            </span>
-          </div>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Personas who achieved their goal
-        </p>
+        <Meter
+          className="w-full max-w-xs"
+          value={results.taskSuccess.achieved}
+          total={results.taskSuccess.total}
+          label="task success"
+          unit="personas reached their goal"
+          tone={successTone(results.taskSuccess.achieved, results.taskSuccess.total)}
+        />
       </div>
 
       {/* Persona Cards */}
       <div className="grid gap-6 sm:grid-cols-3">
         {results.personas.map((persona) => (
-          <Card key={persona.id} className="transition-all duration-200 hover:scale-[1.02] hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>{persona.name}</CardTitle>
-              </div>
-              <CardDescription>
+          <div key={persona.id} className="space-y-3 rounded-md border border-border p-4">
+            <div>
+              <p className="text-sm font-medium">{persona.name}</p>
+              <p className="text-xs text-muted-foreground">
                 {PERSONA_DATA[persona.id as keyof typeof PERSONA_DATA]?.role ?? persona.id}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant={persona.goalCompleted ? "secondary" : "destructive"}
-                >
-                  {persona.goalCompleted ? "Goal achieved" : "Blocked"}
-                </Badge>
-                <span className="text-xs text-muted-foreground">
-                  {persona.totalSteps} steps · {persona.statesReached} states
-                </span>
-              </div>
+              </p>
+            </div>
 
-              {persona.findings.length > 0 ? (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    UX observations ({persona.findings.length}) &mdash; AI judgement
-                  </p>
-                  {persona.findings.slice(0, 3).map((finding, i) => (
-                    <div
-                      key={i}
-                      className="rounded-lg border border-border p-3 space-y-1"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: severityColor(finding.severity) }} />
-                        <Badge variant={severityBadgeVariant(finding.severity)}>
-                          {severityLabel(finding.severity)}
-                        </Badge>
-                        <span className="text-xs font-medium truncate">
-                          {finding.title}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
-                        {finding.description}
-                      </p>
-                      {formatLocation(finding.location) && (
-                        <p className="text-xs text-muted-foreground/70">
-                          Found at: {formatLocation(finding.location)}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  No issues found
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Goal state — same chip formula as SeverityChip (color+border+bg via
+                  color-mix), but not the shared component: this is a pass/fail state on
+                  a persona's own goal, not an axe severity. */}
+              <span
+                className="inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium"
+                style={{
+                  color: persona.goalCompleted ? "var(--severity-minor)" : "var(--severity-critical)",
+                  borderColor: `color-mix(in oklch, ${persona.goalCompleted ? "var(--severity-minor)" : "var(--severity-critical)"} 55%, transparent)`,
+                }}
+              >
+                {persona.goalCompleted ? "Goal achieved" : "Blocked"}
+              </span>
+              <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                {persona.totalSteps} steps · {persona.statesReached} states
+              </span>
+            </div>
+
+            {persona.findings.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  UX observations ({persona.findings.length}) &mdash; AI judgement
                 </p>
-              )}
-            </CardContent>
-          </Card>
+                {persona.findings.slice(0, 3).map((finding, i) => (
+                  <div
+                    key={i}
+                    className="space-y-1.5 rounded-md border border-border p-3"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <SeverityChip severity={finding.severity} />
+                      <span className="text-xs font-medium truncate">
+                        {finding.title}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {finding.description}
+                    </p>
+                    {formatLocation(finding.location) && (
+                      <p className="font-mono text-xs text-muted-foreground">
+                        found at {formatLocation(finding.location)}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                No issues found
+              </p>
+            )}
+          </div>
         ))}
       </div>
 
       {/* Axe Findings */}
       {results.axeFindings.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">
-            Accessibility Issues (axe-core)
+          <h3 className="text-lg font-semibold tracking-tight">
+            Accessibility issues (axe-core)
           </h3>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {results.axeFindings.map((finding, i) => (
-              <div
-                key={i}
-                className="rounded-xl border border-border p-4 space-y-2 transition-all duration-200 hover:border-primary/20"
-              >
-                <div className="flex items-center gap-2">
-                  <Badge variant={severityBadgeVariant(finding.severity)}>
-                    {severityLabel(finding.severity)}
-                  </Badge>
-                  <span className="text-sm font-medium">{finding.title}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {finding.description}
-                </p>
-                <p className="text-xs text-muted-foreground/70">
-                  {finding.recommendation}
-                </p>
-                {formatLocation(finding.location) && (
-                  <p className="text-xs text-muted-foreground/70">
-                    Found at: {formatLocation(finding.location)}
+          <div className="overflow-hidden rounded-md border border-border bg-card">
+            <div className="flex items-center gap-2 border-b border-border px-4 py-2.5 font-mono text-xs text-muted-foreground">
+              <span className="text-[var(--primary)]">›</span>
+              <span>verdicts — deterministic, cited to WCAG</span>
+              <span className="ml-auto rounded-sm border border-border px-1.5 py-0.5 tabular-nums">
+                {results.axeFindings.length}
+              </span>
+            </div>
+            <div className="divide-y divide-border">
+              {results.axeFindings.map((finding, i) => (
+                <div key={i} className="px-4 py-4 sm:px-5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <SeverityChip severity={finding.severity} />
+                    <span className="text-sm font-medium text-card-foreground">{finding.title}</span>
+                  </div>
+                  <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted-foreground">
+                    {finding.description}
                   </p>
-                )}
-              </div>
-            ))}
+                  <p className="mt-1 max-w-prose text-xs text-muted-foreground">
+                    {finding.recommendation}
+                  </p>
+                  {formatLocation(finding.location) && (
+                    <p className="mt-2 font-mono text-xs text-muted-foreground">
+                      <span className="select-none">found at&nbsp;</span>
+                      {formatLocation(finding.location)}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -226,12 +185,12 @@ export function AuditResults({
       {/* Conflicts */}
       {results.conflicts.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Persona Conflicts</h3>
+          <h3 className="text-lg font-semibold tracking-tight">Persona conflicts</h3>
           <div className="space-y-3">
             {results.conflicts.map((conflict, i) => (
               <div
                 key={i}
-                className="rounded-xl border border-border p-4 space-y-2"
+                className="space-y-2 rounded-md border border-border p-4"
               >
                 <p className="text-sm">{conflict.description}</p>
                 <p className="text-xs text-muted-foreground">
