@@ -22,6 +22,7 @@ export type Database = {
           error: string | null
           id: string
           persona_ids: string[]
+          project_id: string | null
           result: Json | null
           started_at: string | null
           status: string
@@ -35,6 +36,7 @@ export type Database = {
           error?: string | null
           id?: string
           persona_ids?: string[]
+          project_id?: string | null
           result?: Json | null
           started_at?: string | null
           status?: string
@@ -48,6 +50,7 @@ export type Database = {
           error?: string | null
           id?: string
           persona_ids?: string[]
+          project_id?: string | null
           result?: Json | null
           started_at?: string | null
           status?: string
@@ -60,6 +63,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_jobs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -169,6 +179,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          agency_name: string | null
           avatar_url: string | null
           created_at: string
           email: string
@@ -179,6 +190,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agency_name?: string | null
           avatar_url?: string | null
           created_at?: string
           email: string
@@ -189,6 +201,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agency_name?: string | null
           avatar_url?: string | null
           created_at?: string
           email?: string
@@ -372,6 +385,7 @@ export type Database = {
           error: string | null
           id: string
           persona_ids: string[]
+          project_id: string | null
           result: Json | null
           started_at: string | null
           status: string

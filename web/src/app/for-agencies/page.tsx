@@ -185,8 +185,9 @@ export default function ForAgenciesPage() {
               Stop re-running a single-site scanner twenty times.
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Every client site is a project. Scan on a schedule, watch new defects appear,
-              track which ones you&apos;ve cleared, and export a report per client.
+              Every client site becomes a project — run audits, open history, and export a
+              compliance report per client. Scheduled re-scans are next; today you drive
+              when each site gets checked.
             </p>
           </div>
 
@@ -228,8 +229,10 @@ export default function ForAgenciesPage() {
           <div className="mt-6 space-y-4 text-lg text-muted-foreground">
             <p>
               No overlay. No &ldquo;one line of JavaScript makes you compliant.&rdquo; We audit
-              the real DOM, behind the real login, and tell you exactly what&apos;s broken and
-              where. You hand your client a report they can act on — or defend.
+              the real DOM with axe-core — on public pages in the hosted product, and behind
+              login via the CLI where credentials never leave your machine — and tell you
+              exactly what&apos;s broken and where. You hand your client a report they can act
+              on — or defend.
             </p>
             <p>
               And we&apos;re honest about the limits: axe-core renders the compliance verdict;
@@ -261,13 +264,14 @@ export default function ForAgenciesPage() {
               Help shape the agency workspace.
             </h2>
             <p className="mt-5 text-lg text-muted-foreground">
-              The engine is live — you can run a free scan today, and behind-login scanning
-              works now through the CLI, where credentials never leave your machine.
+              The engine is live — free public scans on the web, behind-login scanning via
+              the CLI (credentials stay on your machine), and a verdicts-only compliance
+              report you can print to PDF. Multi-site projects are shipping now.
             </p>
             <p className="mt-4 text-muted-foreground">
-              What we&apos;re building next, with a first group of agencies: multi-site
-              projects, scheduled re-scans, and a client-ready compliance report. Tell us how
-              you&apos;d use it and get in early.
+              Join early if you ship many client sites under ADA / EAA pressure. Tell us how
+              you&apos;d use it — scheduled re-scans and white-label reports are next on the
+              list for agencies who raise their hand.
             </p>
           </Reveal>
           <Reveal delay={80}>

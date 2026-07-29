@@ -17,6 +17,7 @@ const row = (over: Partial<FindingRow>): FindingRow => ({
   recommendation: "r",
   rule_id: "color-contrast",
   wcag_tags: ["wcag2aa", "wcag143"],
+  page_url: "https://client.example/checkout",
   ...over,
 });
 
@@ -73,6 +74,8 @@ describe("assembleReport", () => {
       url: "https://client.example",
       auditDate: "2026-07-28T12:00:00Z",
       personaIds: ["elderly-user", "power-user-developer"],
+      clientName: null,
+      agencyName: null,
     });
     expect(report.verdicts).toEqual([]);
     expect(report.severityCounts).toEqual({
@@ -81,5 +84,26 @@ describe("assembleReport", () => {
       moderate: 0,
       minor: 0,
     });
+  });
+
+  it("splits per-state locations from a comma-joined page_url", () => {
+    const report = assembleReport(run, [
+      row({
+        page_url: "https://app.example/cart, https://app.example/checkout",
+      }),
+    ]);
+    expect(report.verdicts[0]!.locations).toEqual([
+      "https://app.example/cart",
+      "https://app.example/checkout",
+    ]);
+  });
+
+  it("carries white-label branding when provided", () => {
+    const report = assembleReport(run, [], {
+      clientName: "Meridian Clinic",
+      agencyName: "Northwind Agency",
+    });
+    expect(report.clientName).toBe("Meridian Clinic");
+    expect(report.agencyName).toBe("Northwind Agency");
   });
 });

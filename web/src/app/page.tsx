@@ -177,6 +177,44 @@ export default function Home() {
         </div>
       </section>
 
+      {/* CI gate — already built in the CLI; surface it as a selling point. */}
+      <section className="border-y border-border bg-card/40 px-6 py-16">
+        <div className="mx-auto max-w-3xl">
+          <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
+            CI gate
+          </p>
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight">
+            Fail the build only on new defects.
+          </h2>
+          <p className="mt-3 text-muted-foreground">
+            Baseline today&apos;s backlog once, then gate CI on regressions — existing issues
+            stay ignored until you clear them. Deterministic, no API key, works behind a
+            saved session.
+          </p>
+          <pre className="mt-6 overflow-x-auto rounded-sm border border-border bg-background p-4 font-mono text-xs leading-relaxed text-foreground">
+{`# snapshot today's defects (commit the baseline)
+mpersonas scan https://app.example.com --session ./session.json \\
+  --baseline mpersonas-baseline.json --update-baseline
+
+# CI: exit 2 only on NEW defects at/above serious
+mpersonas scan https://app.example.com --session ./session.json \\
+  --baseline mpersonas-baseline.json --fail-on serious`}
+          </pre>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Ready-to-use GitHub Action:{" "}
+            <a
+              href="https://github.com/forbiddenlink/multipersonas/tree/main/examples/github-actions"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-4 hover:text-foreground"
+            >
+              examples/github-actions
+            </a>
+            .
+          </p>
+        </div>
+      </section>
+
       {/* Bottom CTA */}
       <section className="border-t border-border px-6 py-20">
         <div className="mx-auto flex max-w-3xl flex-col items-start gap-4">

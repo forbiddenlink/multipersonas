@@ -161,3 +161,88 @@ describe("POST /api/audit — anonymous access", () => {
     expect(res.status).not.toBe(401);
   });
 });
+
+describe("POST /api/audit — projectId", () => {
+  async function loadRouteWithMocks(opts: {
+    user: { id: string; email: string } | null;
+    projectRow?: { id: string } | null;
+  }) {
+    vi.doMock("@engine/security/url-guard", () => ({
+      assertUrlAllowed: vi.fn().mockResolvedValue(new URL("https://example.com/")),
+      BlockedUrlError: class BlockedUrlError extends Error {},
+    }));
+    vi.doMock("@/lib/rate-limit", () => ({
+      consumeRateLimit: vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 }),
+    }));
+    vi.doMock("@/lib/spend", () => ({
+      reserveSpend: vi.fn().mockResolvedValue(true),
+    }));
+    vi.doMock("@/lib/limits", () => ({
+      killSwitchEnabled: vi.fn().mockReturnValue(false),
+    }));
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createAdminClient: vi.fn().mockReturnValue({
+        from: vi.fn(() => ({
+          insert: vi.fn(() => ({
+            select: vi.fn(() => ({
+              single: vi.fn().mockResolvedValue({ data: { id: "job-1" }, error: null }),
+            })),
+          })),
+        })),
+      }),
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: vi.fn().mockResolvedValue({
+        auth: {
+          getUser: vi.fn().mockResolvedValue({ data: { user: opts.user } }),
+        },
+        from: vi.fn(() => ({
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn().mockResolvedValue({
+                data: opts.projectRow ?? null,
+                error: null,
+              }),
+            })),
+          })),
+        })),
+      }),
+    }));
+    vi.resetModules();
+    return import("@/app/api/audit/route");
+  }
+
+  it("rejects a projectId not owned by the caller", async () => {
+    const mod = await loadRouteWithMocks({
+      user: { id: "test-user", email: "test@example.com" },
+      projectRow: null,
+    });
+
+    const req = new Request("http://localhost/api/audit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: "https://example.com", projectId: "not-mine" }),
+    });
+    const res = await mod.POST(req);
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.error).toContain("Project not found");
+  });
+
+  it("ignores a projectId supplied by an anonymous caller instead of rejecting", async () => {
+    const mod = await loadRouteWithMocks({ user: null });
+
+    const req = new Request("http://localhost/api/audit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url: "https://example.com",
+        projectId: "someone-elses-project",
+      }),
+    });
+    const res = await mod.POST(req);
+    // Anonymous callers can't own a project, so the field is dropped rather than
+    // rejected with the ownership error above.
+    expect(res.status).toBe(202);
+  });
+});
