@@ -77,7 +77,7 @@ export default async function ReportPage({
       <div className={`${styles.toolbar} report-print-hide`}>
         <div className="flex items-center gap-2 border-b border-border px-4 py-2.5 font-mono text-xs text-muted-foreground">
           <span className="text-[var(--primary)]">›</span>
-          <span>report — accessibility compliance record</span>
+          <span>report: accessibility compliance record</span>
           <span className="ml-auto rounded-sm border border-border px-1.5 py-0.5 tabular-nums">
             {report.runId}
           </span>
@@ -105,7 +105,7 @@ export default async function ReportPage({
         <header className={styles.header}>
           <h1 className={styles.title}>
             {report.agencyName
-              ? `${report.agencyName} — Accessibility Report`
+              ? `${report.agencyName} Accessibility Report`
               : "Personaudit Accessibility Report"}
           </h1>
           {report.clientName && (
@@ -152,7 +152,7 @@ export default async function ReportPage({
           {totalViolations === 0 ? (
             <p className={styles.empty}>
               No accessibility violations were detected at the states this audit reached.
-              This is not a guarantee of full conformance — see methodology above.
+              This is not a guarantee of full conformance. See the methodology above.
             </p>
           ) : (
             <div className={styles.summary}>
@@ -180,7 +180,7 @@ export default async function ReportPage({
           </h2>
           <p className={styles.disclaimer}>
             This conformance table is generated from <strong>deterministic axe-core</strong>{" "}
-            results — not AI inference. Automation alone can never confirm full support: a
+            results, not AI inference. Automation alone can never confirm full support: a
             criterion axe checks and finds clean is <strong>Partially Supports</strong>{" "}
             (manual verification still required), and a criterion axe cannot evaluate is{" "}
             <strong>Needs Manual Review</strong>. Only measured violations yield{" "}

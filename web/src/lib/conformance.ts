@@ -1,14 +1,14 @@
 import type { Criterion } from "./wcag";
 
 /**
- * The conformance engine — turns axe verdicts into an honest, automated ACR/VPAT-lite
+ * The conformance engine. Turns axe verdicts into an honest, automated ACR/VPAT-lite
  * conformance table. See docs/plans/2026-07-30-honest-acr-design.md.
  *
  * The one rule that makes this credible (and legally defensible) rather than the
  * accessiBe failure mode: automation ALONE never emits a bare "Supports". A criterion
  * axe checks and finds clean is "Partially Supports" (the manual portion is untested); a
  * criterion axe can't check at all is "Needs Manual Review". Only a real violation yields
- * "Does Not Support". Pure function — unit-tested independently of the catalog data.
+ * "Does Not Support". Pure function, unit-tested independently of the catalog data.
  */
 
 export type ConformanceLevel = "A" | "AA";
@@ -41,10 +41,10 @@ export interface ConformanceSummary {
 }
 
 const REMARK: Record<ConformanceStatus, string> = {
-  "does-not-support": "Automated testing found violations of this criterion — see findings.",
+  "does-not-support": "Automated testing found violations of this criterion. See the findings below.",
   "partially-supports":
-    "Automated checks pass; portions of this criterion require manual verification.",
-  "needs-manual-review": "No automated coverage — this criterion requires manual review.",
+    "Automated checks pass. Portions of this criterion still require manual verification.",
+  "needs-manual-review": "No automated coverage. This criterion requires manual review.",
 };
 
 /**
