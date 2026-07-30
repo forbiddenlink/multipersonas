@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@sentry/node": "^10.69.0",
     "@supabase/supabase-js": "^2.110.1",
     "multipersonas": "workspace:*",
     "tsx": "^4.23.0"

@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
+
 // Terminal-native error state: a `fail` line in the critical severity colour with a
 // retry prompt, framed as tool output (forensic-terminal spec §6).
 export default function Error({
@@ -9,6 +12,10 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <div className="flex min-h-dvh items-center justify-center px-4">
       <div className="w-full max-w-md rounded-md border border-border bg-card font-mono text-sm">

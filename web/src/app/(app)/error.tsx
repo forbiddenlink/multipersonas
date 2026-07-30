@@ -1,5 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
+
+// In-app error state, in the same terminal-native language as the root error boundary
+// (forensic-terminal spec §6) rather than a generic heading + solid button.
 export default function AppError({
   error,
   reset,
@@ -7,18 +12,35 @@ export default function AppError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
-    <div className="flex flex-col items-center justify-center gap-4 py-16 px-4">
-      <h2 className="text-xl font-semibold">Something broke</h2>
-      <p className="text-sm text-muted-foreground max-w-md text-center">
-        {error.message || "Try refreshing the page. If this keeps happening, clear your browser cache."}
-      </p>
-      <button
-        onClick={reset}
-        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-      >
-        Try again
-      </button>
+    <div className="flex items-center justify-center px-4 py-16">
+      <div className="w-full max-w-md rounded-md border border-border bg-card font-mono text-sm">
+        <div className="border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
+          <span aria-hidden="true" className="select-none text-[var(--primary)]">┌─ </span>
+          personaudit ~/error
+        </div>
+        <div className="space-y-3 px-4 py-5">
+          <p style={{ color: "var(--severity-critical)" }}>
+            <span aria-hidden="true" className="select-none">✗&nbsp;</span>
+            fail — something broke
+          </p>
+          <p className="break-words text-muted-foreground">
+            {error.message ||
+              "Try refreshing the page. If this keeps happening, clear your browser cache."}
+          </p>
+          <button
+            onClick={reset}
+            className="rounded-sm border border-border px-3 py-1.5 text-left transition-colors hover:border-[var(--primary)]/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+          >
+            <span aria-hidden="true" className="select-none text-[var(--primary)]">›&nbsp;</span>
+            retry
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

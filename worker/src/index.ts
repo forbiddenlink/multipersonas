@@ -1,6 +1,7 @@
 import * as os from "node:os";
 import * as path from "node:path";
 import * as fs from "node:fs";
+import * as Sentry from "@sentry/node";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { runMultiPersonaTest, type TestResult } from "multipersonas/orchestrator";
 import { personaLibrary } from "multipersonas/personas/library";
@@ -18,9 +19,14 @@ const JOB_TIMEOUT_MS = Number(process.env.WORKER_JOB_TIMEOUT_SECONDS ?? 300) * 1
 // worker is itself about to time out.
 const REAP_AFTER_SECONDS = Number(process.env.WORKER_REAP_AFTER_SECONDS ?? 600);
 const MAX_ATTEMPTS = Number(process.env.WORKER_MAX_ATTEMPTS ?? 3);
-// Optional alert sink (Slack-compatible incoming webhook). Until Sentry is wired with a
-// DSN, this is the paging path for a stuck/crashing worker. No-op when unset.
+// Optional alert sink (Slack-compatible incoming webhook) — a lightweight paging path
+// alongside Sentry. No-op when unset.
 const ALERT_WEBHOOK = process.env.WORKER_ALERT_WEBHOOK;
+
+// Error tracking. No-op until SENTRY_DSN is set on the host, so this ships safely disabled.
+if (process.env.SENTRY_DSN) {
+  Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 0.1 });
+}
 
 if (!SUPABASE_URL || !SERVICE_KEY) {
   console.error(
@@ -257,6 +263,7 @@ async function claimAndRun(): Promise<boolean> {
     // Refund the budget this failed run reserved (P0 #3) so a run of failures can't
     // fill the daily cap and refuse legitimate audits.
     await releaseReservation(claimed);
+    Sentry.captureException(e, { tags: { jobId: claimed.id } });
     console.error(`[worker] failed ${claimed.id}: ${message}`);
     await notify(`job ${claimed.id} failed: ${message}`);
   } finally {
@@ -292,6 +299,7 @@ async function loop(): Promise<void> {
       ranSomething = await claimAndRun();
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
+      Sentry.captureException(e);
       console.error("[worker] loop error:", msg);
       await notify(`loop error: ${msg}`);
     }

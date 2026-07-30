@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
+
 // Root fallback when the whole app tree crashes: renders its own <html>, so no Tailwind
 // tokens are available — literal warm-dark hex mirrored from the .dark token block, in a
 // terminal-native frame. (globals.css .dark: bg oklch(0.15 0.006 70) ≈ #17130e, etc.)
@@ -19,6 +22,10 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <html lang="en" className="dark">
       <body style={{ backgroundColor: BG, color: FG, fontFamily: MONO, margin: 0 }}>
