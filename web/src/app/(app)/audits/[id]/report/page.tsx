@@ -29,6 +29,19 @@ const SEVERITY_META: Record<Severity, { label: string; color: string }> = {
   minor: { label: "Minor", color: "#4b5563" },
 };
 
+// Print-safe conformance colors (same rationale as SEVERITY_META — hardcoded for the
+// paper preview). Order is worst-first for the summary tiles.
+const CONFORMANCE_STATUSES = [
+  "does-not-support",
+  "partially-supports",
+  "needs-manual-review",
+] as const;
+const CONFORMANCE_META = {
+  "does-not-support": { label: "Does Not Support", color: "#b91c1c" },
+  "partially-supports": { label: "Partially Supports", color: "#a16207" },
+  "needs-manual-review": { label: "Needs Manual Review", color: "#4b5563" },
+} as const;
+
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
     year: "numeric",
@@ -159,6 +172,55 @@ export default async function ReportPage({
               ))}
             </div>
           )}
+        </section>
+
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>
+            WCAG 2.2 AA conformance ({report.conformance.totalCriteria} criteria)
+          </h2>
+          <p className={styles.disclaimer}>
+            This conformance table is generated from <strong>deterministic axe-core</strong>{" "}
+            results — not AI inference. Automation alone can never confirm full support: a
+            criterion axe checks and finds clean is <strong>Partially Supports</strong>{" "}
+            (manual verification still required), and a criterion axe cannot evaluate is{" "}
+            <strong>Needs Manual Review</strong>. Only measured violations yield{" "}
+            <strong>Does Not Support</strong>.
+          </p>
+          <div className={styles.summary}>
+            {CONFORMANCE_STATUSES.map((s) => (
+              <div key={s} className={styles.count}>
+                <div className={styles.countNum} style={{ color: CONFORMANCE_META[s].color }}>
+                  {report.conformance.counts[s]}
+                </div>
+                <div className={styles.countLabel}>{CONFORMANCE_META[s].label}</div>
+              </div>
+            ))}
+          </div>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th style={{ width: "40%" }}>Success criterion</th>
+                <th style={{ width: "8%" }}>Level</th>
+                <th style={{ width: "22%" }}>Conformance</th>
+                <th style={{ width: "30%" }}>Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.conformance.rows.map((row) => (
+                <tr key={row.code}>
+                  <td>
+                    <strong>{row.code}</strong> {row.name}
+                  </td>
+                  <td>{row.level}</td>
+                  <td style={{ color: CONFORMANCE_META[row.status].color, whiteSpace: "nowrap" }}>
+                    {CONFORMANCE_META[row.status].label}
+                    {row.violationCount > 0 ? ` (${row.violationCount})` : ""}
+                  </td>
+                  <td>{row.remarks}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </section>
 
         {totalViolations > 0 && (

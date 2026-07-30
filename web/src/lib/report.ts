@@ -1,7 +1,9 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
-import { wcagTagsToCriteria, type Criterion } from "./wcag";
+import { wcagTagsToCriteria, AXE_TESTABLE_CODES, type Criterion } from "./wcag";
+import { buildConformance, type ConformanceSummary } from "./conformance";
+import { WCAG22_AA_CATALOG } from "./wcag-catalog";
 
 type SB = SupabaseClient<Database>;
 
@@ -48,6 +50,8 @@ export interface ReportData {
   personaIds: string[];
   severityCounts: Record<Severity, number>;
   verdicts: ReportVerdict[];
+  /** WCAG 2.2 A+AA conformance table (the honest automated ACR). */
+  conformance: ConformanceSummary;
   /** Client project name when the run is linked to a project. */
   clientName: string | null;
   /** Agency display name from the caller's profile (white-label "Prepared by"). */
@@ -108,6 +112,7 @@ export function assembleReport(
     personaIds: run.persona_ids,
     severityCounts,
     verdicts,
+    conformance: buildConformance(verdicts, WCAG22_AA_CATALOG, AXE_TESTABLE_CODES),
     clientName: branding.clientName ?? null,
     agencyName: branding.agencyName ?? null,
   };

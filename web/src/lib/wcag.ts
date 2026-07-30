@@ -6,7 +6,10 @@
  * digits — `wcag1411` is 1.4.11, not 1.41.1, and guessing would fabricate criteria. Any
  * tag not in the table is dropped, never invented.
  *
- * Covers WCAG 2.0 / 2.1 Level A + AA — the criteria axe-core actually emits.
+ * Covers the WCAG 2.2 Level A + AA criteria axe-core actually emits. 4.1.1 Parsing is
+ * deliberately absent: axe historically emitted `wcag411`, but 4.1.1 is obsolete and removed
+ * in WCAG 2.2, so this product (which reports 2.2 conformance) must never cite it. A stray
+ * `wcag411` tag on a legacy finding is simply dropped.
  */
 
 export interface Criterion {
@@ -61,7 +64,6 @@ const TAG_TO_CRITERION: Record<string, Criterion> = {
   wcag332: { code: "3.3.2", name: "Labels or Instructions" },
   wcag333: { code: "3.3.3", name: "Error Suggestion" },
   wcag334: { code: "3.3.4", name: "Error Prevention (Legal, Financial, Data)" },
-  wcag411: { code: "4.1.1", name: "Parsing" },
   wcag412: { code: "4.1.2", name: "Name, Role, Value" },
   wcag413: { code: "4.1.3", name: "Status Messages" },
 };
@@ -69,6 +71,15 @@ const TAG_TO_CRITERION: Record<string, Criterion> = {
 /** Same criteria, keyed by SC code ("1.4.3") for citation lookups by number. */
 const CRITERION_BY_CODE: Record<string, Criterion> = Object.fromEntries(
   Object.values(TAG_TO_CRITERION).map((c) => [c.code, c]),
+);
+
+/**
+ * SC codes axe-core can actually test (i.e. it ships rules that emit these tags). Used by
+ * the conformance engine to distinguish "automated checks apply here" from "no automated
+ * coverage — manual review". A code NOT in this set can never be claimed as automated-clean.
+ */
+export const AXE_TESTABLE_CODES: ReadonlySet<string> = new Set(
+  Object.values(TAG_TO_CRITERION).map((c) => c.code),
 );
 
 /** Human name for a success-criterion code, or null if the code is not a known SC. */

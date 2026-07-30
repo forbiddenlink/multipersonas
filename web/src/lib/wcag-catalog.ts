@@ -1,0 +1,67 @@
+import type { CatalogCriterion } from "./conformance";
+
+/**
+ * The complete WCAG 2.2 Level A + AA success-criteria catalog — 55 criteria (31 A, 24 AA).
+ * Sourced from the W3C normative document https://www.w3.org/TR/WCAG22/ (cross-checked
+ * against the quickref). 4.1.1 Parsing is intentionally absent — it is obsolete and removed
+ * in WCAG 2.2. WCAG 2.2 additions over 2.1: 2.4.11, 2.5.7, 2.5.8 (AA); 3.2.6, 3.3.7 (A);
+ * 3.3.8 (AA). This is the denominator every ACR reports against, so it must stay accurate —
+ * do not add AAA criteria, and re-verify against W3C before editing.
+ */
+export const WCAG22_AA_CATALOG: readonly CatalogCriterion[] = [
+  { code: "1.1.1", level: "A", name: "Non-text Content" },
+  { code: "1.2.1", level: "A", name: "Audio-only and Video-only (Prerecorded)" },
+  { code: "1.2.2", level: "A", name: "Captions (Prerecorded)" },
+  { code: "1.2.3", level: "A", name: "Audio Description or Media Alternative (Prerecorded)" },
+  { code: "1.2.4", level: "AA", name: "Captions (Live)" },
+  { code: "1.2.5", level: "AA", name: "Audio Description (Prerecorded)" },
+  { code: "1.3.1", level: "A", name: "Info and Relationships" },
+  { code: "1.3.2", level: "A", name: "Meaningful Sequence" },
+  { code: "1.3.3", level: "A", name: "Sensory Characteristics" },
+  { code: "1.3.4", level: "AA", name: "Orientation" },
+  { code: "1.3.5", level: "AA", name: "Identify Input Purpose" },
+  { code: "1.4.1", level: "A", name: "Use of Color" },
+  { code: "1.4.2", level: "A", name: "Audio Control" },
+  { code: "1.4.3", level: "AA", name: "Contrast (Minimum)" },
+  { code: "1.4.4", level: "AA", name: "Resize Text" },
+  { code: "1.4.5", level: "AA", name: "Images of Text" },
+  { code: "1.4.10", level: "AA", name: "Reflow" },
+  { code: "1.4.11", level: "AA", name: "Non-text Contrast" },
+  { code: "1.4.12", level: "AA", name: "Text Spacing" },
+  { code: "1.4.13", level: "AA", name: "Content on Hover or Focus" },
+  { code: "2.1.1", level: "A", name: "Keyboard" },
+  { code: "2.1.2", level: "A", name: "No Keyboard Trap" },
+  { code: "2.1.4", level: "A", name: "Character Key Shortcuts" },
+  { code: "2.2.1", level: "A", name: "Timing Adjustable" },
+  { code: "2.2.2", level: "A", name: "Pause, Stop, Hide" },
+  { code: "2.3.1", level: "A", name: "Three Flashes or Below Threshold" },
+  { code: "2.4.1", level: "A", name: "Bypass Blocks" },
+  { code: "2.4.2", level: "A", name: "Page Titled" },
+  { code: "2.4.3", level: "A", name: "Focus Order" },
+  { code: "2.4.4", level: "A", name: "Link Purpose (In Context)" },
+  { code: "2.4.5", level: "AA", name: "Multiple Ways" },
+  { code: "2.4.6", level: "AA", name: "Headings and Labels" },
+  { code: "2.4.7", level: "AA", name: "Focus Visible" },
+  { code: "2.4.11", level: "AA", name: "Focus Not Obscured (Minimum)" },
+  { code: "2.5.1", level: "A", name: "Pointer Gestures" },
+  { code: "2.5.2", level: "A", name: "Pointer Cancellation" },
+  { code: "2.5.3", level: "A", name: "Label in Name" },
+  { code: "2.5.4", level: "A", name: "Motion Actuation" },
+  { code: "2.5.7", level: "AA", name: "Dragging Movements" },
+  { code: "2.5.8", level: "AA", name: "Target Size (Minimum)" },
+  { code: "3.1.1", level: "A", name: "Language of Page" },
+  { code: "3.1.2", level: "AA", name: "Language of Parts" },
+  { code: "3.2.1", level: "A", name: "On Focus" },
+  { code: "3.2.2", level: "A", name: "On Input" },
+  { code: "3.2.3", level: "AA", name: "Consistent Navigation" },
+  { code: "3.2.4", level: "AA", name: "Consistent Identification" },
+  { code: "3.2.6", level: "A", name: "Consistent Help" },
+  { code: "3.3.1", level: "A", name: "Error Identification" },
+  { code: "3.3.2", level: "A", name: "Labels or Instructions" },
+  { code: "3.3.3", level: "AA", name: "Error Suggestion" },
+  { code: "3.3.4", level: "AA", name: "Error Prevention (Legal, Financial, Data)" },
+  { code: "3.3.7", level: "A", name: "Redundant Entry" },
+  { code: "3.3.8", level: "AA", name: "Accessible Authentication (Minimum)" },
+  { code: "4.1.2", level: "A", name: "Name, Role, Value" },
+  { code: "4.1.3", level: "AA", name: "Status Messages" },
+];
