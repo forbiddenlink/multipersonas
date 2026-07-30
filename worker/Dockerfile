@@ -19,4 +19,10 @@ RUN pnpm --filter multipersonas build
 
 # SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (and ANTHROPIC_API_KEY for the persona runs)
 # are provided by the host environment, never baked into the image.
+
+# Drop root: the Playwright base image ships a non-root `pwuser`. Chromium drives
+# attacker-supplied pages, so a renderer exploit must not land as root next to the
+# service-role + Anthropic keys. Chown the build output so the runtime user can read it.
+RUN chown -R pwuser:pwuser /app
+USER pwuser
 CMD ["pnpm", "--filter", "worker", "start"]

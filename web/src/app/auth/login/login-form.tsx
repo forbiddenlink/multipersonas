@@ -11,6 +11,14 @@ import { Separator } from "@/components/ui/separator";
 import { Wordmark } from "@/components/forensic/wordmark";
 import { Eye, EyeOff } from "lucide-react";
 
+// Callers redirect here with either ?next= (server guards: settings, projects actions)
+// or ?returnTo= (middleware). Read both, and only honor a same-origin path so a crafted
+// ?returnTo=//evil.com can't turn login into an open redirect.
+function safeReturnTo(params: URLSearchParams): string {
+  const raw = params.get("next") ?? params.get("returnTo");
+  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/dashboard";
+}
+
 // Terminal header bar — frames the auth card as tool output (forensic-terminal spec).
 function CardHeaderBar({ route }: { route: string }) {
   return (
@@ -69,13 +77,13 @@ export function LoginForm() {
       return;
     }
 
-    const returnTo = searchParams.get("returnTo") || "/dashboard";
+    const returnTo = safeReturnTo(searchParams);
     router.push(returnTo);
   }
 
   async function handleGitHubLogin() {
     setFormError("");
-    const returnTo = searchParams.get("returnTo") || "/dashboard";
+    const returnTo = safeReturnTo(searchParams);
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "github",

@@ -24,8 +24,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  serverExternalPackages: ["playwright", "@axe-core/playwright"],
-  webpack: (config, { isServer }) => {
+  webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       "@engine": path.resolve(__dirname, "../src"),
@@ -34,15 +33,6 @@ const nextConfig: NextConfig = {
     config.resolve.extensionAlias = {
       ".js": [".ts", ".js"],
     };
-    // Don't bundle Playwright — it runs as native Node module on server
-    if (isServer) {
-      config.externals = [
-        ...(Array.isArray(config.externals) ? config.externals : []),
-        "playwright",
-        "playwright-core",
-        "@axe-core/playwright",
-      ];
-    }
     return config;
   },
 };
