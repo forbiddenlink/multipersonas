@@ -185,9 +185,9 @@ export default function ForAgenciesPage() {
               Stop re-running a single-site scanner twenty times.
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Every client site becomes a project — run audits, open history, and export a
-              compliance report per client. Scheduled re-scans are next; today you drive
-              when each site gets checked.
+              Every client site becomes a project — run audits, see new vs cleared defects
+              vs the last run, open history, and export a compliance report per client.
+              Scheduled re-scans are next; today you drive when each site gets checked.
             </p>
           </div>
 
@@ -219,6 +219,50 @@ export default function ForAgenciesPage() {
           </ul>
         </section>
       </Reveal>
+
+      {/* ── CI gate — agency selling point ─────────────────────────────── */}
+      <section className="mx-auto w-full max-w-6xl px-6 py-20 sm:py-28">
+        <Reveal>
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            CI gate
+          </p>
+          <h2 className="mt-4 max-w-2xl font-heading text-[clamp(1.8rem,3.6vw,2.75rem)] leading-tight text-balance">
+            Fail the client&apos;s build only on new defects.
+          </h2>
+          <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
+            Baseline today&apos;s backlog once, then gate CI on regressions — existing issues
+            stay ignored until you clear them. Deterministic axe-core, no API key, works
+            behind a saved session. Same identity the project regression panel uses.
+          </p>
+        </Reveal>
+        <Reveal delay={60}>
+          <pre className="mt-10 overflow-x-auto rounded-md border border-border bg-card p-5 font-mono text-xs leading-relaxed text-foreground">
+{`# snapshot today's defects (commit the baseline)
+mpersonas scan https://client.app --session ./session.json \\
+  --baseline mpersonas-baseline.json --update-baseline
+
+# CI: exit 2 only on NEW defects at/above serious
+mpersonas scan https://client.app --session ./session.json \\
+  --baseline mpersonas-baseline.json --fail-on serious`}
+          </pre>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Ready-to-use GitHub Action:{" "}
+            <a
+              href="https://github.com/forbiddenlink/multipersonas/tree/main/examples/github-actions"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-4 hover:text-foreground"
+            >
+              examples/github-actions
+            </a>
+            . Try a free public scan on the{" "}
+            <Link href="/" className="underline underline-offset-4 hover:text-foreground">
+              homepage
+            </Link>
+            .
+          </p>
+        </Reveal>
+      </section>
 
       {/* ── Honesty / not-an-overlay ───────────────────────────────────── */}
       <section className="mx-auto w-full max-w-3xl px-6 py-20 sm:py-28">
@@ -265,8 +309,9 @@ export default function ForAgenciesPage() {
             </h2>
             <p className="mt-5 text-lg text-muted-foreground">
               The engine is live — free public scans on the web, behind-login scanning via
-              the CLI (credentials stay on your machine), and a verdicts-only compliance
-              report you can print to PDF. Multi-site projects are shipping now.
+              the CLI (credentials stay on your machine), multi-site projects with
+              new/cleared regression vs the last run, and a verdicts-only compliance
+              report you can print to PDF.
             </p>
             <p className="mt-4 text-muted-foreground">
               Join early if you ship many client sites under ADA / EAA pressure. Tell us how

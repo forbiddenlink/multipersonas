@@ -42,6 +42,8 @@ declare module "multipersonas/orchestrator" {
       ruleId?: string;
       /** axe tags incl. WCAG success criteria (e.g. "wcag143"). */
       wcagTags?: string[];
+      /** CSS selector of the offending element — CLI/web baseline identity. */
+      target?: string;
     }[];
     conflicts: { description: string; suggestion: string }[];
   }

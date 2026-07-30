@@ -69,6 +69,8 @@ function toResponse(result: TestResult) {
       // let the report cite success criteria. null for the odd finding lacking them.
       ruleId: f.ruleId ?? null,
       wcagTags: f.wcagTags ?? null,
+      // CSS selector — same identity key the CLI baseline gate uses (ruleId|target).
+      target: f.target ?? null,
     })),
     conflicts: result.conflicts.map((c) => ({
       description: c.description,
@@ -126,6 +128,7 @@ async function persistHistory(
       page_url: f.location || audit.url,
       rule_id: f.ruleId,
       wcag_tags: f.wcagTags,
+      target: f.target,
     })),
     ...audit.personas.flatMap((p) =>
       p.findings.map((f) => ({

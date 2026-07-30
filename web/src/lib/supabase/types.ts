@@ -88,6 +88,7 @@ export type Database = {
           screenshot_url: string | null
           severity: string
           source: string
+          target: string | null
           test_run_id: string
           title: string
           wcag_tags: string[] | null
@@ -105,6 +106,7 @@ export type Database = {
           screenshot_url?: string | null
           severity: string
           source?: string
+          target?: string | null
           test_run_id: string
           title: string
           wcag_tags?: string[] | null
@@ -122,6 +124,7 @@ export type Database = {
           screenshot_url?: string | null
           severity?: string
           source?: string
+          target?: string | null
           test_run_id?: string
           title?: string
           wcag_tags?: string[] | null

@@ -4,8 +4,10 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getProject } from "@/lib/projects";
 import { listAudits } from "@/lib/audits";
+import { compareProjectRuns } from "@/lib/baseline";
 import { AuditForm } from "@/components/audit-form";
 import { AuditHistory } from "@/components/audit-history";
+import { RunDiff } from "@/components/run-diff";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +35,7 @@ export default async function ProjectDetailPage({
   if (!project) notFound();
 
   const audits = await listAudits(supabase, { projectId: project.id });
+  const regression = await compareProjectRuns(supabase, audits);
 
   const updateWithId = updateProjectAction.bind(null, project.id);
   const deleteWithId = deleteProjectAction.bind(null, project.id);
@@ -62,6 +65,13 @@ export default async function ProjectDetailPage({
       <BoxDivider label="new scan for this project" className="my-5" />
 
       <AuditForm projectId={project.id} defaultUrl={project.url} />
+
+      {regression ? (
+        <>
+          <BoxDivider label="since last run" className="my-5" />
+          <RunDiff diff={regression} />
+        </>
+      ) : null}
 
       <BoxDivider label="saved runs" className="my-5" />
 

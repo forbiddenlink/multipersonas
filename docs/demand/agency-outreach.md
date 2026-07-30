@@ -71,8 +71,19 @@ Do **not** build billing until the middle row or better.
 ## Distribution checklist
 
 - [ ] Set `ADMIN_EMAILS=<your-login-email>` on Vercel production
+      (`vercel env add ADMIN_EMAILS production` — then redeploy). Without this, `/waitlist`
+      shows nothing to anyone (safe default).
 - [ ] Post /for-agencies once on LinkedIn (personal, not company spam)
 - [ ] 10 personalized DMs / emails using templates above
 - [ ] Offer one free CLI behind-login scan as a hook
 - [ ] Check `/waitlist` daily for 7 days
 - [ ] Note themes from waitlist `note` field into product backlog
+
+### What shipped for the demand test (2026-07-29)
+
+- Landing: https://personaudit.com/for-agencies (CI gate section + Projects regression pitch)
+- Owner signal: `/waitlist` (requires `ADMIN_EMAILS`)
+- Product proof: Projects with new/cleared vs last run; VPAT-lite report export; CLI CI gate
+- Templates: LinkedIn DM + email above
+
+**You** still own the 10 outreaches — agents cannot send personal DMs.
