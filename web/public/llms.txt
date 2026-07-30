@@ -1,34 +1,48 @@
-# MultiPersonas
+# Personaudit
 
-> AI-powered accessibility testing that simulates diverse user personas browsing your website.
+> An authenticated accessibility scanner. Point it at a URL — including one behind a
+> login — and it crawls the site and runs axe-core at every state it reaches, reporting
+> deterministic, citable rule violations. Credentials never leave the operator's machine.
 
 ## What it does
 
-MultiPersonas uses AI agents (powered by Claude) to simulate real users testing your website for accessibility and usability issues. Three distinct personas browse your site independently:
+Personaudit has two modes, and the split reflects what the evidence actually supports:
 
-- **Screen Reader User** — Tests WCAG compliance, keyboard navigation, ARIA labels, heading structure
-- **First-Time Visitor** — Tests usability, information architecture, clarity of navigation
-- **Mobile / Slow Connection** — Tests performance, responsive design, image optimization
+- **Scan (the core).** Crawls the site with a saved session — behind the login wall — and
+  runs **axe-core** at every state reached, reporting deterministic, citable WCAG rule
+  violations. This is the part nothing free replaces: the `axe` CLI does not crawl and
+  does not hold a session. Gate-able in CI on newly-introduced defects.
+- **Run (UX personas).** Adds LLM personas (a first-time visitor, a mobile user on slow
+  3G) that browse toward a goal. Their unique output is **task success** — did a
+  real-shaped user actually complete the flow? — which a crawler cannot produce. Their
+  finding output is *opinion* (jargon, buried pricing, tap targets): useful, never a
+  compliance verdict.
 
-Each persona operates a real browser (Playwright) and reports findings with severity levels and fix recommendations.
+## What it is NOT
 
-## Key features
+- **Not a disability simulator.** There is no "blind user" or other disabled-user persona,
+  and there will not be one — an LLM roleplaying a disability is inaccurate and harmful.
+  Personas are ordinary-user UX opinion only.
+- **Personas do not judge accessibility compliance.** Only axe-core touches compliance;
+  it is deterministic and citable. A head-to-head test found personas do not surface
+  accessibility defects a scripted crawler misses, so they are not pitched as an
+  accessibility tool — their validated, distinct value is task success.
 
-- Real browser testing (not static analysis)
-- WCAG 2.1 AA compliance checking via axe-core
-- Persona conflict detection (when fixing one issue breaks another persona's experience)
-- CLI tool (`mpersonas`) and web app
+## Who it's for
 
-## Tech stack
+Agencies and freelancers who carry accessibility liability across many client sites and
+need defensible, repeatable evidence across authenticated states — in CI and as a
+client-facing report.
 
-- Next.js 16 (App Router)
-- Supabase (auth + database)
-- Anthropic Claude (AI agent reasoning)
-- Playwright (browser automation)
-- axe-core (accessibility scanning)
+## Tech
+
+- axe-core for accessibility scanning (the compliance verdict)
+- Playwright for real-browser crawling behind a saved session
+- Anthropic Claude for the UX personas (navigation + task-success judgment)
+- CLI (`mpersonas`) and web app
 
 ## Links
 
-- Website: https://multipersonas.dev
-- Privacy: https://multipersonas.dev/privacy
-- Terms: https://multipersonas.dev/terms
+- Website: https://personaudit.com
+- Privacy: https://personaudit.com/privacy
+- Terms: https://personaudit.com/terms

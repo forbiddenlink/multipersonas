@@ -4,9 +4,9 @@ import { assertUrlAllowed, BlockedUrlError } from "@engine/security/url-guard";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DEFAULT_PERSONA_IDS, MAX_PERSONAS } from "@/lib/personas";
-import { killSwitchEnabled } from "@/lib/limits";
+import { killSwitchEnabled, estimatedCallsFor } from "@/lib/limits";
 import { consumeRateLimit } from "@/lib/rate-limit";
-import { reserveSpend } from "@/lib/spend";
+import { reserveSpend, releaseSpend } from "@/lib/spend";
 
 // Rate limiting + spend cap are enforced durably in Postgres (lib/rate-limit.ts,
 // lib/spend.ts) — shared across instances and not resettable, unlike the in-process
@@ -145,11 +145,16 @@ export async function POST(request: Request) {
       url: parsedUrl.href,
       persona_ids: chosenIds,
       project_id: projectId,
+      // Record what we reserved so the worker/reaper can refund exactly this on failure.
+      reserved_calls: estimatedCallsFor(chosenIds.length),
     })
     .select("id")
     .single();
 
   if (enqueueError || !job) {
+    // The reservation went through but no job will run — refund it now rather than
+    // letting it sit against the daily cap until UTC midnight.
+    await releaseSpend(chosenIds.length);
     return NextResponse.json(
       { error: "Could not queue the audit. Please try again." },
       { status: 500 },

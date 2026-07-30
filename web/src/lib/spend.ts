@@ -35,3 +35,20 @@ export async function reserveSpend(personaCount: number): Promise<boolean> {
 
   return data === true;
 }
+
+/**
+ * Refund a prior reservation. Call this when a run never happens after a successful
+ * reserveSpend — e.g. enqueue fails. Best-effort: a failure to release must not fail
+ * the request (the daily counter self-heals at UTC midnight regardless), so errors are
+ * logged, not thrown. No-op when enforcement isn't configured.
+ */
+export async function releaseSpend(personaCount: number): Promise<void> {
+  const admin = createAdminClient();
+  if (!admin) return;
+
+  const planned = estimatedCallsFor(personaCount);
+  const { error } = await admin.rpc("release_model_calls", { p_calls: planned });
+  if (error) {
+    console.error("[spend] release RPC failed (reservation will expire at UTC midnight):", error.message);
+  }
+}

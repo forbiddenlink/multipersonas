@@ -275,3 +275,48 @@ export async function isUrlAllowed(
     return false;
   }
 }
+
+/**
+ * Per-request interception decision for Playwright's `context.route`. A page we
+ * point the browser at is attacker-controlled, so EVERY request it emits — not
+ * just the top-level document — is a potential SSRF vector: a subresource
+ * `fetch`/`img`/`script` to 169.254.169.254 or an RFC1918 host reaches the
+ * internal network exactly as a navigation would.
+ *
+ * Two distinct checks with different scopes:
+ *
+ * - **SSRF (private/reserved address):** applies to every http(s) request. There
+ *   is no legitimate reason for any subresource to hit a private destination.
+ * - **Crawl scope (same-origin):** applies ONLY to top-level document
+ *   navigations. Real pages legitimately load cross-origin CDN/font/analytics
+ *   subresources; enforcing scope on those would break rendering of normal
+ *   sites. Scope keeps the *agent* on the target site (see isInScope); it is not
+ *   a security boundary.
+ *
+ * Non-network schemes (data:, blob:, about:) carry no SSRF surface and are always
+ * allowed.
+ */
+export async function assertRequestAllowed(
+  rawUrl: string,
+  resourceType: string,
+  options: UrlGuardOptions & { scopeOrigin?: string } = {},
+): Promise<boolean> {
+  let protocol: string;
+  try {
+    protocol = new URL(rawUrl).protocol;
+  } catch {
+    return false;
+  }
+
+  if (protocol !== "http:" && protocol !== "https:") return true;
+
+  if (
+    resourceType === "document" &&
+    options.scopeOrigin &&
+    !isInScope(rawUrl, options.scopeOrigin)
+  ) {
+    return false;
+  }
+
+  return isUrlAllowed(rawUrl, options);
+}

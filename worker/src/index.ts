@@ -9,6 +9,18 @@ import { personaLibrary } from "multipersonas/personas/library";
 const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const POLL_MS = Number(process.env.WORKER_POLL_MS ?? 3000);
+// In-process cap on a single run. A hung Playwright navigation must not freeze the
+// whole (single-worker) queue, so the run loses a race against this timeout and the
+// job is marked failed.
+const JOB_TIMEOUT_MS = Number(process.env.WORKER_JOB_TIMEOUT_SECONDS ?? 300) * 1000;
+// Backstop for a CRASHED worker (where the in-process timeout never fires): the reaper
+// only touches jobs stuck well past the in-process cap, so it never races a run the
+// worker is itself about to time out.
+const REAP_AFTER_SECONDS = Number(process.env.WORKER_REAP_AFTER_SECONDS ?? 600);
+const MAX_ATTEMPTS = Number(process.env.WORKER_MAX_ATTEMPTS ?? 3);
+// Optional alert sink (Slack-compatible incoming webhook). Until Sentry is wired with a
+// DSN, this is the paging path for a stuck/crashing worker. No-op when unset.
+const ALERT_WEBHOOK = process.env.WORKER_ALERT_WEBHOOK;
 
 if (!SUPABASE_URL || !SERVICE_KEY) {
   console.error(
@@ -29,6 +41,55 @@ interface AuditJob {
   persona_ids: string[];
   status: string;
   project_id: string | null;
+  reserved_calls: number;
+}
+
+/** Reject if `promise` doesn't settle within ms. The underlying work keeps running
+ * (the orchestrator has no abort signal), so we swallow its late result to avoid an
+ * unhandled rejection; the job is already marked failed by then. */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  promise.catch(() => {});
+  let timer: NodeJS.Timeout;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} exceeded ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer)) as Promise<T>;
+}
+
+/** Send an alert to WORKER_ALERT_WEBHOOK if configured. Best-effort and never throws —
+ * an alert-path failure must not take down the worker. */
+async function notify(text: string): Promise<void> {
+  if (!ALERT_WEBHOOK) return;
+  try {
+    await fetch(ALERT_WEBHOOK, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text: `[personaudit worker] ${text}` }),
+    });
+  } catch (e) {
+    console.error("[worker] alert webhook failed:", e instanceof Error ? e.message : e);
+  }
+}
+
+/** Refund a failed job's reserved model-call budget. Best-effort — a release failure
+ * (e.g. migration 013 not yet applied) is logged, not thrown; the daily counter
+ * self-heals at UTC midnight. */
+async function releaseReservation(job: AuditJob): Promise<void> {
+  if (!job.reserved_calls) return;
+  const { error } = await supabase.rpc("release_model_calls", { p_calls: job.reserved_calls });
+  if (error) console.error(`[worker] release_model_calls failed for ${job.id}: ${error.message}`);
+}
+
+// Graceful shutdown: on a container redeploy (SIGTERM) or Ctrl-C (SIGINT), stop
+// claiming new work and let the current job finish (or hit its timeout) rather than
+// being SIGKILLed mid-run and stranded. The reaper covers a hard kill.
+let shuttingDown = false;
+for (const sig of ["SIGTERM", "SIGINT"] as const) {
+  process.on(sig, () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`[worker] ${sig} received — finishing current job, then exiting.`);
+  });
 }
 
 const SEVERITIES = ["critical", "serious", "moderate", "minor"];
@@ -167,13 +228,17 @@ async function claimAndRun(): Promise<boolean> {
       .map((id) => personaLibrary[id])
       .filter((p) => Boolean(p));
 
-    const result = await runMultiPersonaTest({
-      url: claimed.url,
-      personas,
-      outputDir: tmpDir,
-      parallel: true,
-      runAxe: true,
-    });
+    const result = await withTimeout(
+      runMultiPersonaTest({
+        url: claimed.url,
+        personas,
+        outputDir: tmpDir,
+        parallel: true,
+        runAxe: true,
+      }),
+      JOB_TIMEOUT_MS,
+      `job ${claimed.id}`,
+    );
     const response = toResponse(result);
 
     if (claimed.user_id) await persistHistory(claimed.user_id, response, claimed.project_id);
@@ -189,7 +254,11 @@ async function claimAndRun(): Promise<boolean> {
       .from("audit_jobs")
       .update({ status: "failed", error: message, completed_at: new Date().toISOString() })
       .eq("id", claimed.id);
+    // Refund the budget this failed run reserved (P0 #3) so a run of failures can't
+    // fill the daily cap and refuse legitimate audits.
+    await releaseReservation(claimed);
     console.error(`[worker] failed ${claimed.id}: ${message}`);
+    await notify(`job ${claimed.id} failed: ${message}`);
   } finally {
     try {
       fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -200,21 +269,40 @@ async function claimAndRun(): Promise<boolean> {
   return true;
 }
 
+/** Requeue/dead-letter jobs a crashed worker left stuck in 'running' (P0 #2). */
+async function reapStaleJobs(): Promise<void> {
+  const { data, error } = await supabase.rpc("reap_stale_audit_jobs", {
+    p_timeout_seconds: REAP_AFTER_SECONDS,
+    p_max_attempts: MAX_ATTEMPTS,
+  });
+  if (error) {
+    console.error(`[worker] reap failed: ${error.message}`);
+  } else if (typeof data === "number" && data > 0) {
+    console.log(`[worker] reaped ${data} stale job(s)`);
+  }
+}
+
 async function loop(): Promise<void> {
   console.log(`[worker] started; polling every ${POLL_MS}ms`);
   // Run continuously. If a job ran, poll again immediately (drain the queue);
-  // otherwise wait POLL_MS before checking again.
-  for (;;) {
+  // otherwise reap stranded jobs and wait POLL_MS before checking again.
+  while (!shuttingDown) {
     let ranSomething = false;
     try {
       ranSomething = await claimAndRun();
     } catch (e) {
-      console.error("[worker] loop error:", e instanceof Error ? e.message : e);
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("[worker] loop error:", msg);
+      await notify(`loop error: ${msg}`);
     }
     if (!ranSomething) {
+      await reapStaleJobs();
+      if (shuttingDown) break;
       await new Promise((r) => setTimeout(r, POLL_MS));
     }
   }
+  console.log("[worker] stopped.");
+  process.exit(0);
 }
 
 void loop();

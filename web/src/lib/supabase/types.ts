@@ -23,6 +23,7 @@ export type Database = {
           id: string
           persona_ids: string[]
           project_id: string | null
+          reserved_calls: number
           result: Json | null
           started_at: string | null
           status: string
@@ -37,6 +38,7 @@ export type Database = {
           id?: string
           persona_ids?: string[]
           project_id?: string | null
+          reserved_calls?: number
           result?: Json | null
           started_at?: string | null
           status?: string
@@ -51,6 +53,7 @@ export type Database = {
           id?: string
           persona_ids?: string[]
           project_id?: string | null
+          reserved_calls?: number
           result?: Json | null
           started_at?: string | null
           status?: string
@@ -389,6 +392,7 @@ export type Database = {
           id: string
           persona_ids: string[]
           project_id: string | null
+          reserved_calls: number
           result: Json | null
           started_at: string | null
           status: string
@@ -405,6 +409,14 @@ export type Database = {
       consume_rate_limit: {
         Args: { p_key: string; p_max: number; p_window_seconds: number }
         Returns: boolean
+      }
+      reap_stale_audit_jobs: {
+        Args: { p_max_attempts: number; p_timeout_seconds: number }
+        Returns: number
+      }
+      release_model_calls: {
+        Args: { p_calls: number }
+        Returns: undefined
       }
       reserve_model_calls: {
         Args: { p_calls: number; p_cap: number }
