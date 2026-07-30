@@ -123,7 +123,7 @@ describe("AuditForm — client poll deadline", () => {
     vi.useFakeTimers();
   });
 
-  it("keeps the jobId (does not discard it) when the ~3-min deadline is hit, and 'Check status' re-polls without re-submitting", async () => {
+  it("keeps the jobId (does not discard it) when the ~10-min deadline is hit, and 'Check status' re-polls without re-submitting", async () => {
     let pollCount = 0;
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input.toString();
@@ -147,8 +147,8 @@ describe("AuditForm — client poll deadline", () => {
       fireEvent.click(screen.getByRole("button", { name: /run free audit/i }));
     });
 
-    // Exhaust the ~3-min client deadline.
-    await advance(3 * 60 * 1000 + 5000);
+    // Exhaust the ~10-min client deadline.
+    await advance(10 * 60 * 1000 + 5000);
 
     // Recoverable state, not a lost scan.
     const status = screen.getByText(/still running/i);

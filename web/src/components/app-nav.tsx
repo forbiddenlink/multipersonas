@@ -43,9 +43,10 @@ export function AppNav({
           <ThemeToggle />
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileOpen}
+            aria-controls="app-mobile-nav"
           >
             {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
@@ -54,7 +55,7 @@ export function AppNav({
 
       {/* Mobile nav dropdown */}
       {mobileOpen && (
-        <nav className="flex flex-col gap-1 border-b border-border bg-card p-3 md:hidden">
+        <nav id="app-mobile-nav" className="flex flex-col gap-1 border-b border-border bg-card p-3 md:hidden">
           {navItems.map((item) => (
             <Link
               key={item.href}

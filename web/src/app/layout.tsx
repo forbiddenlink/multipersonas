@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 
@@ -36,9 +36,29 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
   },
-  other: {
-    "theme-color": "#17130e",
-  },
+};
+
+// Declaring both schemes stops native controls/scrollbars flashing the wrong theme, and
+// the media-paired theme-color keeps the mobile address bar in sync with light/dark
+// instead of pinning it to the dark value.
+export const viewport: Viewport = {
+  colorScheme: "dark light",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#17130e" },
+    { media: "(prefers-color-scheme: light)", color: "#fdfcfa" },
+  ],
+};
+
+// Honest structured data — identity only, no fabricated price/rating.
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Personaudit",
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "Web, macOS, Linux, Windows",
+  url: "https://personaudit.com",
+  description:
+    "An authenticated accessibility scanner: axe-core at every crawled state (the compliance verdict), plus UX personas that measure task success. Not a disability simulator.",
 };
 
 export default function RootLayout({
@@ -53,6 +73,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-dvh bg-background text-foreground font-sans">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         {/* Dark-first, no-FOUC: apply the theme class before paint. Defaults to dark
             unless the user has explicitly chosen light. */}
         <script

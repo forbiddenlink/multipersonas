@@ -80,10 +80,10 @@ export default async function AuditDetailPage({
     <div className="w-full max-w-5xl mx-auto space-y-10">
       {/* Header */}
       <div className="flex flex-col items-center gap-4 text-center">
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-sm font-medium text-muted-foreground">
           Results for{" "}
           <span className="font-mono text-foreground">{run.url}</span>
-        </p>
+        </h1>
         <p className="font-mono text-xs text-muted-foreground">
           {new Date(run.created_at).toLocaleDateString(undefined, {
             year: "numeric",
@@ -112,7 +112,7 @@ export default async function AuditDetailPage({
       {/* Persona findings */}
       {byPersona.size > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold tracking-tight">Persona findings</h3>
+          <h2 className="text-lg font-semibold tracking-tight">Persona findings</h2>
           <div className="grid gap-6 sm:grid-cols-3">
             {[...byPersona.entries()].map(([personaId, list]) => {
               const meta = PERSONA_DATA[personaId as keyof typeof PERSONA_DATA];
@@ -163,9 +163,9 @@ export default async function AuditDetailPage({
       {/* Axe findings */}
       {sortedAxeFindings.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold tracking-tight">
+          <h2 className="text-lg font-semibold tracking-tight">
             Accessibility issues (axe-core)
-          </h3>
+          </h2>
           <div className="overflow-hidden rounded-md border border-border bg-card">
             <div className="flex items-center gap-2 border-b border-border px-4 py-2.5 font-mono text-xs text-muted-foreground">
               <span className="text-[var(--primary)]">›</span>
