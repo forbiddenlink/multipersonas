@@ -38,9 +38,9 @@ const TEAL = "var(--primary)";
 const SEV_CRITICAL = "var(--severity-critical)";
 const SEV_SERIOUS = "var(--severity-serious)";
 
-const TYPE_MS = 22; // per-character
-const LINE_PAUSE = 9; // ticks held after a line completes
-const LOOP_HOLD = 170; // ticks held on the final frame before restarting
+const TYPE_MS = 28; // per-character (slightly calmer than a frantic typewriter)
+const LINE_PAUSE = 14; // ticks held after a line completes, so each line is readable
+const LOOP_HOLD = 150; // ticks held ON THE COMPLETED frame before restarting (~4.2s)
 
 const REDUCED_QUERY = "(prefers-reduced-motion: reduce)";
 function usePrefersReducedMotion() {
@@ -94,14 +94,22 @@ export function AuditTerminal() {
       }
       if (hold > 0) {
         hold -= 1;
+        // The loop hold just ended and we are parked at the start of the script with the
+        // completed frame still on screen. Clear it now, so the finished state is what the
+        // viewer sees for the whole hold, then typing restarts on the next tick.
+        if (hold === 0 && line === 0 && char === 0) {
+          setRevealed(0);
+          setTyping("");
+        }
         return;
       }
       if (line >= SCRIPT.length) {
+        // Every line is shown. Hold ON the completed frame (chips + task-success), do NOT
+        // reset yet. The reset happens when this hold expires (the branch above), so the
+        // end is actually visible instead of flashing for one line-pause.
         hold = LOOP_HOLD;
         line = 0;
         char = 0;
-        setRevealed(0);
-        setTyping("");
         return;
       }
       const text = SCRIPT[line].text;
