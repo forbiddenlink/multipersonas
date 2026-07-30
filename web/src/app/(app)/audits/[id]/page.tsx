@@ -8,6 +8,8 @@ import { formatLocation } from "@/lib/format-location";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { Meter } from "@/components/forensic/meter";
 import { SEVERITY_ORDER, type Severity } from "@/components/forensic/severity";
+import { loadJourney } from "@/lib/journey";
+import { ReplayTheater, type ReplayFinding } from "@/components/replay-theater";
 
 export const metadata: Metadata = {
   title: "Audit details",
@@ -32,10 +34,13 @@ function severityRank(value: string): number {
 
 export default async function AuditDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ persona?: string; step?: string }>;
 }) {
   const { id } = await params;
+  const { persona: personaParam, step: stepParam } = await searchParams;
   const supabase = await createClient();
 
   // RLS scopes this to the caller's own rows; a mismatched or missing id both
@@ -76,6 +81,26 @@ export default async function AuditDetailPage({
   const total = run.task_success_total ?? 0;
   const achieved = run.task_success_achieved ?? 0;
 
+  // Persona Replay Theater: the scrubbable walk, if this run captured one (runs predating
+  // journey capture, and anon runs, simply have none — the section then hides).
+  const journeys = await loadJourney(supabase, run.id);
+
+  // axe verdicts keyed by the exact state they were seen on, so the replay can surface
+  // "evidence captured here" at the matching frame.
+  const findingsByUrl: Record<string, ReplayFinding[]> = {};
+  for (const f of axeFindings) {
+    if (!f.page_url) continue;
+    (findingsByUrl[f.page_url] ??= []).push({ severity: f.severity, title: f.title });
+  }
+
+  const personaMeta: Record<string, { name: string; role: string }> = {};
+  for (const j of journeys) {
+    const meta = PERSONA_DATA[j.personaId as keyof typeof PERSONA_DATA];
+    personaMeta[j.personaId] = { name: meta?.name ?? j.personaId, role: meta?.role ?? "" };
+  }
+
+  const initialStep = Number.isFinite(Number(stepParam)) ? Number(stepParam) : 0;
+
   return (
     <div className="w-full max-w-5xl mx-auto space-y-10">
       {/* Header */}
@@ -108,6 +133,25 @@ export default async function AuditDetailPage({
           tone={successTone(achieved, total)}
         />
       </div>
+
+      {/* Persona Replay Theater — the scrubbable walk a real user took */}
+      {journeys.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-lg font-semibold tracking-tight">Replay</h2>
+            <p className="font-mono text-xs text-muted-foreground">
+              what a persona saw, thought, and hit — step by step
+            </p>
+          </div>
+          <ReplayTheater
+            journeys={journeys}
+            personaMeta={personaMeta}
+            findingsByUrl={findingsByUrl}
+            initialPersona={personaParam}
+            initialStep={initialStep}
+          />
+        </div>
+      )}
 
       {/* Persona findings */}
       {byPersona.size > 0 && (

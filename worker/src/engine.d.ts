@@ -18,6 +18,19 @@ declare module "multipersonas/orchestrator" {
     pageUrl: string;
     seenOn?: string[];
   }
+  /** One recorded step of a persona's walk. Persisted for Persona Replay Theater — the
+   * screenshot + the persona's inner-monologue reasoning turn the dry log into a replay. */
+  export interface EngineStepRecord {
+    step: number;
+    action: string;
+    detail: string;
+    pageUrl: string;
+    /** Absolute path to the frame captured after this step, under the run's tmp dir. */
+    screenshotPath: string;
+    timestamp: number;
+    /** The persona's narration for this step. Navigation narration, never a verdict. */
+    reasoning?: string;
+  }
   export interface EnginePersonaResult {
     persona: { id: string; name: string; description: string };
     agentResult: {
@@ -25,6 +38,8 @@ declare module "multipersonas/orchestrator" {
       totalSteps: number;
       pagesVisited: unknown[];
       findings: EngineFinding[];
+      /** Ordered walk this persona took. Empty on a persona that failed to launch. */
+      steps: EngineStepRecord[];
     };
   }
   export interface TestResult {

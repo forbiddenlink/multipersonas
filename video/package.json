@@ -1,0 +1,24 @@
+{
+  "name": "personaudit-video",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Persona Replay Theater shareable-clip renderer (Remotion). Deliberately OUTSIDE the pnpm workspace (web/worker) so its heavy chromium/ffmpeg deps never touch the deployed app's lockfile. Install + run on demand.",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "node render.mjs",
+    "render:gif": "node render.mjs --codec gif"
+  },
+  "dependencies": {
+    "@remotion/bundler": "^4.0.0",
+    "@remotion/renderer": "^4.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "^4.0.0"
+  },
+  "devDependencies": {
+    "@remotion/cli": "^4.0.0",
+    "@types/react": "^19.0.0",
+    "typescript": "^5.0.0"
+  }
+}

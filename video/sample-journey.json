@@ -1,0 +1,49 @@
+{
+  "url": "https://shop.example",
+  "personaName": "Margaret, 68",
+  "goalCompleted": false,
+  "steps": [
+    {
+      "action": "navigate",
+      "reasoning": "Landing on the homepage. The hero is clear enough, I want to find the product.",
+      "screenshot": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1280' height='800'%3E%3Crect width='1280' height='800' fill='%231a1613'/%3E%3Crect width='1280' height='120' fill='%234ecdc0' opacity='0.15'/%3E%3Crect x='80' y='260' width='700' height='40' rx='6' fill='%23f4f1ec' opacity='0.85'/%3E%3Crect x='80' y='330' width='560' height='18' rx='4' fill='%23f4f1ec' opacity='0.3'/%3E%3Crect x='80' y='430' width='260' height='64' rx='8' fill='%234ecdc0'/%3E%3C/svg%3E",
+      "frustration": 5,
+      "findings": []
+    },
+    {
+      "action": "click product tile",
+      "reasoning": "This looks like what I need. Opening the product page to check the price.",
+      "screenshot": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1280' height='800'%3E%3Crect width='1280' height='800' fill='%231a1613'/%3E%3Crect x='80' y='120' width='500' height='500' rx='10' fill='%23f4f1ec' opacity='0.1'/%3E%3Crect x='640' y='140' width='420' height='34' rx='6' fill='%23f4f1ec' opacity='0.85'/%3E%3Crect x='640' y='420' width='300' height='60' rx='8' fill='%23e5484d'/%3E%3C/svg%3E",
+      "frustration": 22,
+      "findings": []
+    },
+    {
+      "action": "click Add to cart",
+      "reasoning": "Add to cart. Did that work? I did not see any confirmation appear.",
+      "screenshot": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1280' height='800'%3E%3Crect width='1280' height='800' fill='%231a1613'/%3E%3Crect x='80' y='120' width='500' height='500' rx='10' fill='%23f4f1ec' opacity='0.1'/%3E%3Crect x='640' y='420' width='300' height='60' rx='8' fill='%23e5484d'/%3E%3C/svg%3E",
+      "frustration": 53,
+      "findings": [
+        { "severity": "critical", "title": "Add-to-cart button has no accessible name" },
+        { "severity": "serious", "title": "Cart confirmation is not announced to screen readers" }
+      ]
+    },
+    {
+      "action": "click Add to cart (retry)",
+      "reasoning": "Trying the button again. Still nothing obvious. This is a little frustrating.",
+      "screenshot": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1280' height='800'%3E%3Crect width='1280' height='800' fill='%231a1613'/%3E%3Crect x='640' y='420' width='300' height='60' rx='8' fill='%23e5484d'/%3E%3C/svg%3E",
+      "frustration": 71,
+      "findings": [
+        { "severity": "critical", "title": "Add-to-cart button has no accessible name" }
+      ]
+    },
+    {
+      "action": "click Checkout",
+      "reasoning": "The checkout button did nothing. I give up on completing this purchase.",
+      "screenshot": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1280' height='800'%3E%3Crect width='1280' height='800' fill='%231a1613'/%3E%3Crect x='80' y='200' width='1120' height='24' rx='4' fill='%23f4f1ec' opacity='0.25'/%3E%3Crect x='80' y='260' width='900' height='24' rx='4' fill='%23f4f1ec' opacity='0.25'/%3E%3C/svg%3E",
+      "frustration": 96,
+      "findings": [
+        { "severity": "moderate", "title": "Checkout control fails 3:1 contrast" }
+      ]
+    }
+  ]
+}

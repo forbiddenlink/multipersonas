@@ -142,6 +142,56 @@ export type Database = {
           },
         ]
       }
+      journey_steps: {
+        Row: {
+          action: string
+          detail: string | null
+          goal_completed: boolean
+          id: string
+          page_url: string | null
+          persona_id: string
+          reasoning: string | null
+          screenshot_path: string | null
+          step: number
+          test_run_id: string
+          ts: string
+        }
+        Insert: {
+          action: string
+          detail?: string | null
+          goal_completed?: boolean
+          id?: string
+          page_url?: string | null
+          persona_id: string
+          reasoning?: string | null
+          screenshot_path?: string | null
+          step: number
+          test_run_id: string
+          ts?: string
+        }
+        Update: {
+          action?: string
+          detail?: string | null
+          goal_completed?: boolean
+          id?: string
+          page_url?: string | null
+          persona_id?: string
+          reasoning?: string | null
+          screenshot_path?: string | null
+          step?: number
+          test_run_id?: string
+          ts?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journey_steps_test_run_id_fkey"
+            columns: ["test_run_id"]
+            isOneToOne: false
+            referencedRelation: "test_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       personas: {
         Row: {
           config: Json
