@@ -68,6 +68,13 @@ export interface StepRecord {
   pageUrl: string;
   screenshotPath: string;
   timestamp: number;
+  /**
+   * The persona's own words for this step: the model's narration that accompanied the
+   * action. This is the "inner monologue" that turns a dry step log into a journey worth
+   * watching (Persona Replay Theater). Undefined when the model produced no text alongside
+   * the forced tool call. It is navigation narration, never a compliance verdict.
+   */
+  reasoning?: string;
 }
 
 export interface AgentResult {
@@ -485,6 +492,10 @@ export async function runPersonaAgent(
         toolChoice: "required",
       });
 
+      // The model's narration alongside its (forced) tool call: the persona's inner
+      // monologue for this step, captured for journey replay. Often present, sometimes "".
+      const reasoning = result.text?.trim() || undefined;
+
       // Extract the tool call from the response
       const toolCall = result.toolCalls[0];
       if (!toolCall) {
@@ -557,6 +568,7 @@ export async function runPersonaAgent(
           pageUrl: page.url(),
           screenshotPath,
           timestamp: Date.now(),
+          reasoning,
         });
 
         // Tell the LLM the finding was recorded via a tool result
@@ -599,6 +611,7 @@ export async function runPersonaAgent(
           pageUrl: page.url(),
           screenshotPath,
           timestamp: Date.now(),
+          reasoning,
         });
         break;
       }
@@ -660,6 +673,7 @@ export async function runPersonaAgent(
         pageUrl: page.url(),
         screenshotPath,
         timestamp: Date.now(),
+        reasoning,
       });
 
       // Feed the result back as a tool result message
