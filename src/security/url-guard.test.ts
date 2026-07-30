@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { assertUrlAllowed, isPrivateAddress, isInScope, BlockedUrlError } from "./url-guard.js";
+import {
+  assertUrlAllowed,
+  assertRequestAllowed,
+  isPrivateAddress,
+  isInScope,
+  BlockedUrlError,
+} from "./url-guard.js";
 
 /** Stub resolver so tests never touch real DNS. */
 const resolvesTo = (...addresses: string[]) => async () => addresses;
@@ -197,5 +203,46 @@ describe("isInScope — the audit must stay on the site it was pointed at", () =
   it("refuses garbage rather than defaulting open", () => {
     expect(isInScope("not a url", target)).toBe(false);
     expect(isInScope("", target)).toBe(false);
+  });
+});
+
+describe("assertRequestAllowed (per-request interception)", () => {
+  const scope = { scopeOrigin: "https://site.example", resolveHost: resolvesTo("93.184.216.34") };
+
+  it("blocks a subresource fetch to link-local IMDS (the SSRF hole)", async () => {
+    // resourceType is NOT 'document' — this is exactly the case the old guard skipped.
+    expect(await assertRequestAllowed("http://169.254.169.254/latest/meta-data/", "fetch", scope)).toBe(false);
+  });
+
+  it("blocks a subresource image to an RFC1918 host", async () => {
+    const priv = { scopeOrigin: "https://site.example", resolveHost: resolvesTo("10.0.0.5") };
+    expect(await assertRequestAllowed("http://intranet.local/logo.png", "image", priv)).toBe(false);
+  });
+
+  it("blocks a document navigation that resolves private (redirect-to-internal)", async () => {
+    const priv = { scopeOrigin: "https://site.example", resolveHost: resolvesTo("127.0.0.1") };
+    expect(await assertRequestAllowed("https://site.example/next", "document", priv)).toBe(false);
+  });
+
+  it("allows a cross-origin CDN subresource (scope is NOT enforced on subresources)", async () => {
+    const cdn = { scopeOrigin: "https://site.example", resolveHost: resolvesTo("151.101.0.1") };
+    expect(await assertRequestAllowed("https://cdn.jsdelivr.net/app.js", "script", cdn)).toBe(true);
+  });
+
+  it("blocks a cross-origin DOCUMENT navigation (scope keeps the agent on-site)", async () => {
+    expect(await assertRequestAllowed("https://elsewhere.example/page", "document", scope)).toBe(false);
+  });
+
+  it("allows an in-scope public document navigation", async () => {
+    expect(await assertRequestAllowed("https://site.example/dashboard", "document", scope)).toBe(true);
+  });
+
+  it("allows data: and blob: URIs (no network egress, no SSRF surface)", async () => {
+    expect(await assertRequestAllowed("data:image/png;base64,iVBORw0KGgo=", "image", scope)).toBe(true);
+    expect(await assertRequestAllowed("blob:https://site.example/abc", "fetch", scope)).toBe(true);
+  });
+
+  it("refuses an unparseable request URL rather than defaulting open", async () => {
+    expect(await assertRequestAllowed("http://[bad", "fetch", scope)).toBe(false);
   });
 });

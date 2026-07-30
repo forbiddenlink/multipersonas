@@ -5,7 +5,7 @@ import { z } from "zod";
 import * as fs from "fs";
 import * as path from "path";
 import type { Persona } from "../personas/types.js";
-import { assertUrlAllowed, isUrlAllowed, isInScope, BlockedUrlError } from "../security/url-guard.js";
+import { assertUrlAllowed, assertRequestAllowed, isInScope, BlockedUrlError } from "../security/url-guard.js";
 import { runAxeScan, mergeAxeFindings } from "./axe-scan.js";
 
 /**
@@ -422,20 +422,15 @@ export async function runPersonaAgent(
       // logs or the model's context.
       ...(guard.sessionFile ? { storageState: guard.sessionFile } : {}),
     });
-    // Belt-and-braces against SSRF: assertUrlAllowed() vets a URL before we ask
-    // for it, but page.goto follows 3xx itself, so a clean host can still bounce
-    // us to 169.254.169.254. Vetting every document request catches each hop.
-    //
-    // Scope is enforced here too, not just in the navigate tool: a plain click on
-    // an outbound link is a document request the tool never sees, and it walked
-    // the agent onto a different website entirely (2026-07-15).
+    // Every in-flight request is checked, not just the top-level document. The page
+    // is attacker-controlled, so a subresource fetch/img/script to 169.254.169.254 or
+    // an RFC1918 host is an SSRF vector exactly as a navigation is. assertRequestAllowed
+    // blocks private/reserved destinations on ALL request types, and additionally keeps
+    // document navigations on-origin (scope) — see its contract in url-guard.ts. This is
+    // the assertRequestAllowed() the guard's DNS-rebinding note refers to.
     await context.route("**/*", async (route, request) => {
-      if (request.resourceType() !== "document") return route.continue();
-      if (scope.scopeOrigin && !isInScope(request.url(), scope.scopeOrigin)) {
-        return route.abort("blockedbyclient");
-      }
-      if (await isUrlAllowed(request.url(), scope)) return route.continue();
-      return route.abort("blockedbyclient");
+      const allowed = await assertRequestAllowed(request.url(), request.resourceType(), scope);
+      return allowed ? route.continue() : route.abort("blockedbyclient");
     });
 
     const page = await context.newPage();
