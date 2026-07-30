@@ -10,7 +10,7 @@ describe("ExportButton", () => {
     vi.stubGlobal("print", print);
 
     render(<ExportButton />);
-    fireEvent.click(screen.getByRole("button", { name: /export pdf/i }));
+    fireEvent.click(screen.getByRole("button", { name: /print.*save as pdf/i }));
 
     expect(print).toHaveBeenCalledTimes(1);
     vi.unstubAllGlobals();

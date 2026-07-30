@@ -119,20 +119,44 @@ export function assembleReport(
  * Optionally joins project name + the caller's agency_name for white-label headers.
  */
 export async function buildReport(supabase: SB, id: string): Promise<ReportData | null> {
-  const { data: run } = await supabase
-    .from("test_runs")
-    .select("id,url,created_at,persona_ids,project_id")
-    .eq("id", id)
-    .single();
-  if (!run) return null;
+  // The run+findings chain and the caller's user+profile chain don't depend on each
+  // other — run concurrently instead of four sequential round-trips.
+  const [runAndFindings, agencyName] = await Promise.all([
+    (async () => {
+      const { data: run } = await supabase
+        .from("test_runs")
+        .select("id,url,created_at,persona_ids,project_id")
+        .eq("id", id)
+        .single();
+      if (!run) return null;
 
-  const { data: findingRows } = await supabase
-    .from("findings")
-    .select(
-      "id,source,severity,title,description,recommendation,rule_id,wcag_tags,page_url",
-    )
-    .eq("test_run_id", run.id)
-    .eq("source", "axe");
+      const { data: findingRows } = await supabase
+        .from("findings")
+        .select(
+          "id,source,severity,title,description,recommendation,rule_id,wcag_tags,page_url",
+        )
+        .eq("test_run_id", run.id)
+        .eq("source", "axe");
+
+      return { run, findingRows: findingRows ?? [] };
+    })(),
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("agency_name")
+        .eq("id", user.id)
+        .single();
+      return profile?.agency_name ?? null;
+    })(),
+  ]);
+
+  if (!runAndFindings) return null;
+  const { run, findingRows } = runAndFindings;
 
   let clientName: string | null = null;
   if (run.project_id) {
@@ -144,18 +168,5 @@ export async function buildReport(supabase: SB, id: string): Promise<ReportData 
     clientName = project?.name ?? null;
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  let agencyName: string | null = null;
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("agency_name")
-      .eq("id", user.id)
-      .single();
-    agencyName = profile?.agency_name ?? null;
-  }
-
-  return assembleReport(run, findingRows ?? [], { clientName, agencyName });
+  return assembleReport(run, findingRows, { clientName, agencyName });
 }

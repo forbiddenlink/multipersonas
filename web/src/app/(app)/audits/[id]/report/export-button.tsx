@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 export function ExportButton() {
   return (
     <Button type="button" variant="secondary" onClick={() => window.print()}>
-      Export PDF
+      Print / Save as PDF
     </Button>
   );
 }

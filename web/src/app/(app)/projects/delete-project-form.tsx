@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
-/** Wraps the delete Server Action with a native confirm — cascade-deletes every saved
- * run (and its findings) for the project via the FK, so this needs an explicit warning
- * before the POST fires. */
+/** Wraps the delete Server Action with an inline two-step confirm — cascade-deletes every
+ * saved run (and its findings) for the project via the FK, so this needs an explicit
+ * warning before the POST fires. No native window.confirm — styled to match the forensic
+ * UI instead. */
 export function DeleteProjectForm({
   action,
   projectName,
@@ -12,19 +14,40 @@ export function DeleteProjectForm({
   action: () => Promise<void>;
   projectName: string;
 }) {
+  const [confirming, setConfirming] = useState(false);
+
+  if (confirming) {
+    return (
+      <form
+        action={action}
+        className="flex items-center gap-2 rounded-sm border border-destructive/30 bg-destructive/10 px-3 py-2"
+      >
+        <p className="font-mono text-xs text-destructive">
+          Delete &ldquo;{projectName}&rdquo; permanently?
+        </p>
+        <Button type="submit" variant="destructive" size="sm">
+          Confirm
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setConfirming(false)}
+        >
+          Cancel
+        </Button>
+      </form>
+    );
+  }
+
   return (
-    <form
-      action={action}
-      onSubmit={(e) => {
-        const confirmed = window.confirm(
-          `Delete "${projectName}"? This permanently deletes every saved audit run and finding for this project. This cannot be undone.`,
-        );
-        if (!confirmed) e.preventDefault();
-      }}
+    <Button
+      type="button"
+      variant="destructive"
+      size="sm"
+      onClick={() => setConfirming(true)}
     >
-      <Button type="submit" variant="destructive" size="sm">
-        Delete project
-      </Button>
-    </form>
+      Delete project
+    </Button>
   );
 }

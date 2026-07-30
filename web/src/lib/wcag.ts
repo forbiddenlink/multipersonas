@@ -67,7 +67,7 @@ const TAG_TO_CRITERION: Record<string, Criterion> = {
 };
 
 /** Same criteria, keyed by SC code ("1.4.3") for citation lookups by number. */
-export const CRITERION_BY_CODE: Record<string, Criterion> = Object.fromEntries(
+const CRITERION_BY_CODE: Record<string, Criterion> = Object.fromEntries(
   Object.values(TAG_TO_CRITERION).map((c) => [c.code, c]),
 );
 

@@ -109,6 +109,21 @@ export default async function SettingsPage() {
           </Link>
         </section>
 
+        <section className="rounded-md border border-destructive/30 bg-card p-5">
+          <h2 className="font-mono text-xs uppercase tracking-wide text-destructive">
+            Danger zone
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Email us to delete your account and stored audit data.
+          </p>
+          <a
+            href="mailto:support@personaudit.com?subject=Account%20deletion%20request"
+            className="mt-3 inline-flex items-center justify-center rounded-sm border border-destructive/30 px-4 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+          >
+            Delete account
+          </a>
+        </section>
+
         <section className="flex items-center justify-between rounded-md border border-border bg-card p-5">
           <div>
             <h2 className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
