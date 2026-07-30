@@ -37,7 +37,7 @@ export default function TermsPage() {
           as-is. We do not guarantee that audits will find all accessibility issues, or that
           findings are accurate.
         </p>
-        <p className="text-xs text-muted-foreground/60">
+        <p className="text-xs text-muted-foreground">
           Last updated: May 2026. These terms will be expanded as the product develops.
         </p>
       </div>

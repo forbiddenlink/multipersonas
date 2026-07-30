@@ -99,7 +99,7 @@ export function WaitlistForm() {
           placeholder="you@youragency.com"
           aria-describedby={error ? `${emailId}-err` : undefined}
           aria-invalid={status === "error" || undefined}
-          className="mt-2 w-full rounded-sm border border-input bg-background px-4 py-3 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+          className="mt-2 w-full rounded-sm border border-input bg-background px-4 py-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         />
       </div>
 
@@ -141,7 +141,7 @@ export function WaitlistForm() {
           rows={3}
           maxLength={500}
           placeholder="e.g. one report I can white-label per client, scheduled monthly re-scans, a CI check my devs can't ignore…"
-          className="mt-2 w-full resize-y rounded-sm border border-input bg-background px-4 py-3 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+          className="mt-2 w-full resize-y rounded-sm border border-input bg-background px-4 py-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         />
       </div>
 

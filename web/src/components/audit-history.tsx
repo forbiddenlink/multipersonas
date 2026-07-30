@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { AuditListItem } from "@/lib/audits";
+import { EmptyPrompt } from "@/components/forensic/empty-prompt";
 
 // Task-success is a fraction of real-shaped users, not a compliance verdict — this
 // borrows the same red/amber/green ramp the shared Meter component uses for the same
@@ -26,13 +27,10 @@ function hostname(url: string): string {
 export function AuditHistory({ audits }: { audits: AuditListItem[] }) {
   if (audits.length === 0) {
     return (
-      <div className="rounded-md border border-dashed border-border p-8 text-center">
-        <p className="text-sm font-medium">No saved audits yet</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Run an audit above and it&apos;ll be saved here so you can track which defects
-          you&apos;ve cleared over time.
-        </p>
-      </div>
+      <EmptyPrompt
+        prompt="no saved runs yet — point it at a URL above"
+        hint="Signed-in scans land here so you can track which defects you’ve cleared over time."
+      />
     );
   }
 

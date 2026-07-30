@@ -338,23 +338,23 @@ export function AuditForm({
           disabled={loading}
           autoComplete="url"
           aria-label="Website URL to audit"
-          className="flex-1 h-10 rounded-lg border border-border bg-card px-4 text-base md:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50 disabled:opacity-50"
+          className="h-10 flex-1 rounded-sm border border-border bg-card px-4 text-base text-foreground transition-colors duration-150 placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] disabled:opacity-50 md:text-sm"
         />
         <Button
           type="submit"
           size="lg"
           disabled={loading || !url}
-          className="h-10 px-6 shrink-0"
+          className="h-10 shrink-0 px-6 font-mono text-xs uppercase tracking-wide"
         >
-          {loading ? "Running..." : "Run Free Audit"}
+          {loading ? "Running…" : "Run free audit"}
         </Button>
       </form>
 
-      {/* Persona picker */}
+      {/* Persona picker — outline chips, not soft pills */}
       <fieldset className="mt-4" disabled={loading}>
-        <legend className="mb-2 text-xs font-medium text-muted-foreground">
+        <legend className="mb-2 font-mono text-xs uppercase tracking-wide text-muted-foreground">
           Who tests your site{" "}
-          <span className="text-muted-foreground">
+          <span className="normal-case tracking-normal">
             ({selected.size} selected, max {MAX_PERSONAS})
           </span>
         </legend>
@@ -371,10 +371,10 @@ export function AuditForm({
                 disabled={disabled}
                 aria-pressed={isOn}
                 title={p.description}
-                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                className={`rounded-sm border px-3 py-1.5 text-xs font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] disabled:cursor-not-allowed disabled:opacity-40 ${
                   isOn
-                    ? "border-primary/50 bg-primary/10 text-foreground"
-                    : "border-border text-muted-foreground hover:text-foreground"
+                    ? "border-[var(--primary)] text-foreground"
+                    : "border-border text-muted-foreground hover:border-foreground/25 hover:text-foreground"
                 }`}
               >
                 {p.name} · {p.role}
@@ -412,43 +412,61 @@ export function AuditForm({
       )}
 
       {loading && (
-        <div role="status" aria-live="polite" className="mt-8 grid gap-4 sm:grid-cols-3">
-          {selectedPersonas.map((persona) => {
-            const status = personaStatuses[persona.id] || "pending";
-            return (
-              <div
-                key={persona.id}
-                className={`rounded-xl border border-border p-4 transition-all duration-500 ${
-                  status === "running"
-                    ? "border-primary/50 bg-primary/5"
-                    : status === "complete"
-                      ? "border-green-500/50 bg-green-500/5"
-                      : "opacity-50"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  {status === "pending" && (
-                    <span className="size-2 rounded-full bg-muted-foreground" />
-                  )}
-                  {status === "running" && (
-                    <span className="size-2 rounded-full bg-primary animate-pulse" />
-                  )}
-                  {status === "complete" && (
-                    <span className="size-2 rounded-full bg-green-500" />
-                  )}
-                  <span className="text-sm font-medium">{persona.name}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {persona.role}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {status === "pending" && "Waiting..."}
-                  {status === "running" && "Browsing your site..."}
-                  {status === "complete" && "Done"}
-                </p>
-              </div>
-            );
-          })}
+        <div
+          role="status"
+          aria-live="polite"
+          className="mt-6 overflow-hidden rounded-md border border-border bg-card font-mono text-sm"
+        >
+          <div className="flex items-center justify-between border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
+            <span>
+              <span className="select-none text-[var(--primary)]">┌─ </span>
+              run log
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span
+                className="size-1.5 rounded-full bg-[var(--primary)]"
+                style={{ animation: "pulse 1.4s ease-in-out infinite" }}
+                aria-hidden
+              />
+              scanning
+            </span>
+          </div>
+          <ul className="divide-y divide-border">
+            {selectedPersonas.map((persona) => {
+              const status = personaStatuses[persona.id] || "pending";
+              const statusLabel =
+                status === "pending"
+                  ? "queued"
+                  : status === "running"
+                    ? "browsing…"
+                    : "done";
+              return (
+                <li
+                  key={persona.id}
+                  className={`flex items-baseline justify-between gap-3 px-4 py-2.5 transition-colors duration-300 ${
+                    status === "pending" ? "text-muted-foreground" : "text-card-foreground"
+                  }`}
+                >
+                  <span className="min-w-0 truncate">
+                    <span className="select-none text-[var(--primary)]">›&nbsp;</span>
+                    <span className="text-muted-foreground">[persona:{persona.id}]</span>{" "}
+                    {persona.name}
+                  </span>
+                  <span
+                    className={`shrink-0 text-xs tabular-nums ${
+                      status === "running"
+                        ? "text-[var(--primary)]"
+                        : status === "complete"
+                          ? "text-foreground"
+                          : "text-muted-foreground"
+                    }`}
+                  >
+                    {statusLabel}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
     </div>

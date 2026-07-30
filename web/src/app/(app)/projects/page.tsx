@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BoxDivider } from "@/components/forensic/divider";
+import { EmptyPrompt } from "@/components/forensic/empty-prompt";
 import { createProjectAction } from "./actions";
 
 export const metadata: Metadata = {
@@ -57,7 +58,7 @@ export default async function ProjectsPage({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="description" className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
-            Description <span className="normal-case text-muted-foreground/70">(optional)</span>
+            Description <span className="normal-case tracking-normal">(optional)</span>
           </Label>
           <Input id="description" name="description" placeholder="What is this site for?" maxLength={500} />
         </div>
@@ -74,12 +75,10 @@ export default async function ProjectsPage({
       <BoxDivider label="all projects" className="my-5" />
 
       {projects.length === 0 ? (
-        <div className="rounded-md border border-dashed border-border p-8 text-center">
-          <p className="text-sm font-medium">No projects yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Create your first project above to start grouping audits by site.
-          </p>
-        </div>
+        <EmptyPrompt
+          prompt="no projects yet — create one above"
+          hint="Group saved audits by client site so history and re-runs stay together."
+        />
       ) : (
         <div className="overflow-hidden rounded-md border border-border bg-card font-mono text-sm">
           <div className="border-b border-border px-4 py-2.5 text-xs text-muted-foreground">

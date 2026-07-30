@@ -36,7 +36,7 @@ export default function PrivacyPage() {
         <p>
           We do not sell your data. We do not use analytics or tracking cookies.
         </p>
-        <p className="text-xs text-muted-foreground/60">
+        <p className="text-xs text-muted-foreground">
           Last updated: May 2026. This policy will be expanded as the product develops.
         </p>
       </div>
