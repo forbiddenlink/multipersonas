@@ -179,6 +179,7 @@ describe("POST /api/audit — projectId", () => {
     }));
     vi.doMock("@/lib/limits", () => ({
       killSwitchEnabled: vi.fn().mockReturnValue(false),
+      estimatedCallsFor: vi.fn((n: number) => n * 25),
     }));
     vi.doMock("@/lib/supabase/admin", () => ({
       createAdminClient: vi.fn().mockReturnValue({
