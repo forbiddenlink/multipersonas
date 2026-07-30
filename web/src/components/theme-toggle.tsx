@@ -38,8 +38,9 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      aria-label="Toggle dark mode"
+      aria-pressed={isDark}
+      className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
     >
       {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
     </button>

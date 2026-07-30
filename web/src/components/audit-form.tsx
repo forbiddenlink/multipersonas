@@ -88,14 +88,25 @@ type PollOutcome =
  * long as it needs — a "timeout" outcome means we stopped watching, not that the job
  * died, so the caller decides whether to keep the jobId around for a manual re-check. */
 async function pollAuditJob(jobId: string): Promise<PollOutcome> {
-  const deadlineMs = Date.now() + 3 * 60 * 1000;
+  // A real multi-persona run (browser + axe + LLM per persona) routinely runs several
+  // minutes; the old 3-minute deadline made the timeout branch the *default* outcome for
+  // genuine scans. Ten minutes covers the worst case, and the worker keeps running past
+  // it regardless (a "timeout" only means we stopped watching).
+  const deadlineMs = Date.now() + 10 * 60 * 1000;
   while (Date.now() < deadlineMs) {
     await new Promise((r) => setTimeout(r, 2500));
-    const res = await fetch(`/api/audit/${jobId}`);
-    if (!res.ok) continue;
-    const data = await res.json();
+    let data: { status?: string; result?: AuditResponse; error?: string };
+    try {
+      const res = await fetch(`/api/audit/${jobId}`);
+      if (!res.ok) continue;
+      data = await res.json();
+    } catch {
+      // Transient network error (offline blip, dropped connection). The job is still
+      // running server-side, so keep polling rather than throwing and freezing the UI.
+      continue;
+    }
     if (data.status === "completed" && data.result) {
-      return { status: "completed", result: data.result as AuditResponse };
+      return { status: "completed", result: data.result };
     }
     if (data.status === "failed") {
       return {
@@ -188,7 +199,19 @@ export function AuditForm({
     setError(null);
     animatePersonaStatuses(personaIds);
 
-    const outcome = await pollAuditJob(jobId);
+    let outcome: PollOutcome;
+    try {
+      outcome = await pollAuditJob(jobId);
+    } catch {
+      // Safety net: pollAuditJob already swallows transient network errors, but any
+      // unexpected throw here must never leave the spinner stuck (watchJob is called
+      // fire-and-forget, so a rejection would otherwise be an unhandled one).
+      setLoading(false);
+      setError(
+        "Lost connection while watching the audit. Your scan may still be running — use Check status to retry.",
+      );
+      return;
+    }
 
     if (outcome.status === "timeout") {
       // Keep the jobId persisted — the scan is still running server-side, and

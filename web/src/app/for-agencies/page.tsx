@@ -310,13 +310,13 @@ mpersonas scan https://client.app --session ./session.json \\
             <p className="mt-5 text-lg text-muted-foreground">
               The engine is live — free public scans on the web, behind-login scanning via
               the CLI (credentials stay on your machine), multi-site projects with
-              new/cleared regression vs the last run, and a verdicts-only compliance
-              report you can print to PDF.
+              new/cleared regression vs the last run, and a verdicts-only compliance report
+              you can white-label with your agency name and print to PDF.
             </p>
             <p className="mt-4 text-muted-foreground">
               Join early if you ship many client sites under ADA / EAA pressure. Tell us how
-              you&apos;d use it — scheduled re-scans and white-label reports are next on the
-              list for agencies who raise their hand.
+              you&apos;d use it — scheduled re-scans are next on the list for agencies who
+              raise their hand.
             </p>
           </Reveal>
           <Reveal delay={80}>
