@@ -33,21 +33,31 @@ This keeps the "credentials and client data stay protected" promise intact.
 ## Phases
 
 - **P1 (done): engine captures per-step reasoning.** StepRecord.reasoning, committed.
-- **P2: persistence.** Migration for `journey_steps` + the `journeys` Storage bucket + RLS;
-  worker uploads step screenshots and writes the journey. NEEDS Liz (prod infra): create
-  the bucket and apply the migration (Supabase writes are classifier-blocked for the agent).
-- **P3: replay UI.** A scrubbable filmstrip on the audit detail page: screenshot + reasoning
-  caption + the axe finding(s) at that state, play/scrub/step, deep-link to a moment.
-  Design language: forensic terminal. Use figma/canva MCP if a richer visual is wanted.
-- **P4: shareable clip.** Render the journey (or just the stuck-moment) to an MP4/GIF with
-  the `remotion` MCP (video in React): screenshots + captions + the frustration ribbon, 6
-  seconds, Slack-able. Every share is an ad.
-- **P5: enrichment + tool-powered personas.**
-  - Frustration ribbon: a 0-100 signal per step (derive from backtracking/repeats or ask the
-    model), colored calm-to-rage.
-  - `magica` MCP: generate persona avatars + marketing visuals so the personas feel real.
-  - `lighthouse` MCP: power a genuine "mobile on slow 3G" performance persona with real
-    Core Web Vitals, not a simulated label.
+- **P2 (code DONE, infra gated on Liz): persistence.** `web/supabase/migrations/014_journey_steps.sql`
+  (journey_steps table + RLS scoped via test_runs.user_id + private `journeys` Storage bucket +
+  owner-scoped read policy); worker (`worker/src/index.ts` `persistJourney`) uploads step
+  screenshots + writes the journey, best-effort. types.ts + engine.d.ts shim updated. NEEDS Liz:
+  apply migration 014 + it creates the bucket (Supabase writes are classifier-blocked). Runtime-
+  unverified until applied (same gap as prior migrations).
+- **P3 (DONE + visually verified): replay UI.** `web/src/components/replay-theater.tsx` — a
+  scrubbable filmstrip on the audit detail page (frame + serif reasoning caption + the axe
+  finding(s) at that state + inferred-frustration ribbon that doubles as the scrubber), play/
+  scrub/step, keyboard, deep-link `?persona=&step=`, "⧉ link" copy-moment share. `web/src/lib/journey.ts`
+  loads + signs. Verified dark + light + mobile + deep-link + evidence-at-state, axe-safe, 0
+  console errors.
+- **P4 (composition + renderer ready; hosted render gated): shareable clip.** Isolated `video/`
+  Remotion project (OUTSIDE the pnpm workspace so its chromium/ffmpeg deps never touch the app):
+  `JourneyClip` composition + `render.mjs` SSR script + sample-journey.json + README. Renders MP4/
+  GIF locally. NOT installed/rendered here (heavy deps) and per-user in-app render needs Remotion
+  Lambda or a render worker (Vercel/Next can't run renderMedia). Ships-now share = the deep-link
+  "⧉ link" button.
+- **P5:**
+  - **Frustration ribbon (DONE):** `web/src/lib/frustration.ts` — a deterministic 0-100 per-step
+    signal from backtracking / revisits / stalls / terminal relief-vs-rage. NOT a model call
+    (free + honest). Unit-tested. Rendered as a calm-to-rage ribbon in the replay + the clip.
+  - **lighthouse perf lens + magica:** scoped in `docs/plans/2026-07-30-replay-p5-perf-persona-and-magica.md`.
+    Perf lens = BUILD as its own slice (deterministic 'perf' source, worker-run lighthouse, real CWV).
+    magica avatars = HOLD (brand wall, no synthetic humans).
 
 ## Non-goals / guardrails
 - Reasoning is navigation narration, never a compliance verdict (the axe/persona wall).

@@ -156,7 +156,7 @@ async function persistHistory(
   userId: string,
   audit: AuditResponse,
   projectId?: string | null,
-): Promise<void> {
+): Promise<string | null> {
   const now = new Date().toISOString();
   const { data: run, error } = await supabase
     .from("test_runs")
@@ -176,7 +176,7 @@ async function persistHistory(
 
   if (error || !run) {
     console.error("[worker] history: test_run insert failed:", error?.message);
-    return;
+    return null;
   }
 
   // `location` already carries the specific page each finding was seen on (see
@@ -215,6 +215,65 @@ async function persistHistory(
     const { error: fErr } = await supabase.from("findings").insert(rows);
     if (fErr) console.error("[worker] history: findings insert failed:", fErr.message);
   }
+  return run.id;
+}
+
+/** Persist the persona walk for Persona Replay Theater: upload each step's screenshot to
+ * the private `journeys` bucket and write one journey_steps row per (persona, step). The
+ * screenshot + the persona's inner-monologue reasoning are what make the run replayable.
+ *
+ * Best-effort — a failure here (bucket/table not yet created, a missing frame) is logged,
+ * never fatal to the job. Worker scans are UNAUTHENTICATED, so every frame is of a PUBLIC
+ * page; behind-login capture stays opt-in + private when it lands (see migration 014). */
+async function persistJourney(runId: string, result: TestResult): Promise<void> {
+  for (const pr of result.personas) {
+    for (const s of pr.agentResult.steps) {
+      const nnn = String(s.step).padStart(3, "0");
+      let screenshotPath: string | null = null;
+
+      // Upload the frame if it is still on disk (the run's tmp dir is cleaned right after).
+      if (s.screenshotPath && fs.existsSync(s.screenshotPath)) {
+        const objectPath = `${runId}/${pr.persona.id}/step-${nnn}.png`;
+        try {
+          const bytes = fs.readFileSync(s.screenshotPath);
+          const { error: upErr } = await supabase.storage
+            .from("journeys")
+            .upload(objectPath, bytes, { contentType: "image/png", upsert: true });
+          if (upErr) {
+            console.error(`[worker] journey: upload ${objectPath} failed: ${upErr.message}`);
+          } else {
+            screenshotPath = objectPath;
+          }
+        } catch (e) {
+          console.error(
+            `[worker] journey: read/upload ${objectPath} failed:`,
+            e instanceof Error ? e.message : e,
+          );
+        }
+      }
+
+      const { error: rowErr } = await supabase.from("journey_steps").upsert(
+        {
+          test_run_id: runId,
+          persona_id: pr.persona.id,
+          step: s.step,
+          action: s.action,
+          detail: s.detail || null,
+          reasoning: s.reasoning ?? null,
+          goal_completed: pr.agentResult.goalCompleted,
+          page_url: s.pageUrl || null,
+          screenshot_path: screenshotPath,
+          ts: new Date(s.timestamp).toISOString(),
+        },
+        { onConflict: "test_run_id,persona_id,step" },
+      );
+      if (rowErr) {
+        console.error(`[worker] journey: step insert failed (${runId}): ${rowErr.message}`);
+        // A row failure usually means the migration isn't applied yet — stop hammering.
+        return;
+      }
+    }
+  }
 }
 
 async function claimAndRun(): Promise<boolean> {
@@ -247,7 +306,12 @@ async function claimAndRun(): Promise<boolean> {
     );
     const response = toResponse(result);
 
-    if (claimed.user_id) await persistHistory(claimed.user_id, response, claimed.project_id);
+    if (claimed.user_id) {
+      const runId = await persistHistory(claimed.user_id, response, claimed.project_id);
+      // Replay Theater: persist the walk while the screenshots are still on disk (the
+      // finally block wipes tmpDir). Best-effort; `result` carries the per-step records.
+      if (runId) await persistJourney(runId, result);
+    }
 
     await supabase
       .from("audit_jobs")
