@@ -56,6 +56,47 @@ clients if you already ship sites for them.
 
 ---
 
+## Segment-tailored variants (pick the hook per prospect)
+
+The generic template converts worse than a segment-specific first line. Swap the
+opener; keep the link + task-success mechanism. One hook per archetype.
+
+### A. Freelance a11y / web consultant (2–20 client sites)
+> Hi {Name} — you audit sites for a living, so you already know axe-core misses
+> the stuff behind the login: checkout, account, dashboards. Personaudit runs
+> axe at every state a persona actually reaches (behind-login via CLI, creds
+> never leave your machine) and exports a verdicts-only VPAT-lite report per
+> client. Curious if that'd save you the manual-flow-walk on repeat clients.
+> https://personaudit.com/for-agencies
+
+### B. Small agency owner (5–30 people, WP / Next / Shopify)
+> Hi {Name} — when a client asks "are we ADA-safe?", how long does it take your
+> team to prove it across every logged-in flow? Personaudit gives you a per-client
+> project, tracks defects cleared vs last run, and prints a compliance report you
+> can hand the client. Between free DIY scanners and a $25k enterprise monitor.
+> Free public scans to try: https://personaudit.com/for-agencies
+
+### C. EAA-facing EU agency (deadline is the wedge)
+> Hi {Name} — with the EAA in force, your clients' authenticated flows (not just
+> the homepage) are in scope. Personaudit crawls behind-login states with axe-core
+> and checks a real-shaped user can finish the task, per client, with a print-ready
+> report. Happy to scan one staging site free. https://personaudit.com/for-agencies
+
+---
+
+## How to find the 10 (search playbook)
+
+Do NOT buy a list. Find people already talking about the problem:
+
+- **LinkedIn search:** `"web accessibility" agency owner`, `"ADA compliance" founder`,
+  `accessibility consultant` + filter People. DM the ones who POST about a11y (warm-ish).
+- **EU/EAA angle:** `European Accessibility Act agency`, filter by EU location.
+- **Communities (warmest):** a11y Slack (web-a11y.slack.com), r/accessibility,
+  Indie Hackers "who's building" threads, agency owners in local chamber Slacks.
+- **Warmest of all:** anyone you already ship sites for — offer one free behind-login scan.
+- Qualify before DM: they ship ≥2 client sites AND mention compliance/legal pressure.
+- Log each: name · segment (A/B/C) · where found · sent date → check `/waitlist` daily.
+
 ## Success criteria (decide in 7 days)
 
 | Signal | Kill / continue |
