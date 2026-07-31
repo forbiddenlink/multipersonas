@@ -44,12 +44,22 @@ jobs:
         working-directory: web
         run: pnpm exec tsc --noEmit
 
+      - name: Type check (worker)
+        working-directory: worker
+        run: pnpm typecheck
+
       - name: Test (CLI)
         run: pnpm test
 
       - name: Test (web)
         working-directory: web
         run: pnpm test
+
+      # Catches build-only breaks (Satori/ImageResponse, RSC boundaries, Next 16
+      # config) that tsc + tests miss — hand-run every session, now gated in CI.
+      - name: Build (web)
+        working-directory: web
+        run: pnpm build
 
       # Dependency advisories are handled by Dependabot (active on this repo),
       # not here: npm retired the `pnpm audit` REST endpoint (410 Gone), so the
