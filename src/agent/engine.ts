@@ -205,6 +205,32 @@ export const finishSchema = z.object({
   summary: z.string().min(1),
 });
 
+/**
+ * Map a finish tool call to a replay step's caption + monologue.
+ *
+ * The finish `summary` is the persona's richest closing narration — it is the
+ * inner monologue, so it belongs in `reasoning` (rendered as the serif quote in
+ * Persona Replay Theater), NOT crammed into `detail`, which is a short mono
+ * caption meant for the outcome label. Getting this backwards printed the whole
+ * multi-paragraph summary as a cramped caption while the monologue read
+ * "No narration recorded for this step" (2026-07-31).
+ */
+export function finishStepFields(
+  input: unknown,
+  reasoning: string | undefined,
+): { detail: string; reasoning: string | undefined } {
+  const finish = finishSchema.safeParse(input);
+  if (finish.success) {
+    return { detail: finish.data.outcome, reasoning: finish.data.summary };
+  }
+  // Malformed finish: keep any model narration; fall back to a raw summary if present.
+  const rawSummary =
+    typeof (input as { summary?: unknown })?.summary === "string"
+      ? (input as { summary: string }).summary
+      : undefined;
+  return { detail: "finished", reasoning: reasoning ?? rawSummary };
+}
+
 const agentTools = {
   click: tool({
     description:
@@ -602,16 +628,15 @@ export async function runPersonaAgent(
         );
         await page.screenshot({ path: screenshotPath, fullPage: false });
 
+        const finishFields = finishStepFields(input, reasoning);
         steps.push({
           step,
           action: "finish",
-          detail: finish.success
-            ? finish.data.summary
-            : String((input as { summary?: string }).summary ?? "session finished"),
+          detail: finishFields.detail,
           pageUrl: page.url(),
           screenshotPath,
           timestamp: Date.now(),
-          reasoning,
+          reasoning: finishFields.reasoning,
         });
         break;
       }

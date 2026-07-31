@@ -22,6 +22,39 @@ export interface ReplayTheaterProps {
 }
 
 const PLAY_INTERVAL_MS = 1600;
+/** A finish-step monologue can run several paragraphs; clamp the long ones. */
+const MONOLOGUE_CLAMP_CHARS = 280;
+
+/**
+ * The persona's inner monologue as a serif quote. Long ones (the finish summary
+ * especially) clamp to a few lines with a show-more toggle so the theater stays
+ * scannable. Reset per frame by the caller keying on (persona, step).
+ */
+function Monologue({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = text.length > MONOLOGUE_CLAMP_CHARS;
+  return (
+    <div className="mt-2">
+      <p
+        className={`font-serif text-[15px] italic leading-relaxed text-foreground ${
+          isLong && !expanded ? "line-clamp-5" : ""
+        }`}
+      >
+        &ldquo;{text}&rdquo;
+      </p>
+      {isLong && (
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          aria-expanded={expanded}
+          className="mt-1 font-mono text-[11px] text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+        >
+          {expanded ? "show less" : "show more"}
+        </button>
+      )}
+    </div>
+  );
+}
 
 /**
  * Persona Replay Theater: a scrubbable evidence timeline of one persona's walk. Each frame
@@ -207,9 +240,8 @@ export function ReplayTheater({
               {step.detail ? <span className="normal-case"> — {step.detail}</span> : null}
             </p>
             {step.reasoning ? (
-              <p className="mt-2 font-serif text-[15px] italic leading-relaxed text-foreground">
-                &ldquo;{step.reasoning}&rdquo;
-              </p>
+              // Keyed by frame so a long finish monologue re-collapses when you scrub away.
+              <Monologue key={`${pIdx}-${sIdx}`} text={step.reasoning} />
             ) : (
               <p className="mt-2 text-sm text-muted-foreground">
                 No narration recorded for this step.
