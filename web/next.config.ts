@@ -24,6 +24,13 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    // Natural URL guesses land on the real auth routes instead of 404ing.
+    return [
+      { source: "/signup", destination: "/auth/signup", permanent: true },
+      { source: "/login", destination: "/auth/login", permanent: true },
+    ];
+  },
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
