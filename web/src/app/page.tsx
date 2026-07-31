@@ -27,7 +27,7 @@ export default function Home() {
       {/* Hero — the signature: tight headline + live audit-terminal. Grain on the dark
           fill; real content sits above it on z-10. */}
       <section className="grain relative overflow-hidden border-b border-border">
-        <div className="relative z-10 mx-auto grid max-w-6xl gap-12 px-6 py-16 lg:grid-cols-[1fr_1.05fr] lg:items-start lg:py-20">
+        <div className="relative z-10 mx-auto grid max-w-6xl gap-12 px-6 py-16 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:py-24">
           <div>
             <p className="flex flex-wrap gap-2 font-mono text-xs text-muted-foreground">
               <span className="rounded-sm border border-border px-2.5 py-1">axe-core · deterministic</span>
@@ -59,8 +59,12 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="lg:pl-4">
+          <div className="lg:pl-2">
             <AuditTerminal />
+            <p className="mt-3 flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
+              <span className="inline-block size-1.5 rounded-full bg-[var(--primary)] motion-safe:animate-pulse" aria-hidden="true" />
+              a persona is walking a checkout behind login — this is the actual instrument, not a mockup
+            </p>
           </div>
         </div>
       </section>
@@ -78,7 +82,7 @@ export default function Home() {
       </section>
 
       {/* The product — run a real scan. */}
-      <section id="scan" className="border-y border-border bg-card/40 px-6 py-16">
+      <section id="scan" className="border-y border-border bg-card px-6 py-16">
         <div className="mx-auto max-w-3xl">
           <p className="mb-6 font-mono text-xs text-muted-foreground">
             <span className="select-none text-[var(--primary)]">›&nbsp;</span>new scan — point it at any public URL
@@ -88,8 +92,9 @@ export default function Home() {
       </section>
 
       {/* How it works — a run-log. */}
-      <section className="mx-auto w-full max-w-3xl px-6 py-16">
-        <h2 className="text-2xl font-semibold tracking-tight">How it works</h2>
+      <section className="mx-auto w-full max-w-3xl px-6 py-20">
+        <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">pipeline</p>
+        <h2 className="mt-3 text-2xl font-semibold tracking-tight">How it works</h2>
         <div className="mt-6 overflow-hidden rounded-md border border-border bg-card font-mono text-sm">
           <div className="border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
             <span className="select-none text-[var(--primary)]">┌─ </span>personaudit ~/run
@@ -109,10 +114,12 @@ export default function Home() {
       </section>
 
       {/* Two outputs, never blurred — the honesty wall. */}
-      <section className="mx-auto w-full max-w-3xl px-6 py-16">
-        <h2 className="text-2xl font-semibold tracking-tight">Two outputs, never blurred</h2>
+      <section className="border-y border-border bg-card px-6 py-20">
+        <div className="mx-auto w-full max-w-3xl">
+        <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">honesty wall</p>
+        <h2 className="mt-3 text-2xl font-semibold tracking-tight">Two outputs, never blurred</h2>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-md border border-border p-5">
+          <div className="rounded-md border border-border bg-background p-5">
             <div className="flex items-center gap-2">
               <SeverityChip severity="critical" />
               <span className="font-medium">Accessibility violations</span>
@@ -122,7 +129,7 @@ export default function Home() {
               citable, per state. The only output that touches compliance.
             </p>
           </div>
-          <div className="rounded-md border border-border p-5">
+          <div className="rounded-md border border-border bg-background p-5">
             <p className="font-medium">Usability &amp; task success</p>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
               From UX personas — did a real-shaped user complete the flow? Opinion and outcome,
@@ -143,11 +150,13 @@ export default function Home() {
           </a>
           .
         </p>
+        </div>
       </section>
 
       {/* What you get — the real report excerpt + the task-success layer. */}
-      <section id="example" className="mx-auto w-full max-w-6xl px-6 py-16">
-        <h2 className="text-2xl font-semibold tracking-tight">What you get</h2>
+      <section id="example" className="mx-auto w-full max-w-6xl px-6 py-20">
+        <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">output</p>
+        <h2 className="mt-3 text-2xl font-semibold tracking-tight">What you get</h2>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
           Deterministic axe-core violations, cited to WCAG and grouped by the states they appeared
           in — plus how many personas reached their goal. Sample shown; real reports vary.
@@ -179,7 +188,7 @@ export default function Home() {
       </section>
 
       {/* CI gate — already built in the CLI; surface it as a selling point. */}
-      <section className="border-y border-border bg-card/40 px-6 py-16">
+      <section className="border-y border-border bg-card px-6 py-16">
         <div className="mx-auto max-w-3xl">
           <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
             CI gate
