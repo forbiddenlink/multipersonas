@@ -35,7 +35,9 @@ export default function ForAgenciesPage() {
             <span className="h-px w-8 bg-primary" />
             For agencies &amp; freelancers
           </p>
-          <h1 className="fade-up mt-6 font-heading text-[clamp(2.5rem,6vw,4.25rem)] leading-[1.02] tracking-tight text-balance" style={{ animationDelay: "0.12s" }}>
+          {/* No entrance animation on the headline: it's the LCP element, so it must
+              paint immediately rather than fade in from opacity:0. */}
+          <h1 className="mt-6 font-heading text-[clamp(2.5rem,6vw,4.25rem)] leading-[1.02] tracking-tight text-balance">
             Every client site is your liability now.
           </h1>
           <p className="fade-up mt-6 max-w-[52ch] text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "0.19s" }}>

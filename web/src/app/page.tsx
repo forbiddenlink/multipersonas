@@ -34,7 +34,9 @@ export default function Home() {
               <span className="rounded-sm border border-border px-2.5 py-1">crawls behind login</span>
               <span className="rounded-sm border border-border px-2.5 py-1">gate CI on new defects</span>
             </p>
-            <h1 className="fade-up mt-6 text-[clamp(2.4rem,5.5vw,3.75rem)] font-bold leading-[1.03] tracking-tight text-balance" style={{ animationDelay: "0.12s" }}>
+            {/* No entrance animation on the headline: it's the LCP element, so it must
+                paint immediately rather than fade in from opacity:0. */}
+            <h1 className="mt-6 text-[clamp(2.4rem,5.5vw,3.75rem)] font-bold leading-[1.03] tracking-tight text-balance">
               Scan the pages a crawler can&apos;t reach.
             </h1>
             <p className="fade-up mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "0.19s" }}>
