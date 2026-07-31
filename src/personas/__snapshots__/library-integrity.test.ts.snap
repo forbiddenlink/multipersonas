@@ -1,0 +1,15 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`persona library integrity > matches the committed roster (catches accidental add/remove) 1`] = `
+[
+  "anxious-first-timer · ux",
+  "budget-conscious-student · ux",
+  "elderly-user · ux",
+  "first-time-visitor · ux",
+  "impatient-executive · ux",
+  "keyboard-traversal · traversal",
+  "mobile-slow-connection · ux",
+  "non-native-english · ux",
+  "power-user-developer · ux",
+]
+`;
