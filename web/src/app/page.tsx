@@ -29,21 +29,21 @@ export default function Home() {
       <section className="grain relative overflow-hidden border-b border-border">
         <div className="relative z-10 mx-auto grid max-w-6xl gap-12 px-6 py-16 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:py-24">
           <div>
-            <p className="flex flex-wrap gap-2 font-mono text-xs text-muted-foreground">
+            <p className="fade-up flex flex-wrap gap-2 font-mono text-xs text-muted-foreground" style={{ animationDelay: "0.05s" }}>
               <span className="rounded-sm border border-border px-2.5 py-1">axe-core · deterministic</span>
               <span className="rounded-sm border border-border px-2.5 py-1">crawls behind login</span>
               <span className="rounded-sm border border-border px-2.5 py-1">gate CI on new defects</span>
             </p>
-            <h1 className="mt-6 text-[clamp(2.4rem,5.5vw,3.75rem)] font-bold leading-[1.03] tracking-tight text-balance">
+            <h1 className="fade-up mt-6 text-[clamp(2.4rem,5.5vw,3.75rem)] font-bold leading-[1.03] tracking-tight text-balance" style={{ animationDelay: "0.12s" }}>
               Scan the pages a crawler can&apos;t reach.
             </h1>
-            <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
+            <p className="fade-up mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "0.19s" }}>
               Personaudit crawls your site with a saved session — through checkout, dashboards, and
               multi-step flows a page-level scanner never reaches — and runs{" "}
               <strong className="font-medium text-foreground">axe-core</strong> at every state.
               Behind-login scanning runs from the CLI, so your credentials never leave your machine.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="fade-up mt-8 flex flex-col gap-3 sm:flex-row sm:items-center" style={{ animationDelay: "0.26s" }}>
               <Link
                 href="#scan"
                 className="rounded-sm bg-primary px-5 py-2.5 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
@@ -59,7 +59,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="lg:pl-2">
+          <div className="fade-up lg:pl-2" style={{ animationDelay: "0.34s" }}>
             <AuditTerminal />
             <p className="mt-3 flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
               <span className="inline-block size-1.5 rounded-full bg-[var(--primary)] motion-safe:animate-pulse" aria-hidden="true" />
