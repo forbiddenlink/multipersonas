@@ -31,20 +31,20 @@ export default function ForAgenciesPage() {
         className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-12 px-6 pt-16 pb-24 sm:pt-24 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16"
       >
         <div className="max-w-xl">
-          <p className="flex items-center gap-3 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          <p className="fade-up flex items-center gap-3 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground" style={{ animationDelay: "0.05s" }}>
             <span className="h-px w-8 bg-primary" />
             For agencies &amp; freelancers
           </p>
-          <h1 className="mt-6 font-heading text-[clamp(2.5rem,6vw,4.25rem)] leading-[1.02] tracking-tight text-balance">
+          <h1 className="fade-up mt-6 font-heading text-[clamp(2.5rem,6vw,4.25rem)] leading-[1.02] tracking-tight text-balance" style={{ animationDelay: "0.12s" }}>
             Every client site is your liability now.
           </h1>
-          <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-muted-foreground">
+          <p className="fade-up mt-6 max-w-[52ch] text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "0.19s" }}>
             Personaudit walks each client&apos;s site the way a real user does — behind the
             login, through checkout — runs <span className="text-foreground">axe-core</span> at
             every state it reaches, and hands you the evidence report. Not a widget bolted to
             the page. An actual audit.
           </p>
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="fade-up mt-9 flex flex-col gap-3 sm:flex-row sm:items-center" style={{ animationDelay: "0.26s" }}>
             <Link
               href="#early-access"
               className="inline-flex items-center justify-center rounded-sm bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-[background-color] hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
@@ -61,13 +61,13 @@ export default function ForAgenciesPage() {
         </div>
 
         {/* The product, visibly working — a persona auditing behind the login, live. */}
-        <div className="lg:pl-2">
+        <div className="fade-up lg:pl-2" style={{ animationDelay: "0.34s" }}>
           <AuditTerminal />
         </div>
       </section>
 
       {/* ── The stakes: overlay villain + numbers ──────────────────────── */}
-      <Reveal className="border-y border-border bg-card/40">
+      <Reveal className="border-y border-border bg-card">
         <section className="mx-auto w-full max-w-6xl px-6 py-20 sm:py-28">
           <p className="max-w-3xl font-heading text-[clamp(1.6rem,3.4vw,2.5rem)] leading-[1.15] text-balance">
             <span className="tabular-nums text-primary">456</span> of 2025&apos;s accessibility
@@ -175,7 +175,7 @@ export default function ForAgenciesPage() {
       </section>
 
       {/* ── Multi-site strip: the agency identity ──────────────────────── */}
-      <Reveal className="border-y border-border bg-card/40">
+      <Reveal className="border-y border-border bg-card">
         <section className="mx-auto w-full max-w-6xl px-6 py-20 sm:py-28">
           <div className="max-w-2xl">
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -298,7 +298,7 @@ mpersonas scan https://client.app --session ./session.json \\
       </section>
 
       {/* ── Early access / waitlist ────────────────────────────────────── */}
-      <section id="early-access" className="border-t border-border bg-card/40">
+      <section id="early-access" className="border-t border-border bg-card">
         <div className="mx-auto grid w-full max-w-6xl gap-12 px-6 py-20 sm:py-28 lg:grid-cols-[1fr_1fr] lg:gap-16">
           <Reveal>
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
