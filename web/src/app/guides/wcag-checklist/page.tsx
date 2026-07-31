@@ -50,7 +50,7 @@ const checks = [
 
 export default function WcagChecklistPage() {
   return (
-    <div className="mx-auto max-w-2xl px-6 py-16">
+    <main id="main" className="mx-auto max-w-2xl px-6 py-16">
       <p className="font-mono text-xs text-muted-foreground">
         <span className="rounded-sm border border-border px-2.5 py-1">reference · wcag 2.1 aa</span>
       </p>
@@ -100,6 +100,6 @@ export default function WcagChecklistPage() {
           &larr; Back to home
         </Link>
       </div>
-    </div>
+    </main>
   );
 }

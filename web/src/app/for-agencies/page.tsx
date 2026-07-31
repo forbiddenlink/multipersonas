@@ -25,9 +25,9 @@ export default function ForAgenciesPage() {
     <div className="flex min-h-dvh flex-col overflow-x-hidden">
       <SiteHeader />
 
+      <main id="main">
       {/* ── Hero: split ledger ─────────────────────────────────────────── */}
       <section
-        id="main"
         className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-12 px-6 pt-16 pb-24 sm:pt-24 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16"
       >
         <div className="max-w-xl">
@@ -324,6 +324,7 @@ mpersonas scan https://client.app --session ./session.json \\
           </Reveal>
         </div>
       </section>
+      </main>
 
       {/* ── Footnotes + footer ─────────────────────────────────────────── */}
       <footer className="border-t border-border px-6 py-10">
@@ -335,7 +336,7 @@ mpersonas scan https://client.app --session ./session.json \\
           </ol>
           <div className="mt-8 flex flex-col items-start justify-between gap-4 border-t border-border pt-6 sm:flex-row sm:items-center">
             <Wordmark className="text-sm text-foreground" />
-            <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+            <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
               <Link href="/" className="transition-colors hover:text-foreground">Home</Link>
               <Link href="/guides/wcag-checklist" className="transition-colors hover:text-foreground">WCAG Checklist</Link>
               <Link href="/privacy" className="transition-colors hover:text-foreground">Privacy</Link>

@@ -23,9 +23,10 @@ export default function Home() {
     <div className="flex min-h-dvh flex-col pb-[env(safe-area-inset-bottom)]">
       <SiteHeader />
 
+      <main id="main">
       {/* Hero — the signature: tight headline + live audit-terminal. Grain on the dark
           fill; real content sits above it on z-10. */}
-      <section id="main" className="grain relative overflow-hidden border-b border-border">
+      <section className="grain relative overflow-hidden border-b border-border">
         <div className="relative z-10 mx-auto grid max-w-6xl gap-12 px-6 py-16 lg:grid-cols-[1fr_1.05fr] lg:items-start lg:py-20">
           <div>
             <p className="flex flex-wrap gap-2 font-mono text-xs text-muted-foreground">
@@ -239,6 +240,7 @@ mpersonas scan https://app.example.com --session ./session.json \\
           </div>
         </div>
       </section>
+      </main>
 
       {/* Footer */}
       <footer className="border-t border-border px-6 py-8">

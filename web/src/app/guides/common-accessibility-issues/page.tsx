@@ -72,7 +72,7 @@ const issues = [
 
 export default function CommonIssuesPage() {
   return (
-    <div className="mx-auto max-w-2xl px-6 py-16">
+    <main id="main" className="mx-auto max-w-2xl px-6 py-16">
       <p className="font-mono text-xs text-muted-foreground">
         <span className="rounded-sm border border-border px-2.5 py-1">reference · top 10</span>
       </p>
@@ -133,6 +133,6 @@ export default function CommonIssuesPage() {
           &larr; Back to home
         </Link>
       </div>
-    </div>
+    </main>
   );
 }

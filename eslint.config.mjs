@@ -7,7 +7,16 @@ export default tseslint.config(
     // web/ has its own eslint-config-next setup; worker/ is a separate
     // package with its own tsconfig. Root lint only covers the published
     // CLI + experiments/scripts, and never touches build output.
-    ignores: ["dist/**", "node_modules/**", "web/**", "worker/**", "coverage/**"],
+    ignores: [
+      "dist/**",
+      "node_modules/**",
+      "web/**",
+      "worker/**",
+      // video/ is a standalone Remotion project with its own tooling and tsconfig,
+      // isolated from the workspace like worker/. Not part of the root CLI lint.
+      "video/**",
+      "coverage/**",
+    ],
   },
   js.configs.recommended,
   // typescript-eslint "recommended" (not type-checked/strict-type-checked) —
@@ -31,6 +40,21 @@ export default tseslint.config(
       // Empty catch blocks / intentionally-unused error bindings show up
       // in retry/cleanup paths; keep as a warning, not a blocker.
       "@typescript-eslint/no-empty-object-type": "warn",
+    },
+  },
+  {
+    // Standalone Node scripts (dogfood runner, etc.) — plain .mjs run with `node`,
+    // so declare the Node globals they use rather than tripping no-undef.
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        console: "readonly",
+        URL: "readonly",
+        setTimeout: "readonly",
+        // referenced inside a browser-injected addInitScript callback, not Node scope
+        window: "readonly",
+      },
     },
   },
 );

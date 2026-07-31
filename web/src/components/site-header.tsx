@@ -15,7 +15,7 @@ export async function SiteHeader() {
       >
         <Wordmark className="text-lg text-foreground" />
       </Link>
-      <nav className="flex items-center gap-3">
+      <nav aria-label="Primary" className="flex items-center gap-3">
         <ThemeToggle />
         {user ? (
           <Link
