@@ -231,6 +231,18 @@ export function finishStepFields(
   return { detail: "finished", reasoning: reasoning ?? rawSummary };
 }
 
+/**
+ * axe should only judge real web documents. When a persona follows a link off
+ * the site, Chrome can land on a `chrome-error://` / `about:blank` state; axe
+ * still runs there and reports Chrome's own error page as the audited site's
+ * verdict (2026-07-31 — an example.com run surfaced 5 "findings" that were all
+ * on the post-navigation error page). Restrict scanning to http(s) states so
+ * the deterministic, billable verdict only reflects the site.
+ */
+export function isScannablePageUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url);
+}
+
 const agentTools = {
   click: tool({
     description:
@@ -471,7 +483,8 @@ export async function runPersonaAgent(
     // Navigate to target
     await page.goto(safeUrl.href, { waitUntil: "domcontentloaded", timeout: 30_000 });
     pagesVisited.add(page.url());
-    if (guard.runAxe !== false) axeFindings.push(...(await runAxeScan(page)));
+    if (guard.runAxe !== false && isScannablePageUrl(page.url()))
+      axeFindings.push(...(await runAxeScan(page)));
 
     // Take initial screenshot
     const initialScreenshot = path.join(screenshotDir, "step-000.png");
@@ -670,7 +683,11 @@ export async function runPersonaAgent(
       // is the whole reason for walking this far in: a filtered dashboard or an
       // open dialog is a state no crawler reaches, so nothing else will ever
       // scan it. Deduped by (rule, element) at the end.
-      if (guard.runAxe !== false && toolName !== "report_finding") {
+      if (
+        guard.runAxe !== false &&
+        toolName !== "report_finding" &&
+        isScannablePageUrl(page.url())
+      ) {
         try {
           axeFindings.push(...(await runAxeScan(page)));
         } catch {
