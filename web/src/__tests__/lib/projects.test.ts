@@ -118,7 +118,7 @@ describe("createProject", () => {
       url: "https://acme.com",
     });
     expect(result).toEqual(row);
-    expect(supabase.query.calls.insert[0]!).toEqual({
+    expect(supabase.query.calls.insert![0]).toEqual({
       user_id: "u1",
       name: "Acme",
       url: "https://acme.com",
