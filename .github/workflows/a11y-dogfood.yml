@@ -18,6 +18,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    # Public pages instantiate a Supabase client on render (auth forms), which throws
+    # when these are absent — crashing every scanned route. The dogfood only audits
+    # rendered markup, so non-secret placeholders are sufficient: the client constructs,
+    # no real backend is contacted.
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
