@@ -30,7 +30,7 @@ export default tseslint.config(
       // ignored catch bindings) — don't flag them.
       "@typescript-eslint/no-unused-vars": [
         "warn",
-        { argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
       ],
       // Downgraded, not disabled: the CLI leans on `any` for third-party
       // (Playwright/axe) shapes and dynamic report data. Rewriting that
@@ -52,8 +52,10 @@ export default tseslint.config(
         console: "readonly",
         URL: "readonly",
         setTimeout: "readonly",
-        // referenced inside a browser-injected addInitScript callback, not Node scope
+        // referenced inside browser-injected addInitScript / page.evaluate callbacks,
+        // not Node scope
         window: "readonly",
+        document: "readonly",
       },
     },
   },
