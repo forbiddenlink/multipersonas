@@ -108,6 +108,7 @@ function detectConflicts(personaResults: PersonaTestResult[]): PersonaConflict[]
       for (let j = i + 1; j < outcomes.length; j++) {
         const a = outcomes[i];
         const b = outcomes[j];
+        if (!a || !b) continue;
 
         const aHasIssues = a.findings.length > 0;
         const bHasIssues = b.findings.length > 0;
@@ -213,7 +214,7 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
       if (result.status === "fulfilled") return result.value;
       // Should not happen since runSinglePersona catches internally, but handle anyway
       return {
-        persona: personas[i],
+        persona: personas[i]!,
         agentResult: { findings: [], axeFindings: [], steps: [], pagesVisited: [url], goalCompleted: false, totalSteps: 0 },
       };
     });
@@ -273,7 +274,7 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
 
   return {
     url,
-    date: new Date().toISOString().split("T")[0],
+    date: new Date().toISOString().slice(0, 10),
     taskSuccess,
     personas: personaResults,
     axeFindings,

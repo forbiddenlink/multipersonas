@@ -33,7 +33,7 @@ describe("frustrationSeries", () => {
     const series = frustrationSeries(steps, false);
     expect(series.at(-1)!).toBeGreaterThan(75);
     // And it should be non-trivially higher than the first step.
-    expect(series.at(-1)!).toBeGreaterThan(series[0]);
+    expect(series.at(-1)!).toBeGreaterThan(series[0]!);
   });
 
   it("penalizes revisiting a page over first-time progress", () => {
@@ -54,7 +54,7 @@ describe("frustrationSeries", () => {
       false,
     );
     // The third step revisits /a in the looping case — higher than smooth's fresh /c.
-    expect(looping[2]).toBeGreaterThan(smooth[2]);
+    expect(looping[2]!).toBeGreaterThan(smooth[2]!);
   });
 
   it("clamps every score to 0..100", () => {

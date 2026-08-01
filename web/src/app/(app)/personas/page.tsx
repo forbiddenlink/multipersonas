@@ -27,8 +27,8 @@ export default async function PersonasPage({
 
   const filteredPersonas =
     activeCategory && activeCategory in personasByCategory
-      ? allPersonas.filter((p) =>
-          personasByCategory[activeCategory].includes(p.id),
+      ? allPersonas.filter(
+          (p) => personasByCategory[activeCategory]?.includes(p.id) ?? false,
         )
       : allPersonas;
 

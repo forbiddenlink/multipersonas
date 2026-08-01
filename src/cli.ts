@@ -576,6 +576,7 @@ program
 
     for (const id of filteredIds) {
       const persona = allPersonas[id];
+      if (!persona) continue;
       const customTag = isCustomPersona(id) ? chalk.yellow(" [custom]") : "";
       console.log(`  ${chalk.cyan(id)}${customTag}`);
       console.log(`    ${persona.name} — ${persona.description}`);

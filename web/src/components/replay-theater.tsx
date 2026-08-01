@@ -76,7 +76,9 @@ export function ReplayTheater({
     journeys.findIndex((j) => j.personaId === initialPersona),
   );
   const [pIdx, setPIdx] = useState(initialPersonaIndex === -1 ? 0 : initialPersonaIndex);
-  const journey = journeys[pIdx];
+  // Caller renders this only when journeys.length > 0 (audits/[id]/page.tsx), and pIdx is
+  // always a clamped valid index — so the journey is guaranteed present.
+  const journey = journeys[pIdx]!;
   const stepCount = journey.steps.length;
 
   const [sIdx, setSIdx] = useState(() =>
@@ -110,7 +112,8 @@ export function ReplayTheater({
     window.history.replaceState(null, "", `?${params.toString()}`);
   }, [journey.personaId, sIdx]);
 
-  const step = journey.steps[sIdx];
+  // sIdx is clamped to [0, stepCount-1] and every journey has ≥1 step.
+  const step = journey.steps[sIdx]!;
   const band = frustrationBand(step.frustration);
   const findingsHere = (step.pageUrl && findingsByUrl[step.pageUrl]) || [];
   const location = formatLocation(step.pageUrl ?? undefined);

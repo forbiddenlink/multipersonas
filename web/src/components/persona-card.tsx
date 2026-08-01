@@ -44,8 +44,8 @@ export function PersonaCard({ persona }: { persona: Persona }) {
       <div className="divide-y divide-border/60 px-4">
         <Readout label="Tech" value={`${persona.techProficiency} / 5`} />
         <Readout label="Device" value={persona.isMobile ? "Mobile" : "Desktop"} />
-        <Readout label="Connection" value={connectionLabels[persona.connectionSpeed]} />
-        <Readout label="Patience" value={patienceLabels[persona.patienceLevel]} />
+        <Readout label="Connection" value={connectionLabels[persona.connectionSpeed] ?? persona.connectionSpeed} />
+        <Readout label="Patience" value={patienceLabels[persona.patienceLevel] ?? persona.patienceLevel} />
         <Readout
           label="Input"
           value={persona.inputModality === "keyboard" ? "Keyboard only" : "Pointer"}

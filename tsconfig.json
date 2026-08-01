@@ -5,6 +5,7 @@
     "moduleResolution": "nodenext",
     "esModuleInterop": true,
     "strict": true,
+    "noUncheckedIndexedAccess": true,
     "outDir": "dist",
     "rootDir": "src",
     "declaration": true,

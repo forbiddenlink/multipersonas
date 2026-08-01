@@ -69,7 +69,7 @@ export function AuditTerminal() {
       return () => cancelAnimationFrame(raf);
     }
     const io = new IntersectionObserver(
-      ([e]) => setInView(e.isIntersecting),
+      ([e]) => { if (e) setInView(e.isIntersecting); },
       { threshold: 0.25 },
     );
     io.observe(el);
@@ -112,7 +112,7 @@ export function AuditTerminal() {
         char = 0;
         return;
       }
-      const text = SCRIPT[line].text;
+      const text = SCRIPT[line]!.text;
       if (char < text.length) {
         char += 1;
         setTyping(text.slice(0, char));

@@ -86,7 +86,7 @@ export async function loadJourney(supabase: SB, runId: string): Promise<PersonaJ
         pageUrl: r.page_url,
         screenshotUrl: r.screenshot_path ? signed.get(r.screenshot_path) ?? null : null,
         ts: r.ts,
-        frustration: scores[i],
+        frustration: scores[i] ?? 0,
       })),
     });
   }

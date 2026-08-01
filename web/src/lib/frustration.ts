@@ -27,7 +27,8 @@ export function frustrationSeries(
   const out: number[] = [];
 
   for (let i = 0; i < steps.length; i++) {
-    const { pageUrl, action } = steps[i];
+    // Dense array (index-bounded loop); non-null keeps the output 1:1 with the input.
+    const { pageUrl, action } = steps[i]!;
 
     // Effort creep: ramps to ~35 over the first several steps, then plateaus.
     const effort = Math.min(i, 8) / 8 * 35;
@@ -38,7 +39,7 @@ export function frustrationSeries(
 
     // Stall: identical action + page as the immediately preceding step (retrying in place).
     const prev = steps[i - 1];
-    const stall = i > 0 && prev.pageUrl === pageUrl && prev.action === action ? 22 : 0;
+    const stall = i > 0 && prev && prev.pageUrl === pageUrl && prev.action === action ? 22 : 0;
 
     let score = effort + revisit + stall;
 

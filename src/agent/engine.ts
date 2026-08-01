@@ -427,7 +427,9 @@ function isStuck(
 ): boolean {
   if (steps.length < repeatThreshold) return false;
   const recent = steps.slice(-repeatThreshold);
-  const first = `${recent[0].action}:${recent[0].detail}`;
+  const head = recent[0];
+  if (!head) return false;
+  const first = `${head.action}:${head.detail}`;
   return recent.every((s) => `${s.action}:${s.detail}` === first);
 }
 
