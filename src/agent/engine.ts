@@ -5,6 +5,7 @@ import { z } from "zod";
 import * as fs from "fs";
 import * as path from "path";
 import type { Persona } from "../personas/types.js";
+import { deriveTraits, giveUpThreshold, maxDeadEnds } from "../personas/traits.js";
 import { assertUrlAllowed, assertRequestAllowed, isInScope, BlockedUrlError } from "../security/url-guard.js";
 import { runAxeScan, mergeAxeFindings } from "./axe-scan.js";
 
@@ -450,6 +451,15 @@ export async function runPersonaAgent(
   const pagesVisited = new Set<string>();
   let goalCompleted = false;
 
+  // Traits -> code-enforced give-up boundaries (see personas/traits.ts). Computed
+  // once: an impatient/low-persistence persona notices it is stuck sooner AND
+  // tolerates fewer dead-end rounds before quitting honestly, instead of looping
+  // to maxSteps with the model's cooperative "I'll keep trying" bias.
+  const traits = deriveTraits(persona);
+  const stuckThreshold = giveUpThreshold(traits);
+  const deadEndBudget = maxDeadEnds(traits);
+  let deadEndStreak = 0;
+
   let browser: Browser | undefined;
 
   try {
@@ -510,9 +520,36 @@ export async function runPersonaAgent(
           "\n\nYou are already signed in to this site as an existing user. Do not look for a login or sign-up form, and do not treat being logged in as something you achieved — start from the goal itself.";
       }
 
-      if (isStuck(steps)) {
+      if (isStuck(steps, stuckThreshold)) {
+        deadEndStreak++;
+        if (deadEndStreak >= deadEndBudget) {
+          // Code-enforced give-up (the "banana problem" fix): the persona has
+          // repeated itself past its patience/persistence, so end the walk
+          // honestly as blocked rather than letting the cooperative model loop
+          // to maxSteps pretending to still be trying. Recorded like a finish so
+          // replay shows an honest give-up.
+          const screenshotPath = path.join(
+            screenshotDir,
+            `step-${String(step).padStart(3, "0")}.png`,
+          );
+          await page.screenshot({ path: screenshotPath, fullPage: false });
+          steps.push({
+            step,
+            action: "finish",
+            detail: "blocked",
+            pageUrl: page.url(),
+            screenshotPath,
+            timestamp: Date.now(),
+            reasoning:
+              "Gave up: repeated the same action without progress past this persona's patience.",
+          });
+          goalCompleted = false;
+          break;
+        }
         userContent +=
-          "\n\nYou seem stuck -- you've performed the same action 3 times in a row. Try a different approach.";
+          "\n\nYou seem stuck -- you've repeated the same action without progress. Try a different approach.";
+      } else {
+        deadEndStreak = 0;
       }
 
       messages.push({ role: "user", content: userContent });
