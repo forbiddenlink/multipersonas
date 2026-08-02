@@ -17,4 +17,11 @@ describe("grader scan source guards", () => {
   it("never loads a session/storageState (public pages only)", () => {
     expect(src).not.toMatch(/storageState|sessionFile/);
   });
+
+  it("guards every in-flight request against SSRF (redirects + subresources)", () => {
+    // page.goto follows redirects and pages load subresources, so a pre-nav URL
+    // check alone is bypassable. Require the per-request guard to be registered.
+    expect(src).toMatch(/context\.route\(/);
+    expect(src).toMatch(/assertRequestAllowed/);
+  });
 });

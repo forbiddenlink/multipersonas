@@ -1,6 +1,6 @@
 import { chromium } from "playwright";
 import { AxeBuilder } from "@axe-core/playwright";
-import { assertUrlAllowed, isUrlAllowed } from "../security/url-guard.js";
+import { assertUrlAllowed, isUrlAllowed, assertRequestAllowed } from "../security/url-guard.js";
 import { computeGrade, type PageAxe, type Impact, type GradeReport } from "./score.js";
 
 // Public-only accessibility grader scan — the free teaser wedge.
@@ -49,6 +49,19 @@ export async function gradeScan(
 
   try {
     const context = await browser.newContext();
+
+    // SSRF defence on EVERY in-flight request, not just the URLs we pre-check.
+    // page.goto follows HTTP redirects and the page loads its own subresources —
+    // a public URL that 302s to 169.254.169.254 / an RFC1918 host, or an <img>/
+    // fetch to one, would bypass the pre-navigation isUrlAllowed check. This runs
+    // on stranger-supplied URLs, so guard the request layer (mirrors the audit
+    // engine's context.route guard). No scope origin: block private/reserved
+    // always, but allow legit cross-origin public redirects (apex <-> www, CDNs).
+    await context.route("**/*", async (route, request) => {
+      const allowed = await assertRequestAllowed(request.url(), request.resourceType());
+      return allowed ? route.continue() : route.abort("blockedbyclient");
+    });
+
     const page = await context.newPage();
 
     while (queue.length > 0 && visited.length < maxPages) {
