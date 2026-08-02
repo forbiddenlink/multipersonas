@@ -2,7 +2,7 @@
 # Browserbase-adjacent host, Fly, etc.). Based on the Playwright image so Chromium +
 # its system deps are already present — keep the tag in sync with the `playwright`
 # version in the root package.json.
-FROM mcr.microsoft.com/playwright:v1.61.1-jammy
+FROM mcr.microsoft.com/playwright:v1.62.1-jammy
 
 WORKDIR /app
 RUN corepack enable
