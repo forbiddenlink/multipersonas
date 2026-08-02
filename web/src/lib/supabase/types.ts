@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   public: {
     Tables: {
       audit_jobs: {
@@ -21,6 +16,7 @@ export type Database = {
           created_at: string
           error: string | null
           id: string
+          kind: string
           persona_ids: string[]
           project_id: string | null
           reserved_calls: number
@@ -36,6 +32,7 @@ export type Database = {
           created_at?: string
           error?: string | null
           id?: string
+          kind?: string
           persona_ids?: string[]
           project_id?: string | null
           reserved_calls?: number
@@ -51,6 +48,7 @@ export type Database = {
           created_at?: string
           error?: string | null
           id?: string
+          kind?: string
           persona_ids?: string[]
           project_id?: string | null
           reserved_calls?: number
@@ -62,17 +60,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "audit_jobs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "audit_jobs_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_jobs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -138,6 +136,47 @@ export type Database = {
             columns: ["test_run_id"]
             isOneToOne: false
             referencedRelation: "test_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grader_scans: {
+        Row: {
+          created_at: string
+          entry_url: string
+          error: string | null
+          job_id: string | null
+          pages_visited: string[]
+          report: Json | null
+          status: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          entry_url: string
+          error?: string | null
+          job_id?: string | null
+          pages_visited?: string[]
+          report?: Json | null
+          status?: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          entry_url?: string
+          error?: string | null
+          job_id?: string | null
+          pages_visited?: string[]
+          report?: Json | null
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grader_scans_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "audit_jobs"
             referencedColumns: ["id"]
           },
         ]
@@ -440,6 +479,7 @@ export type Database = {
           created_at: string
           error: string | null
           id: string
+          kind: string
           persona_ids: string[]
           project_id: string | null
           reserved_calls: number
@@ -464,10 +504,7 @@ export type Database = {
         Args: { p_max_attempts: number; p_timeout_seconds: number }
         Returns: number
       }
-      release_model_calls: {
-        Args: { p_calls: number }
-        Returns: undefined
-      }
+      release_model_calls: { Args: { p_calls: number }; Returns: undefined }
       reserve_model_calls: {
         Args: { p_calls: number; p_cap: number }
         Returns: boolean
@@ -604,3 +641,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
