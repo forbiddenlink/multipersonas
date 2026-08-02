@@ -5,6 +5,9 @@
 export const RATE_LIMITS = {
   authenticated: { max: 5, windowSeconds: 10 * 60 },
   anonymous: { max: 1, windowSeconds: 60 * 60 },
+  // Public grader teaser: generous enough to try a few sites, still bounded.
+  // Deliberately looser than `anonymous` (audits cost model calls; grades don't).
+  grade: { max: 5, windowSeconds: 10 * 60 },
 } as const;
 
 export type RateLimitType = keyof typeof RATE_LIMITS;

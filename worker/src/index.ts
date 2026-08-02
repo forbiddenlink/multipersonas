@@ -4,6 +4,7 @@ import * as fs from "node:fs";
 import * as Sentry from "@sentry/node";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { runMultiPersonaTest, type TestResult } from "multipersonas/orchestrator";
+import { gradeScan } from "multipersonas/grader";
 import { personaLibrary } from "multipersonas/personas/library";
 
 // --- config ---------------------------------------------------------------
@@ -48,6 +49,7 @@ interface AuditJob {
   status: string;
   project_id: string | null;
   reserved_calls: number;
+  kind: string;
 }
 
 /** Reject if `promise` doesn't settle within ms. The underlying work keeps running
@@ -286,6 +288,43 @@ async function claimAndRun(): Promise<boolean> {
   if (!claimed || !claimed.id) return false; // empty queue
 
   console.log(`[worker] claimed ${claimed.id} — ${claimed.url}`);
+
+  // Public grader jobs (kind='grade') are axe-only: no personas, no model spend,
+  // no session, results to the public grader_scans row. Handled inline then done.
+  if (claimed.kind === "grade") {
+    await supabase.from("grader_scans").update({ status: "running" }).eq("job_id", claimed.id);
+    try {
+      const { report, pagesVisited } = await withTimeout(
+        gradeScan(claimed.url, { maxPages: 10 }),
+        JOB_TIMEOUT_MS,
+        `grade ${claimed.id}`,
+      );
+      await supabase
+        .from("grader_scans")
+        .update({ status: "completed", report, pages_visited: pagesVisited })
+        .eq("job_id", claimed.id);
+      await supabase
+        .from("audit_jobs")
+        .update({ status: "completed", completed_at: new Date().toISOString() })
+        .eq("id", claimed.id);
+      console.log(`[worker] graded ${claimed.id}`);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Unknown error";
+      await supabase
+        .from("grader_scans")
+        .update({ status: "failed", error: message })
+        .eq("job_id", claimed.id);
+      await supabase
+        .from("audit_jobs")
+        .update({ status: "failed", error: message, completed_at: new Date().toISOString() })
+        .eq("id", claimed.id);
+      Sentry.captureException(e, { tags: { jobId: claimed.id, kind: "grade" } });
+      console.error(`[worker] grade failed ${claimed.id}: ${message}`);
+      await notify(`grade ${claimed.id} failed: ${message}`);
+    }
+    return true; // grade jobs reserve no spend — no releaseReservation needed
+  }
+
   const tmpDir = path.join(os.tmpdir(), `mp-worker-${claimed.id}`);
 
   try {

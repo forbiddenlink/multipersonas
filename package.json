@@ -10,7 +10,8 @@
     "./personas/types": "./dist/personas/types.js",
     "./personas/library": "./dist/personas/library.js",
     "./personas/generator": "./dist/personas/generator.js",
-    "./personas/prebuilt": "./dist/personas/prebuilt.js"
+    "./personas/prebuilt": "./dist/personas/prebuilt.js",
+    "./grader": "./dist/grader/scan.js"
   },
   "bin": {
     "mpersonas": "./dist/cli.js"
