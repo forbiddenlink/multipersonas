@@ -15,7 +15,8 @@
 - **SSRF:** the grader points a browser at stranger-supplied URLs. Every URL (entry + every crawled hop) must pass `assertUrlAllowed` / `isUrlAllowed` (`src/security/url-guard.ts`). `allowPrivate` must NEVER be set on this path.
 - **Public pages only:** the grader never uses a `sessionFile`. It audits whatever is public.
 - **Anonymous + abuse-bounded:** anonymous by IP. Reuse `consumeRateLimit`. Add a per-scan page cap (10) and a global concurrent-grade cap. Respect the `killSwitchEnabled()` freeze.
-- **Node version:** engine + web target Node >=20 / CI Node 22. No new runtime deps in the engine beyond what axe/playwright already provide; `@vercel/og` is web-only.
+- **Node version:** engine + web target Node >=20 / CI Node 22. **No new dependencies** — the engine already ships axe/playwright; the OG image uses Next 16's built-in `next/og`.
+- **Shared queue risk:** grader jobs ride the SAME `audit_jobs` queue + single worker as real audits. A grade flood could starve paying audits. Mitigations in this plan: `grade` rate-limit tier + a queued-grade-count backpressure cap in the enqueue route. A dedicated worker/queue or claim-priority for `kind='audit'` is a deferred follow-up (YAGNI at current volume — one worker, IP-limited).
 - **Verification gate every task:** engine `pnpm test` + `pnpm exec tsc --noEmit`; web `pnpm exec tsc --noEmit` + `pnpm lint` + `pnpm test` + `pnpm build`. All green before commit.
 
 ## File Structure
@@ -24,15 +25,16 @@
 - `src/grader/score.test.ts` (NEW) — unit tests for scoring.
 - `src/grader/scan.ts` (NEW) — `gradeScan(entryUrl, opts)`: BFS public pages (reuse url-guard), run axe capturing violations + passes per page, return per-page weighted data + the computed grade. Isolated from `src/crawler/crawl.ts` so the honesty-walled product spine is untouched.
 - `src/grader/scan.test.ts` (NEW) — a keyless source-guard test (no ANTHROPIC key needed) + a stubbed-page unit test.
-- `web/supabase/migrations/015_grader.sql` (NEW) — `audit_jobs.kind` + nullable `user_id`; `grader_scans` public-read table.
+- `package.json` (engine root, MODIFY) — add `"./grader": "./dist/grader/scan.js"` to `exports` so the worker can `import { gradeScan } from "multipersonas/grader"`. Engine tsc has `declaration: true`, so `dist/grader/scan.d.ts` is emitted and the worker gets full types with NO hand-written shim.
+- `web/src/lib/limits.ts` (MODIFY) — add a `grade` rate-limit tier. The `anonymous` tier is **1/hour** (an audit-abuse guard); reusing it would strangle the grader funnel (visitors try 2-3 URLs at once).
+- `web/supabase/migrations/015_grader.sql` (NEW) — `audit_jobs.kind` (default `'audit'`); `grader_scans` public-read table. (`user_id` is already nullable; `persona_ids`/`reserved_calls`/`status` all have defaults, so grade inserts need none of them.)
 - `web/src/lib/database.types.ts` (MODIFY) — regenerate/hand-add `grader_scans` + `audit_jobs.kind`.
-- `worker/src/index.ts` (MODIFY) — branch claimed jobs on `kind`: `grade` → `gradeScan` → persist to `grader_scans`.
-- `worker/engine.d.ts` (MODIFY) — expose `gradeScan` + its types to the worker.
+- `worker/src/index.ts` (MODIFY) — add `kind: string` to the `AuditJob` interface; import `gradeScan` from `multipersonas/grader`; branch claimed jobs on `kind`: `grade` → `gradeScan` → update `grader_scans` AND mark the `audit_jobs` row done (so the reaper leaves it).
 - `web/src/lib/grade.ts` (NEW) — server helper: read a `grader_scans` row by token (public), shape it for the page.
-- `web/src/app/api/grade/route.ts` (NEW) — POST: killSwitch → IP rate-limit → validate URL → enqueue `kind='grade'` → return `{ token }`.
+- `web/src/app/api/grade/route.ts` (NEW) — POST: killSwitch → IP rate-limit (`grade` tier) → validate URL → queue-depth backpressure → enqueue `kind='grade'` → return `{ token }`.
 - `web/src/app/api/grade/[token]/route.ts` (NEW) — GET poll: status + result by token.
 - `web/src/app/grade/[token]/page.tsx` (NEW) — public result page (score, honest wall, table, waitlist CTA).
-- `web/src/app/grade/[token]/opengraph-image.tsx` (NEW) — dynamic OG image (`@vercel/og`).
+- `web/src/app/grade/[token]/opengraph-image.tsx` (NEW) — dynamic OG image via `next/og` (built into Next 16 — verified `next/og` resolvable; NO `@vercel/og` dependency).
 - `web/src/app/grade/page.tsx` (NEW) — public entry: URL form → POST → poll → redirect to `/grade/[token]`.
 - `web/src/components/grade-form.tsx` (NEW) — client form + polling.
 
@@ -365,11 +367,24 @@ export async function gradeScan(
 
 Run: `pnpm exec vitest run src/grader/scan.test.ts` → PASS (3). Then `pnpm exec tsc --noEmit` clean, and full `pnpm test` green.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Export `gradeScan` from the engine package**
+
+The worker imports the engine as the `multipersonas` package via an explicit `exports`
+map — add a subpath so `import { gradeScan } from "multipersonas/grader"` resolves. In the
+ROOT `package.json` `exports` block (which already lists `./orchestrator`, `./engine`, …),
+add:
+```json
+"./grader": "./dist/grader/scan.js"
+```
+Then rebuild so `dist/grader/scan.{js,d.ts}` exist (engine tsconfig has `declaration: true`,
+so types ship automatically — no worker shim):
+Run: `pnpm build` (root). Expected: `dist/grader/scan.d.ts` present.
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add src/grader/scan.ts src/grader/scan.test.ts
-git commit -m "feat(grader): public-only axe scan capturing passes+violations for honest scoring"
+git add src/grader/scan.ts src/grader/scan.test.ts package.json
+git commit -m "feat(grader): public-only axe scan (passes+violations) + engine export"
 ```
 
 ---
@@ -442,53 +457,67 @@ git commit -m "feat(grader): migration for grade job kind + public grader_scans 
 ### Task 4: Worker grade branch
 
 **Files:**
-- Modify: `worker/src/index.ts` (branch claimed jobs on `kind`)
-- Modify: `worker/engine.d.ts` (expose `gradeScan` + `GradeScanResult`)
+- Modify: `worker/src/index.ts`
 
 **Interfaces:**
-- Consumes: `gradeScan` from the engine build; the existing claim loop + `audit_jobs` row (now carrying `kind`).
-- Produces: on `kind==='grade'`, writes `grader_scans` (status running→completed/failed, report, pages_visited) via the service-role Supabase client the worker already holds.
+- Consumes: `gradeScan` from `multipersonas/grader` (Task 2 export — fully typed, no shim); the existing `claim_audit_job` RPC result (`claimed`, now carrying `kind`).
+- Produces: on `kind==='grade'`, writes `grader_scans` (running→completed/failed + report + pages_visited) AND marks the `audit_jobs` row completed/failed (line ~318's mechanism) so the reaper doesn't reap it.
+- Verified against real code: worker imports the engine as the `multipersonas` package (`import { runMultiPersonaTest } from "multipersonas/orchestrator"`, `index.ts:6`); it claims via `supabase.rpc("claim_audit_job")` (`index.ts:280`) and on success updates `audit_jobs` `status:"completed"`/`"failed"` itself (`index.ts:318,325`) then `releaseReservation` on failure (`index.ts:329`; a no-op when `reserved_calls` is 0, which grade jobs are).
 
-- [ ] **Step 1: Add the type shim**
+- [ ] **Step 1: Add `kind` to the `AuditJob` interface + import gradeScan**
 
-In `worker/engine.d.ts`, add:
+At `worker/src/index.ts:6` add the import:
 ```ts
-export interface GradeReport { grade: "A"|"B"|"C"|"D"|"F"; score: number; pagesScanned: number; totalViolations: number; byImpact: Record<string, number>; wcagAAViolations: number; perPage: { url: string; score: number; violations: number }[]; }
-export interface GradeScanResult { entryUrl: string; report: GradeReport; pagesVisited: string[]; skipped: string[]; }
-export function gradeScan(entryUrl: string, opts?: { maxPages?: number; onPage?: (url: string, i: number) => void }): Promise<GradeScanResult>;
+import { gradeScan } from "multipersonas/grader";
 ```
-(Point the worker's engine import path at the built `gradeScan` the same way it imports `runMultiPersonaTest` — verify the existing import style in `worker/src/index.ts` and match it.)
-
-- [ ] **Step 2: Branch on kind in the claim loop**
-
-In the job-processing block (where it currently calls `runMultiPersonaTest`), add — before the persona path — a `kind === 'grade'` branch:
+In the `AuditJob` interface (`index.ts` ~line 44-52), add:
 ```ts
-if (job.kind === "grade") {
-  await supabase.from("grader_scans").update({ status: "running" }).eq("job_id", job.id);
+  kind: string;
+```
+(The interface already has `id`, `user_id`, `url`, `persona_ids`, `status`, `project_id`, `reserved_calls` — `kind` joins them; `claim_audit_job` returns the whole row so it's populated.)
+
+- [ ] **Step 2: Branch on kind right after the claim**
+
+After `const { data: job } = await supabase.rpc("claim_audit_job")` resolves to a claimed
+job (call it `claimed`), and BEFORE the `runMultiPersonaTest` path, insert:
+```ts
+if (claimed.kind === "grade") {
+  await supabase.from("grader_scans").update({ status: "running" }).eq("job_id", claimed.id);
   try {
-    const { report, pagesVisited } = await gradeScan(job.url, { maxPages: 10 });
-    await supabase.from("grader_scans").update({
-      status: "completed", report, pages_visited: pagesVisited,
-    }).eq("job_id", job.id);
+    const { report, pagesVisited } = await gradeScan(claimed.url, { maxPages: 10 });
+    await supabase.from("grader_scans")
+      .update({ status: "completed", report, pages_visited: pagesVisited })
+      .eq("job_id", claimed.id);
+    await supabase.from("audit_jobs")
+      .update({ status: "completed", completed_at: new Date().toISOString() })
+      .eq("id", claimed.id);
+    console.log(`[worker] graded ${claimed.id}`);
   } catch (err) {
-    await supabase.from("grader_scans").update({
-      status: "failed", error: err instanceof Error ? err.message : String(err),
-    }).eq("job_id", job.id);
+    const message = err instanceof Error ? err.message : String(err);
+    await supabase.from("grader_scans")
+      .update({ status: "failed", error: message })
+      .eq("job_id", claimed.id);
+    await supabase.from("audit_jobs")
+      .update({ status: "failed", error: message, completed_at: new Date().toISOString() })
+      .eq("id", claimed.id);
+    console.error(`[worker] grade failed ${claimed.id}: ${message}`);
   }
-  // mark the queue row done using the SAME mechanism the audit path uses (verify it)
-  continue;
+  continue; // next poll — skip the persona path entirely (no spend reserve/release)
 }
 ```
-Match the exact "mark job complete" call the persona path uses (do not invent one). Grade jobs never reserve/release model spend (axe is keyless) — skip the spend calls entirely on this branch.
+(Match the exact variable name the code uses for the claimed row and the surrounding
+loop's `continue` target — read `index.ts:280-329` and slot this in above the persona
+processing.)
 
 - [ ] **Step 3: Verify worker compiles**
 
-Run (in `worker/`): `pnpm typecheck`. Expected: clean.
+Run (in `worker/`): `pnpm typecheck`. Expected: clean (types for `gradeScan` come from
+`dist/grader/scan.d.ts` via the package export — rebuild the engine first if needed).
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add worker/src/index.ts worker/engine.d.ts
+git add worker/src/index.ts
 git commit -m "feat(grader): worker runs kind=grade jobs via gradeScan -> grader_scans"
 ```
 
@@ -497,14 +526,27 @@ git commit -m "feat(grader): worker runs kind=grade jobs via gradeScan -> grader
 ### Task 5: Enqueue route `POST /api/grade`
 
 **Files:**
+- Modify: `web/src/lib/limits.ts` (add a `grade` rate-limit tier)
 - Create: `web/src/app/api/grade/route.ts`
 
 **Interfaces:**
 - Consumes: `killSwitchEnabled` (`@/lib/limits`), `consumeRateLimit` (`@/lib/rate-limit`), `assertUrlAllowed` + `BlockedUrlError` (`@engine/security/url-guard`), `createAdminClient` (`@/lib/supabase/admin`).
-- Produces: JSON `{ token }` (202) that Task 7 polls. Inserts one `audit_jobs` row (`kind='grade'`, `user_id=null`, `url`) and one `grader_scans` row (`job_id`, `entry_url`, `status='queued'`) via the admin (service-role) client.
-- Model the validation/limit ordering on `web/src/app/api/audit/route.ts:21-108` (killSwitch → rate-limit by IP → parse → validate URL). NO `reserveSpend` (axe is free). Rate-limit key: `grade:${ip}`, type `"anonymous"`.
+- Produces: JSON `{ token }` (202) that Task 7 polls. Inserts one `audit_jobs` row (`kind='grade'`, `user_id=null`, `url`) and one `grader_scans` row (`job_id`, `entry_url`) via the admin (service-role) client. NO `reserveSpend` (axe is keyless — free).
+- Verified: `consumeRateLimit(key, type)` → `{ allowed, retryAfterSeconds }` and degrades to ALLOW when the service key is unset (dev). `createAdminClient()` is synchronous, returns `SupabaseClient | null`. `audit_jobs` defaults cover `persona_ids` (`'{}'`), `reserved_calls` (`0`), `status` (`'queued'`) — the grade insert omits all three. `RateLimitType` is `keyof typeof RATE_LIMITS`, so a `grade` tier must be ADDED (the existing `anonymous` tier is 1/hour — wrong for a public grader).
 
-- [ ] **Step 1: Implement the route**
+- [ ] **Step 1: Add a `grade` rate-limit tier**
+
+In `web/src/lib/limits.ts`, extend `RATE_LIMITS` (this is what makes `type: "grade"` valid):
+```ts
+export const RATE_LIMITS = {
+  authenticated: { max: 5, windowSeconds: 10 * 60 },
+  anonymous: { max: 1, windowSeconds: 60 * 60 },
+  grade: { max: 5, windowSeconds: 10 * 60 }, // public grader teaser: generous but bounded
+} as const;
+```
+There's a `limits.test.ts` covering these — add a one-line assertion that `RATE_LIMITS.grade.max === 5` so the tier is pinned. Run: `pnpm test` (web) green.
+
+- [ ] **Step 2: Implement the route (with queue backpressure)**
 
 ```ts
 import { NextResponse } from "next/server";
@@ -512,6 +554,8 @@ import { assertUrlAllowed, BlockedUrlError } from "@engine/security/url-guard";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { killSwitchEnabled } from "@/lib/limits";
 import { consumeRateLimit } from "@/lib/rate-limit";
+
+const MAX_QUEUED_GRADES = Number(process.env.GRADE_QUEUE_CAP ?? 25);
 
 function getClientIP(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
@@ -524,7 +568,7 @@ export async function POST(request: Request) {
       { status: 503, headers: { "Retry-After": "3600" } });
   }
   const ip = getClientIP(request);
-  const rate = await consumeRateLimit(`grade:${ip}`, "anonymous");
+  const rate = await consumeRateLimit(`grade:${ip}`, "grade");
   if (!rate.allowed) {
     return NextResponse.json({ error: "Free grade limit reached. Please wait and try again." },
       { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } });
@@ -548,16 +592,27 @@ export async function POST(request: Request) {
   if (!admin) {
     return NextResponse.json({ error: "Grading is not configured." }, { status: 503 });
   }
+
+  // Backpressure: don't let a grade flood starve real audits on the shared worker.
+  const { count } = await admin
+    .from("audit_jobs")
+    .select("id", { count: "exact", head: true })
+    .eq("kind", "grade").eq("status", "queued");
+  if ((count ?? 0) >= MAX_QUEUED_GRADES) {
+    return NextResponse.json({ error: "The grader is busy. Please try again shortly." },
+      { status: 429, headers: { "Retry-After": "60" } });
+  }
+
   const { data: job, error: jobErr } = await admin
     .from("audit_jobs")
-    .insert({ url, kind: "grade", user_id: null, status: "queued" })
+    .insert({ url, kind: "grade", user_id: null }) // persona_ids/reserved_calls/status use defaults
     .select("id").single();
   if (jobErr || !job) {
     return NextResponse.json({ error: "Could not queue the grade." }, { status: 500 });
   }
   const { data: scan, error: scanErr } = await admin
     .from("grader_scans")
-    .insert({ job_id: job.id, entry_url: url, status: "queued" })
+    .insert({ job_id: job.id, entry_url: url }) // status defaults to 'queued'
     .select("token").single();
   if (scanErr || !scan) {
     return NextResponse.json({ error: "Could not queue the grade." }, { status: 500 });
@@ -565,17 +620,16 @@ export async function POST(request: Request) {
   return NextResponse.json({ token: scan.token }, { status: 202 });
 }
 ```
-(Confirm the exact `audit_jobs` insert columns/status enum against the audit route + migration 005; adjust `status: "queued"` to match the queue's claimable state.)
 
-- [ ] **Step 2: Verify**
+- [ ] **Step 3: Verify**
 
-`pnpm exec tsc --noEmit` + `pnpm lint` + `pnpm build` in web. Confirm `/api/grade` appears in the build route tree.
+`pnpm exec tsc --noEmit` + `pnpm lint` + `pnpm test` + `pnpm build` in web. Confirm `/api/grade` appears in the build route tree.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add web/src/app/api/grade/route.ts
-git commit -m "feat(grader): POST /api/grade enqueues anonymous axe-only grade jobs"
+git add web/src/lib/limits.ts web/src/app/api/grade/route.ts
+git commit -m "feat(grader): grade rate-limit tier + POST /api/grade with queue backpressure"
 ```
 
 ---
@@ -660,12 +714,12 @@ git commit -m "feat(grader): public entry form + honest result page"
 
 **Files:**
 - Create: `web/src/app/grade/[token]/opengraph-image.tsx`
-- Add dep: `@vercel/og` (web only)
+- (No new dependency — `next/og` ships with Next 16, verified resolvable.)
 
 **Interfaces:**
 - Consumes: `getGraderScan(token)`. Renders an `ImageResponse` (1200×630) with the domain + big letter grade + issue count, warm-dark forensic palette (literal hex — Satori has no CSS-var/oklch support; use `display:flex`/`block` only, no `inline-block` — a prior Satori build error).
 
-- [ ] **Step 1** Implement `opengraph-image.tsx` (`ImageResponse` from `next/og` if available in Next 16, else `@vercel/og`) reading the scan and drawing grade + `entry_url` host + `report.totalViolations`. Fallback image when scan missing/incomplete.
+- [ ] **Step 1** Implement `opengraph-image.tsx` importing `{ ImageResponse } from "next/og"`, reading the scan and drawing grade + `entry_url` host + `report.totalViolations`. Fallback image when scan missing/incomplete.
 - [ ] **Step 2** Verify `pnpm build` prerenders the route without a Satori error; spot-check the generated image locally.
 - [ ] **Step 3** Commit `feat(grader): dynamic OG image per grade result`.
 
@@ -679,7 +733,9 @@ git commit -m "feat(grader): public entry form + honest result page"
 
 **Type consistency:** `PageAxe`/`GradeReport`/`computeGrade` (T1) reused verbatim in T2/T4; `gradeScan` signature identical in T2 (impl), engine.d.ts (T4), worker call (T4); `grader_scans` columns identical across T3 migration, T4 writes, T5 insert, T6 read.
 
-**Open items for Liz (validation zones):** apply migration 015; add the smokescreen egress companion plan BEFORE promoting the grader to high-traffic public (SSRF surface widens); decide max concurrent grade jobs vs Railway/spend budget.
+**Verified against real code (2026-08-01, not assumed):** `crawl()`/`Finding.severity` shapes (T1-2); `audit_jobs` schema — `persona_ids`/`reserved_calls`/`status` all defaulted, `user_id` nullable, `claim_audit_job` filters only `status='queued'` (kind-agnostic → claims grade jobs), reaper releases `reserved_calls=0` safely (T3-4); worker imports the engine as the `multipersonas` package + updates `audit_jobs` status itself + `releaseReservation` is a no-op at 0 (T4); engine tsconfig `declaration:true` → typed package export, no shim (T2/T4); `RATE_LIMITS` is a fixed const so a `grade` tier must be added (T5); `consumeRateLimit`/`createAdminClient` signatures (T5); `next/og` ships with Next 16 (T8). Corrections from that pass are baked into the tasks above.
+
+**Open items for Liz (validation zones):** apply migration 015; add the smokescreen egress companion plan BEFORE promoting the grader to high-traffic public (SSRF surface widens); tune `GRADE_QUEUE_CAP` (default 25) + the `grade` rate tier (default 5/10min) vs Railway compute budget; a dedicated grader worker/queue or `kind='audit'` claim-priority is the escalation if grade volume starves audits.
 
 ## Companion plan (next)
 Egress hardening (`smokescreen` two-service split on Railway) is a separate, infra-shaped plan — write it next so the grader launches on a hardened base. It closes the documented DNS-rebind TOCTOU (`url-guard.ts:174-179`).
