@@ -37,6 +37,12 @@ export const elderlyUser: Persona = buildPersona({
   inputModality: "pointer",
   maxSteps: 25,
   patienceLevel: "high",
+  // Margaret runs high-contrast + reduced-motion (she is distracted by movement
+  // and needs comfortable contrast). Now a REAL imposed browser condition, so her
+  // audit measures whether the site stays usable under forced-colors, not just a
+  // stated preference. Cautious reader -> high attention/risk-aversion.
+  conditions: { reducedMotion: true, forcedColors: true },
+  traits: { riskAversion: 0.7, attentionToDetail: 0.75 },
 });
 
 export const nonNativeEnglish: Persona = buildPersona({
