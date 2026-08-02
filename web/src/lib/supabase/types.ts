@@ -439,6 +439,24 @@ export type Database = {
         }
         Relationships: []
       }
+      usage_counters_by_caller: {
+        Row: {
+          caller: string
+          day: string
+          model_calls: number
+        }
+        Insert: {
+          caller: string
+          day: string
+          model_calls?: number
+        }
+        Update: {
+          caller?: string
+          day?: string
+          model_calls?: number
+        }
+        Relationships: []
+      }
       waitlist: {
         Row: {
           created_at: string
@@ -507,6 +525,15 @@ export type Database = {
       release_model_calls: { Args: { p_calls: number }; Returns: undefined }
       reserve_model_calls: {
         Args: { p_calls: number; p_cap: number }
+        Returns: boolean
+      }
+      reserve_model_calls_scoped: {
+        Args: {
+          p_calls: number
+          p_cap: number
+          p_caller: string
+          p_caller_cap: number
+        }
         Returns: boolean
       }
     }

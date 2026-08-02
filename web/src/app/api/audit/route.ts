@@ -128,7 +128,7 @@ export async function POST(request: Request) {
   // atomically, and ONLY now — after every early-return check (rate limit, URL guard,
   // project ownership, admin-config) has passed. Reserving earlier leaked the
   // reservation against the cap on any of those returns until UTC midnight.
-  if (!(await reserveSpend(chosenIds.length))) {
+  if (!(await reserveSpend(chosenIds.length, rateLimitKey))) {
     return NextResponse.json(
       { error: "Daily audit capacity reached. Please try again tomorrow." },
       { status: 429, headers: { "Retry-After": "3600" } },

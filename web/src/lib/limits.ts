@@ -21,6 +21,13 @@ export const CALLS_PER_PERSONA = 25;
 /** Global daily model-call ceiling. Overridable per environment. */
 export const DAILY_MODEL_CALL_CAP = Number(process.env.AUDIT_DAILY_CALL_CAP ?? 5000);
 
+/**
+ * Per-caller daily model-call ceiling, beneath the global cap. Stops one caller (a user
+ * id, or an anon IP) from consuming the whole daily budget and denying everyone else.
+ * Defaults to ~25% of the global cap (~50 audits/caller/day at 25 calls each).
+ */
+export const CALLER_DAILY_CALL_CAP = Number(process.env.AUDIT_CALLER_DAILY_CALL_CAP ?? 1250);
+
 /** Hard stop for all runs, independent of limits — flip in the environment to freeze spend. */
 export function killSwitchEnabled(env: Record<string, string | undefined> = process.env): boolean {
   const v = env.AUDIT_KILL_SWITCH;

@@ -1,6 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DAILY_MODEL_CALL_CAP, estimatedCallsFor } from "@/lib/limits";
+import { CALLER_DAILY_CALL_CAP, DAILY_MODEL_CALL_CAP, estimatedCallsFor } from "@/lib/limits";
 
 /**
  * Reserve the estimated model-call budget for a run against today's global cap, atomically.
@@ -12,7 +12,7 @@ import { DAILY_MODEL_CALL_CAP, estimatedCallsFor } from "@/lib/limits";
  * dev), there is nothing to enforce, so allow with a loud warning; the deploy runbook
  * (docs/PLAN-2026-07-26-phase2) requires the key before any public deploy.
  */
-export async function reserveSpend(personaCount: number): Promise<boolean> {
+export async function reserveSpend(personaCount: number, callerKey: string): Promise<boolean> {
   const admin = createAdminClient();
 
   if (!admin) {
@@ -23,9 +23,14 @@ export async function reserveSpend(personaCount: number): Promise<boolean> {
   }
 
   const planned = estimatedCallsFor(personaCount);
-  const { data, error } = await admin.rpc("reserve_model_calls", {
+  // Reserve against BOTH the global daily cap and this caller's daily sub-cap, atomically.
+  // callerKey is the same identity used for rate limiting (user id, or anon:<ip>), so one
+  // actor cannot consume the whole global budget and deny audits to everyone else.
+  const { data, error } = await admin.rpc("reserve_model_calls_scoped", {
     p_calls: planned,
     p_cap: DAILY_MODEL_CALL_CAP,
+    p_caller: callerKey,
+    p_caller_cap: CALLER_DAILY_CALL_CAP,
   });
 
   if (error) {
