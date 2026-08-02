@@ -1,5 +1,32 @@
 import { describe, it, expect } from "vitest";
-import { trimToWindow, HISTORY_WINDOW } from "./engine.js";
+import type { Page } from "playwright";
+import { trimToWindow, HISTORY_WINDOW, executeAction } from "./engine.js";
+
+/**
+ * Minimal fake Page for the click path. `resolveElement` tries getByRole first
+ * and clicks the located element; `touched` records whether the page was
+ * queried at all, so a blocked click can be proven to short-circuit before any
+ * element resolution.
+ */
+function fakePage() {
+  const state = { clicked: false, touched: false };
+  const locator = {
+    count: async () => 1,
+    first: () => ({ click: async () => { state.clicked = true; } }),
+  };
+  const touch = () => {
+    state.touched = true;
+    return locator;
+  };
+  const page = {
+    getByRole: touch,
+    getByLabel: touch,
+    getByText: touch,
+    getByPlaceholder: touch,
+    locator: touch,
+  } as unknown as Page;
+  return { page, state };
+}
 
 const user = (n: number) => ({ role: "user" as const, id: n });
 const assistant = (n: number) => ({ role: "assistant" as const, id: n });
@@ -51,5 +78,39 @@ describe("trimToWindow", () => {
     expect(Math.max(...sizes)).toBeLessThanOrEqual(HISTORY_WINDOW);
     // Flat, not growing: the last step sends no more than an early one.
     expect(sizes.at(-1)).toBeLessThanOrEqual(HISTORY_WINDOW);
+  });
+});
+
+describe("executeAction — destructive-action guard wiring", () => {
+  it("refuses a destructive click and never touches the page when enabled", async () => {
+    const { page, state } = fakePage();
+    const result = await executeAction(
+      page,
+      "click",
+      { selector: "Place Order" },
+      { blockDestructiveActions: true },
+    );
+    expect(result.toLowerCase()).toContain("irreversible");
+    expect(state.clicked).toBe(false);
+    expect(state.touched).toBe(false);
+  });
+
+  it("executes the same click when the guard is off (default)", async () => {
+    const { page, state } = fakePage();
+    const result = await executeAction(page, "click", { selector: "Place Order" });
+    expect(result).toBe('Clicked "Place Order"');
+    expect(state.clicked).toBe(true);
+  });
+
+  it("does not block reversible clicks even when enabled", async () => {
+    const { page, state } = fakePage();
+    const result = await executeAction(
+      page,
+      "click",
+      { selector: "Add to cart" },
+      { blockDestructiveActions: true },
+    );
+    expect(result).toBe('Clicked "Add to cart"');
+    expect(state.clicked).toBe(true);
   });
 });

@@ -8,6 +8,7 @@ import type { Persona } from "../personas/types.js";
 import { deriveTraits, giveUpThreshold, maxDeadEnds, nextGiveUpState } from "../personas/traits.js";
 import { resolveConditions } from "../personas/conditions.js";
 import { assertUrlAllowed, assertRequestAllowed, isInScope, BlockedUrlError } from "../security/url-guard.js";
+import { isDestructiveAction, destructiveActionRefusal } from "../security/action-guard.js";
 import { runAxeScan, mergeAxeFindings } from "./axe-scan.js";
 
 /**
@@ -34,6 +35,14 @@ export interface GuardOptions {
   scopeOrigin?: string;
   /** Scan each reached state with axe. Default true; --no-axe turns it off. */
   runAxe?: boolean;
+  /**
+   * Refuse clicks on irreversible controls (place order, pay, delete account).
+   * Default off, so existing runs — including the validated task-success flows
+   * where completing a purchase IS the success signal — stay byte-identical.
+   * Turn it on when pointing a persona at a real site you do not want it
+   * transacting against. See src/security/action-guard.ts.
+   */
+  blockDestructiveActions?: boolean;
 }
 
 // --- Types ---
@@ -321,7 +330,9 @@ const agentTools = {
 
 // --- Action executor ---
 
-async function executeAction(
+// Exported for the wiring test in engine.test.ts, which verifies the
+// destructive-action guard short-circuits before the page is touched.
+export async function executeAction(
   page: Page,
   toolName: string,
   input: Record<string, unknown>,
@@ -331,9 +342,17 @@ async function executeAction(
 
   switch (toolName) {
     case "click": {
-      const el = await resolveElement(page, input.selector as string);
+      const selector = input.selector as string;
+      // Stop before the point of no return. Unlike navigate's guard this is
+      // opt-in (see GuardOptions.blockDestructiveActions): the refusal is
+      // handed back to the model as a normal tool result so it finishes rather
+      // than hunting for another way to press the same button.
+      if (guard.blockDestructiveActions && isDestructiveAction(selector)) {
+        return destructiveActionRefusal(selector);
+      }
+      const el = await resolveElement(page, selector);
       await el.click({ timeout: ACTION_TIMEOUT });
-      return `Clicked "${input.selector}"`;
+      return `Clicked "${selector}"`;
     }
     case "type": {
       const el = await resolveElement(page, input.selector as string);

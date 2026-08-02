@@ -22,6 +22,13 @@ export interface TestOptions {
   allowPrivate?: boolean;
   /** Path to a saved session, so personas audit the app instead of its login page. */
   sessionFile?: string;
+  /**
+   * Refuse irreversible clicks (place order, pay, delete account). Off by
+   * default so validated task-success runs are unchanged; the CLI sets it from
+   * --block-destructive-actions when pointing at a real site. See
+   * src/security/action-guard.ts.
+   */
+  blockDestructiveActions?: boolean;
 }
 
 export interface ProgressEvent {
@@ -153,6 +160,7 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
     runAxe = true,
     allowPrivate = false,
     sessionFile,
+    blockDestructiveActions = false,
   } = options;
 
   // Vet the target before doing anything else, and let a refusal propagate.
@@ -176,7 +184,7 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
     fs.mkdirSync(personaOutputDir, { recursive: true });
 
     try {
-      const agentResult = await runPersonaAgent(url, persona, personaOutputDir, { allowPrivate, sessionFile, runAxe });
+      const agentResult = await runPersonaAgent(url, persona, personaOutputDir, { allowPrivate, sessionFile, runAxe, blockDestructiveActions });
 
       const status = agentResult.goalCompleted ? "goal achieved" : "blocked";
       onProgress?.({

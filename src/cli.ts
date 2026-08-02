@@ -249,6 +249,10 @@ program
     "--session <file>",
     "Saved session from `mpersonas auth`, so personas test the app itself instead of its login page."
   )
+  .option(
+    "--block-destructive-actions",
+    "Refuse irreversible clicks (place order, pay, delete account). Pass this when testing a real site you do not want personas transacting against."
+  )
   .action(async (url: string, options: {
     personas: string;
     output: string;
@@ -259,6 +263,7 @@ program
     describe?: string;
     allowPrivate?: boolean;
     session?: string;
+    blockDestructiveActions?: boolean;
   }) => {
     // Vet the target first. runMultiPersonaTest checks again, but persona
     // generation runs before it and costs model calls — no reason to spend them
@@ -403,6 +408,7 @@ program
       runAxe: options.axe,
       allowPrivate: options.allowPrivate,
       sessionFile: options.session,
+      blockDestructiveActions: options.blockDestructiveActions,
       onProgress: (event: ProgressEvent) => {
         switch (event.type) {
           case "axe_start": {
