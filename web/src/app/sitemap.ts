@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/guides/wcag-checklist`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/guides/common-accessibility-issues`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/guides/screen-reader-testing`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/accessibility`, changeFrequency: "monthly", priority: 0.4 },
     { url: `${base}/privacy`, changeFrequency: "monthly", priority: 0.3 },
     { url: `${base}/terms`, changeFrequency: "monthly", priority: 0.3 },
   ];

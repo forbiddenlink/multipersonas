@@ -3,9 +3,10 @@ import * as Sentry from "@sentry/nextjs";
 // Server + edge Sentry init. dsn comes from NEXT_PUBLIC_SENTRY_DSN; when it is unset
 // (local dev, or before the env var is provisioned) Sentry.init with an undefined dsn
 // is a documented no-op, so this ships safely disabled and activates the moment the
-// DSN env var is set. No withSentryConfig wrapper on purpose — it would rewrite the
-// custom webpack config (the @engine alias). Errors are captured via onRequestError
-// below plus captureException in the error boundaries.
+// DSN env var is set. next.config wraps with withSentryConfig for source-map upload; it
+// COMPOSES the custom webpack fn (the @engine alias survives — verified by build), and the
+// upload is a no-op unless SENTRY_AUTH_TOKEN/ORG/PROJECT are set in the build env. Errors
+// are captured via onRequestError below plus captureException in the error boundaries.
 export async function register() {
   const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
   if (!dsn) return;

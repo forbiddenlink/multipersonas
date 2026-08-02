@@ -3,45 +3,98 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description: "Terms for using Personaudit accessibility testing service.",
+  description: "Terms for using Personaudit accessibility and usability testing.",
 };
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="mt-8">
+      <h2 className="text-base font-semibold text-foreground">{title}</h2>
+      <div className="mt-3 space-y-3">{children}</div>
+    </section>
+  );
+}
 
 export default function TermsPage() {
   return (
     <main id="main" className="mx-auto max-w-2xl px-6 py-16">
       <h1 className="text-2xl font-semibold tracking-tight font-heading">Terms of Service</h1>
-      <div className="mt-6 space-y-4 text-sm text-muted-foreground">
+      <p className="mt-2 text-xs text-muted-foreground">Last updated: 2 August 2026.</p>
+
+      <div className="mt-6 space-y-3 text-sm text-muted-foreground">
         <p>
-          By using Personaudit, you agree to the following:
+          Personaudit is operated by Elizabeth Stein (&quot;we&quot;, &quot;us&quot;). By using it,
+          you agree to these terms.
         </p>
-        <p>
-          <strong className="text-foreground">What we do:</strong> Personaudit runs axe-core and
-          AI-driven UX personas against websites to find accessibility and usability issues. When
-          you submit a URL, our system browses that site using automated browsers.
-        </p>
-        <p>
-          <strong className="text-foreground">Your responsibility:</strong> Only submit URLs for
-          sites you own or have permission to test. Do not use this service to scan sites without
-          authorization.
-        </p>
-        <p>
-          <strong className="text-foreground">How findings are produced:</strong> Accessibility
-          violations come from axe-core and are deterministic — not AI-generated. Usability and
-          task-success findings come from AI personas and are opinion; they may contain
-          inaccuracies and are not authoritative for accessibility compliance. Do not rely on the
-          persona findings as the sole basis for compliance decisions. Always verify results
-          manually.
-        </p>
-        <p>
-          <strong className="text-foreground">No guarantees:</strong> This service is provided
-          as-is. We do not guarantee that audits will find all accessibility issues, or that
-          findings are accurate.
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Last updated: May 2026. These terms will be expanded as the product develops.
-        </p>
+
+        <Section title="What the service does">
+          <p>
+            Personaudit runs axe-core and AI-driven UX personas against websites to find
+            accessibility and usability issues. When you submit a URL, our system browses that site
+            with automated browsers.
+          </p>
+        </Section>
+
+        <Section title="Acceptable use">
+          <p>
+            <strong className="text-foreground">Only submit URLs for sites you own or are
+            authorized to test.</strong> Do not use the service to scan sites without permission, to
+            probe infrastructure you do not control, or to attempt to overload, disrupt, or
+            circumvent access controls on any site. You are responsible for having the right to test
+            any URL you submit.
+          </p>
+          <p>
+            Do not attempt to abuse, overload, or reverse the service itself, or use it to generate
+            excessive automated load.
+          </p>
+        </Section>
+
+        <Section title="How findings are produced">
+          <p>
+            Accessibility violations come from <strong className="text-foreground">axe-core</strong>{" "}
+            and are deterministic, not AI-generated. Usability and task-success findings come from AI
+            personas and are opinion: they may contain inaccuracies and are not authoritative for
+            accessibility compliance. Do not rely on persona findings as the sole basis for
+            compliance decisions, and verify results before acting on them.
+          </p>
+        </Section>
+
+        <Section title="No warranty; limitation of liability">
+          <p>
+            The service is provided <strong className="text-foreground">&quot;as is&quot;</strong>,
+            without warranties of any kind. We do not guarantee that audits find all issues, that
+            findings are accurate, or that a passing result means legal compliance. To the maximum
+            extent permitted by law, we are not liable for indirect, incidental, or consequential
+            damages arising from use of the service.
+          </p>
+        </Section>
+
+        <Section title="Accessibility">
+          <p>
+            We hold our own site to the standard we sell. See our{" "}
+            <Link href="/accessibility" className="text-foreground underline underline-offset-4 hover:text-primary">
+              accessibility statement
+            </Link>
+            .
+          </p>
+        </Section>
+
+        <Section title="Governing law">
+          <p>
+            These terms are governed by the laws of the United States and the state in which the
+            operator is established, without regard to conflict-of-laws rules. Disputes will be
+            handled in that jurisdiction.
+          </p>
+        </Section>
+
+        <Section title="Contact">
+          <p>
+            Questions about these terms: <a href="mailto:hello@personaudit.com" className="text-foreground underline underline-offset-4 hover:text-primary">hello@personaudit.com</a>.
+          </p>
+        </Section>
       </div>
-      <div className="mt-8">
+
+      <div className="mt-10">
         <Link href="/" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
           &larr; Back to home
         </Link>

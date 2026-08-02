@@ -341,6 +341,7 @@ mpersonas scan https://client.app --session ./session.json \\
             <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
               <Link href="/" className="transition-colors hover:text-foreground">Home</Link>
               <Link href="/guides/wcag-checklist" className="transition-colors hover:text-foreground">WCAG Checklist</Link>
+              <Link href="/accessibility" className="transition-colors hover:text-foreground">Accessibility</Link>
               <Link href="/privacy" className="transition-colors hover:text-foreground">Privacy</Link>
               <Link href="/terms" className="transition-colors hover:text-foreground">Terms</Link>
             </nav>

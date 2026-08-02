@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import path from "path";
+import { withSentryConfig } from "@sentry/nextjs";
 
 // Content-Security-Policy in REPORT-ONLY mode: it never blocks a request, it only
 // reports violations, so it is safe to ship to the live site without risking the inline
@@ -63,4 +64,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// withSentryConfig COMPOSES the webpack fn above (it calls it, then appends the Sentry
+// source-map plugin) rather than replacing it, so the @engine alias survives — verified by
+// build. Source-map upload only runs when SENTRY_AUTH_TOKEN (+ SENTRY_ORG/SENTRY_PROJECT)
+// are set in the build env; otherwise it is a no-op, so this ships safely without them.
+// tunnelRoute proxies client events through our domain to beat ad-blockers.
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  widenClientFileUpload: true,
+  tunnelRoute: "/monitoring",
+});

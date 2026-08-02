@@ -23,6 +23,7 @@ const ROUTES = [
   "/guides/screen-reader-testing",
   "/privacy",
   "/terms",
+  "/accessibility",
 ];
 
 // The site is dark-first, toggled by localStorage 'theme' (see layout.tsx no-FOUC

@@ -276,6 +276,7 @@ mpersonas scan https://app.example.com --session ./session.json \\
             <Link href="/guides/common-accessibility-issues" className="py-2 transition-colors hover:text-foreground">Common Issues</Link>
             <Link href="/guides/screen-reader-testing" className="py-2 transition-colors hover:text-foreground">Screen Reader Testing</Link>
             <a href="mailto:hello@personaudit.com" className="py-2 transition-colors hover:text-foreground">Contact</a>
+            <Link href="/accessibility" className="py-2 transition-colors hover:text-foreground">Accessibility</Link>
             <Link href="/privacy" className="py-2 transition-colors hover:text-foreground">Privacy</Link>
             <Link href="/terms" className="py-2 transition-colors hover:text-foreground">Terms</Link>
           </div>
