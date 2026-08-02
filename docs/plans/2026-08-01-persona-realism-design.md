@@ -134,6 +134,38 @@ patterns before implementing.
 - New: `src/personas/traits.ts` (pure trait→boundary mapping, fully unit-testable — the TDD core,
   mirrors how `src/grader/score.ts` isolated the pure logic).
 
+## Delivered vs deferred (as of 2026-08-02 — best safe state)
+
+**Delivered + shipped + verified live** (commits 98c7160 → 8a38984, worker + web on prod):
+- Trait vector + back-compat derivation (`traits.ts`).
+- Code-enforced give-up in the engine loop — decision extracted to `nextGiveUpState`,
+  deterministically unit-tested. Verified live: impatient persona blocked in 2 steps vs
+  patient in 4 on a real prod audit.
+- Real browser conditions (reduced-motion / forced-colors / color-scheme) via newContext —
+  proven real via matchMedia. Margaret runs under forced-colors + reduced-motion.
+- Persona-aware frustration in Replay Theater (`frustration.ts` scaled by patience).
+
+**Deferred — deliberately, with rationale (NOT silently dropped):**
+- **Fine-trait PROMPT integration.** DEFERRED: PersonaGym shows prompt-steering is
+  unreliable/unreproducible; code-enforcement is the reliable lever and is done. Injecting
+  trait text into the core system prompt shifts every run's verdict (the moat metric) for
+  low marginal value. Revisit only behind a proper eval harness.
+- **Real network throttle** (make `connectionSpeed` real via CDP). DEFERRED: introduces
+  goto-timeout fragility — a slow-3g persona's page may not load inside the 30s timeout,
+  turning an honest "slow" into a false "failed". Needs a per-persona timeout bump + load
+  test first. Honest to want; not a clean win yet.
+- **Real keyboard-only enforcement** (make `inputModality: keyboard` real). DEFERRED:
+  Playwright cannot disable the mouse; real enforcement means redesigning the agent's
+  action space (Tab/Enter nav, reject pointer clicks) — a substantial change with
+  regression risk on the core loop.
+- **New ability-based roster personas.** DEFERRED: needs engine↔web display-meta sync (the
+  web `PERSONA_DATA` picker). Existing personas + Margaret's conditions already demonstrate
+  the system end-to-end.
+- **Refusal intent-tests with a live model.** DEFERRED: needs adversarial/out-of-spec
+  fixtures + non-deterministic model runs. The give-up *decision* is now deterministically
+  tested (`nextGiveUpState`); the full-loop refusal behavior against broken fixtures is the
+  remaining piece.
+
 ## Considered & rejected
 - GOV.UK disability personas as SIMULATED users — REJECTED (brand wall; can't authentically simulate
   disability; it's the killed positioning). We steal their runtime-config idea, not the role-play.
