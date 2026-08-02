@@ -19,6 +19,17 @@ updates:
       major-updates:
         patterns: ["*"]
         update-types: ["major"]
+    ignore:
+      # eslint 10 is blocked upstream, not by us: eslint-config-next (Next 16)
+      # pulls eslint-plugin-react@7.37.5, which peers eslint "<=9.7" and crashes
+      # on eslint 10's removed context.getFilename API (web lint exits 2). Left
+      # in the major group it poisons the whole grouped PR. Hold the eslint major
+      # (and @eslint/js, versioned in lockstep) until eslint-config-next ships
+      # eslint-10 support, then bump manually and remove this ignore.
+      - dependency-name: "eslint"
+        versions: [">=10"]
+      - dependency-name: "@eslint/js"
+        versions: [">=10"]
     labels: ["dependencies"]
     commit-message:
       prefix: "chore(deps):"
