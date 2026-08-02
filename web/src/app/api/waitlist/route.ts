@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import { getClientIP } from "@/lib/client-ip";
 
 // Demand-test capture for the /for-agencies landing page. Insert-only — see
 // supabase/migrations/008_waitlist.sql for the RLS policy (no select/update/delete,
@@ -13,6 +15,16 @@ const waitlistSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  // Public insert endpoint: rate-limit per IP so a script can't flood the waitlist.
+  // (Distinct-email spam still needs a CAPTCHA/Turnstile — tracked as a follow-up.)
+  const rate = await consumeRateLimit(`waitlist:${getClientIP(request)}`, "waitlist");
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { error: "Too many signups from this network. Please try again shortly." },
+      { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } },
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();

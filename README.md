@@ -55,7 +55,7 @@ layer." The web app is not deployed and cannot be as written — see
 
 ```bash
 pnpm install
-cp .env.example .env                    # ANTHROPIC_API_KEY required
+cp .env.example .env                    # ANTHROPIC_API_KEY only for `run`/`generate`; `scan` needs no key
 pnpm exec playwright install chromium
 ```
 

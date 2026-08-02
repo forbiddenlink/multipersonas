@@ -48,6 +48,11 @@ jobs:
         working-directory: worker
         run: pnpm typecheck
 
+      # Tests are excluded from the build tsconfig; typecheck them separately so
+      # agent-authored test drift (stale fixtures against changed types) is caught.
+      - name: Type check (CLI tests)
+        run: pnpm exec tsc --noEmit -p tsconfig.test.json
+
       - name: Test (CLI)
         run: pnpm test
 

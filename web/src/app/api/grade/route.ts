@@ -3,25 +3,13 @@ import { assertUrlAllowed, BlockedUrlError } from "@engine/security/url-guard";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { killSwitchEnabled } from "@/lib/limits";
 import { consumeRateLimit } from "@/lib/rate-limit";
+import { getClientIP } from "@/lib/client-ip";
 
 // Public accessibility grader: anonymous, axe-only, no model spend. Enqueues a
 // kind='grade' job onto the shared audit_jobs queue; the worker runs gradeScan and
 // writes the public grader_scans row this returns a token for.
 
 const MAX_QUEUED_GRADES = Number(process.env.GRADE_QUEUE_CAP ?? 25);
-
-function getClientIP(request: Request): string {
-  // See api/audit/route.ts: the leftmost x-forwarded-for entry is client-spoofable,
-  // so prefer the platform's trustworthy x-real-ip and fall back to the rightmost hop.
-  const realIp = request.headers.get("x-real-ip")?.trim();
-  if (realIp) return realIp;
-  const xff = request.headers.get("x-forwarded-for");
-  if (xff) {
-    const hops = xff.split(",").map((p) => p.trim()).filter(Boolean);
-    return hops[hops.length - 1] || "unknown";
-  }
-  return "unknown";
-}
 
 export async function POST(request: Request) {
   if (killSwitchEnabled()) {

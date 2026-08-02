@@ -7,26 +7,11 @@ import { DEFAULT_PERSONA_IDS, MAX_PERSONAS } from "@/lib/personas";
 import { killSwitchEnabled, estimatedCallsFor } from "@/lib/limits";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { reserveSpend, releaseSpend } from "@/lib/spend";
+import { getClientIP } from "@/lib/client-ip";
 
 // Rate limiting + spend cap are enforced durably in Postgres (lib/rate-limit.ts,
 // lib/spend.ts) — shared across instances and not resettable, unlike the in-process
 // Map this replaced. See docs/DEPLOYMENT.md and docs/PLAN-2026-07-26-phase2-deploy-infra.md.
-
-function getClientIP(request: Request): string {
-  // x-real-ip is set by the platform (Vercel) to the true client IP and is NOT
-  // client-spoofable. The LEFTMOST x-forwarded-for entry is attacker-controlled
-  // (the client sends it; the platform appends the real IP after), so keying the
-  // rate limit on it lets an anon caller mint a fresh bucket per request. Prefer
-  // x-real-ip; fall back to the RIGHTMOST XFF hop (closest to us), never the first.
-  const realIp = request.headers.get("x-real-ip")?.trim();
-  if (realIp) return realIp;
-  const xff = request.headers.get("x-forwarded-for");
-  if (xff) {
-    const hops = xff.split(",").map((p) => p.trim()).filter(Boolean);
-    return hops[hops.length - 1] || "unknown";
-  }
-  return "unknown";
-}
 
 export async function POST(request: Request) {
   // Global kill switch — freezes all runs regardless of limits (spend emergency stop).

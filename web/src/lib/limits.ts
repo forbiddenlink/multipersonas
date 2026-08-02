@@ -8,6 +8,8 @@ export const RATE_LIMITS = {
   // Public grader teaser: generous enough to try a few sites, still bounded.
   // Deliberately looser than `anonymous` (audits cost model calls; grades don't).
   grade: { max: 5, windowSeconds: 10 * 60 },
+  // Waitlist signups: generous for a real person, bounded against spam. Per IP.
+  waitlist: { max: 5, windowSeconds: 60 * 60 },
 } as const;
 
 export type RateLimitType = keyof typeof RATE_LIMITS;

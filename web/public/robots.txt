@@ -28,5 +28,6 @@ Disallow: /dashboard
 Disallow: /personas
 Disallow: /projects
 Disallow: /settings
+Disallow: /waitlist
 
 Sitemap: https://personaudit.com/sitemap.xml
