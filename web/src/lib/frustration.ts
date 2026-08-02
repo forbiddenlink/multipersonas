@@ -19,33 +19,47 @@ export interface FrustrationInput {
 
 const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
 
+/** Persona temperament that shapes the curve. Absent -> neutral (0.5), which
+ * yields the original uniform model byte-for-byte. */
+export interface FrustrationTraits {
+  patience?: number; // 0..1
+}
+
 export function frustrationSeries(
   steps: FrustrationInput[],
   goalCompleted: boolean,
+  traits: FrustrationTraits = {},
 ): number[] {
   const seen = new Map<string, number>();
   const out: number[] = [];
+
+  // Impatient personas accrue frustration faster; patient ones stay calmer. At
+  // patience 0.5 the factor is exactly 1.0, so the default (no traits) output is
+  // identical to the prior persona-blind model.
+  const patience = traits.patience ?? 0.5;
+  const impatience = 1 + (0.5 - patience) * 0.6; // 0->1.3, 0.5->1.0, 1->0.7
 
   for (let i = 0; i < steps.length; i++) {
     // Dense array (index-bounded loop); non-null keeps the output 1:1 with the input.
     const { pageUrl, action } = steps[i]!;
 
     // Effort creep: ramps to ~35 over the first several steps, then plateaus.
-    const effort = Math.min(i, 8) / 8 * 35;
+    const effort = (Math.min(i, 8) / 8 * 35) * impatience;
 
     // Revisits: how many earlier steps were already on this page (looping / backtracking).
     const priorVisits = seen.get(pageUrl) ?? 0;
-    const revisit = Math.min(priorVisits * 18, 45);
+    const revisit = Math.min(priorVisits * 18, 45) * impatience;
 
     // Stall: identical action + page as the immediately preceding step (retrying in place).
     const prev = steps[i - 1];
-    const stall = i > 0 && prev && prev.pageUrl === pageUrl && prev.action === action ? 22 : 0;
+    const stall = (i > 0 && prev && prev.pageUrl === pageUrl && prev.action === action ? 22 : 0) * impatience;
 
     let score = effort + revisit + stall;
 
-    // The ending colors the whole story: relief on success, rage on a dead end.
+    // The ending colors the whole story: relief on success, rage on a dead end
+    // (a dead end stings an impatient persona more).
     if (i === steps.length - 1) {
-      score += goalCompleted ? -45 : 30;
+      score += goalCompleted ? -45 : 30 * impatience;
     }
 
     out.push(clamp(score));

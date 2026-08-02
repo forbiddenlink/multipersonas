@@ -2,6 +2,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { frustrationSeries } from "@/lib/frustration";
+import { personaLibrary } from "@engine/personas/library";
+import { deriveTraits } from "@engine/personas/traits";
 
 type SB = SupabaseClient<Database>;
 
@@ -71,9 +73,14 @@ export async function loadJourney(supabase: SB, runId: string): Promise<PersonaJ
   const journeys: PersonaJourney[] = [];
   for (const [personaId, rows] of byPersona) {
     const goalCompleted = rows[0]?.goal_completed ?? false;
+    // Persona-aware frustration: an impatient persona's curve climbs faster.
+    // Unknown/ad-hoc personas (not in the library) fall back to neutral (0.5).
+    const persona = personaLibrary[personaId];
+    const patience = persona ? deriveTraits(persona).patience : undefined;
     const scores = frustrationSeries(
       rows.map((r) => ({ pageUrl: r.page_url ?? "", action: r.action })),
       goalCompleted,
+      { patience },
     );
     journeys.push({
       personaId,

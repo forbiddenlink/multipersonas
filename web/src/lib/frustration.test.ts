@@ -57,6 +57,24 @@ describe("frustrationSeries", () => {
     expect(looping[2]!).toBeGreaterThan(smooth[2]!);
   });
 
+  it("is persona-aware: an impatient persona accrues frustration faster than a patient one", () => {
+    const steps = [
+      { pageUrl: "/a", action: "navigate" },
+      { pageUrl: "/b", action: "click" },
+      { pageUrl: "/b", action: "click" }, // stall
+      { pageUrl: "/a", action: "click" }, // revisit
+    ];
+    const impatient = frustrationSeries(steps, false, { patience: 0.1 });
+    const patient = frustrationSeries(steps, false, { patience: 0.9 });
+    const neutral = frustrationSeries(steps, false);
+    // Impatient >= patient at every step, strictly higher somewhere mid-walk.
+    impatient.forEach((s, i) => expect(s).toBeGreaterThanOrEqual(patient[i]!));
+    expect(impatient[2]!).toBeGreaterThan(patient[2]!);
+    // Default (no traits) sits between them — patience 0.5 is the neutral baseline.
+    expect(neutral[2]!).toBeGreaterThan(patient[2]!);
+    expect(neutral[2]!).toBeLessThan(impatient[2]!);
+  });
+
   it("clamps every score to 0..100", () => {
     const steps = Array.from({ length: 20 }, () => ({ pageUrl: "/x", action: "click" }));
     for (const s of frustrationSeries(steps, false)) {
