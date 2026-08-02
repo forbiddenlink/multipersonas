@@ -6,6 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import type { Persona } from "../personas/types.js";
 import { deriveTraits, giveUpThreshold, maxDeadEnds } from "../personas/traits.js";
+import { resolveConditions } from "../personas/conditions.js";
 import { assertUrlAllowed, assertRequestAllowed, isInScope, BlockedUrlError } from "../security/url-guard.js";
 import { runAxeScan, mergeAxeFindings } from "./axe-scan.js";
 
@@ -475,6 +476,10 @@ export async function runPersonaAgent(
         ? "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1"
         : undefined,
       isMobile: persona.isMobile,
+      // Real imposed browser conditions (reduced-motion / forced-colors / scheme).
+      // Empty for personas without a `conditions` block, so existing runs are
+      // byte-identical. A measured condition, never a disability simulation.
+      ...resolveConditions(persona),
       // Playwright reads the file itself, so the cookies never pass through our
       // logs or the model's context.
       ...(guard.sessionFile ? { storageState: guard.sessionFile } : {}),
