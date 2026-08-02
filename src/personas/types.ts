@@ -1,3 +1,5 @@
+import type { TraitVector } from "./traits.js";
+
 /**
  * How a profile is framed, and what it is allowed to claim.
  *
@@ -48,6 +50,14 @@ export interface Persona {
   // Agent behavior
   maxSteps: number;
   patienceLevel: "low" | "medium" | "high";
+
+  /**
+   * Optional fine-grained trait vector (0..1 per trait). When absent it is
+   * derived from patienceLevel + techProficiency via deriveTraits(), so the
+   * existing personas keep working unchanged. Traits drive CODE-ENFORCED
+   * behavior (give-up threshold, dead-end tolerance) — not just prompt text.
+   */
+  traits?: Partial<TraitVector>;
 
   // Generated from above fields
   systemPrompt: string;
