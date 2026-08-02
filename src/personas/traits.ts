@@ -80,3 +80,20 @@ export function giveUpThreshold(t: TraitVector): number {
 export function maxDeadEnds(t: TraitVector): number {
   return Math.round(1 + t.persistence * 2); // persistence 0 -> 1, 1 -> 3
 }
+
+/**
+ * Advance the code-enforced give-up state machine one loop iteration. Pure so the
+ * banana-fix decision (does the persona quit this round?) is deterministically
+ * testable without a live model. `stuck` = isStuck() for this step; `streak` =
+ * consecutive stuck rounds so far; `budget` = maxDeadEnds(traits). Give up once
+ * the streak reaches the budget; any non-stuck step resets it.
+ */
+export function nextGiveUpState(
+  stuck: boolean,
+  streak: number,
+  budget: number,
+): { streak: number; giveUp: boolean } {
+  if (!stuck) return { streak: 0, giveUp: false };
+  const next = streak + 1;
+  return { streak: next, giveUp: next >= budget };
+}

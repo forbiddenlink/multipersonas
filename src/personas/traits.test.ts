@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { deriveTraits, giveUpThreshold, maxDeadEnds, type TraitVector } from "./traits.js";
+import { deriveTraits, giveUpThreshold, maxDeadEnds, nextGiveUpState, type TraitVector } from "./traits.js";
 
 describe("deriveTraits (back-compat)", () => {
   it("maps patienceLevel + techProficiency for a legacy persona (no traits)", () => {
@@ -51,6 +51,28 @@ describe("maxDeadEnds", () => {
     // Earlier stuck detection AND fewer tolerated dead ends = strictly sooner give-up.
     expect(giveUpThreshold(impatient)).toBeLessThan(giveUpThreshold(patient));
     expect(maxDeadEnds(impatient)).toBeLessThan(maxDeadEnds(patient));
+  });
+});
+
+describe("nextGiveUpState (code-enforced give-up decision)", () => {
+  it("resets the streak and never gives up on a non-stuck step", () => {
+    expect(nextGiveUpState(false, 5, 2)).toEqual({ streak: 0, giveUp: false });
+  });
+
+  it("accumulates the streak and gives up exactly when it reaches the budget", () => {
+    // budget 1 (low persistence): gives up on the first stuck round.
+    expect(nextGiveUpState(true, 0, 1)).toEqual({ streak: 1, giveUp: true });
+    // budget 3 (high persistence): tolerates two, quits on the third.
+    expect(nextGiveUpState(true, 0, 3)).toEqual({ streak: 1, giveUp: false });
+    expect(nextGiveUpState(true, 1, 3)).toEqual({ streak: 2, giveUp: false });
+    expect(nextGiveUpState(true, 2, 3)).toEqual({ streak: 3, giveUp: true });
+  });
+
+  it("an impatient persona (budget 1) quits after one stuck round; a persistent one (budget 3) survives two", () => {
+    const impatient = maxDeadEnds(base({ persistence: 0 })); // 1
+    const persistent = maxDeadEnds(base({ persistence: 1 })); // 3
+    expect(nextGiveUpState(true, 0, impatient).giveUp).toBe(true);
+    expect(nextGiveUpState(true, 0, persistent).giveUp).toBe(false);
   });
 });
 

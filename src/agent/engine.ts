@@ -5,7 +5,7 @@ import { z } from "zod";
 import * as fs from "fs";
 import * as path from "path";
 import type { Persona } from "../personas/types.js";
-import { deriveTraits, giveUpThreshold, maxDeadEnds } from "../personas/traits.js";
+import { deriveTraits, giveUpThreshold, maxDeadEnds, nextGiveUpState } from "../personas/traits.js";
 import { resolveConditions } from "../personas/conditions.js";
 import { assertUrlAllowed, assertRequestAllowed, isInScope, BlockedUrlError } from "../security/url-guard.js";
 import { runAxeScan, mergeAxeFindings } from "./axe-scan.js";
@@ -525,36 +525,37 @@ export async function runPersonaAgent(
           "\n\nYou are already signed in to this site as an existing user. Do not look for a login or sign-up form, and do not treat being logged in as something you achieved — start from the goal itself.";
       }
 
-      if (isStuck(steps, stuckThreshold)) {
-        deadEndStreak++;
-        if (deadEndStreak >= deadEndBudget) {
-          // Code-enforced give-up (the "banana problem" fix): the persona has
-          // repeated itself past its patience/persistence, so end the walk
-          // honestly as blocked rather than letting the cooperative model loop
-          // to maxSteps pretending to still be trying. Recorded like a finish so
-          // replay shows an honest give-up.
-          const screenshotPath = path.join(
-            screenshotDir,
-            `step-${String(step).padStart(3, "0")}.png`,
-          );
-          await page.screenshot({ path: screenshotPath, fullPage: false });
-          steps.push({
-            step,
-            action: "finish",
-            detail: "blocked",
-            pageUrl: page.url(),
-            screenshotPath,
-            timestamp: Date.now(),
-            reasoning:
-              "Gave up: repeated the same action without progress past this persona's patience.",
-          });
-          goalCompleted = false;
-          break;
-        }
+      const stuck = isStuck(steps, stuckThreshold);
+      const giveUpState = nextGiveUpState(stuck, deadEndStreak, deadEndBudget);
+      deadEndStreak = giveUpState.streak;
+      if (giveUpState.giveUp) {
+        // Code-enforced give-up (the "banana problem" fix): the persona has
+        // repeated itself past its patience/persistence, so end the walk
+        // honestly as blocked rather than letting the cooperative model loop
+        // to maxSteps pretending to still be trying. Recorded like a finish so
+        // replay shows an honest give-up. Decision is unit-tested in
+        // nextGiveUpState (personas/traits.test.ts).
+        const screenshotPath = path.join(
+          screenshotDir,
+          `step-${String(step).padStart(3, "0")}.png`,
+        );
+        await page.screenshot({ path: screenshotPath, fullPage: false });
+        steps.push({
+          step,
+          action: "finish",
+          detail: "blocked",
+          pageUrl: page.url(),
+          screenshotPath,
+          timestamp: Date.now(),
+          reasoning:
+            "Gave up: repeated the same action without progress past this persona's patience.",
+        });
+        goalCompleted = false;
+        break;
+      }
+      if (stuck) {
         userContent +=
           "\n\nYou seem stuck -- you've repeated the same action without progress. Try a different approach.";
-      } else {
-        deadEndStreak = 0;
       }
 
       messages.push({ role: "user", content: userContent });
