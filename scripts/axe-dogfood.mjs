@@ -15,6 +15,7 @@ const BASE = (process.env.DOGFOOD_URL || "http://localhost:3000").replace(/\/$/,
 const ROUTES = [
   "/",
   "/for-agencies",
+  "/grade",
   "/auth/login",
   "/auth/signup",
   "/guides/wcag-checklist",

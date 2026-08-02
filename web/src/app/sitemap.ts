@@ -5,6 +5,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     { url: base, lastModified: new Date(), changeFrequency: "weekly", priority: 1 },
+    { url: `${base}/for-agencies`, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${base}/grade`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/auth/login`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/auth/signup`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/guides/wcag-checklist`, changeFrequency: "monthly", priority: 0.8 },

@@ -24,6 +24,7 @@ const step = (over: Partial<AgentResult["steps"][number]> = {}) => ({
 
 const result = (steps: AgentResult["steps"]): AgentResult => ({
   findings: [],
+  axeFindings: [],
   steps,
   pagesVisited: ["https://example.com"],
   goalCompleted: true,
@@ -32,7 +33,7 @@ const result = (steps: AgentResult["steps"]): AgentResult => ({
 
 const render = (r: AgentResult) =>
   generateMarkdownReport("https://example.com", [
-    { persona: firstTimeVisitor, agentResult: r, axeFindings: [] },
+    { persona: firstTimeVisitor, agentResult: r },
   ]);
 
 describe("generateMarkdownReport survives malformed step data", () => {

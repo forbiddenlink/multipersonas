@@ -1,7 +1,7 @@
 import { chromium } from "playwright";
 import { runAxeScan, mergeAxeFindings } from "../agent/axe-scan.js";
 import type { Finding } from "../agent/engine.js";
-import { assertUrlAllowed, isUrlAllowed } from "../security/url-guard.js";
+import { assertUrlAllowed, isUrlAllowed, assertRequestAllowed } from "../security/url-guard.js";
 
 /**
  * Authenticated accessibility crawler — the product's spine.
@@ -47,6 +47,20 @@ export async function crawl(entryUrl: string, options: CrawlOptions = {}): Promi
 
   try {
     const context = await browser.newContext(sessionFile ? { storageState: sessionFile } : {});
+
+    // SSRF defence on EVERY in-flight request, not just the pre-checked URLs.
+    // page.goto follows HTTP redirects and the page loads its own subresources — a
+    // public URL that 302s to 169.254.169.254 / an RFC1918 host, or an <img>/fetch
+    // to one, would slip past the pre-navigation isUrlAllowed check below. This runs
+    // on stranger-supplied URLs, so guard the request layer too (mirrors the audit
+    // engine's context.route + grader/scan.ts). Respects allowPrivate for CLI use.
+    await context.route("**/*", async (route, request) => {
+      const allowed = await assertRequestAllowed(request.url(), request.resourceType(), {
+        allowPrivate,
+      });
+      return allowed ? route.continue() : route.abort("blockedbyclient");
+    });
+
     const page = await context.newPage();
 
     while (queue.length > 0 && visited.length < maxPages) {

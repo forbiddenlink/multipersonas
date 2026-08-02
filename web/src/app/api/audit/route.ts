@@ -13,9 +13,19 @@ import { reserveSpend, releaseSpend } from "@/lib/spend";
 // Map this replaced. See docs/DEPLOYMENT.md and docs/PLAN-2026-07-26-phase2-deploy-infra.md.
 
 function getClientIP(request: Request): string {
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-    || request.headers.get("x-real-ip")
-    || "unknown";
+  // x-real-ip is set by the platform (Vercel) to the true client IP and is NOT
+  // client-spoofable. The LEFTMOST x-forwarded-for entry is attacker-controlled
+  // (the client sends it; the platform appends the real IP after), so keying the
+  // rate limit on it lets an anon caller mint a fresh bucket per request. Prefer
+  // x-real-ip; fall back to the RIGHTMOST XFF hop (closest to us), never the first.
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+  const xff = request.headers.get("x-forwarded-for");
+  if (xff) {
+    const hops = xff.split(",").map((p) => p.trim()).filter(Boolean);
+    return hops[hops.length - 1] || "unknown";
+  }
+  return "unknown";
 }
 
 export async function POST(request: Request) {
@@ -94,15 +104,6 @@ export async function POST(request: Request) {
     MAX_PERSONAS,
   );
 
-  // Reserve this run's estimated model-call budget against the global daily cap,
-  // atomically, before queuing. If we can't reserve, refuse.
-  if (!(await reserveSpend(chosenIds.length))) {
-    return NextResponse.json(
-      { error: "Daily audit capacity reached. Please try again tomorrow." },
-      { status: 429, headers: { "Retry-After": "3600" } },
-    );
-  }
-
   // Optional project association. Verified against the caller's own RLS-scoped view
   // (not the admin client) so this can never confirm — or deny — the existence of a
   // project owned by someone else. Anonymous callers have no projects, so the field
@@ -135,6 +136,17 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Audits are not configured on this environment (missing service key)." },
       { status: 503 },
+    );
+  }
+
+  // Reserve this run's estimated model-call budget against the global daily cap,
+  // atomically, and ONLY now — after every early-return check (rate limit, URL guard,
+  // project ownership, admin-config) has passed. Reserving earlier leaked the
+  // reservation against the cap on any of those returns until UTC midnight.
+  if (!(await reserveSpend(chosenIds.length))) {
+    return NextResponse.json(
+      { error: "Daily audit capacity reached. Please try again tomorrow." },
+      { status: 429, headers: { "Retry-After": "3600" } },
     );
   }
 

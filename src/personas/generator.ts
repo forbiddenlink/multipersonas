@@ -4,7 +4,7 @@ import { z } from "zod";
 import { chromium } from "playwright";
 import { Persona, generateSystemPrompt } from "./types.js";
 import { DEFAULT_MODEL } from "../agent/engine.js";
-import { assertUrlAllowed } from "../security/url-guard.js";
+import { assertUrlAllowed, assertRequestAllowed } from "../security/url-guard.js";
 
 export class PersonaGenerationError extends Error {
   constructor(message: string, options?: { cause?: unknown }) {
@@ -56,7 +56,7 @@ const personaSchema = z.object({
       viewport: z.object({ width: z.number(), height: z.number() }),
       isMobile: z.boolean(),
       connectionSpeed: z.enum(["fast", "3g", "slow-3g"]),
-      maxSteps: z.number(),
+      maxSteps: z.number().int().min(1).max(50),
       patienceLevel: z.enum(["low", "medium", "high"]),
     }),
     ),
@@ -87,6 +87,17 @@ async function extractWebsiteSignals(
   const context = await browser.newContext(
     options.sessionFile ? { storageState: options.sessionFile } : {},
   );
+
+  // Guard every request, not just the initial URL: this navigates a stranger-supplied
+  // target and a 302 to a private/metadata host (or a subresource to one) would
+  // otherwise be followed and read into the model prompt. Mirrors crawler/grader/engine.
+  await context.route("**/*", async (route, request) => {
+    const allowed = await assertRequestAllowed(request.url(), request.resourceType(), {
+      allowPrivate: options.allowPrivate,
+    });
+    return allowed ? route.continue() : route.abort("blockedbyclient");
+  });
+
   const page = await context.newPage();
 
   try {

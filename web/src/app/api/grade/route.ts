@@ -11,11 +11,16 @@ import { consumeRateLimit } from "@/lib/rate-limit";
 const MAX_QUEUED_GRADES = Number(process.env.GRADE_QUEUE_CAP ?? 25);
 
 function getClientIP(request: Request): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown"
-  );
+  // See api/audit/route.ts: the leftmost x-forwarded-for entry is client-spoofable,
+  // so prefer the platform's trustworthy x-real-ip and fall back to the rightmost hop.
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+  const xff = request.headers.get("x-forwarded-for");
+  if (xff) {
+    const hops = xff.split(",").map((p) => p.trim()).filter(Boolean);
+    return hops[hops.length - 1] || "unknown";
+  }
+  return "unknown";
 }
 
 export async function POST(request: Request) {

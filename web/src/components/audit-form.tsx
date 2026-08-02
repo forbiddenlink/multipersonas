@@ -408,7 +408,7 @@ export function AuditForm({
       </fieldset>
 
       {error && (
-        <div className="mt-4 text-center">
+        <div role="alert" className="mt-4 text-center">
           {error.includes("audit limit") ? (
             <p className="text-sm" style={{ color: "var(--severity-moderate)" }}>{error}</p>
           ) : (

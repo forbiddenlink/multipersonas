@@ -21,8 +21,9 @@ model cost. So personas are **not** pitched as an accessibility tool. Their surv
 distinct value is task-success — a crawler cannot tell you whether a real-shaped user
 completed a flow — and it is **validated**: on a labelled probe set
 (`experiments/task-success-validity/`) the verdict never once claimed success on a
-genuinely impossible task (0% false-success, 90% agreement). n=1 target so far, so the
-next step is more targets, not a launch.
+genuinely impossible task (0% false-success, 90% agreement, holding across both runs).
+n=2 targets so far (Metabase, then SauceDemo — an interaction-heavy checkout), each goal
+run once, so the next step is more targets and repeated runs per goal, not a launch.
 
 - **Accessibility violations** come from **axe-core** — deterministic, citable, and
   the only thing here that touches compliance.

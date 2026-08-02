@@ -112,7 +112,7 @@ export function GradeForm() {
       </form>
 
       {error && (
-        <div className="mt-4 text-center">
+        <div role="alert" className="mt-4 text-center">
           <p className="text-sm text-destructive">{error}</p>
         </div>
       )}

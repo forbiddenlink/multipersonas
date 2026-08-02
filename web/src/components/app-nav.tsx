@@ -56,20 +56,25 @@ export function AppNav({
       {/* Mobile nav dropdown */}
       {mobileOpen && (
         <nav id="app-mobile-nav" className="flex flex-col gap-1 border-b border-border bg-card p-3 md:hidden">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className={`rounded-sm border-l-2 px-3 py-2 font-mono text-[13px] tracking-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
-                pathname === item.href || pathname.startsWith(item.href + "/")
-                  ? "border-[var(--primary)] bg-muted text-foreground"
-                  : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const isActive =
+              pathname === item.href || pathname.startsWith(item.href + "/");
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                aria-current={isActive ? "page" : undefined}
+                className={`rounded-sm border-l-2 px-3 py-2 font-mono text-[13px] tracking-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
+                  isActive
+                    ? "border-[var(--primary)] bg-muted text-foreground"
+                    : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
           {userEmail && (
             <>
               <div className="mx-3 my-2 h-px bg-border" />
@@ -97,19 +102,24 @@ export function AppNav({
         </div>
         <div className="mx-3 h-px bg-border" />
         <nav className="flex flex-1 flex-col gap-1 p-3">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`rounded-sm border-l-2 px-3 py-2 font-mono text-[13px] tracking-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
-                pathname === item.href || pathname.startsWith(item.href + "/")
-                  ? "border-[var(--primary)] bg-muted text-foreground"
-                  : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const isActive =
+              pathname === item.href || pathname.startsWith(item.href + "/");
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive ? "page" : undefined}
+                className={`rounded-sm border-l-2 px-3 py-2 font-mono text-[13px] tracking-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
+                  isActive
+                    ? "border-[var(--primary)] bg-muted text-foreground"
+                    : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
         <div className="flex items-center justify-between border-t border-border px-4 py-2">
           <span className="text-xs text-muted-foreground">Theme</span>
