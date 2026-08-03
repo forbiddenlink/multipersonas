@@ -24,7 +24,7 @@ jobs:
         run: semgrep ci --config=auto --sarif --output=semgrep.sarif
         env:
           SEMGREP_RULES: p/default p/security-audit p/secrets p/nextjs p/typescript p/react p/javascript
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.1
         if: always()
         with:
           name: semgrep-sarif
