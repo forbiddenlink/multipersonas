@@ -1,6 +1,7 @@
 import { generateText, tool, type ModelMessage } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
-import { chromium, type Browser, type Page } from "playwright";
+import { type Browser, type Page } from "playwright";
+import { launchAuditBrowser } from "../security/browser.js";
 import { z } from "zod";
 import * as fs from "fs";
 import * as path from "path";
@@ -488,7 +489,7 @@ export async function runPersonaAgent(
     const safeUrl = await assertUrlAllowed(url, guard);
     const scope: GuardOptions = { ...guard, scopeOrigin: guard.scopeOrigin ?? safeUrl.origin };
 
-    browser = await chromium.launch({ headless: true });
+    browser = await launchAuditBrowser({ headless: true });
     const context = await browser.newContext({
       viewport: persona.viewport,
       userAgent: persona.isMobile

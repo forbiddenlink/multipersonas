@@ -1,4 +1,4 @@
-import { chromium } from "playwright";
+import { launchAuditBrowser } from "../security/browser.js";
 import { runAxeScan, mergeAxeFindings } from "../agent/axe-scan.js";
 import type { Finding } from "../agent/engine.js";
 import { assertUrlAllowed, isUrlAllowed, assertRequestAllowed } from "../security/url-guard.js";
@@ -39,7 +39,7 @@ export async function crawl(entryUrl: string, options: CrawlOptions = {}): Promi
   const entry = await assertUrlAllowed(entryUrl, { allowPrivate });
   const origin = entry.origin;
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await launchAuditBrowser({ headless: true });
   const findings: Finding[] = [];
   const visited: string[] = [];
   const seen = new Set<string>([normalise(entry.href)]);

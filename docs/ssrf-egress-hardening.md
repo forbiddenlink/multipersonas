@@ -23,18 +23,57 @@ addresses at the network layer, so a rebind resolves to a destination the networ
 
 Stripe's [smokescreen](https://github.com/stripe/smokescreen) is a purpose-built
 SSRF-protection HTTP CONNECT proxy: it re-resolves and validates **every** connection
-against a private-range denylist at connect time, which is exactly where the rebind
-happens. Run it beside the worker and point Chromium at it:
+against a private-range denylist **at connect time**, which is exactly where the rebind
+happens. By default it denies RFC1918, loopback (incl. `127.0.0.1`), link-local (incl.
+`169.254.169.254`), CGNAT (`100.64/10`), and the IPv6 equivalents.
 
-- Run smokescreen as a sidecar (or a second process in the worker container).
-- Launch Chromium with `--proxy-server=http://127.0.0.1:4750` (smokescreen's port) and
-  `--proxy-bypass-list=<none>` so *all* egress goes through it.
-- Smokescreen denies RFC1918, loopback, link-local (incl. `169.254.169.254`), CGNAT, and
-  the IPv6 equivalents by default; keep url-guard as the app-layer first gate (defense in
-  depth). Net effect: a rebind's second resolution is blocked at the proxy.
+**The app side is already wired.** `src/security/browser.ts` (`launchAuditBrowser`) reads
+`AUDIT_BROWSER_PROXY`; when set, every audit browser (crawler, grader, persona engine,
+persona-gen, session) launches with `proxy.server` pointing at it. Unset (CLI/local) it is
+a plain launch — no behaviour change off the worker. If the proxy is down the browser can't
+connect, so audits **fail closed** rather than bypassing the guard.
 
-Keeps the browser local (no per-scan latency to a remote service), proven in production,
-minimal code (a launch flag + a sidecar).
+So only two things are left, both on the worker container/host (untested here — verify the
+Docker build + `smokescreen --help` flag names before relying on it):
+
+**a) Build + run smokescreen in the worker container.** Smokescreen ships no official
+binary or image, so build it from source with a multi-stage step, then run it as a second
+process via an entrypoint. Add to `worker/Dockerfile`:
+
+```dockerfile
+# --- stage: build smokescreen from source (no official binary/image) ---
+FROM golang:1.23-bookworm AS smokescreen
+RUN go install github.com/stripe/smokescreen@latest   # -> /go/bin/smokescreen
+
+# --- existing worker stage (FROM mcr.microsoft.com/playwright:...) ---
+# ...after the existing build steps, before `USER pwuser`:
+COPY --from=smokescreen /go/bin/smokescreen /usr/local/bin/smokescreen
+COPY worker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/smokescreen
+# ...keep `USER pwuser` (smokescreen on :4750 needs no root)...
+CMD ["/usr/local/bin/entrypoint.sh"]
+```
+
+`worker/entrypoint.sh`:
+
+```sh
+#!/bin/sh
+set -e
+# Egress SSRF guard. Default-denies private/reserved ranges; ALSO deny Class E
+# 240.0.0.0/4, which smokescreen default-ALLOWS (known DNS-rebind bypass, spearbit
+# 2026-06-18). Backgrounded; the worker's browser egress goes through it via
+# AUDIT_BROWSER_PROXY, so if it dies the browser can't connect (fail closed).
+smokescreen --listen-ip 127.0.0.1 --listen-port 4750 --deny-range 240.0.0.0/4 &
+exec pnpm --filter worker start
+```
+
+**b) Set the env on the worker (Railway):** `AUDIT_BROWSER_PROXY=http://127.0.0.1:4750`.
+Leave it UNSET everywhere else (CLI, tests) so only the worker is proxied.
+
+Caveats: verify the exact smokescreen flags against `smokescreen --help` at build time;
+keep the app-layer `url-guard` as the first gate (it already blocks 240/4 and the rest, so
+it is the belt to smokescreen's suspenders). Keeps the browser local (no per-scan latency),
+proven in production, minimal moving parts.
 
 ### 2. Sandboxed browser service (Browserbase / Browserless)
 

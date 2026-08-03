@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as readline from "node:readline/promises";
-import { chromium } from "playwright";
+import { launchAuditBrowser } from "../security/browser.js";
 import { assertUrlAllowed } from "../security/url-guard.js";
 
 /**
@@ -46,7 +46,7 @@ export async function captureSession(
   // Same bar as an audit target — this still points a browser at a supplied URL.
   const safeUrl = await assertUrlAllowed(url, { allowPrivate: options.allowPrivate });
 
-  const browser = await chromium.launch({ headless: false });
+  const browser = await launchAuditBrowser({ headless: false });
   try {
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -139,7 +139,7 @@ export async function sessionIsLive(
   options: { allowPrivate?: boolean } = {},
 ): Promise<boolean> {
   const safeUrl = await assertUrlAllowed(url, { allowPrivate: options.allowPrivate });
-  const browser = await chromium.launch({ headless: true });
+  const browser = await launchAuditBrowser({ headless: true });
   try {
     const context = await browser.newContext({ storageState: sessionFile });
     const page = await context.newPage();

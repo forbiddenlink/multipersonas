@@ -1,4 +1,4 @@
-import { chromium } from "playwright";
+import { launchAuditBrowser } from "../security/browser.js";
 import { AxeBuilder } from "@axe-core/playwright";
 import { assertUrlAllowed, isUrlAllowed, assertRequestAllowed } from "../security/url-guard.js";
 import { computeGrade, type PageAxe, type Impact, type GradeReport } from "./score.js";
@@ -41,7 +41,7 @@ export async function gradeScan(
   const entry = await assertUrlAllowed(entryUrl);
   const origin = entry.origin;
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await launchAuditBrowser({ headless: true });
   const pages: PageAxe[] = [];
   const visited: string[] = [];
   const seen = new Set<string>([entry.href]);

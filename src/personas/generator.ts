@@ -1,7 +1,7 @@
 import { generateObject } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
-import { chromium } from "playwright";
+import { launchAuditBrowser } from "../security/browser.js";
 import { Persona, generateSystemPrompt } from "./types.js";
 import { DEFAULT_MODEL } from "../agent/engine.js";
 import { assertUrlAllowed, assertRequestAllowed } from "../security/url-guard.js";
@@ -80,7 +80,7 @@ async function extractWebsiteSignals(
   options: GenerateOptions = {},
 ): Promise<WebsiteSignals> {
   const safeUrl = await assertUrlAllowed(url, { allowPrivate: options.allowPrivate });
-  const browser = await chromium.launch({ headless: true });
+  const browser = await launchAuditBrowser({ headless: true });
   // Generate from the app, not from its login form. Without the session the
   // model only ever sees "Sign in", so it invents prospective-buyer personas who
   // then hunt for a pricing page inside a dashboard (observed 2026-07-16).
