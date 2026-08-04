@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { WcagCitation } from "@/components/forensic/wcag-citation";
 import { BoxDivider } from "@/components/forensic/divider";
+import { MarketingShell } from "@/components/marketing-shell";
 
 export const metadata: Metadata = {
-  title: "WCAG 2.1 AA Checklist",
-  description: "A practical checklist for WCAG 2.1 AA compliance. Covers perceivable, operable, understandable, and robust criteria with examples.",
+  title: "WCAG 2.2 AA Checklist",
+  description: "A practical checklist for WCAG 2.2 AA compliance. Covers perceivable, operable, understandable, and robust criteria with examples.",
 };
 
 const checks = [
@@ -50,56 +51,51 @@ const checks = [
 
 export default function WcagChecklistPage() {
   return (
-    <main id="main" className="mx-auto max-w-2xl px-6 py-16">
+    <MarketingShell>
       <p className="font-mono text-xs text-muted-foreground">
-        <span className="rounded-sm border border-border px-2.5 py-1">reference · wcag 2.1 aa</span>
+        <span className="rounded-sm border border-border px-2.5 py-1">reference · wcag 2.2 aa</span>
       </p>
-      <h1 className="mt-6 text-3xl font-bold tracking-tight sm:text-4xl">WCAG 2.1 AA Checklist</h1>
+      <h1 className="mt-6 text-3xl font-bold tracking-tight sm:text-4xl">WCAG 2.2 AA Checklist</h1>
       <p className="mt-4 font-serif text-lg leading-relaxed text-muted-foreground">
-        A practical checklist for meeting WCAG 2.1 Level AA. These are the criteria that matter
+        A practical checklist for meeting WCAG 2.2 Level AA. These are the criteria that matter
         most for real users — not just compliance checkboxes.
       </p>
 
+      <h2 className="sr-only">Checklist by principle</h2>
       <BoxDivider label="checklist" className="mt-10" />
 
       {checks.map((section) => (
         <div key={section.category} className="mt-10">
           <h2 className="text-xl font-semibold tracking-tight">{section.category}</h2>
-          <div className="mt-4 space-y-4">
+          <ul className="mt-4 divide-y divide-border border-y border-border">
             {section.items.map((item) => (
-              <div key={item.wcag} className="rounded-md border border-border p-4">
+              <li key={item.wcag} className="py-4">
                 <div className="flex items-start justify-between gap-4">
                   <h3 className="font-medium">{item.rule}</h3>
                   <WcagCitation code={item.wcag} className="mt-0.5 shrink-0" />
                 </div>
                 <p className="mt-2 font-serif text-sm leading-relaxed text-muted-foreground">{item.how}</p>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       ))}
 
-      <div className="mt-12 rounded-md border border-border bg-card p-6 text-center">
+      <div className="mt-12 border-t border-border pt-8">
         <h2 className="text-lg font-semibold tracking-tight">Test your site automatically</h2>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Personaudit checks these criteria using AI personas that actually browse your site.
+          Personaudit crawls your site and runs{" "}
+          <strong className="font-medium text-foreground">axe-core</strong> at every state —
+          deterministic, citable checks against these criteria. Personas measure task success;
+          they never render the compliance verdict.
         </p>
         <Link
-          href="/"
+          href="/#scan"
           className="mt-4 inline-block rounded-sm bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
           Run a free audit
         </Link>
       </div>
-
-      <div className="mt-8">
-        <Link
-          href="/"
-          className="rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-        >
-          &larr; Back to home
-        </Link>
-      </div>
-    </main>
+    </MarketingShell>
   );
 }

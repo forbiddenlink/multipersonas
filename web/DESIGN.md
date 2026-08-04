@@ -125,9 +125,9 @@ disabled · loading. Focus rings are a *feature* (thick, offset, teal) — dogfo
 
 ## Content Gaps Still Worth Filling
 
-1. Real product screenshots of the *app* console (auth-gated — need signed-in capture)
-2. Demand distribution for `/for-agencies` (outreach kit exists; traffic does not)
-3. CI-gate docs surface for agencies (CLI exists; marketing/docs can go deeper)
+1. Signed-in *live* console screenshot (probe-grounded samples ship on marketing; swap when a saved customer run exists)
+2. Demand distribution for `/for-agencies` (outreach kit + CI docs live; 10 human outreaches outstanding)
+3. ~~CI-gate docs surface for agencies~~ → `/guides/ci-accessibility-gate`
 4. Session-artifact UX — **only after demand pull** (ADR 0001)
 
 ## Build North Star

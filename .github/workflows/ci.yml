@@ -44,6 +44,9 @@ jobs:
         working-directory: web
         run: pnpm exec tsc --noEmit
 
+      - name: Build (CLI)
+        run: pnpm build
+
       - name: Type check (worker)
         working-directory: worker
         run: pnpm typecheck

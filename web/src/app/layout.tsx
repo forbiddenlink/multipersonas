@@ -72,7 +72,7 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable} ${sourceSerif.variable} antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-dvh bg-background text-foreground font-sans">
+      <body className="theme-transition min-h-dvh bg-background text-foreground font-sans">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

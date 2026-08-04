@@ -64,7 +64,7 @@ export default async function ProjectDetailPage({
 
       <BoxDivider label="new scan for this project" className="my-5" />
 
-      <AuditForm projectId={project.id} defaultUrl={project.url} />
+      <AuditForm projectId={project.id} defaultUrl={project.url} submitLabel="Run audit" />
 
       {regression ? (
         <>

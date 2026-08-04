@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminEmail } from "@/lib/admin-access";
 import { BoxDivider } from "@/components/forensic/divider";
+import { EmptyPrompt } from "@/components/forensic/empty-prompt";
 
 export const metadata: Metadata = {
   title: "Waitlist",
@@ -63,10 +64,11 @@ export default async function WaitlistPage() {
       )}
 
       {signups.length === 0 ? (
-        <div className="mt-8 rounded-md border border-dashed border-border p-8 text-center text-muted-foreground">
-          No signups yet. Drive agency traffic to{" "}
-          <span className="font-mono text-sm">/for-agencies</span> and they&apos;ll appear here.
-        </div>
+        <EmptyPrompt
+          className="mt-8"
+          prompt="no signups yet"
+          hint="Drive agency traffic to /for-agencies and they&apos;ll appear here."
+        />
       ) : (
         <>
           <BoxDivider label="signups" className="mt-8 mb-4" />

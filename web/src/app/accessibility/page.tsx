@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { MarketingShell } from "@/components/marketing-shell";
 
 export const metadata: Metadata = {
   title: "Accessibility Statement",
@@ -15,9 +15,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+const focusLink =
+  "rounded-sm text-foreground underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
+
 export default function AccessibilityPage() {
   return (
-    <main id="main" className="mx-auto max-w-2xl px-6 py-16">
+    <MarketingShell>
       <h1 className="text-2xl font-semibold tracking-tight font-heading">Accessibility Statement</h1>
       <p className="mt-2 text-xs text-muted-foreground">Last updated: 2 August 2026.</p>
 
@@ -48,8 +51,15 @@ export default function AccessibilityPage() {
             Automated testing does not catch everything, and it is not a substitute for testing with
             people who use assistive technology. We do not simulate disabled users; for testing with
             real disabled testers we point you to{" "}
-            <a href="https://makeitfable.com/" target="_blank" rel="noopener noreferrer" className="text-foreground underline underline-offset-4 hover:text-primary">Fable</a>.
-            Signed-in application areas are held to the same bar but are not yet in the automated
+            <a
+              href="https://makeitfable.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={focusLink}
+            >
+              Fable
+            </a>
+            . Signed-in application areas are held to the same bar but are not yet in the automated
             public scan.
           </p>
         </Section>
@@ -57,17 +67,13 @@ export default function AccessibilityPage() {
         <Section title="Report a barrier">
           <p>
             If you hit an accessibility barrier on this site, tell us at{" "}
-            <a href="mailto:hello@personaudit.com" className="text-foreground underline underline-offset-4 hover:text-primary">hello@personaudit.com</a>{" "}
+            <a href="mailto:hello@personaudit.com" className={focusLink}>
+              hello@personaudit.com
+            </a>{" "}
             and we will prioritise a fix.
           </p>
         </Section>
       </div>
-
-      <div className="mt-10">
-        <Link href="/" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-          &larr; Back to home
-        </Link>
-      </div>
-    </main>
+    </MarketingShell>
   );
 }

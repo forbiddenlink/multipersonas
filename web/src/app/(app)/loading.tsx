@@ -8,9 +8,9 @@ export default function Loading() {
           <span aria-hidden="true" className="select-none text-[var(--primary)]">›&nbsp;</span>
           scanning…
         </p>
-        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-border">
+        <div className="mt-2 h-1 w-full overflow-hidden rounded-sm bg-border">
           <div
-            className="h-full w-2/5 rounded-full motion-safe:animate-pulse"
+            className="h-full w-2/5 rounded-sm motion-safe:animate-pulse"
             style={{ backgroundColor: "var(--primary)" }}
           />
         </div>

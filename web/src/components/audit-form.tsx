@@ -121,12 +121,15 @@ async function pollAuditJob(jobId: string): Promise<PollOutcome> {
 export function AuditForm({
   projectId,
   defaultUrl,
+  submitLabel,
 }: {
   /** When set, included on the queued job so the worker links the saved run back to
    * this project (see app/api/audit/route.ts, which verifies ownership server-side). */
   projectId?: string;
   /** Prefills the URL field — e.g. a project's own URL on its detail page. */
   defaultUrl?: string;
+  /** Button label. Defaults to marketing "Run free audit"; app pages pass "Run audit". */
+  submitLabel?: string;
 } = {}) {
   const router = useRouter();
   const [url, setUrl] = useState(defaultUrl ?? "");
@@ -344,7 +347,11 @@ export function AuditForm({
   }
 
   if (results) {
-    return <AuditResults results={results} onReset={handleReset} />;
+    return (
+      <div className="w-full max-w-2xl mx-auto space-y-6">
+        <AuditResults results={results} onReset={handleReset} compact />
+      </div>
+    );
   }
 
   const atCap = selected.size >= MAX_PERSONAS;
@@ -369,7 +376,7 @@ export function AuditForm({
           disabled={loading || !url}
           className="h-10 shrink-0 px-6 font-mono text-xs uppercase tracking-wide"
         >
-          {loading ? "Running…" : "Run free audit"}
+          {loading ? "Running…" : (submitLabel ?? "Run free audit")}
         </Button>
       </form>
 

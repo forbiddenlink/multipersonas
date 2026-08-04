@@ -262,7 +262,7 @@ function TerminalLine({ line }: { line: Line }) {
         </p>
       );
     case "say":
-      return <p className="break-words pl-4 italic text-white/45">{line.text}</p>;
+      return <p className="break-words pl-4 italic text-white/70">{line.text}</p>;
     case "result":
       return (
         <p className="mt-1 break-words border-t border-white/10 pt-2 font-medium text-white">

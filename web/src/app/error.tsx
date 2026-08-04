@@ -17,7 +17,7 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4">
+    <main id="main" className="flex min-h-dvh items-center justify-center px-4">
       <div className="w-full max-w-md rounded-md border border-border bg-card font-mono text-sm">
         <div className="border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
           <span aria-hidden="true" className="select-none text-[var(--primary)]">┌─ </span>
@@ -41,6 +41,6 @@ export default function Error({
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

@@ -30,7 +30,7 @@ export function Meter({
         </span>
       </div>
       <div
-        className="mt-1.5 h-1 overflow-hidden rounded-full bg-border"
+        className="mt-1.5 h-1 overflow-hidden rounded-sm bg-border"
         role="progressbar"
         aria-valuenow={value}
         aria-valuemin={0}
@@ -38,7 +38,7 @@ export function Meter({
         aria-label={`${label}: ${value} of ${total}`}
       >
         <div
-          className="h-full rounded-full transition-[width] duration-500 ease-out"
+          className="h-full rounded-sm transition-[width] duration-500 ease-out"
           style={{ width: `${Math.round(pct * 100)}%`, backgroundColor: barColor }}
         />
       </div>

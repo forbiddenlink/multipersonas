@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { MarketingShell } from "@/components/marketing-shell";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -15,9 +15,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+const focusLink =
+  "rounded-sm text-foreground underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
+
 export default function PrivacyPage() {
   return (
-    <main id="main" className="mx-auto max-w-2xl px-6 py-16">
+    <MarketingShell>
       <h1 className="text-2xl font-semibold tracking-tight font-heading">Privacy Policy</h1>
       <p className="mt-2 text-xs text-muted-foreground">Last updated: 2 August 2026.</p>
 
@@ -48,7 +51,7 @@ export default function PrivacyPage() {
           <p>We rely on these services to run Personaudit. Each processes only what its function requires:</p>
           <ul className="list-disc space-y-1 pl-5">
             <li><strong className="text-foreground">Supabase</strong> — authentication and database (your account and audit data).</li>
-            <li><strong className="text-foreground">Anthropic</strong> — the AI (Claude) that produces persona usability findings; the page context of an audited site is sent to their API. See <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-foreground underline underline-offset-4 hover:text-primary">Anthropic&apos;s privacy policy</a>.</li>
+            <li><strong className="text-foreground">Anthropic</strong> — the AI (Claude) that produces persona usability findings; the page context of an audited site is sent to their API. See <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener noreferrer" className={focusLink}>Anthropic&apos;s privacy policy</a>.</li>
             <li><strong className="text-foreground">Vercel</strong> — web hosting and delivery.</li>
             <li><strong className="text-foreground">Railway</strong> — the worker that runs browser audits.</li>
             <li><strong className="text-foreground">Sentry</strong> — error monitoring (active only when configured); we scrub personal data from error reports.</li>
@@ -76,16 +79,14 @@ export default function PrivacyPage() {
 
         <Section title="Contact">
           <p>
-            Privacy questions or data requests: <a href="mailto:hello@personaudit.com" className="text-foreground underline underline-offset-4 hover:text-primary">hello@personaudit.com</a>.
+            Privacy questions or data requests:{" "}
+            <a href="mailto:hello@personaudit.com" className={focusLink}>
+              hello@personaudit.com
+            </a>
+            .
           </p>
         </Section>
       </div>
-
-      <div className="mt-10">
-        <Link href="/" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-          &larr; Back to home
-        </Link>
-      </div>
-    </main>
+    </MarketingShell>
   );
 }
