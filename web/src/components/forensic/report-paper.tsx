@@ -17,7 +17,7 @@ export function ReportPaper({ className = "" }: { className?: string }) {
       </div>
 
       <div className="bg-[oklch(0.24_0.008_70)] p-4 sm:p-6">
-        <article className="rounded-sm bg-white px-5 py-6 text-[#111827] shadow-sm sm:px-8 sm:py-8">
+        <article className="report-paper-surface rounded-sm bg-white px-5 py-6 text-[#111827] shadow-sm sm:px-8 sm:py-8">
           <header className="border-b-2 border-[#111827] pb-4">
             <p className="font-mono text-[11px] uppercase tracking-wide text-[#4b5563]">
               Accessibility evidence report

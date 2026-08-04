@@ -143,6 +143,15 @@
   --severity-minor: oklch(0.70 0.12 250);
 }
 
+
+/* Paper report preview sits on a white sheet inside dark chrome — use light severity tokens. */
+.report-paper-surface {
+  --severity-critical: oklch(0.50 0.20 25);
+  --severity-serious: oklch(0.52 0.14 55);
+  --severity-moderate: oklch(0.52 0.12 85);
+  --severity-minor: oklch(0.48 0.14 250);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
