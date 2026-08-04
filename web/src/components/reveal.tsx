@@ -30,8 +30,8 @@ export function Reveal({
     if (typeof window !== "undefined") {
       const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
       if (mq.matches) {
-        setShown(true);
-        return;
+        const raf = requestAnimationFrame(() => setShown(true));
+        return () => cancelAnimationFrame(raf);
       }
     }
 
