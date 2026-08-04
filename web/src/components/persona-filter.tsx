@@ -44,7 +44,7 @@ export function PersonaFilter({
             aria-pressed={isActive}
             className={`rounded-sm border px-2.5 py-1 font-mono text-xs uppercase tracking-wide transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
               isActive
-                ? "border-primary bg-primary text-primary-foreground"
+                ? "border-[var(--primary)] text-foreground"
                 : "border-border text-muted-foreground hover:border-foreground/25 hover:text-foreground"
             }`}
           >

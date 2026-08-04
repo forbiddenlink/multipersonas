@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BoxDivider } from "@/components/forensic/divider";
+import { MarketingShell } from "@/components/marketing-shell";
 
 export const metadata: Metadata = {
   title: "10 Most Common Accessibility Issues",
@@ -72,7 +73,7 @@ const issues = [
 
 export default function CommonIssuesPage() {
   return (
-    <main id="main" className="mx-auto max-w-2xl px-6 py-16">
+    <MarketingShell>
       <p className="font-mono text-xs text-muted-foreground">
         <span className="rounded-sm border border-border px-2.5 py-1">reference · top 10</span>
       </p>
@@ -92,47 +93,37 @@ export default function CommonIssuesPage() {
         deterministically — the hard part is running it on the states behind your login.
       </p>
 
+      <h2 className="sr-only">Issues ranked by frequency</h2>
       <BoxDivider label="ranked by frequency" className="mt-10" />
 
-      <div className="mt-10 space-y-6">
+      <ol className="mt-10 divide-y divide-border border-y border-border">
         {issues.map((issue) => (
-          <div key={issue.rank} className="rounded-md border border-border p-5">
-            <div className="flex items-start gap-4">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-sm border border-border font-mono text-sm font-bold tabular-nums text-muted-foreground">
-                {issue.rank}
-              </span>
-              <div>
-                <h2 className="text-lg font-medium tracking-tight">{issue.title}</h2>
-                <p className="mt-3 font-serif text-sm leading-relaxed text-muted-foreground"><strong className="font-medium text-foreground">Impact:</strong> {issue.impact}</p>
-                <p className="mt-2 font-serif text-sm leading-relaxed text-muted-foreground"><strong className="font-medium text-foreground">Fix:</strong> {issue.fix}</p>
-              </div>
+          <li key={issue.rank} className="flex items-start gap-4 py-5">
+            <span className="flex size-8 shrink-0 items-center justify-center font-mono text-sm font-bold tabular-nums text-muted-foreground">
+              {issue.rank}
+            </span>
+            <div>
+              <h2 className="text-lg font-medium tracking-tight">{issue.title}</h2>
+              <p className="mt-3 font-serif text-sm leading-relaxed text-muted-foreground"><strong className="font-medium text-foreground">Impact:</strong> {issue.impact}</p>
+              <p className="mt-2 font-serif text-sm leading-relaxed text-muted-foreground"><strong className="font-medium text-foreground">Fix:</strong> {issue.fix}</p>
             </div>
-          </div>
+          </li>
         ))}
-      </div>
+      </ol>
 
-      <div className="mt-12 rounded-md border border-border bg-card p-6 text-center">
+      <div className="mt-12 border-t border-border pt-8">
         <h2 className="text-lg font-semibold tracking-tight">Find these automatically — even behind a login</h2>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           Personaudit runs axe-core at every state it reaches, including authenticated pages a
           single-URL scan never sees. No signup required.
         </p>
         <Link
-          href="/"
+          href="/#scan"
           className="mt-4 inline-block rounded-sm bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
           Run a free audit
         </Link>
       </div>
-
-      <div className="mt-8">
-        <Link
-          href="/"
-          className="rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-        >
-          &larr; Back to home
-        </Link>
-      </div>
-    </main>
+    </MarketingShell>
   );
 }

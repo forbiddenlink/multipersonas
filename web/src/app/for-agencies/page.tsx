@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { WaitlistForm } from "@/components/waitlist-form";
 import { Reveal } from "@/components/reveal";
 import { AuditTerminal } from "@/components/audit-terminal";
-import { Wordmark } from "@/components/forensic/wordmark";
+import { ConsolePreview } from "@/components/forensic/console-preview";
+import { ReportPaper } from "@/components/forensic/report-paper";
 
 export const metadata: Metadata = {
   title: "For agencies — one audit trail for every client site",
@@ -23,7 +25,7 @@ const SITES = [
 export default function ForAgenciesPage() {
   return (
     <div className="flex min-h-dvh flex-col overflow-x-hidden">
-      <SiteHeader />
+      <SiteHeader intent="waitlist" />
 
       <main id="main">
       {/* ── Hero: split ledger ─────────────────────────────────────────── */}
@@ -57,7 +59,7 @@ export default function ForAgenciesPage() {
               href="/"
               className="inline-flex items-center justify-center rounded-sm px-4 py-3 text-sm font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
-              Try the free scan first
+              Try a free audit first
             </Link>
           </div>
         </div>
@@ -82,28 +84,34 @@ export default function ForAgenciesPage() {
             they get named.
           </p>
 
-          <div className="mt-12 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-md border border-border bg-background p-5">
-              <p className="font-mono text-3xl tabular-nums">$1,000,000</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                FTC fine against an overlay vendor for claiming a script makes a site
-                compliant.<sup>1</sup>
-              </p>
+          <div className="mt-12 overflow-hidden rounded-md border border-border bg-background font-mono text-sm">
+            <div className="border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
+              <span className="select-none text-[var(--primary)]">┌─ </span>
+              evidence · public record
             </div>
-            <div className="rounded-md border border-border bg-background p-5">
-              <p className="font-mono text-3xl tabular-nums">Jun 28, 2025</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                The EU Accessibility Act is enforceable — not a future deadline, already in
-                force.<sup>2</sup>
-              </p>
-            </div>
-            <div className="rounded-md border border-border bg-background p-5">
-              <p className="font-mono text-3xl tabular-nums">5,500+</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Projected US federal ADA web-accessibility filings in 2026, most against
-                companies under $25M revenue.<sup>3</sup>
-              </p>
-            </div>
+            <ul className="divide-y divide-border">
+              <li className="flex flex-col gap-1 px-4 py-4 sm:flex-row sm:items-baseline sm:gap-6">
+                <p className="shrink-0 text-2xl tabular-nums text-foreground">$1,000,000</p>
+                <p className="text-sm leading-relaxed text-muted-foreground font-sans">
+                  FTC fine against an overlay vendor for claiming a script makes a site
+                  compliant.<sup>1</sup>
+                </p>
+              </li>
+              <li className="flex flex-col gap-1 px-4 py-4 sm:flex-row sm:items-baseline sm:gap-6">
+                <p className="shrink-0 text-2xl tabular-nums text-foreground">Jun 28, 2025</p>
+                <p className="text-sm leading-relaxed text-muted-foreground font-sans">
+                  The EU Accessibility Act is enforceable — not a future deadline, already in
+                  force.<sup>2</sup>
+                </p>
+              </li>
+              <li className="flex flex-col gap-1 px-4 py-4 sm:flex-row sm:items-baseline sm:gap-6">
+                <p className="shrink-0 text-2xl tabular-nums text-foreground">5,500+</p>
+                <p className="text-sm leading-relaxed text-muted-foreground font-sans">
+                  Projected US federal ADA web-accessibility filings in 2026, most against
+                  companies under $25M revenue.<sup>3</sup>
+                </p>
+              </li>
+            </ul>
           </div>
         </section>
       </Reveal>
@@ -201,7 +209,7 @@ export default function ForAgenciesPage() {
               >
                 <span className="flex items-center gap-3">
                   <span
-                    className="h-9 w-1 rounded-full"
+                    className="h-9 w-1 rounded-sm"
                     style={{ backgroundColor: s.ok ? "var(--severity-minor)" : "var(--severity-serious)" }}
                     aria-hidden="true"
                   />
@@ -219,6 +227,11 @@ export default function ForAgenciesPage() {
               </li>
             ))}
           </ul>
+
+          <div className="mt-10 grid gap-6 lg:grid-cols-2 lg:items-start">
+            <ConsolePreview />
+            <ReportPaper />
+          </div>
         </section>
       </Reveal>
 
@@ -248,17 +261,27 @@ mpersonas scan https://client.app --session ./session.json \\
   --baseline mpersonas-baseline.json --fail-on serious`}
           </pre>
           <p className="mt-4 text-sm text-muted-foreground">
-            Ready-to-use GitHub Action:{" "}
+            Full walkthrough:{" "}
+            <Link
+              href="/guides/ci-accessibility-gate"
+              className="rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+            >
+              CI accessibility gate
+            </Link>
+            . Ready-to-use GitHub Action:{" "}
             <a
               href="https://github.com/forbiddenlink/multipersonas/tree/main/examples/github-actions"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline underline-offset-4 hover:text-foreground"
+              className="rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               examples/github-actions
             </a>
             . Try a free public scan on the{" "}
-            <Link href="/" className="underline underline-offset-4 hover:text-foreground">
+            <Link
+              href="/#scan"
+              className="rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+            >
               homepage
             </Link>
             .
@@ -328,26 +351,18 @@ mpersonas scan https://client.app --session ./session.json \\
       </section>
       </main>
 
-      {/* ── Footnotes + footer ─────────────────────────────────────────── */}
-      <footer className="border-t border-border px-6 py-10">
-        <div className="mx-auto max-w-6xl">
+      <SiteFooter
+        footnotes={
           <ol className="space-y-1 text-xs text-muted-foreground">
             <li>1. FTC v. accessiBe, settlement announced January 2025 (ftc.gov).</li>
             <li>2. European Accessibility Act, enforcement from 28 June 2025.</li>
-            <li>3. Projection based on Q1 2025 federal ADA Title III web filings (accessible.org / UsableNet trend data). Figures are directional.</li>
+            <li>
+              3. Projection based on Q1 2025 federal ADA Title III web filings (accessible.org /
+              UsableNet trend data). Figures are directional.
+            </li>
           </ol>
-          <div className="mt-8 flex flex-col items-start justify-between gap-4 border-t border-border pt-6 sm:flex-row sm:items-center">
-            <Wordmark className="text-sm text-foreground" />
-            <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-              <Link href="/" className="transition-colors hover:text-foreground">Home</Link>
-              <Link href="/guides/wcag-checklist" className="transition-colors hover:text-foreground">WCAG Checklist</Link>
-              <Link href="/accessibility" className="transition-colors hover:text-foreground">Accessibility</Link>
-              <Link href="/privacy" className="transition-colors hover:text-foreground">Privacy</Link>
-              <Link href="/terms" className="transition-colors hover:text-foreground">Terms</Link>
-            </nav>
-          </div>
-        </div>
-      </footer>
+        }
+      />
     </div>
   );
 }

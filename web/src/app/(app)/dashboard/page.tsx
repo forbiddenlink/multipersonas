@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { AuditForm } from "@/components/audit-form";
 import { AuditHistory } from "@/components/audit-history";
 import { BoxDivider } from "@/components/forensic/divider";
+import { SeverityChip } from "@/components/forensic/severity-chip";
 import { createClient } from "@/lib/supabase/server";
 import { listAudits } from "@/lib/audits";
+import { SEVERITY_ORDER, type Severity } from "@/components/forensic/severity";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -11,15 +13,58 @@ export const metadata: Metadata = {
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const audits = await listAudits(supabase);
+  const audits = await listAudits(supabase, 20);
+
+  // Severity roll-up across recent runs — axe verdicts only (never persona opinion).
+  const runIds = audits.map((a) => a.id);
+  const counts: Record<Severity, number> = {
+    critical: 0,
+    serious: 0,
+    moderate: 0,
+    minor: 0,
+  };
+  if (runIds.length > 0) {
+    const { data: rows } = await supabase
+      .from("findings")
+      .select("severity")
+      .eq("source", "axe")
+      .in("test_run_id", runIds);
+    for (const row of rows ?? []) {
+      const sev = row.severity as Severity;
+      if (sev in counts) counts[sev] += 1;
+    }
+  }
+  const totalVerdicts = SEVERITY_ORDER.reduce((n, s) => n + counts[s], 0);
 
   return (
     <div className="max-w-2xl">
       <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-      <p className="mt-1 text-muted-foreground">
-        Scan a public URL for accessibility defects and persona task-success. To scan behind
-        your login, use the CLI — credentials stay on your machine.
+      <p className="mt-1 font-mono text-xs text-muted-foreground">
+        <span className="select-none text-[var(--primary)]">›&nbsp;</span>
+        scan · history · severity roll-up
       </p>
+
+      {totalVerdicts > 0 ? (
+        <>
+          <BoxDivider label="severity roll-up" className="my-5" />
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            {SEVERITY_ORDER.map((sev) =>
+              counts[sev] > 0 ? (
+                <span key={sev} className="inline-flex items-center gap-2">
+                  <SeverityChip severity={sev} />
+                  <span className="font-mono text-sm tabular-nums text-foreground">
+                    {counts[sev]}
+                  </span>
+                </span>
+              ) : null,
+            )}
+            <span className="font-mono text-xs text-muted-foreground">
+              {totalVerdicts} axe verdict{totalVerdicts === 1 ? "" : "s"} · {audits.length} run
+              {audits.length === 1 ? "" : "s"}
+            </span>
+          </div>
+        </>
+      ) : null}
 
       <BoxDivider label="new scan" className="my-5" />
 
@@ -27,7 +72,7 @@ export default async function DashboardPage() {
         <span className="select-none text-[var(--primary)]">›&nbsp;</span>
         point it at any public URL
       </p>
-      <AuditForm />
+      <AuditForm submitLabel="Run audit" />
 
       <BoxDivider label="recent runs" className="my-5" />
 

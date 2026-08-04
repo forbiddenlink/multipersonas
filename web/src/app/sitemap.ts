@@ -9,6 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/grade`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${base}/auth/login`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/auth/signup`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/guides/ci-accessibility-gate`, changeFrequency: "monthly", priority: 0.85 },
     { url: `${base}/guides/wcag-checklist`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/guides/common-accessibility-issues`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/guides/screen-reader-testing`, changeFrequency: "monthly", priority: 0.8 },

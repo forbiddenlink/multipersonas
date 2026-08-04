@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Wordmark } from "@/components/forensic/wordmark";
+
+const signOutClass =
+  "w-full rounded-sm px-3 py-2 text-left font-mono text-[13px] tracking-tight text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
 
 export function AppNav({
   userEmail,
@@ -18,6 +21,8 @@ export function AppNav({
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileNavRef = useRef<HTMLElement>(null);
 
   const navItems = [
     { label: "Dashboard", href: "/dashboard" },
@@ -34,14 +39,35 @@ export function AppNav({
     router.refresh();
   }
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setMobileOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    // Move focus into the open menu for keyboard users.
+    const first = mobileNavRef.current?.querySelector<HTMLElement>("a, button");
+    first?.focus();
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [mobileOpen]);
+
   return (
     <>
       {/* Mobile header */}
       <div className="flex items-center justify-between border-b border-border bg-card px-4 py-3 md:hidden">
-        <Wordmark className="text-lg text-foreground" />
+        <Link
+          href="/dashboard"
+          className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+        >
+          <Wordmark className="text-lg text-foreground" />
+        </Link>
         <div className="flex items-center gap-1">
           <ThemeToggle />
           <button
+            ref={menuButtonRef}
             onClick={() => setMobileOpen(!mobileOpen)}
             className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
@@ -55,7 +81,11 @@ export function AppNav({
 
       {/* Mobile nav dropdown */}
       {mobileOpen && (
-        <nav id="app-mobile-nav" className="flex flex-col gap-1 border-b border-border bg-card p-3 md:hidden">
+        <nav
+          ref={mobileNavRef}
+          id="app-mobile-nav"
+          className="flex flex-col gap-1 border-b border-border bg-card p-3 md:hidden"
+        >
           {navItems.map((item) => {
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + "/");
@@ -79,10 +109,7 @@ export function AppNav({
             <>
               <div className="mx-3 my-2 h-px bg-border" />
               <p className="truncate px-3 py-1 text-xs text-muted-foreground">{userEmail}</p>
-              <button
-                onClick={handleSignOut}
-                className="rounded-md px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
+              <button onClick={handleSignOut} className={signOutClass}>
                 Sign out
               </button>
             </>
@@ -94,7 +121,7 @@ export function AppNav({
       <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-card md:flex">
         <div className="px-6 py-5">
           <Link
-            href="/"
+            href="/dashboard"
             className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
           >
             <Wordmark className="text-lg text-foreground" />
@@ -128,10 +155,7 @@ export function AppNav({
         {userEmail && (
           <div className="border-t border-border p-3">
             <p className="truncate px-3 py-1 text-xs text-muted-foreground">{userEmail}</p>
-            <button
-              onClick={handleSignOut}
-              className="w-full rounded-md px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
+            <button onClick={handleSignOut} className={signOutClass}>
               Sign out
             </button>
           </div>

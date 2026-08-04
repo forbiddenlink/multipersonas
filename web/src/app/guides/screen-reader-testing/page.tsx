@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BoxDivider } from "@/components/forensic/divider";
+import { MarketingShell } from "@/components/marketing-shell";
 
 export const metadata: Metadata = {
   title: "Screen Reader Testing Guide",
@@ -44,7 +45,7 @@ const whatToTest = [
 
 export default function ScreenReaderTestingPage() {
   return (
-    <main id="main" className="mx-auto max-w-2xl px-6 py-16">
+    <MarketingShell>
       <p className="font-mono text-xs text-muted-foreground">
         <span className="rounded-sm border border-border px-2.5 py-1">guide · manual testing</span>
       </p>
@@ -55,12 +56,13 @@ export default function ScreenReaderTestingPage() {
         to do it, and where automated tooling can clear the deterministic issues first.
       </p>
 
+      <h2 className="sr-only">Screen readers to use</h2>
       <BoxDivider label="screen readers to use" className="mt-10" />
 
-      <div className="mt-6 grid gap-4">
+      <ul className="mt-6 divide-y divide-border border-y border-border">
         {screenReaders.map((sr) => (
-          <div key={sr.name} className="rounded-md border border-border p-4">
-            <div className="flex items-center gap-3">
+          <li key={sr.name} className="py-4">
+            <div className="flex flex-wrap items-center gap-3">
               <h2 className="font-medium tracking-tight">{sr.name}</h2>
               <span className="rounded-sm border border-border px-2 py-0.5 font-mono text-xs text-muted-foreground">{sr.platform}</span>
               {sr.free && (
@@ -69,22 +71,23 @@ export default function ScreenReaderTestingPage() {
             </div>
             <p className="mt-2 font-serif text-sm leading-relaxed text-muted-foreground">{sr.setup}</p>
             <p className="mt-1 font-serif text-sm leading-relaxed text-muted-foreground"><strong className="font-medium text-foreground">Key commands:</strong> {sr.keyCommands}</p>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
 
+      <h2 className="sr-only">What to check</h2>
       <BoxDivider label="what to check" className="mt-10" />
 
-      <div className="mt-6 space-y-3">
+      <ul className="mt-6 divide-y divide-border border-y border-border">
         {whatToTest.map((item) => (
-          <div key={item.check} className="rounded-md border border-border p-4">
+          <li key={item.check} className="py-4">
             <h3 className="font-medium tracking-tight">{item.check}</h3>
             <p className="mt-1 font-serif text-sm leading-relaxed text-muted-foreground">{item.why}</p>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
 
-      <div className="mt-12 rounded-md border border-border bg-card p-6 text-center">
+      <div className="mt-12 border-t border-border pt-8">
         <h2 className="text-lg font-semibold tracking-tight">Clear the automatable issues first</h2>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           Personaudit does <strong>not</strong> simulate a screen reader user. It drives your
@@ -93,21 +96,12 @@ export default function ScreenReaderTestingPage() {
           pass. It complements that pass; it never replaces it.
         </p>
         <Link
-          href="/"
+          href="/#scan"
           className="mt-4 inline-block rounded-sm bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
           Run a free audit
         </Link>
       </div>
-
-      <div className="mt-8">
-        <Link
-          href="/"
-          className="rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-        >
-          &larr; Back to home
-        </Link>
-      </div>
-    </main>
+    </MarketingShell>
   );
 }

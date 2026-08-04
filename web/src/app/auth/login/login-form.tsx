@@ -103,8 +103,10 @@ export function LoginForm() {
         <CardHeaderBar route="sign-in" />
         <div className="px-5 py-6">
           <div className="text-center">
-            <h1 className="text-xl font-semibold tracking-tight text-foreground">Sign in to Personaudit</h1>
-            <p className="mt-2 text-sm text-muted-foreground">Enter your credentials to continue</p>
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">Sign in</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Open your audit history and resume from where you left off.
+            </p>
           </div>
 
           <div className="mt-6 flex flex-col gap-4">

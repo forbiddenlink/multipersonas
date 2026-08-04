@@ -62,46 +62,47 @@
  * themes, in sRGB gamut. Light = "paper lab" variant; dark (below) is default.
  * ==========================================================================*/
 :root {
-  --background: oklch(0.99 0.003 70);
-  --foreground: oklch(0.18 0.006 70);
-  --card: oklch(0.985 0.003 70);
-  --card-foreground: oklch(0.18 0.006 70);
-  --popover: oklch(0.985 0.003 70);
-  --popover-foreground: oklch(0.18 0.006 70);
+  /* Paper lab — warmer off-white, slightly stronger ink, quieter borders than dark. */
+  --background: oklch(0.985 0.006 70);
+  --foreground: oklch(0.20 0.012 70);
+  --card: oklch(0.995 0.004 70);
+  --card-foreground: oklch(0.20 0.012 70);
+  --popover: oklch(0.995 0.004 70);
+  --popover-foreground: oklch(0.20 0.012 70);
   /* Teal (hue 195), chroma-clamped to stay in sRGB gamut; AA against white text. */
-  --primary: oklch(0.52 0.087 195);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.96 0.004 70);
-  --secondary-foreground: oklch(0.24 0.006 70);
-  --muted: oklch(0.96 0.004 70);
-  --muted-foreground: oklch(0.50 0.01 70);
-  --accent: oklch(0.95 0.012 195);
-  --accent-foreground: oklch(0.24 0.006 70);
-  --destructive: oklch(0.52 0.20 25);
-  --border: oklch(0.90 0.004 70);
-  --input: oklch(0.60 0.01 70);
-  --ring: oklch(0.52 0.087 195);
+  --primary: oklch(0.48 0.09 195);
+  --primary-foreground: oklch(0.99 0.002 70);
+  --secondary: oklch(0.955 0.008 70);
+  --secondary-foreground: oklch(0.26 0.012 70);
+  --muted: oklch(0.955 0.008 70);
+  --muted-foreground: oklch(0.48 0.014 70);
+  --accent: oklch(0.94 0.016 195);
+  --accent-foreground: oklch(0.26 0.012 70);
+  --destructive: oklch(0.50 0.20 25);
+  --border: oklch(0.88 0.008 70);
+  --input: oklch(0.55 0.014 70);
+  --ring: oklch(0.48 0.09 195);
   /* Chart ramp = teal + the four severities (cohesive with the evidence vocabulary). */
-  --chart-1: oklch(0.52 0.087 195);
+  --chart-1: oklch(0.48 0.09 195);
   --chart-2: oklch(0.55 0.134 55);
   --chart-3: oklch(0.56 0.113 85);
   --chart-4: oklch(0.50 0.14 250);
-  --chart-5: oklch(0.52 0.20 25);
+  --chart-5: oklch(0.50 0.20 25);
   --radius: 0.375rem;
-  --sidebar: oklch(0.97 0.003 70);
-  --sidebar-foreground: oklch(0.18 0.006 70);
-  --sidebar-primary: oklch(0.52 0.087 195);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.95 0.012 195);
-  --sidebar-accent-foreground: oklch(0.24 0.006 70);
-  --sidebar-border: oklch(0.90 0.004 70);
-  --sidebar-ring: oklch(0.52 0.087 195);
+  --sidebar: oklch(0.97 0.006 70);
+  --sidebar-foreground: oklch(0.20 0.012 70);
+  --sidebar-primary: oklch(0.48 0.09 195);
+  --sidebar-primary-foreground: oklch(0.99 0.002 70);
+  --sidebar-accent: oklch(0.94 0.016 195);
+  --sidebar-accent-foreground: oklch(0.26 0.012 70);
+  --sidebar-border: oklch(0.88 0.008 70);
+  --sidebar-ring: oklch(0.48 0.09 195);
   /* Severity — light "paper lab" variant, AA as text. Minor pulled to hue 250 so
      it never collides with active-teal (195). */
-  --severity-critical: oklch(0.52 0.20 25);
-  --severity-serious: oklch(0.55 0.134 55);
-  --severity-moderate: oklch(0.56 0.113 85);
-  --severity-minor: oklch(0.50 0.14 250);
+  --severity-critical: oklch(0.50 0.20 25);
+  --severity-serious: oklch(0.52 0.14 55);
+  --severity-moderate: oklch(0.52 0.12 85);
+  --severity-minor: oklch(0.48 0.14 250);
 }
 
 .dark {
@@ -162,10 +163,26 @@
   }
 }
 
-/* Orchestrated hero entrance — one staggered page-load reveal (a single high-impact
- * moment beats scattered micro-interactions). Transform+opacity only, exponential
- * ease-out. CSS-only, so it runs without JS and never hides content; the global
- * reduced-motion block above collapses it to an instant, fully-visible final state. */
+/* Section rhythm — shared marketing/app vertical cadence */
+.section-y {
+  padding-block: clamp(4rem, 8vw, 7rem);
+}
+.section-y-sm {
+  padding-block: clamp(3rem, 5vw, 4.5rem);
+}
+.label-mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+/* Theme toggle / state change — 150ms color only (motion budget). */
+.theme-transition {
+  transition: background-color 150ms ease-out, color 150ms ease-out, border-color 150ms ease-out;
+}
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: none; }

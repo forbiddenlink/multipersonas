@@ -185,7 +185,9 @@ export function SignupForm() {
         <div className="px-5 py-6">
           <div className="text-center">
             <h1 className="text-xl font-semibold tracking-tight text-foreground">Create your account</h1>
-            <p className="mt-2 text-sm text-muted-foreground">Get started with Personaudit</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Save every audit you run — axe verdicts and persona task-success, kept in one place.
+            </p>
           </div>
 
           <div className="mt-6 flex flex-col gap-4">

@@ -1,13 +1,16 @@
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { AuditForm } from "@/components/audit-form";
 import { AuditTerminal } from "@/components/audit-terminal";
 import { ReportExcerpt } from "@/components/forensic/report-excerpt";
+import { ReportPaper } from "@/components/forensic/report-paper";
+import { ConsolePreview } from "@/components/forensic/console-preview";
+import { ReplayStrip } from "@/components/forensic/replay-strip";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { Meter } from "@/components/forensic/meter";
 import { FocusDemo } from "@/components/forensic/focus-demo";
 import { ContrastBadge } from "@/components/forensic/contrast-badge";
 import { BoxDivider } from "@/components/forensic/divider";
-import { Wordmark } from "@/components/forensic/wordmark";
 import Link from "next/link";
 
 // How-it-works as a run-log — real tool steps, not numbered marketing circles.
@@ -29,10 +32,8 @@ export default function Home() {
       <section className="grain relative overflow-hidden border-b border-border">
         <div className="relative z-10 mx-auto grid max-w-6xl gap-12 px-6 py-16 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:py-24">
           <div>
-            <p className="fade-up flex flex-wrap gap-2 font-mono text-xs text-muted-foreground" style={{ animationDelay: "0.05s" }}>
-              <span className="rounded-sm border border-border px-2.5 py-1">axe-core · deterministic</span>
-              <span className="rounded-sm border border-border px-2.5 py-1">crawls behind login</span>
-              <span className="rounded-sm border border-border px-2.5 py-1">gate CI on new defects</span>
+            <p className="fade-up font-mono text-xs uppercase tracking-wide text-muted-foreground" style={{ animationDelay: "0.05s" }}>
+              axe-core · behind login · CI gate
             </p>
             {/* No entrance animation on the headline: it's the LCP element, so it must
                 paint immediately rather than fade in from opacity:0. */}
@@ -50,7 +51,7 @@ export default function Home() {
                 href="#scan"
                 className="rounded-sm bg-primary px-5 py-2.5 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
               >
-                Run a free scan
+                Run a free audit
               </Link>
               <a
                 href="#example"
@@ -72,7 +73,10 @@ export default function Home() {
       </section>
 
       {/* Dogfood band — the product demonstrates the exact things it audits. */}
-      <section className="mx-auto w-full max-w-6xl px-6 py-10">
+      <section className="mx-auto w-full max-w-6xl px-6 py-10" aria-labelledby="dogfood-heading">
+        <h2 id="dogfood-heading" className="sr-only">
+          This site, audited by itself
+        </h2>
         <BoxDivider label="this site, audited by itself" className="mb-6" />
         <div className="grid gap-6 sm:grid-cols-[1.4fr_1fr] sm:items-center">
           <FocusDemo />
@@ -94,8 +98,8 @@ export default function Home() {
       </section>
 
       {/* How it works — a run-log. */}
-      <section className="mx-auto w-full max-w-3xl px-6 py-20">
-        <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">pipeline</p>
+      <section className="mx-auto w-full max-w-3xl px-6 section-y">
+        <p className="label-mono">pipeline</p>
         <h2 className="mt-3 text-2xl font-semibold tracking-tight">How it works</h2>
         <div className="mt-6 overflow-hidden rounded-md border border-border bg-card font-mono text-sm">
           <div className="border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
@@ -116,12 +120,12 @@ export default function Home() {
       </section>
 
       {/* Two outputs, never blurred — the honesty wall. */}
-      <section className="border-y border-border bg-card px-6 py-20">
+      <section className="border-y border-border bg-card px-6 section-y">
         <div className="mx-auto w-full max-w-3xl">
-        <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">honesty wall</p>
+        <p className="label-mono">honesty wall</p>
         <h2 className="mt-3 text-2xl font-semibold tracking-tight">Two outputs, never blurred</h2>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-md border border-border bg-background p-5">
+        <div className="mt-6 grid gap-6 sm:grid-cols-2 sm:gap-10">
+          <div>
             <div className="flex items-center gap-2">
               <SeverityChip severity="critical" />
               <span className="font-medium">Accessibility violations</span>
@@ -131,7 +135,7 @@ export default function Home() {
               citable, per state. The only output that touches compliance.
             </p>
           </div>
-          <div className="rounded-md border border-border bg-background p-5">
+          <div>
             <p className="font-medium">Usability &amp; task success</p>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
               From UX personas — did a real-shaped user complete the flow? Opinion and outcome,
@@ -155,44 +159,51 @@ export default function Home() {
         </div>
       </section>
 
-      {/* What you get — the real report excerpt + the task-success layer. */}
-      <section id="example" className="mx-auto w-full max-w-6xl px-6 py-20">
-        <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">output</p>
-        <h2 className="mt-3 text-2xl font-semibold tracking-tight">What you get</h2>
+      {/* What you get — instrument gallery: report paper, replay, console. */}
+      <section id="example" className="mx-auto w-full max-w-6xl px-6 section-y">
+        <p className="label-mono">output</p>
+        <h2 className="mt-3 text-2xl font-semibold tracking-tight">The instrument, not a mockup.</h2>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-          Deterministic axe-core violations, cited to WCAG and grouped by the states they appeared
-          in — plus how many personas reached their goal. Sample shown; real reports vary.
+          Deterministic axe-core violations on paper, a scrubbable persona walk with verdicts at
+          each state, and the signed-in console language — the same primitives the product uses.
         </p>
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-start">
-          <ReportExcerpt />
-          <div className="rounded-md border border-border bg-card p-6">
-            <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
-              persona task-success
-            </p>
-            <Meter
-              className="mt-4"
-              value={2}
-              total={3}
-              label="reached their goal"
-              unit="personas"
-              tone="serious"
-            />
-            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              One persona was blocked at checkout by the critical violation above — a task a page-level
-              crawler can&apos;t measure at all.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <SeverityChip severity="critical" ruleId="4.1.2" />
-              <SeverityChip severity="serious" ruleId="1.4.3" />
+
+        <div className="mt-10 grid gap-6 lg:grid-cols-2 lg:items-start">
+          <ReportPaper />
+          <ReplayStrip />
+        </div>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
+          <ConsolePreview />
+          <div className="space-y-4">
+            <ReportExcerpt />
+            <div className="rounded-md border border-border bg-card p-5">
+              <p className="label-mono">persona task-success</p>
+              <Meter
+                className="mt-4"
+                value={2}
+                total={3}
+                label="reached their goal"
+                unit="personas"
+                tone="serious"
+              />
+              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                One persona was blocked at checkout by the critical violation — a task a page-level
+                crawler can&apos;t measure.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <SeverityChip severity="critical" ruleId="4.1.2" />
+                <SeverityChip severity="serious" ruleId="1.4.3" />
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* CI gate — already built in the CLI; surface it as a selling point. */}
-      <section className="border-y border-border bg-card px-6 py-16">
+      <section className="border-y border-border bg-card px-6 section-y-sm">
         <div className="mx-auto max-w-3xl">
-          <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
+          <p className="label-mono">
             CI gate
           </p>
           <h2 className="mt-3 text-2xl font-semibold tracking-tight">
@@ -213,12 +224,19 @@ mpersonas scan https://app.example.com --session ./session.json \\
   --baseline mpersonas-baseline.json --fail-on serious`}
           </pre>
           <p className="mt-4 text-sm text-muted-foreground">
-            Ready-to-use GitHub Action:{" "}
+            Full walkthrough:{" "}
+            <Link
+              href="/guides/ci-accessibility-gate"
+              className="rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+            >
+              CI accessibility gate
+            </Link>
+            . Ready-to-use GitHub Action:{" "}
             <a
               href="https://github.com/forbiddenlink/multipersonas/tree/main/examples/github-actions"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline underline-offset-4 hover:text-foreground"
+              className="rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               examples/github-actions
             </a>
@@ -227,76 +245,44 @@ mpersonas scan https://app.example.com --session ./session.json \\
         </div>
       </section>
 
-      {/* Bottom CTA */}
-      <section className="border-t border-border px-6 py-20">
+      {/* Bottom CTA — account save only; primary scan CTA lives at #scan / sticky. */}
+      <section className="border-t border-border px-6 section-y">
         <div className="mx-auto flex max-w-3xl flex-col items-start gap-4">
           <h2 className="text-2xl font-semibold tracking-tight">Keep every audit you run.</h2>
           <p className="max-w-md text-muted-foreground">
-            Create an account and every scan you run from here on is saved to your dashboard, so you
-            can track which defects you&apos;ve cleared over time.
+            Create an account and every scan from here on is saved — axe verdicts and persona
+            task-success, so you can see what you&apos;ve cleared over time.
           </p>
           <div className="mt-2 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/auth/signup"
-              className="rounded-sm bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              className="rounded-sm border border-border px-5 py-2.5 text-sm font-medium text-foreground transition-colors duration-150 hover:border-foreground/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
-              Start your free audit
+              Create an account
             </Link>
             <a
               href="#example"
-              className="rounded-sm border border-border px-5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:border-foreground/25 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              className="rounded-sm px-5 py-2.5 text-sm font-medium text-muted-foreground underline-offset-4 transition-colors duration-150 hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
-              See example results
+              See the instrument
             </a>
           </div>
         </div>
       </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border px-6 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 sm:flex-row sm:justify-between">
-          <div className="text-center sm:text-left">
-            <Wordmark className="text-sm text-foreground" />
-            <p className="mt-1 text-xs text-muted-foreground">
-              Built by{" "}
-              <a
-                href="https://github.com/forbiddenlink"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="py-1 transition-colors hover:text-foreground"
-              >
-                Elizabeth Stein
-              </a>
-            </p>
-          </div>
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-            <Link href="/for-agencies" className="py-2 transition-colors hover:text-foreground">For agencies</Link>
-            <Link href="/guides/wcag-checklist" className="py-2 transition-colors hover:text-foreground">WCAG Checklist</Link>
-            <Link href="/guides/common-accessibility-issues" className="py-2 transition-colors hover:text-foreground">Common Issues</Link>
-            <Link href="/guides/screen-reader-testing" className="py-2 transition-colors hover:text-foreground">Screen Reader Testing</Link>
-            <a href="mailto:hello@personaudit.com" className="py-2 transition-colors hover:text-foreground">Contact</a>
-            <Link href="/accessibility" className="py-2 transition-colors hover:text-foreground">Accessibility</Link>
-            <Link href="/privacy" className="py-2 transition-colors hover:text-foreground">Privacy</Link>
-            <Link href="/terms" className="py-2 transition-colors hover:text-foreground">Terms</Link>
-          </div>
-        </div>
-        <p className="mx-auto mt-4 max-w-6xl text-center text-xs text-muted-foreground">
-          Persona usability notes are generated by AI and should be verified manually. Accessibility
-          violations come from axe-core and are deterministic.
-        </p>
-      </footer>
+      <SiteFooter />
 
       {/* Spacer for sticky CTA on mobile so footer isn't obscured */}
-      <div className="h-16 sm:hidden" aria-hidden="true" />
+      <div className="h-20 sm:hidden" aria-hidden="true" />
 
       {/* Sticky mobile CTA */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm sm:hidden">
+      <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden">
         <Link
           href="#scan"
-          className="block w-full rounded-sm bg-primary py-3 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          className="block w-full rounded-sm bg-primary py-3 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
-          Run a free scan
+          Run a free audit
         </Link>
       </div>
     </div>

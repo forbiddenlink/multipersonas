@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { MarketingShell } from "@/components/marketing-shell";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -15,9 +16,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+const focusLink =
+  "rounded-sm text-foreground underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
+
 export default function TermsPage() {
   return (
-    <main id="main" className="mx-auto max-w-2xl px-6 py-16">
+    <MarketingShell>
       <h1 className="text-2xl font-semibold tracking-tight font-heading">Terms of Service</h1>
       <p className="mt-2 text-xs text-muted-foreground">Last updated: 2 August 2026.</p>
 
@@ -72,7 +76,7 @@ export default function TermsPage() {
         <Section title="Accessibility">
           <p>
             We hold our own site to the standard we sell. See our{" "}
-            <Link href="/accessibility" className="text-foreground underline underline-offset-4 hover:text-primary">
+            <Link href="/accessibility" className={focusLink}>
               accessibility statement
             </Link>
             .
@@ -89,16 +93,14 @@ export default function TermsPage() {
 
         <Section title="Contact">
           <p>
-            Questions about these terms: <a href="mailto:hello@personaudit.com" className="text-foreground underline underline-offset-4 hover:text-primary">hello@personaudit.com</a>.
+            Questions about these terms:{" "}
+            <a href="mailto:hello@personaudit.com" className={focusLink}>
+              hello@personaudit.com
+            </a>
+            .
           </p>
         </Section>
       </div>
-
-      <div className="mt-10">
-        <Link href="/" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-          &larr; Back to home
-        </Link>
-      </div>
-    </main>
+    </MarketingShell>
   );
 }

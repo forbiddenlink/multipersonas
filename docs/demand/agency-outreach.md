@@ -120,11 +120,13 @@ Do **not** build billing until the middle row or better.
 - [ ] Check `/waitlist` daily for 7 days
 - [ ] Note themes from waitlist `note` field into product backlog
 
-### What shipped for the demand test (2026-07-29)
+### What shipped for the demand test (2026-07-29 → 2026-08-03)
 
 - Landing: https://personaudit.com/for-agencies (CI gate section + Projects regression pitch)
+- CI docs: https://personaudit.com/guides/ci-accessibility-gate
 - Owner signal: `/waitlist` (requires `ADMIN_EMAILS`)
 - Product proof: Projects with new/cleared vs last run; VPAT-lite report export; CLI CI gate
+- Marketing instrument gallery grounded in SauceDemo probe (`experiments/net-new-violations`)
 - Templates: LinkedIn DM + email above
 
 **You** still own the 10 outreaches — agents cannot send personal DMs.

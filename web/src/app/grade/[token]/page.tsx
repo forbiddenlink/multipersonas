@@ -51,7 +51,7 @@ export default async function GradeResultPage({
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <SiteHeader />
+      <SiteHeader intent="grade" />
 
       <main id="main" className="flex-1">
         <div className="mx-auto w-full max-w-3xl px-6 py-16">

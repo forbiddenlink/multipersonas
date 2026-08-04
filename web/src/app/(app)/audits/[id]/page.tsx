@@ -7,6 +7,7 @@ import { PERSONA_DATA } from "@/lib/personas";
 import { formatLocation } from "@/lib/format-location";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { Meter } from "@/components/forensic/meter";
+import { EmptyPrompt } from "@/components/forensic/empty-prompt";
 import { SEVERITY_ORDER, type Severity } from "@/components/forensic/severity";
 import { loadJourney } from "@/lib/journey";
 import { ReplayTheater, type ReplayFinding } from "@/components/replay-theater";
@@ -104,26 +105,59 @@ export default async function AuditDetailPage({
   return (
     <div className="w-full max-w-5xl mx-auto space-y-10">
       {/* Header */}
-      <div className="flex flex-col items-center gap-4 text-center">
-        <h1 className="text-sm font-medium text-muted-foreground">
-          Results for{" "}
-          <span className="font-mono text-foreground">{run.url}</span>
-        </h1>
-        <p className="font-mono text-xs text-muted-foreground">
-          {new Date(run.created_at).toLocaleDateString(undefined, {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          })}
-        </p>
-        {axeFindings.length > 0 && (
-          <Link
-            href={`/audits/${run.id}/report`}
-            className={buttonVariants({ variant: "outline", size: "sm" })}
-          >
-            Export accessibility report
-          </Link>
-        )}
+      <div className="space-y-4">
+        <nav aria-label="Breadcrumb" className="font-mono text-xs text-muted-foreground">
+          <ol className="flex flex-wrap items-center gap-1.5">
+            <li>
+              <Link
+                href="/dashboard"
+                className="rounded-sm transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              >
+                dashboard
+              </Link>
+            </li>
+            <li aria-hidden="true" className="select-none">
+              /
+            </li>
+            <li>
+              <Link
+                href="/projects"
+                className="rounded-sm transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              >
+                projects
+              </Link>
+            </li>
+            <li aria-hidden="true" className="select-none">
+              /
+            </li>
+            <li className="text-foreground" aria-current="page">
+              audit
+            </li>
+          </ol>
+        </nav>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+              <span className="font-mono text-base font-normal text-muted-foreground">Results for </span>
+              <span className="font-mono break-all">{run.url}</span>
+            </h1>
+            <p className="mt-1 font-mono text-xs text-muted-foreground">
+              {new Date(run.created_at).toLocaleDateString(undefined, {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            </p>
+          </div>
+          {axeFindings.length > 0 && (
+            <Link
+              href={`/audits/${run.id}/report`}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              Export accessibility report
+            </Link>
+          )}
+        </div>
         <Meter
           className="w-full max-w-xs"
           value={achieved}
@@ -247,9 +281,10 @@ export default async function AuditDetailPage({
       )}
 
       {findings.length === 0 && (
-        <p className="text-center text-sm text-muted-foreground">
-          No findings recorded for this audit.
-        </p>
+        <EmptyPrompt
+          prompt="no findings recorded for this audit"
+          hint="Either the crawl found a clean pass, or this run predates finding capture."
+        />
       )}
     </div>
   );

@@ -8,6 +8,7 @@ import {
 import { PersonaCard } from "@/components/persona-card";
 import { PersonaFilter } from "@/components/persona-filter";
 import { BoxDivider } from "@/components/forensic/divider";
+import { EmptyPrompt } from "@/components/forensic/empty-prompt";
 
 export const metadata: Metadata = {
   title: "Personas",
@@ -38,14 +39,14 @@ export default async function PersonasPage({
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Personas</h1>
           <p className="mt-1 text-muted-foreground">
-            Explore the AI personas that test your site
+            Navigators that browse toward a goal — task-success, not compliance verdicts
           </p>
         </div>
         <Link
           href="/dashboard"
-          className="rounded-sm bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+          className="rounded-sm border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-foreground/25 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
-          Run an audit &rarr;
+          Run an audit →
         </Link>
       </div>
 
@@ -55,16 +56,26 @@ export default async function PersonasPage({
         <PersonaFilter categories={categoryKeys} />
       </Suspense>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredPersonas.map((persona) => (
-          <PersonaCard key={persona.id} persona={persona} />
-        ))}
-      </div>
-
-      {filteredPersonas.length === 0 && (
-        <p className="mt-8 text-center text-muted-foreground">
-          No personas found in this category.
-        </p>
+      {filteredPersonas.length === 0 ? (
+        <EmptyPrompt
+          className="mt-8"
+          prompt="no personas in this category"
+          hint="Try another filter, or clear it to see the full library."
+          action={
+            <Link
+              href="/personas"
+              className="rounded-sm border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-foreground/25 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+            >
+              Show all
+            </Link>
+          }
+        />
+      ) : (
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredPersonas.map((persona) => (
+            <PersonaCard key={persona.id} persona={persona} />
+          ))}
+        </div>
       )}
     </div>
   );

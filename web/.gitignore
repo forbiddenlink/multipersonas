@@ -49,3 +49,6 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /tests/e2e/.auth/
+
+# Local visual QA screenshots
+.qa-shots/
