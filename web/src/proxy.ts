@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -59,9 +60,13 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isAuthRoute && user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    // Already signed in — honor ?returnTo= / ?next= instead of always dumping to dashboard
+    // (deep links and OAuth bounces that land on login while authed).
+    const dest = safeRedirectPath(
+      request.nextUrl.searchParams.get("next") ??
+        request.nextUrl.searchParams.get("returnTo"),
+    );
+    return NextResponse.redirect(new URL(dest, request.url));
   }
 
   return supabaseResponse;

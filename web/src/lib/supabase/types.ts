@@ -523,6 +523,10 @@ export type Database = {
         Returns: number
       }
       release_model_calls: { Args: { p_calls: number }; Returns: undefined }
+      release_model_calls_scoped: {
+        Args: { p_calls: number; p_caller: string }
+        Returns: undefined
+      }
       reserve_model_calls: {
         Args: { p_calls: number; p_cap: number }
         Returns: boolean

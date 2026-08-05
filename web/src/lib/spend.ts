@@ -42,16 +42,33 @@ export async function reserveSpend(personaCount: number, callerKey: string): Pro
 }
 
 /**
- * Refund a prior reservation. Call this when a run never happens after a successful
- * reserveSpend — e.g. enqueue fails. Best-effort: a failure to release must not fail
- * the request (the daily counter self-heals at UTC midnight regardless), so errors are
- * logged, not thrown. No-op when enforcement isn't configured.
+ * Refund a prior reservation when a run never happens after reserveSpend — e.g. enqueue
+ * fails. When `callerKey` is provided, also refunds the per-caller sub-cap (fairness
+ * ceiling must not charge for a job that never started). Worker/reaper failures keep
+ * using the global-only RPC via releaseSpend(personaCount) with no caller.
+ *
+ * Best-effort: a failure to release must not fail the request (counters self-heal at
+ * UTC midnight). No-op when enforcement isn't configured.
  */
-export async function releaseSpend(personaCount: number): Promise<void> {
+export async function releaseSpend(personaCount: number, callerKey?: string): Promise<void> {
   const admin = createAdminClient();
   if (!admin) return;
 
   const planned = estimatedCallsFor(personaCount);
+  if (callerKey) {
+    const { error } = await admin.rpc("release_model_calls_scoped", {
+      p_calls: planned,
+      p_caller: callerKey,
+    });
+    if (error) {
+      console.error(
+        "[spend] scoped release RPC failed (reservation will expire at UTC midnight):",
+        error.message,
+      );
+    }
+    return;
+  }
+
   const { error } = await admin.rpc("release_model_calls", { p_calls: planned });
   if (error) {
     console.error("[spend] release RPC failed (reservation will expire at UTC midnight):", error.message);

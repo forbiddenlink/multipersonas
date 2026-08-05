@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { frustrationBand } from "@/lib/frustration";
 import { formatLocation } from "@/lib/format-location";
 import { SeverityChip } from "@/components/forensic/severity-chip";
@@ -154,6 +154,9 @@ export function ReplayTheater({
     });
   }, []);
 
+  const baseId = useId();
+  const panelId = `${baseId}-panel`;
+
   return (
     <section
       aria-label="Persona replay"
@@ -170,12 +173,39 @@ export function ReplayTheater({
             {journeys.map((j, i) => {
               const m = personaMeta[j.personaId] ?? { name: j.personaId };
               const active = i === pIdx;
+              const tabId = `${baseId}-tab-${j.personaId}`;
               return (
                 <button
                   key={j.personaId}
+                  id={tabId}
+                  type="button"
                   role="tab"
                   aria-selected={active}
+                  aria-controls={panelId}
+                  tabIndex={active ? 0 : -1}
                   onClick={() => selectPersona(i)}
+                  onKeyDown={(e) => {
+                    if (
+                      e.key !== "ArrowRight" &&
+                      e.key !== "ArrowLeft" &&
+                      e.key !== "Home" &&
+                      e.key !== "End"
+                    ) {
+                      return;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const last = journeys.length - 1;
+                    let next = i;
+                    if (e.key === "ArrowRight") next = i === last ? 0 : i + 1;
+                    if (e.key === "ArrowLeft") next = i === 0 ? last : i - 1;
+                    if (e.key === "Home") next = 0;
+                    if (e.key === "End") next = last;
+                    selectPersona(next);
+                    queueMicrotask(() => {
+                      document.getElementById(`${baseId}-tab-${journeys[next]!.personaId}`)?.focus();
+                    });
+                  }}
                   className={`rounded-sm border px-2 py-0.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] ${
                     active
                       ? "border-[var(--primary)] text-foreground"
@@ -207,7 +237,7 @@ export function ReplayTheater({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-0 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+      <div id={panelId} role="tabpanel" className="grid grid-cols-1 gap-0 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         {/* Frame viewport */}
         <div className="flex flex-col border-b border-border md:border-b-0 md:border-r">
           <div className="flex items-center justify-between gap-2 px-4 py-2 font-mono text-[11px] text-muted-foreground">
