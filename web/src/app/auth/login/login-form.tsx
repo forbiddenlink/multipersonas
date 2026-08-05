@@ -10,13 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Wordmark } from "@/components/forensic/wordmark";
 import { Eye, EyeOff } from "lucide-react";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 
 // Callers redirect here with either ?next= (server guards: settings, projects actions)
-// or ?returnTo= (middleware). Read both, and only honor a same-origin path so a crafted
-// ?returnTo=//evil.com can't turn login into an open redirect.
+// or ?returnTo= (middleware). Read both; safeRedirectPath blocks open redirects.
 function safeReturnTo(params: URLSearchParams): string {
-  const raw = params.get("next") ?? params.get("returnTo");
-  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/dashboard";
+  return safeRedirectPath(params.get("next") ?? params.get("returnTo"));
 }
 
 // Terminal header bar — frames the auth card as tool output (forensic-terminal spec).

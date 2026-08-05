@@ -10,12 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Wordmark } from "@/components/forensic/wordmark";
 import { Eye, EyeOff } from "lucide-react";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 
 // Same-origin path only — mirrors login-form so a crafted ?returnTo=//evil.com
 // can't turn signup/OAuth into an open redirect.
 function safeReturnTo(params: URLSearchParams): string {
-  const raw = params.get("next") ?? params.get("returnTo");
-  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/dashboard";
+  return safeRedirectPath(params.get("next") ?? params.get("returnTo"));
 }
 
 function returnToQuery(returnTo: string): string {
