@@ -97,8 +97,16 @@ export async function POST(request: Request) {
     }
   }
 
-  // Rate limit: authenticated by user ID, anonymous by IP. Durable + shared (Postgres).
-  // Only after the request is known-valid — failed validation must not consume a slot.
+  // Rate limit only after the request is known-valid AND the environment can
+  // actually enqueue — a missing service key must not burn the anon 1/hour slot.
+  const admin = createAdminClient();
+  if (!admin) {
+    return NextResponse.json(
+      { error: "Audits are not configured on this environment (missing service key)." },
+      { status: 503 },
+    );
+  }
+
   const rateLimitKey = user?.id || `anon:${getClientIP(request)}`;
   const rateLimitType = user ? "authenticated" : "anonymous";
 
@@ -119,13 +127,6 @@ export async function POST(request: Request) {
   // Enqueue for the worker. The browser cannot run in this serverless route (no Chromium,
   // exceeds size/time limits — docs/DEPLOYMENT.md); a persistent worker claims the job and
   // runs it. Insert with the service client since audit_jobs has no client insert policy.
-  const admin = createAdminClient();
-  if (!admin) {
-    return NextResponse.json(
-      { error: "Audits are not configured on this environment (missing service key)." },
-      { status: 503 },
-    );
-  }
 
   // Reserve this run's estimated model-call budget against the global daily cap,
   // atomically, and ONLY now — after every early-return check (rate limit, URL guard,
@@ -152,9 +153,9 @@ export async function POST(request: Request) {
     .single();
 
   if (enqueueError || !job) {
-    // The reservation went through but no job will run — refund it now rather than
-    // letting it sit against the daily cap until UTC midnight.
-    await releaseSpend(chosenIds.length);
+    // The reservation went through but no job will run — refund global + caller
+    // sub-cap now rather than letting either sit until UTC midnight.
+    await releaseSpend(chosenIds.length, rateLimitKey);
     return NextResponse.json(
       { error: "Could not queue the audit. Please try again." },
       { status: 500 },

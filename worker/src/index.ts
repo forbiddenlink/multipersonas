@@ -98,6 +98,21 @@ async function releaseReservation(job: AuditJob): Promise<void> {
   if (error) console.error(`[worker] release_model_calls failed for ${job.id}: ${error.message}`);
 }
 
+/**
+ * Stable message safe to return on public capability URLs (grade token / job poll).
+ * Full exception text is logged + sent to Sentry; never write paths/DNS details to the DB.
+ */
+function publicJobError(e: unknown): string {
+  const message = e instanceof Error ? e.message : "";
+  if (/exceeded \d+ms/i.test(message) || /timed? ?out/i.test(message)) {
+    return "The scan timed out. Try again, or try a smaller site.";
+  }
+  if (/no valid personas/i.test(message)) {
+    return "No valid personas were configured for this audit.";
+  }
+  return "The scan failed. Please try again.";
+}
+
 // Graceful shutdown: on a container redeploy (SIGTERM) or Ctrl-C (SIGINT), stop
 // claiming new work and let the current job finish (or hit its timeout) rather than
 // being SIGKILLed mid-run and stranded. The reaper covers a hard kill.
@@ -319,18 +334,19 @@ async function claimAndRun(): Promise<boolean> {
         .eq("id", claimed.id);
       console.log(`[worker] graded ${claimed.id}`);
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Unknown error";
+      const detail = e instanceof Error ? e.message : "Unknown error";
+      const publicMsg = publicJobError(e);
       await supabase
         .from("grader_scans")
-        .update({ status: "failed", error: message })
+        .update({ status: "failed", error: publicMsg })
         .eq("job_id", claimed.id);
       await supabase
         .from("audit_jobs")
-        .update({ status: "failed", error: message, completed_at: new Date().toISOString() })
+        .update({ status: "failed", error: publicMsg, completed_at: new Date().toISOString() })
         .eq("id", claimed.id);
       Sentry.captureException(e, { tags: { jobId: claimed.id, kind: "grade" } });
-      console.error(`[worker] grade failed ${claimed.id}: ${message}`);
-      await notify(`grade ${claimed.id} failed: ${message}`);
+      console.error(`[worker] grade failed ${claimed.id}: ${detail}`);
+      await notify(`grade ${claimed.id} failed: ${detail}`);
     }
     return true; // grade jobs reserve no spend — no releaseReservation needed
   }
@@ -374,17 +390,18 @@ async function claimAndRun(): Promise<boolean> {
       .eq("id", claimed.id);
     console.log(`[worker] completed ${claimed.id}`);
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Unknown error";
+    const detail = e instanceof Error ? e.message : "Unknown error";
+    const publicMsg = publicJobError(e);
     await supabase
       .from("audit_jobs")
-      .update({ status: "failed", error: message, completed_at: new Date().toISOString() })
+      .update({ status: "failed", error: publicMsg, completed_at: new Date().toISOString() })
       .eq("id", claimed.id);
     // Refund the budget this failed run reserved (P0 #3) so a run of failures can't
     // fill the daily cap and refuse legitimate audits.
     await releaseReservation(claimed);
     Sentry.captureException(e, { tags: { jobId: claimed.id } });
-    console.error(`[worker] failed ${claimed.id}: ${message}`);
-    await notify(`job ${claimed.id} failed: ${message}`);
+    console.error(`[worker] failed ${claimed.id}: ${detail}`);
+    await notify(`job ${claimed.id} failed: ${detail}`);
   } finally {
     try {
       fs.rmSync(tmpDir, { recursive: true, force: true });

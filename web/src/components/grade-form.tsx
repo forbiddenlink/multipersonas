@@ -4,46 +4,21 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
-type Phase = "idle" | "queued" | "running";
-
-/** Poll the grade until it reaches a terminal state (completed/failed) or a client-side
- * deadline passes. Mirrors audit-form's pollAuditJob: a transient network blip must not
- * freeze the UI, and a "timed out watching" outcome is not the same as "job died" — the
- * worker keeps running regardless, so the result page (which can self-refresh) is a safe
- * place to land either way. */
-async function pollGradeUntilTerminal(
-  token: string,
-  onPhase: (phase: Phase) => void,
-): Promise<void> {
-  const deadlineMs = Date.now() + 3 * 60 * 1000;
-  while (Date.now() < deadlineMs) {
-    await new Promise((r) => setTimeout(r, 3000));
-    let data: { status?: string };
-    try {
-      const res = await fetch(`/api/grade/${token}`);
-      if (!res.ok) continue; // transient — keep polling, don't freeze the spinner
-      data = await res.json();
-    } catch {
-      // Offline blip / dropped connection — the scan is still running server-side.
-      continue;
-    }
-    if (data.status === "running") onPhase("running");
-    if (data.status === "completed" || data.status === "failed") return;
-  }
-}
-
+/**
+ * Queue a public grade, then land on `/grade/[token]` immediately. That page already
+ * self-refreshes while queued/running — keeping the token only in-memory (and polling
+ * here) meant a refresh mid-scan lost the result and burned another free-grade slot.
+ */
 export function GradeForm() {
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [phase, setPhase] = useState<Phase>("idle");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    setPhase("queued");
 
     try {
       const res = await fetch("/api/grade", {
@@ -64,10 +39,6 @@ export function GradeForm() {
         return;
       }
 
-      // The scan runs in a worker; poll until it settles (or the client gives up
-      // watching), then land on the result page either way — it knows how to render
-      // queued/running/completed/failed on its own.
-      await pollGradeUntilTerminal(token, setPhase);
       router.push(`/grade/${token}`);
     } catch (err) {
       setError(
@@ -79,12 +50,8 @@ export function GradeForm() {
       // Clear so a stalled navigation (or back/restore) doesn't leave a frozen spinner.
       // On a successful push the page unmounts anyway.
       setLoading(false);
-      setPhase("idle");
     }
   }
-
-  const statusLabel =
-    phase === "running" ? "scanning public pages…" : phase === "queued" ? "queued…" : "";
 
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -129,7 +96,7 @@ export function GradeForm() {
           />
           <span>
             <span className="select-none text-[var(--primary)]">›&nbsp;</span>
-            {statusLabel || "starting…"}
+            queued…
           </span>
         </div>
       )}

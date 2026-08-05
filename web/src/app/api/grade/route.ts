@@ -44,22 +44,13 @@ export async function POST(request: Request) {
   }
   const entryUrl = parsedUrl.href;
 
-  const ip = getClientIP(request);
-  const rate = await consumeRateLimit(`grade:${ip}`, "grade");
-  if (!rate.allowed) {
-    return NextResponse.json(
-      { error: "Free grade limit reached. Please wait and try again." },
-      { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } },
-    );
-  }
-
   const admin = createAdminClient();
   if (!admin) {
     return NextResponse.json({ error: "Grading is not configured." }, { status: 503 });
   }
 
-  // Backpressure: a grade flood shares one worker with real audits — cap the
-  // queued grades so it can't starve them.
+  // Backpressure before rate-limit: a full queue or missing config must not burn
+  // the free-grade quota (same honesty class as validate-before-limit).
   const { count } = await admin
     .from("audit_jobs")
     .select("id", { count: "exact", head: true })
@@ -69,6 +60,15 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "The grader is busy. Please try again shortly." },
       { status: 429, headers: { "Retry-After": "60" } },
+    );
+  }
+
+  const ip = getClientIP(request);
+  const rate = await consumeRateLimit(`grade:${ip}`, "grade");
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { error: "Free grade limit reached. Please wait and try again." },
+      { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } },
     );
   }
 
