@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,17 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Wordmark } from "@/components/forensic/wordmark";
 import { Eye, EyeOff } from "lucide-react";
+
+// Same-origin path only — mirrors login-form so a crafted ?returnTo=//evil.com
+// can't turn signup/OAuth into an open redirect.
+function safeReturnTo(params: URLSearchParams): string {
+  const raw = params.get("next") ?? params.get("returnTo");
+  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/dashboard";
+}
+
+function returnToQuery(returnTo: string): string {
+  return returnTo === "/dashboard" ? "" : `?returnTo=${encodeURIComponent(returnTo)}`;
+}
 
 // Terminal header bar — frames the auth card as tool output (forensic-terminal spec).
 function CardHeaderBar({ route }: { route: string }) {
@@ -32,6 +43,9 @@ type FieldErrors = {
 
 export function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = safeReturnTo(searchParams);
+  const loginHref = `/auth/login${returnToQuery(returnTo)}`;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -114,7 +128,7 @@ export function SignupForm() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(returnTo)}`,
       },
     });
 
@@ -125,11 +139,11 @@ export function SignupForm() {
     }
 
     // If the project has email confirmation disabled, signUp returns an active session and
-    // the user is already logged in — send them straight to the dashboard instead of the
+    // the user is already logged in — send them to their intended destination instead of the
     // (dead-end) "check your email" screen.
     if (data.session) {
-      router.push("/dashboard");
       router.refresh();
+      router.push(returnTo);
       return;
     }
 
@@ -143,7 +157,7 @@ export function SignupForm() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(returnTo)}`,
       },
     });
 
@@ -166,7 +180,7 @@ export function SignupForm() {
             <p className="mt-5 text-sm text-muted-foreground">
               Already confirmed?{" "}
               <Link
-                href="/auth/login"
+                href={loginHref}
                 className="rounded-sm text-foreground underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
               >
                 Sign in
@@ -309,7 +323,7 @@ export function SignupForm() {
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}
             <Link
-              href="/auth/login"
+              href={loginHref}
               className="rounded-sm text-foreground underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               Sign in

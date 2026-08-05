@@ -149,8 +149,47 @@ function GradeReportView({ report }: { report: GradeReport }) {
             <span>WCAG 2.x A/AA violations</span>
             <span className="tabular-nums text-foreground">{report.wcagAAViolations}</span>
           </div>
+          {report.totalViolations > report.wcagAAViolations ? (
+            <p className="border-t border-border px-4 py-2.5 font-mono text-[11px] leading-relaxed text-muted-foreground">
+              Impact totals include axe best-practice rules that are not WCAG success
+              criteria — that is why the WCAG A/AA count can be lower.
+            </p>
+          ) : null}
         </div>
       </div>
+
+      {/* Named rules — so the impact table is not a black box. Older stored reports
+          may omit this (pre-rules field); skip gracefully. */}
+      {report.rules && report.rules.length > 0 ? (
+        <div className="space-y-3">
+          <h2 className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
+            Rules found
+          </h2>
+          <div className="overflow-hidden rounded-md border border-border bg-card">
+            <ul className="divide-y divide-border">
+              {report.rules.map((rule) => (
+                <li key={rule.id} className="flex flex-col gap-1.5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <SeverityChip severity={rule.impact} />
+                      <span className="font-mono text-xs text-muted-foreground">{rule.id}</span>
+                      {!rule.wcagAA ? (
+                        <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                          best-practice
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-sm text-foreground">{rule.help}</p>
+                  </div>
+                  <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
+                    {rule.nodes} node{rule.nodes === 1 ? "" : "s"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
 
       {/* Per-page list */}
       {report.perPage.length > 0 && (

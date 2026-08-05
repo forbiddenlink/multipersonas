@@ -116,7 +116,8 @@ export function AuditResults({
                 {persona.goalCompleted ? "Goal achieved" : "Blocked"}
               </span>
               <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                {persona.totalSteps} steps · {persona.statesReached} states
+                {persona.totalSteps} step{persona.totalSteps === 1 ? "" : "s"} ·{" "}
+                {persona.statesReached} state{persona.statesReached === 1 ? "" : "s"}
               </span>
             </div>
 
@@ -148,7 +149,11 @@ export function AuditResults({
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground">No issues found</p>
+              <p className="text-xs text-muted-foreground">
+                {persona.goalCompleted
+                  ? "No UX observations"
+                  : "Blocked with no AI observations recorded"}
+              </p>
             )}
           </div>
         ))}

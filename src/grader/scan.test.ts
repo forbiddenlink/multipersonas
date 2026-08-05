@@ -24,4 +24,11 @@ describe("grader scan source guards", () => {
     expect(src).toMatch(/context\.route\(/);
     expect(src).toMatch(/assertRequestAllowed/);
   });
+
+  it("counts WCAG 2.0/2.1/2.2 A+AA tags (not only wcag2a/aa)", () => {
+    expect(src).toMatch(/wcag21aa/);
+    expect(src).toMatch(/wcag22aa/);
+    // Best-practice is not a WCAG success criterion — must stay out of AA_TAGS.
+    expect(src).not.toMatch(/AA_TAGS = new Set\(\[[^\]]*best-practice/);
+  });
 });

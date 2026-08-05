@@ -19,15 +19,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const ip = getClientIP(request);
-  const rate = await consumeRateLimit(`grade:${ip}`, "grade");
-  if (!rate.allowed) {
-    return NextResponse.json(
-      { error: "Free grade limit reached. Please wait and try again." },
-      { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } },
-    );
-  }
-
   let body: { url?: string };
   try {
     body = await request.json();
@@ -40,6 +31,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Please enter a URL to grade" }, { status: 400 });
   }
 
+  // Validate before consuming a rate-limit slot so typos / blocked URLs don't
+  // burn the free-grade quota.
   try {
     await assertUrlAllowed(url);
   } catch (error) {
@@ -47,6 +40,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
     throw error;
+  }
+
+  const ip = getClientIP(request);
+  const rate = await consumeRateLimit(`grade:${ip}`, "grade");
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { error: "Free grade limit reached. Please wait and try again." },
+      { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } },
+    );
   }
 
   const admin = createAdminClient();

@@ -365,7 +365,7 @@ export function AuditForm({
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://example.com"
           required
-          disabled={loading}
+          disabled={loading || !!pendingJobId}
           autoComplete="url"
           aria-label="Website URL to audit"
           className="h-10 flex-1 rounded-sm border border-border bg-card px-4 text-base text-foreground transition-colors duration-150 placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] disabled:opacity-50 md:text-sm"
@@ -373,15 +373,15 @@ export function AuditForm({
         <Button
           type="submit"
           size="lg"
-          disabled={loading || !url}
+          disabled={loading || !!pendingJobId || !url}
           className="h-10 shrink-0 px-6 font-mono text-xs uppercase tracking-wide"
         >
-          {loading ? "Running…" : (submitLabel ?? "Run free audit")}
+          {loading ? "Running…" : timedOut ? "In progress…" : (submitLabel ?? "Run free audit")}
         </Button>
       </form>
 
       {/* Persona picker — outline chips, not soft pills */}
-      <fieldset className="mt-4" disabled={loading}>
+      <fieldset className="mt-4" disabled={loading || !!pendingJobId}>
         <legend className="mb-2 font-mono text-xs uppercase tracking-wide text-muted-foreground">
           Who tests your site{" "}
           <span className="normal-case tracking-normal">
@@ -392,7 +392,7 @@ export function AuditForm({
           {PERSONA_IDS.map((id) => {
             const p = PERSONA_DATA[id];
             const isOn = selected.has(id);
-            const disabled = loading || (!isOn && atCap);
+            const disabled = loading || !!pendingJobId || (!isOn && atCap);
             return (
               <button
                 key={id}

@@ -25,8 +25,11 @@ export function Meter({
         <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
         <span className="font-mono text-sm tabular-nums">
           {value}
-          <span className="text-muted-foreground"> / {total}</span>
-          {unit ? <span className="ml-1.5 text-xs text-muted-foreground">{unit}</span> : null}
+          <span className="text-muted-foreground">{` / ${total}`}</span>
+          {/* Real space in the text node (not just margin) so copy/AT don't read "3personas". */}
+          {unit ? (
+            <span className="ml-1.5 text-xs text-muted-foreground">{` ${unit}`}</span>
+          ) : null}
         </span>
       </div>
       <div
@@ -35,7 +38,7 @@ export function Meter({
         aria-valuenow={value}
         aria-valuemin={0}
         aria-valuemax={total}
-        aria-label={`${label}: ${value} of ${total}`}
+        aria-label={unit ? `${label}: ${value} of ${total} ${unit}` : `${label}: ${value} of ${total}`}
       >
         <div
           className="h-full rounded-sm transition-[width] duration-500 ease-out"
