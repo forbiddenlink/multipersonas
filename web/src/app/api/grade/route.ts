@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { assertUrlAllowed, BlockedUrlError } from "@engine/security/url-guard";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { killSwitchEnabled } from "@/lib/limits";
+import { killSwitchEnabled, positiveEnvInt } from "@/lib/limits";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { getClientIP } from "@/lib/client-ip";
 
@@ -9,7 +9,7 @@ import { getClientIP } from "@/lib/client-ip";
 // kind='grade' job onto the shared audit_jobs queue; the worker runs gradeScan and
 // writes the public grader_scans row this returns a token for.
 
-const MAX_QUEUED_GRADES = Number(process.env.GRADE_QUEUE_CAP ?? 25);
+const MAX_QUEUED_GRADES = positiveEnvInt(process.env.GRADE_QUEUE_CAP, 25);
 
 export async function POST(request: Request) {
   if (killSwitchEnabled()) {
@@ -32,15 +32,17 @@ export async function POST(request: Request) {
   }
 
   // Validate before consuming a rate-limit slot so typos / blocked URLs don't
-  // burn the free-grade quota.
+  // burn the free-grade quota. Persist the normalized href (same as audit).
+  let parsedUrl: URL;
   try {
-    await assertUrlAllowed(url);
+    parsedUrl = await assertUrlAllowed(url);
   } catch (error) {
     if (error instanceof BlockedUrlError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
     throw error;
   }
+  const entryUrl = parsedUrl.href;
 
   const ip = getClientIP(request);
   const rate = await consumeRateLimit(`grade:${ip}`, "grade");
@@ -73,7 +75,7 @@ export async function POST(request: Request) {
   // persona_ids / reserved_calls / status all have DB defaults; user_id is null (anon).
   const { data: job, error: jobErr } = await admin
     .from("audit_jobs")
-    .insert({ url, kind: "grade", user_id: null })
+    .insert({ url: entryUrl, kind: "grade", user_id: null })
     .select("id")
     .single();
   if (jobErr || !job) {
@@ -82,10 +84,13 @@ export async function POST(request: Request) {
 
   const { data: scan, error: scanErr } = await admin
     .from("grader_scans")
-    .insert({ job_id: job.id, entry_url: url })
+    .insert({ job_id: job.id, entry_url: entryUrl })
     .select("token")
     .single();
   if (scanErr || !scan) {
+    // Don't leave an orphaned grade job on the queue — the worker would run a
+    // scan with no public token for the user.
+    await admin.from("audit_jobs").delete().eq("id", job.id);
     return NextResponse.json({ error: "Could not queue the grade." }, { status: 500 });
   }
 

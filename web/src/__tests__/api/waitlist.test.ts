@@ -9,6 +9,12 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
+const mockConsumeRateLimit = vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 });
+
+vi.mock("@/lib/rate-limit", () => ({
+  consumeRateLimit: (...args: unknown[]) => mockConsumeRateLimit(...args),
+}));
+
 describe("POST /api/waitlist", () => {
   let POST: (req: Request) => Promise<Response>;
 
@@ -16,6 +22,7 @@ describe("POST /api/waitlist", () => {
     vi.resetModules();
     vi.clearAllMocks();
     mockInsert.mockResolvedValue({ error: null });
+    mockConsumeRateLimit.mockResolvedValue({ allowed: true, retryAfterSeconds: 0 });
     const mod = await import("@/app/api/waitlist/route");
     POST = mod.POST;
   });
@@ -28,12 +35,13 @@ describe("POST /api/waitlist", () => {
     });
   }
 
-  it("rejects an invalid email with 400", async () => {
+  it("rejects an invalid email with 400 without burning rate-limit quota", async () => {
     const res = await POST(makeRequest({ email: "not-an-email" }));
     expect(res.status).toBe(400);
     const data = await res.json();
     expect(data.error).toBeDefined();
     expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockConsumeRateLimit).not.toHaveBeenCalled();
   });
 
   it("inserts a lowercased, trimmed email and returns ok on a valid payload", async () => {

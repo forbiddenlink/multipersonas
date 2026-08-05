@@ -122,47 +122,58 @@ export function SignupForm() {
     if (!validateAll()) return;
 
     setLoading(true);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(returnTo)}`,
+        },
+      });
 
-    const supabase = createClient();
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(returnTo)}`,
-      },
-    });
+      if (error) {
+        setFormError(error.message);
+        return;
+      }
 
-    if (error) {
-      setFormError(error.message);
+      // If the project has email confirmation disabled, signUp returns an active session and
+      // the user is already logged in — send them to their intended destination instead of the
+      // (dead-end) "check your email" screen.
+      if (data.session) {
+        router.refresh();
+        router.push(returnTo);
+        return;
+      }
+
+      setSuccess(true);
+    } catch {
+      setFormError("Something went wrong. Please try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // If the project has email confirmation disabled, signUp returns an active session and
-    // the user is already logged in — send them to their intended destination instead of the
-    // (dead-end) "check your email" screen.
-    if (data.session) {
-      router.refresh();
-      router.push(returnTo);
-      return;
-    }
-
-    setSuccess(true);
-    setLoading(false);
   }
 
   async function handleGitHubSignup() {
     setFormError("");
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "github",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(returnTo)}`,
-      },
-    });
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "github",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(returnTo)}`,
+        },
+      });
 
-    if (error) {
-      setFormError(error.message);
+      if (error) {
+        setFormError(error.message);
+        setLoading(false);
+      }
+      // On success the browser navigates away — leave loading true.
+    } catch {
+      setFormError("Something went wrong. Please try again.");
+      setLoading(false);
     }
   }
 
@@ -308,7 +319,7 @@ export function SignupForm() {
             <Separator className="flex-1" />
           </div>
 
-          <Button variant="outline" onClick={handleGitHubSignup} className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
+          <Button variant="outline" onClick={handleGitHubSignup} disabled={loading} className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"

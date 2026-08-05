@@ -33,7 +33,7 @@ export default function Home() {
         <div className="relative z-10 mx-auto grid max-w-6xl gap-12 px-6 py-16 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:py-24">
           <div>
             <p className="fade-up font-mono text-xs uppercase tracking-wide text-muted-foreground" style={{ animationDelay: "0.05s" }}>
-              axe-core · behind login · CI gate
+              axe-core · session crawl · CI gate
             </p>
             {/* No entrance animation on the headline: it's the LCP element, so it must
                 paint immediately rather than fade in from opacity:0. */}

@@ -222,7 +222,7 @@ function GradeReportView({ report }: { report: GradeReport }) {
           It does not see behind login, PDFs, or real user flows.
         </p>
         <Link href="/for-agencies" className={buttonVariants({ variant: "outline", size: "sm" })}>
-          Get on the waitlist for behind-login scanning
+          Agency workspace &amp; scheduled scans — join the waitlist
         </Link>
       </div>
     </div>

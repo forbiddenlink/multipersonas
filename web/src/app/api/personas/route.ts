@@ -29,7 +29,7 @@ export async function GET(): Promise<Response> {
 
     return Response.json({ personas, categories: personasByCategory });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error occurred";
-    return Response.json({ error: message }, { status: 500 });
+    console.error("personas list failed:", error);
+    return Response.json({ error: "Could not load personas." }, { status: 500 });
   }
 }

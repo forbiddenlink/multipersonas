@@ -210,6 +210,7 @@ export function AuditForm({
       // unexpected throw here must never leave the spinner stuck (watchJob is called
       // fire-and-forget, so a rejection would otherwise be an unhandled one).
       setLoading(false);
+      setTimedOut(true);
       setError(
         "Lost connection while watching the audit. Your scan may still be running — use Check status to retry.",
       );
@@ -424,7 +425,7 @@ export function AuditForm({
         </div>
       )}
 
-      {timedOut && (
+      {timedOut && pendingJobId && (
         <div role="status" className="mt-4 text-center">
           <p className="text-sm text-muted-foreground">
             Still running — this can take a few minutes. Check back or refresh; we&apos;ll pick it up.

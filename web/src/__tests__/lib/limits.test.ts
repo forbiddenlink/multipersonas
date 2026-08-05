@@ -5,7 +5,23 @@ import {
   estimatedCallsFor,
   withinDailyCap,
   CALLS_PER_PERSONA,
+  positiveEnvInt,
 } from "@/lib/limits";
+
+describe("positiveEnvInt", () => {
+  it("returns the fallback for missing, empty, or non-positive values", () => {
+    expect(positiveEnvInt(undefined, 42)).toBe(42);
+    expect(positiveEnvInt("", 42)).toBe(42);
+    expect(positiveEnvInt("  ", 42)).toBe(42);
+    expect(positiveEnvInt("0", 42)).toBe(42);
+    expect(positiveEnvInt("-3", 42)).toBe(42);
+    expect(positiveEnvInt("nope", 42)).toBe(42);
+  });
+  it("parses positive integers", () => {
+    expect(positiveEnvInt("7", 42)).toBe(7);
+    expect(positiveEnvInt("3.9", 42)).toBe(3);
+  });
+});
 
 describe("killSwitchEnabled", () => {
   it("is off when the env var is absent", () => {

@@ -48,8 +48,12 @@ export async function proxy(request: NextRequest) {
 
   if (isAppRoute && !user) {
     const url = request.nextUrl.clone();
+    // Drop any query from the protected URL (e.g. ?error=agency from settings) so it
+    // can't surface on login as a fake auth failure. Preserve the full path+search in
+    // returnTo so the user still lands back with those params after sign-in.
     const returnTo = request.nextUrl.pathname + request.nextUrl.search;
     url.pathname = "/auth/login";
+    url.search = "";
     url.searchParams.set("returnTo", returnTo);
     return NextResponse.redirect(url);
   }
