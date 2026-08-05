@@ -18,15 +18,29 @@ export type RateLimitType = keyof typeof RATE_LIMITS;
  * reserve spend before a run so a burst can't blow past the daily cap. */
 export const CALLS_PER_PERSONA = 25;
 
+/**
+ * Parse a positive integer env var. Empty string / NaN / ≤0 fall back — `Number("")`
+ * is 0, which would otherwise collapse timeouts, poll intervals, and spend caps.
+ */
+export function positiveEnvInt(
+  raw: string | undefined,
+  fallback: number,
+): number {
+  if (raw === undefined || raw.trim() === "") return fallback;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return fallback;
+  return Math.floor(n);
+}
+
 /** Global daily model-call ceiling. Overridable per environment. */
-export const DAILY_MODEL_CALL_CAP = Number(process.env.AUDIT_DAILY_CALL_CAP ?? 5000);
+export const DAILY_MODEL_CALL_CAP = positiveEnvInt(process.env.AUDIT_DAILY_CALL_CAP, 5000);
 
 /**
  * Per-caller daily model-call ceiling, beneath the global cap. Stops one caller (a user
  * id, or an anon IP) from consuming the whole daily budget and denying everyone else.
  * Defaults to ~25% of the global cap (~50 audits/caller/day at 25 calls each).
  */
-export const CALLER_DAILY_CALL_CAP = Number(process.env.AUDIT_CALLER_DAILY_CALL_CAP ?? 1250);
+export const CALLER_DAILY_CALL_CAP = positiveEnvInt(process.env.AUDIT_CALLER_DAILY_CALL_CAP, 1250);
 
 /** Hard stop for all runs, independent of limits — flip in the environment to freeze spend. */
 export function killSwitchEnabled(env: Record<string, string | undefined> = process.env): boolean {

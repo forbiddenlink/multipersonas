@@ -55,24 +55,28 @@ export default function UpdatePasswordPage() {
     }
 
     setLoading(true);
-    const supabase = createClient();
-    // Requires an active session — supplied by the recovery link (via /auth/callback)
-    // or by an already signed-in user changing their password from settings.
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+    try {
+      const supabase = createClient();
+      // Requires an active session — supplied by the recovery link (via /auth/callback)
+      // or by an already signed-in user changing their password from settings.
+      const { error: updateError } = await supabase.auth.updateUser({ password });
 
-    if (updateError) {
-      setError(
-        updateError.message.toLowerCase().includes("session")
-          ? "This reset link has expired. Request a new one from the sign-in page."
-          : updateError.message,
-      );
+      if (updateError) {
+        setError(
+          updateError.message.toLowerCase().includes("session")
+            ? "This reset link has expired. Request a new one from the sign-in page."
+            : updateError.message,
+        );
+        return;
+      }
+
+      setDone(true);
+      router.refresh();
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setDone(true);
-    setLoading(false);
-    router.refresh();
   }
 
   if (done) {

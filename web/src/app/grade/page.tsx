@@ -41,7 +41,7 @@ export default function GradePage() {
               href="/for-agencies"
               className="rounded-sm text-foreground underline underline-offset-4 hover:text-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
-              behind-login scanning for agencies
+              CLI session crawl and the agency waitlist
             </Link>
             .
           </p>

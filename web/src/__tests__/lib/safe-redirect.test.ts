@@ -18,6 +18,11 @@ describe("safeRedirectPath", () => {
     expect(safeRedirectPath("/foo\\bar")).toBe("/dashboard");
   });
 
+  it("rejects control characters in the path", () => {
+    expect(safeRedirectPath("/projects\t")).toBe("/dashboard");
+    expect(safeRedirectPath("/foo\nbar")).toBe("/dashboard");
+  });
+
   it("falls back on empty or non-path values", () => {
     expect(safeRedirectPath(null)).toBe("/dashboard");
     expect(safeRedirectPath("")).toBe("/dashboard");

@@ -10,16 +10,26 @@ import { personaLibrary } from "multipersonas/personas/library";
 // --- config ---------------------------------------------------------------
 const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const POLL_MS = Number(process.env.WORKER_POLL_MS ?? 3000);
+
+/** Empty string / NaN / ≤0 → fallback. `Number("") === 0` would otherwise
+ * collapse timeouts to instant fail and poll intervals to a busy loop. */
+function positiveEnvInt(raw: string | undefined, fallback: number): number {
+  if (raw === undefined || raw.trim() === "") return fallback;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return fallback;
+  return Math.floor(n);
+}
+
+const POLL_MS = positiveEnvInt(process.env.WORKER_POLL_MS, 3000);
 // In-process cap on a single run. A hung Playwright navigation must not freeze the
 // whole (single-worker) queue, so the run loses a race against this timeout and the
 // job is marked failed.
-const JOB_TIMEOUT_MS = Number(process.env.WORKER_JOB_TIMEOUT_SECONDS ?? 300) * 1000;
+const JOB_TIMEOUT_MS = positiveEnvInt(process.env.WORKER_JOB_TIMEOUT_SECONDS, 300) * 1000;
 // Backstop for a CRASHED worker (where the in-process timeout never fires): the reaper
 // only touches jobs stuck well past the in-process cap, so it never races a run the
 // worker is itself about to time out.
-const REAP_AFTER_SECONDS = Number(process.env.WORKER_REAP_AFTER_SECONDS ?? 600);
-const MAX_ATTEMPTS = Number(process.env.WORKER_MAX_ATTEMPTS ?? 3);
+const REAP_AFTER_SECONDS = positiveEnvInt(process.env.WORKER_REAP_AFTER_SECONDS, 600);
+const MAX_ATTEMPTS = positiveEnvInt(process.env.WORKER_MAX_ATTEMPTS, 3);
 // Optional alert sink (Slack-compatible incoming webhook) — a lightweight paging path
 // alongside Sentry. No-op when unset.
 const ALERT_WEBHOOK = process.env.WORKER_ALERT_WEBHOOK;
@@ -331,6 +341,12 @@ async function claimAndRun(): Promise<boolean> {
     const personas = claimed.persona_ids
       .map((id) => personaLibrary[id])
       .filter((p) => Boolean(p));
+
+    if (personas.length === 0) {
+      throw new Error(
+        `No valid personas for job ${claimed.id} (requested: ${claimed.persona_ids.join(", ") || "none"})`,
+      );
+    }
 
     const result = await withTimeout(
       runMultiPersonaTest({

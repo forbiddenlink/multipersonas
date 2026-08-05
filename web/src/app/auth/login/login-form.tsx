@@ -41,9 +41,11 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [formError, setFormError] = useState(() => {
     const err = searchParams.get("error");
+    // Only surface known auth callback codes — a leaked ?error=agency from settings
+    // must not show as "Authentication failed".
     if (err === "reset_expired")
       return "That password reset link has expired or was already used. Request a new one from “Forgot password?” below.";
-    if (err) return "Authentication failed. Check your email and password, or try GitHub.";
+    if (err === "auth") return "Authentication failed. Check your email and password, or try GitHub.";
     return "";
   });
   const [loading, setLoading] = useState(false);
@@ -66,35 +68,47 @@ export function LoginForm() {
     }
 
     setLoading(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+      if (error) {
+        setFormError(error.message);
+        return;
+      }
 
-    if (error) {
-      setFormError(error.message);
+      router.refresh();
+      router.push(returnTo);
+    } catch {
+      setFormError("Something went wrong. Please try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    router.refresh();
-    router.push(returnTo);
   }
 
   async function handleGitHubLogin() {
     setFormError("");
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "github",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(returnTo)}`,
-      },
-    });
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "github",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(returnTo)}`,
+        },
+      });
 
-    if (error) {
-      setFormError(error.message);
+      if (error) {
+        setFormError(error.message);
+        setLoading(false);
+      }
+      // On success the browser navigates away — leave loading true.
+    } catch {
+      setFormError("Something went wrong. Please try again.");
+      setLoading(false);
     }
   }
 
@@ -177,7 +191,7 @@ export function LoginForm() {
             <Separator className="flex-1" />
           </div>
 
-          <Button variant="outline" onClick={handleGitHubLogin} className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
+          <Button variant="outline" onClick={handleGitHubLogin} disabled={loading} className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
