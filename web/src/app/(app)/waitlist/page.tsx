@@ -67,7 +67,7 @@ export default async function WaitlistPage() {
         <EmptyPrompt
           className="mt-8"
           prompt="no signups yet"
-          hint="Drive agency traffic to /for-agencies and they&apos;ll appear here."
+          hint="Drive agency traffic to /for-agencies and they'll appear here."
         />
       ) : (
         <>

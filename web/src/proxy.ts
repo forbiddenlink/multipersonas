@@ -33,8 +33,10 @@ export async function proxy(request: NextRequest) {
 
   const isAppRoute = request.nextUrl.pathname.startsWith("/dashboard") ||
     request.nextUrl.pathname.startsWith("/projects") ||
+    request.nextUrl.pathname.startsWith("/audits") ||
     request.nextUrl.pathname.startsWith("/settings") ||
-    request.nextUrl.pathname.startsWith("/personas");
+    request.nextUrl.pathname.startsWith("/personas") ||
+    request.nextUrl.pathname.startsWith("/waitlist");
 
   // /auth/update-password must stay reachable while authenticated: the password-reset
   // recovery link lands there with a live session, and Settings → Change password sends an

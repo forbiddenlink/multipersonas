@@ -55,16 +55,12 @@ export function GradeForm() {
 
       if (!res.ok) {
         setError(data.error || "Something went wrong");
-        setLoading(false);
-        setPhase("idle");
         return;
       }
 
       const token = data.token as string | undefined;
       if (!token) {
         setError("Could not queue the grade. Please try again.");
-        setLoading(false);
-        setPhase("idle");
         return;
       }
 
@@ -74,13 +70,16 @@ export function GradeForm() {
       await pollGradeUntilTerminal(token, setPhase);
       router.push(`/grade/${token}`);
     } catch (err) {
-      setLoading(false);
-      setPhase("idle");
       setError(
         err instanceof Error
           ? err.message
           : "Failed to connect to the server. Please try again.",
       );
+    } finally {
+      // Clear so a stalled navigation (or back/restore) doesn't leave a frozen spinner.
+      // On a successful push the page unmounts anyway.
+      setLoading(false);
+      setPhase("idle");
     }
   }
 

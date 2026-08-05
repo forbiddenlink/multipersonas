@@ -47,5 +47,34 @@ describe("computeGrade", () => {
     const r = computeGrade([]);
     expect(r.grade).toBe("F");
     expect(r.score).toBe(0);
+    expect(r.rules).toEqual([]);
+  });
+
+  it("aggregates per-page rule hits by id", () => {
+    const r = computeGrade([
+      {
+        url: "a",
+        violationsByImpact: { ...emptyImpacts, moderate: 2 },
+        passCount: 10,
+        wcagAAViolations: 0,
+        rules: [
+          { id: "region", impact: "moderate", nodes: 1, help: "All page content must be contained by landmarks", wcagAA: false },
+          { id: "landmark-one-main", impact: "moderate", nodes: 1, help: "Document should have one main landmark", wcagAA: false },
+        ],
+      },
+      {
+        url: "b",
+        violationsByImpact: { ...emptyImpacts, moderate: 1 },
+        passCount: 10,
+        wcagAAViolations: 0,
+        rules: [
+          { id: "region", impact: "moderate", nodes: 1, help: "All page content must be contained by landmarks", wcagAA: false },
+        ],
+      },
+    ]);
+    expect(r.rules).toHaveLength(2);
+    const region = r.rules.find((x) => x.id === "region");
+    expect(region?.nodes).toBe(2);
+    expect(region?.wcagAA).toBe(false);
   });
 });

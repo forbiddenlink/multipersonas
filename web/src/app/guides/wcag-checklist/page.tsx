@@ -43,8 +43,8 @@ const checks = [
   {
     category: "Robust",
     items: [
-      { rule: "Valid HTML", wcag: "4.1.1", how: "No duplicate IDs, proper nesting, closed tags." },
       { rule: "ARIA roles used correctly", wcag: "4.1.2", how: "Custom components have appropriate role, state, and value." },
+      { rule: "Status messages announced", wcag: "4.1.3", how: "Status updates (errors, progress, success) are exposed to assistive tech without stealing focus." },
     ],
   },
 ];

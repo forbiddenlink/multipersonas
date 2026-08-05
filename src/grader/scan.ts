@@ -1,7 +1,7 @@
 import { launchAuditBrowser } from "../security/browser.js";
 import { AxeBuilder } from "@axe-core/playwright";
 import { assertUrlAllowed, isUrlAllowed, assertRequestAllowed } from "../security/url-guard.js";
-import { computeGrade, type PageAxe, type Impact, type GradeReport } from "./score.js";
+import { computeGrade, type PageAxe, type Impact, type GradeReport, type GradeRuleHit } from "./score.js";
 
 // Public-only accessibility grader scan — the free teaser wedge.
 //
@@ -24,7 +24,17 @@ export interface GradeScanResult {
   skipped: string[];
 }
 
-const AA_TAGS = new Set(["wcag2a", "wcag2aa"]);
+// axe tags WCAG 2.0 / 2.1 / 2.2 level A+AA separately. Counting only wcag2a/aa
+// under-reports modern criteria (e.g. a rule tagged wcag21aa but not wcag2aa).
+// Keep best-practice out — those are not WCAG success criteria.
+const AA_TAGS = new Set([
+  "wcag2a",
+  "wcag2aa",
+  "wcag21a",
+  "wcag21aa",
+  "wcag22a",
+  "wcag22aa",
+]);
 const IMPACTS: Impact[] = ["critical", "serious", "moderate", "minor"];
 
 function emptyImpacts(): Record<Impact, number> {
@@ -82,11 +92,20 @@ export async function gradeScan(
       const results = await new AxeBuilder({ page }).analyze();
       const byImpact = emptyImpacts();
       let aa = 0;
+      const rules: GradeRuleHit[] = [];
       for (const v of results.violations) {
         const raw = (v.impact ?? "minor") as Impact;
         const impact: Impact = IMPACTS.includes(raw) ? raw : "minor";
         byImpact[impact] += v.nodes.length;
-        if (v.tags?.some((t) => AA_TAGS.has(t))) aa += v.nodes.length;
+        const wcagAA = Boolean(v.tags?.some((t) => AA_TAGS.has(t)));
+        if (wcagAA) aa += v.nodes.length;
+        rules.push({
+          id: v.id,
+          impact,
+          nodes: v.nodes.length,
+          help: v.help,
+          wcagAA,
+        });
       }
 
       pages.push({
@@ -94,6 +113,7 @@ export async function gradeScan(
         violationsByImpact: byImpact,
         passCount: results.passes.length,
         wcagAAViolations: aa,
+        rules,
       });
       onPage?.(page.url(), visited.length);
       visited.push(page.url());

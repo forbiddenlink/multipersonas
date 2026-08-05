@@ -48,7 +48,7 @@ export default async function AuditDetailPage({
   // fall through to notFound() rather than leaking existence of other users' runs.
   const { data: run } = await supabase
     .from("test_runs")
-    .select("id,url,created_at,task_success_achieved,task_success_total,persona_ids")
+    .select("id,url,created_at,task_success_achieved,task_success_total,persona_ids,project_id")
     .eq("id", id)
     .single();
 
@@ -116,17 +116,21 @@ export default async function AuditDetailPage({
                 dashboard
               </Link>
             </li>
-            <li aria-hidden="true" className="select-none">
-              /
-            </li>
-            <li>
-              <Link
-                href="/projects"
-                className="rounded-sm transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-              >
-                projects
-              </Link>
-            </li>
+            {run.project_id ? (
+              <>
+                <li aria-hidden="true" className="select-none">
+                  /
+                </li>
+                <li>
+                  <Link
+                    href="/projects"
+                    className="rounded-sm transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                  >
+                    projects
+                  </Link>
+                </li>
+              </>
+            ) : null}
             <li aria-hidden="true" className="select-none">
               /
             </li>
@@ -149,14 +153,12 @@ export default async function AuditDetailPage({
               })}
             </p>
           </div>
-          {axeFindings.length > 0 && (
-            <Link
-              href={`/audits/${run.id}/report`}
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-            >
-              Export accessibility report
-            </Link>
-          )}
+          <Link
+            href={`/audits/${run.id}/report`}
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            Export accessibility report
+          </Link>
         </div>
         <Meter
           className="w-full max-w-xs"

@@ -11,7 +11,12 @@ export const metadata: Metadata = {
   title: "Settings",
 };
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; saved?: string }>;
+}) {
+  const { error, saved } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -32,6 +37,17 @@ export default async function SettingsPage() {
         <span className="select-none text-[var(--primary)]">›&nbsp;</span>
         account · branding · security
       </p>
+
+      {saved === "agency" ? (
+        <p role="status" className="mt-4 rounded-sm border border-border bg-card px-3 py-2 text-sm text-foreground">
+          Agency name saved.
+        </p>
+      ) : null}
+      {error === "agency" ? (
+        <p role="alert" className="mt-4 rounded-sm border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          Couldn&apos;t save the agency name. Try again.
+        </p>
+      ) : null}
 
       <BoxDivider label="account" className="mt-8 mb-4" />
       <dl className="overflow-hidden rounded-md border border-border bg-card font-mono text-sm">
@@ -102,7 +118,7 @@ export default async function SettingsPage() {
           Email us to delete your account and stored audit data.
         </p>
         <a
-          href="mailto:support@personaudit.com?subject=Account%20deletion%20request"
+          href="mailto:hello@personaudit.com?subject=Account%20deletion%20request"
           className="mt-3 inline-flex items-center justify-center rounded-sm border border-destructive/30 px-4 py-2 font-mono text-xs uppercase tracking-wide text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
           Delete account

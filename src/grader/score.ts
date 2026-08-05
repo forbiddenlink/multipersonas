@@ -15,6 +15,18 @@ export const IMPACT_WEIGHT: Record<Impact, number> = {
   minor: 0.5,
 };
 
+export interface GradeRuleHit {
+  /** axe rule id, e.g. "landmark-one-main" */
+  id: string;
+  impact: Impact;
+  /** Violating node count across pages. */
+  nodes: number;
+  /** axe help text (short). */
+  help: string;
+  /** True when tagged WCAG 2.x A/AA (any version). */
+  wcagAA: boolean;
+}
+
 export interface PageAxe {
   url: string;
   /** Count of violating NODES per impact (a rule can flag many nodes). */
@@ -23,6 +35,8 @@ export interface PageAxe {
   passCount: number;
   /** Violating nodes tagged WCAG 2.x A/AA — surfaced separately from the composite. */
   wcagAAViolations: number;
+  /** Per-rule hits on this page (optional for older fixtures). */
+  rules?: GradeRuleHit[];
 }
 
 export interface GradeReport {
@@ -33,6 +47,8 @@ export interface GradeReport {
   byImpact: Record<Impact, number>;
   wcagAAViolations: number;
   perPage: { url: string; score: number; violations: number }[];
+  /** Aggregated rule hits, most nodes first. Empty on older stored reports. */
+  rules: GradeRuleHit[];
 }
 
 const IMPACTS: Impact[] = ["critical", "serious", "moderate", "minor"];
@@ -66,6 +82,7 @@ export function computeGrade(pages: PageAxe[]): GradeReport {
       byImpact: { critical: 0, serious: 0, moderate: 0, minor: 0 },
       wcagAAViolations: 0,
       perPage: [],
+      rules: [],
     };
   }
 
@@ -84,6 +101,28 @@ export function computeGrade(pages: PageAxe[]): GradeReport {
     {} as Record<Impact, number>,
   );
 
+  // Merge per-page rule hits by id (sum nodes; keep highest impact / first help).
+  const byRule = new Map<string, GradeRuleHit>();
+  for (const p of pages) {
+    for (const hit of p.rules ?? []) {
+      const prev = byRule.get(hit.id);
+      if (!prev) {
+        byRule.set(hit.id, { ...hit });
+        continue;
+      }
+      prev.nodes += hit.nodes;
+      prev.wcagAA = prev.wcagAA || hit.wcagAA;
+      if (IMPACTS.indexOf(hit.impact) < IMPACTS.indexOf(prev.impact)) {
+        prev.impact = hit.impact;
+      }
+    }
+  }
+  const rules = [...byRule.values()].sort((a, b) => {
+    const impactDelta = IMPACTS.indexOf(a.impact) - IMPACTS.indexOf(b.impact);
+    if (impactDelta !== 0) return impactDelta;
+    return b.nodes - a.nodes;
+  });
+
   return {
     grade: bandFor(score),
     score,
@@ -92,5 +131,6 @@ export function computeGrade(pages: PageAxe[]): GradeReport {
     byImpact,
     wcagAAViolations: pages.reduce((s, p) => s + p.wcagAAViolations, 0),
     perPage,
+    rules,
   };
 }

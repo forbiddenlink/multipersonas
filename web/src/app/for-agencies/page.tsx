@@ -74,8 +74,8 @@ export default function ForAgenciesPage() {
       <Reveal className="border-y border-border bg-card">
         <section className="mx-auto w-full max-w-6xl px-6 py-20 sm:py-28">
           <p className="max-w-3xl font-heading text-[clamp(1.6rem,3.4vw,2.5rem)] leading-[1.15] text-balance">
-            <span className="tabular-nums text-primary">456</span> of 2025&apos;s accessibility
-            lawsuits hit sites that already had an accessibility{" "}
+            Hundreds of 2025&apos;s accessibility lawsuits hit sites that already had an
+            accessibility{" "}
             <span className="text-muted-foreground line-through decoration-destructive/50">overlay</span>{" "}
             installed.
           </p>

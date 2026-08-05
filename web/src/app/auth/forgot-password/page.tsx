@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <div className="flex min-h-dvh items-center justify-center px-4">
+      <main id="main" className="flex min-h-dvh items-center justify-center px-4">
         <div className="w-full max-w-sm rounded-md border border-border bg-card">
           <CardHeaderBar />
           <div className="px-5 py-6 text-center">
@@ -70,12 +70,12 @@ export default function ForgotPasswordPage() {
             </p>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4">
+    <main id="main" className="flex min-h-dvh items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-md border border-border bg-card">
         <CardHeaderBar />
         <div className="px-5 py-6">
@@ -139,6 +139,6 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

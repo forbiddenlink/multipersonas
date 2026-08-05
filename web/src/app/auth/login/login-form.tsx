@@ -35,6 +35,9 @@ function CardHeaderBar({ route }: { route: string }) {
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const returnTo = safeReturnTo(searchParams);
+  const signupHref =
+    returnTo === "/dashboard" ? "/auth/signup" : `/auth/signup?returnTo=${encodeURIComponent(returnTo)}`;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [formError, setFormError] = useState(() => {
@@ -77,13 +80,12 @@ export function LoginForm() {
       return;
     }
 
-    const returnTo = safeReturnTo(searchParams);
+    router.refresh();
     router.push(returnTo);
   }
 
   async function handleGitHubLogin() {
     setFormError("");
-    const returnTo = safeReturnTo(searchParams);
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "github",
@@ -191,7 +193,7 @@ export function LoginForm() {
           <p className="text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link
-              href="/auth/signup"
+              href={signupHref}
               className="rounded-sm text-foreground underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               Sign up

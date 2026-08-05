@@ -25,24 +25,6 @@ export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Rate limit: authenticated by user ID, anonymous by IP. Durable + shared (Postgres).
-  const rateLimitKey = user?.id || `anon:${getClientIP(request)}`;
-  const rateLimitType = user ? "authenticated" : "anonymous";
-
-  const rateLimit = await consumeRateLimit(rateLimitKey, rateLimitType);
-  if (!rateLimit.allowed) {
-    const message = user
-      ? "You've reached the audit limit (5 per 10 minutes). Please wait and try again."
-      : "Free audit limit reached (1 per hour). Sign up for more audits.";
-    return NextResponse.json(
-      { error: message },
-      {
-        status: 429,
-        headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
-      }
-    );
-  }
-
   let body: { url?: string; personaIds?: unknown; projectId?: unknown };
   try {
     body = await request.json();
@@ -67,6 +49,8 @@ export async function POST(request: Request) {
   // through localtest.me, metadata.google.internal, and [::ffff:169.254.169.254].
   // The engine re-checks every navigation, so this is the outer gate, not the
   // only one.
+  // Runs BEFORE rate-limit consume so a typo / blocked URL does not burn the
+  // anonymous 1/hour quota (or an authenticated burst slot).
   let parsedUrl: URL;
   try {
     parsedUrl = await assertUrlAllowed(url);
@@ -111,6 +95,25 @@ export async function POST(request: Request) {
       }
       projectId = project.id;
     }
+  }
+
+  // Rate limit: authenticated by user ID, anonymous by IP. Durable + shared (Postgres).
+  // Only after the request is known-valid — failed validation must not consume a slot.
+  const rateLimitKey = user?.id || `anon:${getClientIP(request)}`;
+  const rateLimitType = user ? "authenticated" : "anonymous";
+
+  const rateLimit = await consumeRateLimit(rateLimitKey, rateLimitType);
+  if (!rateLimit.allowed) {
+    const message = user
+      ? "You've reached the audit limit (5 per 10 minutes). Please wait and try again."
+      : "Free audit limit reached (1 per hour). Sign up for more audits.";
+    return NextResponse.json(
+      { error: message },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+      }
+    );
   }
 
   // Enqueue for the worker. The browser cannot run in this serverless route (no Chromium,

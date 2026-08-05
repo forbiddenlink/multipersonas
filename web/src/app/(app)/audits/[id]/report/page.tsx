@@ -85,11 +85,12 @@ export default async function ReportPage({
         {totalViolations > 0 && (
           <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
             {SEVERITY_ORDER.filter((sev) => report.severityCounts[sev] > 0).map((sev) => (
-              <SeverityChip
-                key={sev}
-                severity={sev}
-                ruleId={String(report.severityCounts[sev])}
-              />
+              <span key={sev} className="inline-flex items-center gap-1.5">
+                <SeverityChip severity={sev} />
+                <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                  {report.severityCounts[sev]}
+                </span>
+              </span>
             ))}
           </div>
         )}
