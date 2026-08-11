@@ -38,9 +38,15 @@ export const DAILY_MODEL_CALL_CAP = positiveEnvInt(process.env.AUDIT_DAILY_CALL_
 /**
  * Per-caller daily model-call ceiling, beneath the global cap. Stops one caller (a user
  * id, or an anon IP) from consuming the whole daily budget and denying everyone else.
- * Defaults to ~25% of the global cap (~50 audits/caller/day at 25 calls each).
+ *
+ * Defaults to ~5% of the global cap (250 calls ≈ 10 audits/caller/day at 25 calls each).
+ * The point of a per-caller sub-cap is that draining the WHOLE daily budget must require
+ * many distinct identities, not a handful: at 25% (the previous 1250) only 4 accounts/IPs
+ * drained the entire day and 429'd every real user until UTC midnight — and with no CAPTCHA
+ * on signup those 4 identities are trivially scriptable. At 5% it takes ~20 identities.
+ * Raise AUDIT_CALLER_DAILY_CALL_CAP per environment if a legitimate power user needs more.
  */
-export const CALLER_DAILY_CALL_CAP = positiveEnvInt(process.env.AUDIT_CALLER_DAILY_CALL_CAP, 1250);
+export const CALLER_DAILY_CALL_CAP = positiveEnvInt(process.env.AUDIT_CALLER_DAILY_CALL_CAP, 250);
 
 /** Hard stop for all runs, independent of limits — flip in the environment to freeze spend. */
 export function killSwitchEnabled(env: Record<string, string | undefined> = process.env): boolean {

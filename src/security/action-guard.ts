@@ -66,6 +66,24 @@ export const DESTRUCTIVE_ACTION_PHRASES: readonly string[] = [
   "permanently delete",
 ];
 
+/**
+ * Resolve whether the irreversible-action guard should be active for a run.
+ *
+ * The guard is opt-in via the `blockDestructiveActions` option (the CLI sets it
+ * from `--block-destructive-actions`, for an operator who owns the target). The
+ * hosted worker runs personas against stranger-supplied URLs, so it forces the
+ * guard on out-of-band by setting `MP_BLOCK_DESTRUCTIVE_ACTIONS=1` — a secure
+ * default that lives in deploy config and cannot be turned off by a caller/request.
+ * Only the exact string "1" enables it, so an empty/unset/"0" env is a no-op and
+ * CLI runs stay byte-identical.
+ */
+export function resolveBlockDestructiveActions(
+  optIn: boolean,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return optIn || env.MP_BLOCK_DESTRUCTIVE_ACTIONS === "1";
+}
+
 /** Normalize an accessible name for matching: lowercased, collapsed whitespace. */
 function normalize(name: string): string {
   return name.toLowerCase().replace(/\s+/g, " ").trim();

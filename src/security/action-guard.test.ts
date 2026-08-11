@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   isDestructiveAction,
   destructiveActionRefusal,
+  resolveBlockDestructiveActions,
   DESTRUCTIVE_ACTION_PHRASES,
 } from "./action-guard.js";
 
@@ -73,5 +74,23 @@ describe("destructiveActionRefusal", () => {
     const msg = destructiveActionRefusal("Place Order");
     expect(msg).toContain("Place Order");
     expect(msg.toLowerCase()).toContain("counts as completing");
+  });
+});
+
+describe("resolveBlockDestructiveActions", () => {
+  it("honors the opt-in option regardless of env", () => {
+    expect(resolveBlockDestructiveActions(true, {})).toBe(true);
+    expect(resolveBlockDestructiveActions(true, { MP_BLOCK_DESTRUCTIVE_ACTIONS: "0" })).toBe(true);
+  });
+
+  it("forces the guard on when MP_BLOCK_DESTRUCTIVE_ACTIONS is exactly '1' (hosted worker)", () => {
+    expect(resolveBlockDestructiveActions(false, { MP_BLOCK_DESTRUCTIVE_ACTIONS: "1" })).toBe(true);
+  });
+
+  it("stays off (CLI byte-identical) for unset / empty / non-'1' env values", () => {
+    expect(resolveBlockDestructiveActions(false, {})).toBe(false);
+    expect(resolveBlockDestructiveActions(false, { MP_BLOCK_DESTRUCTIVE_ACTIONS: "" })).toBe(false);
+    expect(resolveBlockDestructiveActions(false, { MP_BLOCK_DESTRUCTIVE_ACTIONS: "0" })).toBe(false);
+    expect(resolveBlockDestructiveActions(false, { MP_BLOCK_DESTRUCTIVE_ACTIONS: "true" })).toBe(false);
   });
 });

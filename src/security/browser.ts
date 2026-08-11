@@ -18,6 +18,24 @@ import { chromium, type Browser, type LaunchOptions } from "playwright";
  */
 export function launchAuditBrowser(options: LaunchOptions = {}): Promise<Browser> {
   const proxyServer = process.env.AUDIT_BROWSER_PROXY?.trim();
+
+  // Fail-closed enforcement for the hosted worker. The DNS-rebinding TOCTOU (above)
+  // is only truly closed when the browser host cannot reach private IPs at the network
+  // layer — i.e. AUDIT_BROWSER_PROXY points at a smokescreen egress proxy. Setting
+  // AUDIT_REQUIRE_EGRESS_PROXY=1 makes a missing/blank proxy a hard error instead of a
+  // silent direct launch, so the worker refuses to run stranger-supplied URLs with the
+  // rebinding hole open rather than bypassing it. Default off, so CLI/local launches and
+  // any environment that has not yet wired the sidecar are unchanged.
+  if (
+    process.env.AUDIT_REQUIRE_EGRESS_PROXY === "1" &&
+    !proxyServer
+  ) {
+    throw new Error(
+      "AUDIT_REQUIRE_EGRESS_PROXY=1 but AUDIT_BROWSER_PROXY is not set: refusing to launch " +
+        "the audit browser without an egress proxy (DNS-rebinding SSRF would be unmitigated).",
+    );
+  }
+
   return chromium.launch({
     ...options,
     ...(proxyServer ? { proxy: { server: proxyServer } } : {}),

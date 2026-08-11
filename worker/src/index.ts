@@ -8,6 +8,15 @@ import { gradeScan } from "multipersonas/grader";
 import { personaLibrary } from "multipersonas/personas/library";
 
 // --- config ---------------------------------------------------------------
+// The worker runs personas against URLs strangers supply via POST /api/audit, so
+// it must never execute an irreversible "Place Order" / "Confirm Payment" /
+// "Delete Account" click on someone else's live site. The engine's action guard is
+// opt-in/off-by-default for the CLI (operator owns the target); force it on here so
+// the hosted path is safe by construction, regardless of deploy env. `??=` lets an
+// operator still override to "0" explicitly if ever needed. See
+// src/security/action-guard.ts and src/agent/orchestrator.ts.
+process.env.MP_BLOCK_DESTRUCTIVE_ACTIONS ??= "1";
+
 const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 

@@ -5,6 +5,7 @@ import { runPersonaAgent, type AgentResult, type Finding } from "./engine.js";
 import { mergeAxeFindings } from "./axe-scan.js";
 import { generateMarkdownReport, type PersonaReport } from "../report/generator.js";
 import { assertUrlAllowed } from "../security/url-guard.js";
+import { resolveBlockDestructiveActions } from "../security/action-guard.js";
 
 // --- Types ---
 
@@ -163,6 +164,12 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
     blockDestructiveActions = false,
   } = options;
 
+  // Fail-safe override for the hosted service: the worker forces the action guard
+  // on via MP_BLOCK_DESTRUCTIVE_ACTIONS=1 (stranger-supplied targets), while the CLI
+  // stays opt-in. Resolved in this shared path so the secure default lives in deploy
+  // config, not in a call-site flag a request could omit. See action-guard.ts.
+  const effectiveBlockDestructive = resolveBlockDestructiveActions(blockDestructiveActions);
+
   // Vet the target before doing anything else, and let a refusal propagate.
   // The per-persona and axe paths below both swallow errors into a scored
   // "failed" result, so validating only in there would report a blocked URL as
@@ -184,7 +191,7 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
     fs.mkdirSync(personaOutputDir, { recursive: true });
 
     try {
-      const agentResult = await runPersonaAgent(url, persona, personaOutputDir, { allowPrivate, sessionFile, runAxe, blockDestructiveActions });
+      const agentResult = await runPersonaAgent(url, persona, personaOutputDir, { allowPrivate, sessionFile, runAxe, blockDestructiveActions: effectiveBlockDestructive });
 
       const status = agentResult.goalCompleted ? "goal achieved" : "blocked";
       onProgress?.({
