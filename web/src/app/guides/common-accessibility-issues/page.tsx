@@ -103,7 +103,7 @@ export default function CommonIssuesPage() {
               {issue.rank}
             </span>
             <div>
-              <h2 className="text-lg font-medium tracking-tight">{issue.title}</h2>
+              <h3 className="text-lg font-medium tracking-tight">{issue.title}</h3>
               <p className="mt-3 font-serif text-sm leading-relaxed text-muted-foreground"><strong className="font-medium text-foreground">Impact:</strong> {issue.impact}</p>
               <p className="mt-2 font-serif text-sm leading-relaxed text-muted-foreground"><strong className="font-medium text-foreground">Fix:</strong> {issue.fix}</p>
             </div>

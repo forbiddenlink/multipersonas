@@ -149,7 +149,7 @@ export default function UpdatePasswordPage() {
                   <button
                     type="button"
                     onClick={() => setShow(!show)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
                     aria-label={show ? "Hide password" : "Show password"}
                   >
                     {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}

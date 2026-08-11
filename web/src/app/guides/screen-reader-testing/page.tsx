@@ -63,7 +63,7 @@ export default function ScreenReaderTestingPage() {
         {screenReaders.map((sr) => (
           <li key={sr.name} className="py-4">
             <div className="flex flex-wrap items-center gap-3">
-              <h2 className="font-medium tracking-tight">{sr.name}</h2>
+              <h3 className="font-medium tracking-tight">{sr.name}</h3>
               <span className="rounded-sm border border-border px-2 py-0.5 font-mono text-xs text-muted-foreground">{sr.platform}</span>
               {sr.free && (
                 <span className="rounded-sm border border-border px-2 py-0.5 font-mono text-xs text-muted-foreground">Free</span>

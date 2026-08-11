@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getGraderScan } from "@/lib/grade";
 import { buttonVariants } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
+import { GradePoll } from "@/components/grade-poll";
 import { Meter } from "@/components/forensic/meter";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { BoxDivider } from "@/components/forensic/divider";
@@ -61,25 +62,9 @@ export default async function GradeResultPage({
           </p>
 
           {(scan.status === "queued" || scan.status === "running") && (
-            <>
-              {/* Auto-refresh so a shared/bookmarked link converges without JS. */}
-              <meta httpEquiv="refresh" content="5" />
-              <div
-                role="status"
-                aria-live="polite"
-                className="mt-8 flex items-center gap-2.5 rounded-md border border-border bg-card px-4 py-3 font-mono text-sm text-muted-foreground"
-              >
-                <span
-                  className="size-1.5 shrink-0 rounded-full bg-[var(--primary)]"
-                  style={{ animation: "pulse 1.4s ease-in-out infinite" }}
-                  aria-hidden
-                />
-                still scanning — this page refreshes on its own, or{" "}
-                <Link href={`/grade/${token}`} className="text-foreground underline underline-offset-4">
-                  refresh now
-                </Link>
-              </div>
-            </>
+            // Soft-refreshes in place (router.refresh) instead of a <meta refresh>
+            // full-page reload, which reset reading position every 5s (WCAG 2.2.1 F5).
+            <GradePoll token={token} />
           )}
 
           {scan.status === "failed" && (
