@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MarketingShell } from "@/components/marketing-shell";
+import { JsonLd, articleSchema } from "@/components/json-ld";
 import { BoxDivider } from "@/components/forensic/divider";
 
 export const metadata: Metadata = {
@@ -13,6 +14,14 @@ export const metadata: Metadata = {
 export default function CiGateGuidePage() {
   return (
     <MarketingShell>
+      <JsonLd
+        data={articleSchema({
+          headline: "CI accessibility gate",
+          description:
+            "Fail the build only on new axe-core defects. Baseline today's backlog, then gate PRs on regressions — deterministic, keyless, works behind a saved session.",
+          path: "/guides/ci-accessibility-gate",
+        })}
+      />
       <p className="font-mono text-xs text-muted-foreground">
         <span className="rounded-sm border border-border px-2.5 py-1">guide · ci gate</span>
       </p>

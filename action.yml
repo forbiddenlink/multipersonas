@@ -1,0 +1,67 @@
+name: "Personaudit accessibility gate"
+description: "Keyless accessibility CI gate — fail the build only on NEW axe-core defects versus a committed baseline. No API key, no external service."
+author: "Elizabeth Stein"
+branding:
+  icon: "check-circle"
+  color: "green"
+
+inputs:
+  url:
+    description: "URL to scan. Public by default; pass a saved session file to scan behind a login."
+    required: true
+  fail-on:
+    description: "Minimum severity that fails the build: critical | serious | moderate | minor."
+    required: false
+    default: "serious"
+  baseline:
+    description: "Path (in the consumer repo) to a baseline JSON. Only defects NOT in it count as new. Omit to treat every current defect as new. Create one with `mpersonas scan <url> --update-baseline`."
+    required: false
+    default: ""
+  session:
+    description: "Path to a saved `mpersonas auth` session file, to scan authenticated pages."
+    required: false
+    default: ""
+  max-pages:
+    description: "Maximum number of pages to crawl."
+    required: false
+    default: "20"
+  report:
+    description: "Directory to write the report into (uploaded as an artifact by your workflow if you add an upload step)."
+    required: false
+    default: "mpersonas-report"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up pnpm
+      uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      with:
+        package_json_file: ${{ github.action_path }}/package.json
+    - name: Set up Node
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      with:
+        node-version: "22"
+    - name: Build the Personaudit CLI
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        pnpm install --frozen-lockfile
+        pnpm build
+        pnpm exec playwright install --with-deps chromium
+    - name: Run the accessibility gate
+      shell: bash
+      # Inputs are passed through env (never interpolated into the command) so a crafted
+      # URL/baseline cannot inject shell — args are built as a quoted bash array.
+      env:
+        MP_ACTION_PATH: ${{ github.action_path }}
+        MP_URL: ${{ inputs.url }}
+        MP_FAIL_ON: ${{ inputs.fail-on }}
+        MP_BASELINE: ${{ inputs.baseline }}
+        MP_SESSION: ${{ inputs.session }}
+        MP_MAX_PAGES: ${{ inputs.max-pages }}
+        MP_REPORT: ${{ inputs.report }}
+      run: |
+        args=( scan "$MP_URL" --fail-on "$MP_FAIL_ON" --max-pages "$MP_MAX_PAGES" --output "$MP_REPORT" )
+        if [ -n "$MP_BASELINE" ]; then args+=( --baseline "$MP_BASELINE" ); fi
+        if [ -n "$MP_SESSION" ]; then args+=( --session "$MP_SESSION" ); fi
+        node "$MP_ACTION_PATH/dist/cli.js" "${args[@]}"

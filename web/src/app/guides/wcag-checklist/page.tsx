@@ -3,6 +3,7 @@ import Link from "next/link";
 import { WcagCitation } from "@/components/forensic/wcag-citation";
 import { BoxDivider } from "@/components/forensic/divider";
 import { MarketingShell } from "@/components/marketing-shell";
+import { JsonLd, articleSchema } from "@/components/json-ld";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/guides/wcag-checklist" },
@@ -53,6 +54,14 @@ const checks = [
 export default function WcagChecklistPage() {
   return (
     <MarketingShell>
+      <JsonLd
+        data={articleSchema({
+          headline: "WCAG 2.2 AA Checklist",
+          description:
+            "A practical checklist for WCAG 2.2 AA compliance. Covers perceivable, operable, understandable, and robust criteria with examples.",
+          path: "/guides/wcag-checklist",
+        })}
+      />
       <p className="font-mono text-xs text-muted-foreground">
         <span className="rounded-sm border border-border px-2.5 py-1">reference · wcag 2.2 aa</span>
       </p>

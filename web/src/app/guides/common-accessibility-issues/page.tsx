@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BoxDivider } from "@/components/forensic/divider";
 import { MarketingShell } from "@/components/marketing-shell";
+import { JsonLd, articleSchema } from "@/components/json-ld";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/guides/common-accessibility-issues" },
@@ -75,6 +76,14 @@ const issues = [
 export default function CommonIssuesPage() {
   return (
     <MarketingShell>
+      <JsonLd
+        data={articleSchema({
+          headline: "10 Most Common Accessibility Issues",
+          description:
+            "The accessibility issues found most often on real websites. Each with examples, impact on users, and how to fix.",
+          path: "/guides/common-accessibility-issues",
+        })}
+      />
       <p className="font-mono text-xs text-muted-foreground">
         <span className="rounded-sm border border-border px-2.5 py-1">reference · top 10</span>
       </p>

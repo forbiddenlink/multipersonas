@@ -1,0 +1,48 @@
+name: Deploy production (manual)
+
+# Deliberately NOT on: push. Production ships on an explicit human action, preserving the
+# "a push to main is not live until someone deploys" property. This just moves that deploy
+# off a single laptop and into a reproducible, reviewable CI run. Add required reviewers to
+# the `production` environment (repo Settings → Environments) to gate it behind sign-off.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy" to confirm a PRODUCTION deploy of web/'
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ github.event.inputs.confirm == 'deploy' }}
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: web
+    env:
+      # Vercel CLI reads these from the environment — never pass --token on argv (it leaks
+      # into logs). Set all three in repo Settings → Secrets/Variables → Actions.
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+      - name: Pull Vercel production env
+        run: pnpm dlx vercel@latest pull --yes --environment=production
+      - name: Build
+        run: pnpm dlx vercel@latest build --prod
+      - name: Deploy prebuilt to production
+        run: pnpm dlx vercel@latest deploy --prebuilt --prod

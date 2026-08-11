@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BoxDivider } from "@/components/forensic/divider";
 import { MarketingShell } from "@/components/marketing-shell";
+import { JsonLd, articleSchema } from "@/components/json-ld";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/guides/screen-reader-testing" },
@@ -47,6 +48,14 @@ const whatToTest = [
 export default function ScreenReaderTestingPage() {
   return (
     <MarketingShell>
+      <JsonLd
+        data={articleSchema({
+          headline: "Screen Reader Testing Guide",
+          description:
+            "How to test your website with screen readers. Covers VoiceOver, NVDA, and JAWS with common issues and automated alternatives.",
+          path: "/guides/screen-reader-testing",
+        })}
+      />
       <p className="font-mono text-xs text-muted-foreground">
         <span className="rounded-sm border border-border px-2.5 py-1">guide · manual testing</span>
       </p>
