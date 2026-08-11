@@ -4,6 +4,7 @@ import { personaLibrary } from "@engine/personas/library";
 import { assertUrlAllowed, BlockedUrlError } from "@engine/security/url-guard";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getSessionPlan, planAllowsPersonas } from "@/lib/entitlements";
 import { DEFAULT_PERSONA_IDS, MAX_PERSONAS } from "@/lib/personas";
 import { killSwitchEnabled, estimatedCallsFor } from "@/lib/limits";
 import { consumeRateLimit } from "@/lib/rate-limit";
@@ -60,6 +61,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
     throw error;
+  }
+
+  // Persona task-success is the paid layer. Free/anonymous callers are refused here, before
+  // any rate-limit slot or spend reservation, and pointed at the free axe grade. Fail closed:
+  // getSessionPlan resolves an unknown plan or a read error to "free".
+  const plan = await getSessionPlan(supabase, user?.id ?? null);
+  if (!planAllowsPersonas(plan)) {
+    return NextResponse.json(
+      {
+        error: "Task-success personas are a Pro feature. Run a free accessibility grade instead.",
+        upgrade: true,
+        freeAlternative: "/grade",
+      },
+      { status: 402 },
+    );
   }
 
   // Pick the personas to run. The client may request a subset by id; anything not in

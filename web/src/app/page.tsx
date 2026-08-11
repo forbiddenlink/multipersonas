@@ -142,7 +142,12 @@ export default function Home() {
             </p>
           </div>
           <div>
-            <p className="font-medium">Usability &amp; task success</p>
+            <p className="font-medium">
+              Usability &amp; task success
+              <span className="ml-2 rounded-sm border border-border px-1.5 py-0.5 text-xs font-normal text-muted-foreground">
+                Pro
+              </span>
+            </p>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
               From UX personas — did a real-shaped user complete the flow? Opinion and outcome,
               clearly labeled. Never a compliance verdict.

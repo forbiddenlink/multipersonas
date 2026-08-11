@@ -65,6 +65,24 @@ export default async function SettingsPage({
         </div>
       </dl>
 
+      {(profile?.plan ?? "free") === "free" && (
+        <p className="mt-3 text-sm text-muted-foreground">
+          Pro is invite-only during early access. It unlocks persona task-success runs (the
+          free plan gets the deterministic accessibility scan).{" "}
+          <a
+            href={
+              process.env.NEXT_PUBLIC_SUPPORT_EMAIL
+                ? `mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}?subject=Pro%20access`
+                : "/waitlist"
+            }
+            className="text-foreground underline underline-offset-4"
+          >
+            Request Pro access
+          </a>
+          .
+        </p>
+      )}
+
       <BoxDivider label="report branding" className="mt-8 mb-4" />
       <div className="rounded-md border border-border bg-card p-4">
         <p className="text-sm text-muted-foreground">

@@ -135,7 +135,7 @@ describe("POST /api/audit — validation", () => {
 });
 
 describe("POST /api/audit — anonymous access", () => {
-  it("allows unauthenticated requests (rate limited to 1/hour)", async () => {
+  it("gates unauthenticated requests behind the Pro paywall (personas are paid)", async () => {
     // Re-mock with no user
     vi.doMock("@/lib/supabase/server", () => ({
       createClient: vi.fn().mockResolvedValue({
@@ -157,7 +157,9 @@ describe("POST /api/audit — anonymous access", () => {
       body: JSON.stringify({ url: "https://example.com" }),
     });
     const res = await mod.POST(req);
-    // Should not be 401 — anonymous audits are allowed
+    // Anonymous callers resolve to the free plan and are gated at 402 (Payment Required),
+    // not 401 (Unauthorized) — the block is about plan, not authentication.
+    expect(res.status).toBe(402);
     expect(res.status).not.toBe(401);
   });
 });
@@ -166,6 +168,7 @@ describe("POST /api/audit — projectId", () => {
   async function loadRouteWithMocks(opts: {
     user: { id: string; email: string } | null;
     projectRow?: { id: string } | null;
+    plan?: string;
   }) {
     vi.doMock("@engine/security/url-guard", () => ({
       assertUrlAllowed: vi.fn().mockResolvedValue(new URL("https://example.com/")),
@@ -197,11 +200,16 @@ describe("POST /api/audit — projectId", () => {
         auth: {
           getUser: vi.fn().mockResolvedValue({ data: { user: opts.user } }),
         },
-        from: vi.fn(() => ({
+        from: vi.fn((table: string) => ({
           select: vi.fn(() => ({
             eq: vi.fn(() => ({
               single: vi.fn().mockResolvedValue({
-                data: opts.projectRow ?? null,
+                // The route reads profiles.plan (entitlement gate) and projects.id
+                // (ownership) through the same client; return the right row per table.
+                data:
+                  table === "profiles"
+                    ? { plan: opts.plan ?? "free" }
+                    : (opts.projectRow ?? null),
                 error: null,
               }),
             })),
@@ -215,7 +223,9 @@ describe("POST /api/audit — projectId", () => {
 
   it("rejects a projectId not owned by the caller", async () => {
     const mod = await loadRouteWithMocks({
+      // Pro plan so the caller clears the persona gate and reaches the ownership check.
       user: { id: "test-user", email: "test@example.com" },
+      plan: "pro",
       projectRow: null,
     });
 
@@ -230,7 +240,7 @@ describe("POST /api/audit — projectId", () => {
     expect(data.error).toContain("Project not found");
   });
 
-  it("ignores a projectId supplied by an anonymous caller instead of rejecting", async () => {
+  it("gates an anonymous caller behind the Pro paywall (personas are paid)", async () => {
     const mod = await loadRouteWithMocks({ user: null });
 
     const req = new Request("http://localhost/api/audit", {
@@ -242,8 +252,11 @@ describe("POST /api/audit — projectId", () => {
       }),
     });
     const res = await mod.POST(req);
-    // Anonymous callers can't own a project, so the field is dropped rather than
-    // rejected with the ownership error above.
-    expect(res.status).toBe(202);
+    // Anonymous callers resolve to the free plan, which cannot run the persona audit —
+    // the gate returns 402 before any project/rate/spend logic is reached.
+    expect(res.status).toBe(402);
+    const data = await res.json();
+    expect(data.upgrade).toBe(true);
+    expect(data.freeAlternative).toBe("/grade");
   });
 });

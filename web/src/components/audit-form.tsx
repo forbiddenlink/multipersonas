@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { AuditResults, type AuditResponse } from "@/components/audit-results";
 import {
@@ -135,6 +136,9 @@ export function AuditForm({
   const [url, setUrl] = useState(defaultUrl ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Distinct from `error`: a 402 from the audit route means personas are a Pro feature, which
+  // we surface as an upgrade prompt (with the free grade alternative), not a failure.
+  const [upgrade, setUpgrade] = useState(false);
   // Lazy initializer reads sessionStorage once on mount without an effect, avoiding
   // react-hooks/set-state-in-effect cascading-render warnings. An active job is only
   // relevant when there isn't already a completed result to show.
@@ -286,6 +290,7 @@ export function AuditForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setUpgrade(false);
     setResults(null);
     setLoading(true);
 
@@ -303,6 +308,13 @@ export function AuditForm({
       });
 
       const data = await res.json();
+
+      if (res.status === 402) {
+        // Personas are the paid layer. Show the upgrade prompt, not a generic error.
+        setUpgrade(true);
+        setLoading(false);
+        return;
+      }
 
       if (!res.ok) {
         setError(data.error || "Something went wrong");
@@ -414,6 +426,23 @@ export function AuditForm({
           })}
         </div>
       </fieldset>
+
+      {upgrade && (
+        <div
+          role="status"
+          className="mt-4 rounded-md border border-border bg-card px-4 py-3 text-sm"
+        >
+          <p className="font-medium">Task-success personas are a Pro feature.</p>
+          <p className="mt-1 text-muted-foreground">
+            Free accounts get the deterministic accessibility scan. Run a free grade on any
+            public page, or ask about Pro to unlock persona task-success runs.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            <Link href="/grade" className="underline underline-offset-4">Run a free grade</Link>
+            <Link href="/settings" className="underline underline-offset-4">About Pro</Link>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div role="alert" className="mt-4 text-center">
