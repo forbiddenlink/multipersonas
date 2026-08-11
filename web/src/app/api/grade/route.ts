@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { assertUrlAllowed, BlockedUrlError } from "@engine/security/url-guard";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { killSwitchEnabled, positiveEnvInt } from "@/lib/limits";
@@ -79,6 +80,10 @@ export async function POST(request: Request) {
     .select("id")
     .single();
   if (jobErr || !job) {
+    console.error("[grade] job insert failed:", jobErr?.message);
+    Sentry.captureException(jobErr ?? new Error("audit_jobs (grade) insert returned no row"), {
+      tags: { route: "grade", stage: "enqueue-job" },
+    });
     return NextResponse.json({ error: "Could not queue the grade." }, { status: 500 });
   }
 
@@ -88,6 +93,10 @@ export async function POST(request: Request) {
     .select("token")
     .single();
   if (scanErr || !scan) {
+    console.error("[grade] scan insert failed:", scanErr?.message);
+    Sentry.captureException(scanErr ?? new Error("grader_scans insert returned no row"), {
+      tags: { route: "grade", stage: "enqueue-scan" },
+    });
     // Don't leave an orphaned grade job on the queue — the worker would run a
     // scan with no public token for the user.
     await admin.from("audit_jobs").delete().eq("id", job.id);

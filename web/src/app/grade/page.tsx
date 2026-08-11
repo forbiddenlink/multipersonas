@@ -6,6 +6,7 @@ import { GradeForm } from "@/components/grade-form";
 import { BoxDivider } from "@/components/forensic/divider";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/grade" },
   title: "Free accessibility grade",
   description:
     "Get a free, honest letter grade on any public page — real axe-core violation weights, no signup, no paywall on the score.",

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { MarketingShell } from "@/components/marketing-shell";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/privacy" },
   title: "Privacy Policy",
   description: "How Personaudit handles your data, authentication, subprocessors, and your rights.",
 };

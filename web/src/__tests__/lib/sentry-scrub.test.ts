@@ -1,0 +1,41 @@
+import { describe, it, expect } from "vitest";
+import { stripQuery, redactEmails, scrubEvent } from "@/lib/sentry-scrub";
+
+describe("stripQuery", () => {
+  it("drops the query string, keeps origin+path", () => {
+    expect(stripQuery("https://x.com/a/b?token=secret&e=a@b.com")).toBe("https://x.com/a/b");
+  });
+  it("leaves a query-less URL unchanged", () => {
+    expect(stripQuery("https://x.com/a")).toBe("https://x.com/a");
+  });
+});
+
+describe("redactEmails", () => {
+  it("replaces emails with a placeholder", () => {
+    expect(redactEmails("failed for user liz@example.com now")).toBe("failed for user [email] now");
+  });
+});
+
+describe("scrubEvent", () => {
+  it("strips request query + drops query_string and POST body", () => {
+    const e = scrubEvent({
+      request: { url: "https://s.com/api/audit?token=abc", query_string: "token=abc", data: { email: "a@b.com" } },
+    });
+    expect(e.request?.url).toBe("https://s.com/api/audit");
+    expect(e.request?.query_string).toBeUndefined();
+    expect(e.request?.data).toBeUndefined();
+  });
+
+  it("redacts emails in message + exception values", () => {
+    const e = scrubEvent({
+      message: "signup failed for a@b.com",
+      exception: { values: [{ value: "duplicate key for c@d.io" }] },
+    });
+    expect(e.message).toBe("signup failed for [email]");
+    expect(e.exception?.values?.[0]?.value).toBe("duplicate key for [email]");
+  });
+
+  it("is safe on an empty event", () => {
+    expect(() => scrubEvent({})).not.toThrow();
+  });
+});

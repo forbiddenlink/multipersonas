@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { personaLibrary } from "@engine/personas/library";
 import { assertUrlAllowed, BlockedUrlError } from "@engine/security/url-guard";
 import { createClient } from "@/lib/supabase/server";
@@ -153,6 +154,13 @@ export async function POST(request: Request) {
     .single();
 
   if (enqueueError || !job) {
+    // This failure (bad service key, RLS regression, schema drift) is caught and
+    // turned into a clean 500, so it never bubbles to Next's onRequestError hook —
+    // report it explicitly or the enqueue path goes dark in prod.
+    console.error("[audit] enqueue insert failed:", enqueueError?.message);
+    Sentry.captureException(enqueueError ?? new Error("audit_jobs insert returned no row"), {
+      tags: { route: "audit", stage: "enqueue" },
+    });
     // The reservation went through but no job will run — refund global + caller
     // sub-cap now rather than letting either sit until UTC midnight.
     await releaseSpend(chosenIds.length, rateLimitKey);

@@ -9,6 +9,7 @@ import { ConsolePreview } from "@/components/forensic/console-preview";
 import { ReportPaper } from "@/components/forensic/report-paper";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/for-agencies" },
   title: "For agencies — one audit trail for every client site",
   description:
     "Personaudit walks every client site behind the login, runs axe-core at each state, and hands you the evidence report. Real audits, not an overlay widget. Early access for agencies.",

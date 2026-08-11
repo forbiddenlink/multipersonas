@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { MarketingShell } from "@/components/marketing-shell";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/accessibility" },
   title: "Accessibility Statement",
   description: "Personaudit's commitment to accessibility, the standard we hold our own site to, and how to report a barrier.",
 };

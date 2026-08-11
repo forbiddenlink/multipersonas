@@ -1,0 +1,6 @@
+# Personaudit security contact (RFC 9116).
+# Report a vulnerability privately via GitHub's security advisories.
+Contact: https://github.com/forbiddenlink/multipersonas/security/advisories/new
+Expires: 2027-08-11T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://personaudit.com/.well-known/security.txt

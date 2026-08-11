@@ -11,9 +11,43 @@ import { BoxDivider } from "@/components/forensic/divider";
 import { SEVERITY_ORDER } from "@/components/forensic/severity";
 import type { GradeReport } from "@engine/grader/score";
 
-export const metadata: Metadata = {
-  title: "Accessibility grade result",
-};
+// Dynamic per-scan metadata so a shared grade link previews the real domain + grade in
+// Slack/iMessage/Twitter. Always noindex: the URL is an unguessable capability token, not
+// an indexable page — letting search engines crawl it would both leak the graded result
+// and pollute the index with token URLs. Social previews don't require indexing.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  const scan = await getGraderScan(token);
+  const base: Metadata = { robots: { index: false, follow: false } };
+
+  if (!scan) return { ...base, title: "Accessibility grade result" };
+
+  let host = scan.entry_url;
+  try {
+    host = new URL(scan.entry_url).host;
+  } catch {
+    /* keep raw entry_url */
+  }
+
+  if (scan.status !== "completed" || !scan.report) {
+    return {
+      ...base,
+      title: `Grading ${host}…`,
+      description: `Accessibility grade in progress for ${host}.`,
+    };
+  }
+
+  const grade = (scan.report as unknown as GradeReport).grade;
+  return {
+    ...base,
+    title: `${host} scored ${grade} on accessibility`,
+    description: `Personaudit graded ${host} a ${grade} using real axe-core violation weights — a free, honest letter grade on any public page.`,
+  };
+}
 
 // Grade bands map onto the site's existing severity vocabulary rather than inventing a
 // new "good/bad" palette — A/B read as the calm teal "live" accent, C/D/F escalate

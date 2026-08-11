@@ -5,6 +5,7 @@ import { BoxDivider } from "@/components/forensic/divider";
 import { MarketingShell } from "@/components/marketing-shell";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/guides/wcag-checklist" },
   title: "WCAG 2.2 AA Checklist",
   description: "A practical checklist for WCAG 2.2 AA compliance. Covers perceivable, operable, understandable, and robust criteria with examples.",
 };

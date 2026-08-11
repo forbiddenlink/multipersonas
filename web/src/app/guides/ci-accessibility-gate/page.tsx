@@ -4,6 +4,7 @@ import { MarketingShell } from "@/components/marketing-shell";
 import { BoxDivider } from "@/components/forensic/divider";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/guides/ci-accessibility-gate" },
   title: "CI accessibility gate",
   description:
     "Fail the build only on new axe-core defects. Baseline today's backlog, then gate PRs on regressions — deterministic, keyless, works behind a saved session.",

@@ -44,8 +44,26 @@ const MAX_ATTEMPTS = positiveEnvInt(process.env.WORKER_MAX_ATTEMPTS, 3);
 const ALERT_WEBHOOK = process.env.WORKER_ALERT_WEBHOOK;
 
 // Error tracking. No-op until SENTRY_DSN is set on the host, so this ships safely disabled.
+// beforeSend redacts app PII (audited target URLs can carry query-string tokens; emails
+// may surface in error text) before events leave the process — parallels web/src/lib/
+// sentry-scrub.ts (kept inline here since the worker is a separate @sentry/node package).
 if (process.env.SENTRY_DSN) {
-  Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 0.1 });
+  const EMAIL_RE = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    tracesSampleRate: 0.1,
+    beforeSend(event) {
+      for (const v of event.exception?.values ?? []) {
+        if (typeof v.value === "string") {
+          v.value = v.value.replace(EMAIL_RE, "[email]").replace(/\?[^\s]*/g, "?[redacted]");
+        }
+      }
+      if (typeof event.message === "string") {
+        event.message = event.message.replace(EMAIL_RE, "[email]");
+      }
+      return event;
+    },
+  });
 }
 
 if (!SUPABASE_URL || !SERVICE_KEY) {
@@ -133,6 +151,27 @@ for (const sig of ["SIGTERM", "SIGINT"] as const) {
     console.log(`[worker] ${sig} received — finishing current job, then exiting.`);
   });
 }
+
+// Last-resort crash handlers. The job and loop try/catch blocks report their own
+// failures, but a throw or rejected promise OUTSIDE them (module init, a stray timer,
+// an unawaited promise) would otherwise vanish with no Sentry signal. Capture, alert,
+// flush, then exit so the process manager restarts a clean worker instead of one left
+// in a half-dead state.
+const onFatal = (evt: string) => (err: unknown) => {
+  const detail = err instanceof Error ? err.message : String(err);
+  console.error(`[worker] ${evt}:`, detail);
+  Sentry.captureException(err, { tags: { fatal: evt } });
+  void (async () => {
+    try {
+      await notify(`worker ${evt}: ${detail}`);
+      await Sentry.flush(2000);
+    } finally {
+      process.exit(1);
+    }
+  })();
+};
+process.on("uncaughtException", onFatal("uncaughtException"));
+process.on("unhandledRejection", onFatal("unhandledRejection"));
 
 const SEVERITIES = ["critical", "serious", "moderate", "minor"];
 const CATEGORIES = ["accessibility", "usability", "performance", "content"];

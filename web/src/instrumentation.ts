@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { scrubEvent } from "@/lib/sentry-scrub";
 
 // Server + edge Sentry init. dsn comes from NEXT_PUBLIC_SENTRY_DSN; when it is unset
 // (local dev, or before the env var is provisioned) Sentry.init with an undefined dsn
@@ -11,7 +12,11 @@ export async function register() {
   const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
   if (!dsn) return;
   if (process.env.NEXT_RUNTIME === "nodejs" || process.env.NEXT_RUNTIME === "edge") {
-    Sentry.init({ dsn, tracesSampleRate: 0.1 });
+    Sentry.init({
+      dsn,
+      tracesSampleRate: 0.1,
+      beforeSend: (event) => scrubEvent(event),
+    });
   }
 }
 

@@ -4,6 +4,7 @@ import { BoxDivider } from "@/components/forensic/divider";
 import { MarketingShell } from "@/components/marketing-shell";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/guides/screen-reader-testing" },
   title: "Screen Reader Testing Guide",
   description: "How to test your website with screen readers. Covers VoiceOver, NVDA, and JAWS with common issues and automated alternatives.",
 };

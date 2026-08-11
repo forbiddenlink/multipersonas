@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { AuditForm } from "@/components/audit-form";
@@ -12,6 +13,11 @@ import { FocusDemo } from "@/components/forensic/focus-demo";
 import { ContrastBadge } from "@/components/forensic/contrast-badge";
 import { BoxDivider } from "@/components/forensic/divider";
 import Link from "next/link";
+
+// Canonical only — title/description are inherited from the root layout default.
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 // How-it-works as a run-log — real tool steps, not numbered marketing circles.
 const RUN_LOG: { src: string; text: string }[] = [

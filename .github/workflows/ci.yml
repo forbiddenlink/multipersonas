@@ -7,6 +7,10 @@ on:
     branches: [main]
 
 # Least privilege: CI only reads the code. No token should be able to write.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

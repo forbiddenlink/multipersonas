@@ -4,6 +4,7 @@ import { BoxDivider } from "@/components/forensic/divider";
 import { MarketingShell } from "@/components/marketing-shell";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/guides/common-accessibility-issues" },
   title: "10 Most Common Accessibility Issues",
   description: "The accessibility issues found most often on real websites. Each with examples, impact on users, and how to fix.",
 };

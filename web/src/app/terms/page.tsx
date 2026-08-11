@@ -3,6 +3,7 @@ import Link from "next/link";
 import { MarketingShell } from "@/components/marketing-shell";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/terms" },
   title: "Terms of Service",
   description: "Terms for using Personaudit accessibility and usability testing.",
 };
