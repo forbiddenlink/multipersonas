@@ -174,10 +174,10 @@
 
 /* Section rhythm — shared marketing/app vertical cadence */
 .section-y {
-  padding-block: clamp(4rem, 8vw, 7rem);
+  padding-block: clamp(3rem, 5.5vw, 5rem);
 }
 .section-y-sm {
-  padding-block: clamp(3rem, 5vw, 4.5rem);
+  padding-block: clamp(2.5rem, 4vw, 3.5rem);
 }
 .label-mono {
   font-family: var(--font-mono), ui-monospace, monospace;
