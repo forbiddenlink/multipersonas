@@ -15,7 +15,7 @@ export function WcagCitation({ code, className = "" }: { code: string; className
         render={
           <button
             type="button"
-            className={`rounded-sm font-mono text-xs tabular-nums text-muted-foreground underline decoration-dotted decoration-muted-foreground/50 underline-offset-2 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${className}`}
+            className={`rounded-sm font-mono text-xs tabular-nums text-muted-foreground underline decoration-dotted decoration-muted-foreground underline-offset-2 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${className}`}
           />
         }
       >

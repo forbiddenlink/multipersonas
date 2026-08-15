@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { listProjects } from "@/lib/projects";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BoxDivider } from "@/components/forensic/divider";
 import { EmptyPrompt } from "@/components/forensic/empty-prompt";
 import { createProjectAction } from "./actions";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 export const metadata: Metadata = {
   title: "Projects",
@@ -67,9 +67,7 @@ export default async function ProjectsPage({
             {errorMessage}
           </p>
         )}
-        <Button type="submit" size="sm">
-          Create project
-        </Button>
+        <SubmitButton size="sm">Create project</SubmitButton>
       </form>
 
       <BoxDivider label="all projects" className="my-5" />

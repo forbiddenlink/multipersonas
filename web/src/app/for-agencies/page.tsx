@@ -52,7 +52,7 @@ export default function ForAgenciesPage() {
           <div className="fade-up mt-9 flex flex-col gap-3 sm:flex-row sm:items-center" style={{ animationDelay: "0.26s" }}>
             <Link
               href="#early-access"
-              className="inline-flex items-center justify-center rounded-sm bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-[background-color] hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              className="inline-flex items-center justify-center rounded-sm bg-foreground px-6 py-3 text-sm font-semibold text-background transition-[background-color] hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               Get early access
             </Link>
@@ -138,7 +138,9 @@ export default function ForAgenciesPage() {
               </p>
             </div>
             <div className="border-l-2 border-border pl-5">
-              <h3 className="text-lg font-semibold">Task success — the persona layer</h3>
+              <h3 className="text-lg font-semibold">
+                Task success <span className="align-middle text-xs font-normal text-muted-foreground">— the persona layer · Pro</span>
+              </h3>
               <p className="mt-1.5 text-muted-foreground">
                 A real-shaped user browses toward a goal. Did a first-time visitor actually
                 finish checkout? A crawler can&apos;t tell you that. Personaudit can.
@@ -163,17 +165,21 @@ export default function ForAgenciesPage() {
                 1.1.1 — Non-text Content · /product/hero
               </div>
               <div className="space-y-1 p-4">
+                {/* Diff as border-accent + colored marker, not a fill tint — a faint
+                    severity tint drops the colored code text below AA (DESIGN.md). */}
                 <p
-                  className="rounded px-2 py-1"
-                  style={{ backgroundColor: "color-mix(in oklch, var(--severity-critical) 10%, transparent)", color: "var(--severity-critical)" }}
+                  className="flex gap-2 rounded-sm border-l-2 px-2 py-1"
+                  style={{ borderColor: "var(--severity-critical)" }}
                 >
-                  {"- <img src=\"hero.jpg\">"}
+                  <span aria-hidden="true" style={{ color: "var(--severity-critical)" }}>-</span>
+                  <code className="text-foreground">{"<img src=\"hero.jpg\">"}</code>
                 </p>
                 <p
-                  className="rounded px-2 py-1"
-                  style={{ backgroundColor: "color-mix(in oklch, var(--severity-minor) 12%, transparent)", color: "var(--severity-minor)" }}
+                  className="flex gap-2 rounded-sm border-l-2 px-2 py-1"
+                  style={{ borderColor: "var(--severity-minor)" }}
                 >
-                  {"+ <img src=\"hero.jpg\" alt=\"Clinician reviewing a chart with a patient\">"}
+                  <span aria-hidden="true" style={{ color: "var(--severity-minor)" }}>+</span>
+                  <code className="text-foreground">{"<img src=\"hero.jpg\" alt=\"Clinician reviewing a chart with a patient\">"}</code>
                 </p>
                 <p className="px-2 pt-2 font-sans text-muted-foreground">
                   Every finding ships with the element, the rule, and the states it appeared

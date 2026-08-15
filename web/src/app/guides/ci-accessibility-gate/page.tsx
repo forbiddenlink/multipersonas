@@ -114,15 +114,15 @@ mpersonas scan https://app.example.com --session ./session.json \\
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
           <Link
             href="/for-agencies#early-access"
-            className="inline-flex rounded-sm bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+            className="inline-flex rounded-sm bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-colors hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
           >
             Get early access
           </Link>
           <Link
-            href="/#scan"
+            href="/grade"
             className="inline-flex rounded-sm border border-border px-5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:border-foreground/25 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
           >
-            Run a free public audit
+            Run a free grade
           </Link>
         </div>
       </div>

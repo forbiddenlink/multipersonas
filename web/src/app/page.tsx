@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { AuditForm } from "@/components/audit-form";
+import { GradeForm } from "@/components/grade-form";
 import { AuditTerminal } from "@/components/audit-terminal";
 import { ReportExcerpt } from "@/components/forensic/report-excerpt";
 import { ReportPaper } from "@/components/forensic/report-paper";
@@ -55,9 +55,9 @@ export default function Home() {
             <div className="fade-up mt-8 flex flex-col gap-3 sm:flex-row sm:items-center" style={{ animationDelay: "0.26s" }}>
               <Link
                 href="#scan"
-                className="rounded-sm bg-primary px-5 py-2.5 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                className="rounded-sm bg-foreground px-5 py-2.5 text-center text-sm font-medium text-background transition-colors hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
               >
-                Run a free audit
+                Run a free grade
               </Link>
               <a
                 href="#example"
@@ -93,13 +93,33 @@ export default function Home() {
         </div>
       </section>
 
-      {/* The product — run a real scan. */}
+      {/* The free entry — a public grade anyone can run (axe-core, no signup). The
+          behind-login persona audit is the Pro layer, linked below; the CLI runs the
+          full crawl free. Keeps the landing's promise honest: what's here is free. */}
       <section id="scan" className="border-y border-border bg-card px-6 py-16">
         <div className="mx-auto max-w-3xl">
           <p className="mb-6 font-mono text-xs text-muted-foreground">
-            <span className="select-none text-[var(--primary)]">›&nbsp;</span>new scan — point it at any public URL
+            <span className="select-none text-[var(--primary)]">›&nbsp;</span>free grade — point it at any public URL, no signup
           </p>
-          <AuditForm />
+          <GradeForm />
+          <p className="mt-5 font-mono text-xs leading-relaxed text-muted-foreground">
+            Behind-login crawls and persona task-success are the{" "}
+            <span className="text-foreground">Pro</span> layer.{" "}
+            <Link
+              href="/for-agencies"
+              className="text-foreground underline underline-offset-4 hover:text-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+            >
+              Get early access
+            </Link>
+            , or run the full crawl free from the{" "}
+            <Link
+              href="/guides/ci-accessibility-gate"
+              className="text-foreground underline underline-offset-4 hover:text-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+            >
+              keyless CLI
+            </Link>
+            .
+          </p>
         </div>
       </section>
 
@@ -291,9 +311,9 @@ mpersonas scan https://app.example.com --session ./session.json \\
       <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden">
         <Link
           href="#scan"
-          className="block w-full rounded-sm bg-primary py-3 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+          className="block w-full rounded-sm bg-foreground py-3 text-center text-sm font-medium text-background transition-colors hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
-          Run a free audit
+          Run a free grade
         </Link>
       </div>
     </div>

@@ -6,6 +6,7 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { Badge } from "@/components/ui/badge";
 import { BoxDivider } from "@/components/forensic/divider";
 import { updateAgencyNameAction } from "./actions";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -110,12 +111,9 @@ export default async function SettingsPage({
               className="mt-2 w-full rounded-sm border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             />
           </div>
-          <button
-            type="submit"
-            className="inline-flex items-center justify-center rounded-sm border border-border px-4 py-2 font-mono text-xs uppercase tracking-wide transition-colors hover:border-foreground/20 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-          >
+          <SubmitButton variant="outline" size="sm" className="font-mono uppercase tracking-wide">
             Save
-          </button>
+          </SubmitButton>
         </form>
       </div>
 
@@ -136,7 +134,7 @@ export default async function SettingsPage({
           Email us to delete your account and stored audit data.
         </p>
         <a
-          href="mailto:hello@personaudit.com?subject=Account%20deletion%20request"
+          href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "hello@personaudit.com"}?subject=Account%20deletion%20request`}
           className="mt-3 inline-flex items-center justify-center rounded-sm border border-destructive/30 px-4 py-2 font-mono text-xs uppercase tracking-wide text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
           Delete account

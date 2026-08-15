@@ -10,7 +10,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        // Primary = warm-neutral "ink" solid (foreground-on-background). Teal (--primary)
+        // is DEMOTED to live/cursor/active per DESIGN.md, so it is NOT the default CTA fill;
+        // opt into `accent` on the rare button that genuinely signals a live action.
+        default: "bg-foreground text-background hover:bg-foreground/90",
+        accent: "bg-primary text-primary-foreground hover:bg-primary/90",
         outline:
           "border-border bg-background hover:border-foreground/25 hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
@@ -42,18 +46,46 @@ const buttonVariants = cva(
   }
 )
 
+// The 6th interaction state (DESIGN.md §Interaction Completeness). `loading` is
+// visually distinct from `disabled` — it keeps full opacity, shows a spinner, and
+// sets aria-busy — so a working button never reads as an inert one.
+function ButtonSpinner() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="size-3.5 animate-spin motion-reduce:animate-none"
+      viewBox="0 0 24 24"
+      fill="none"
+    >
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" className="opacity-30" />
+      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 function Button({
   className,
   variant = "default",
   size = "default",
+  loading = false,
+  disabled,
+  children,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants> & { loading?: boolean }) {
   return (
     <ButtonPrimitive
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      aria-busy={loading || undefined}
+      disabled={disabled || loading}
+      className={cn(
+        buttonVariants({ variant, size, className }),
+        loading && "cursor-wait opacity-100!",
+      )}
       {...props}
-    />
+    >
+      {loading ? <ButtonSpinner /> : null}
+      {children}
+    </ButtonPrimitive>
   )
 }
 

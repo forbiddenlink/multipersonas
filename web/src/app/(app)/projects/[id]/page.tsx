@@ -8,11 +8,11 @@ import { compareProjectRuns } from "@/lib/baseline";
 import { AuditForm } from "@/components/audit-form";
 import { AuditHistory } from "@/components/audit-history";
 import { RunDiff } from "@/components/run-diff";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BoxDivider } from "@/components/forensic/divider";
 import { updateProjectAction, deleteProjectAction } from "../actions";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { DeleteProjectForm } from "../delete-project-form";
 
 export const metadata: Metadata = {
@@ -100,7 +100,7 @@ export default async function ProjectDetailPage({
             htmlFor="description"
             className="font-mono text-xs uppercase tracking-wide text-muted-foreground"
           >
-            Description <span className="normal-case text-muted-foreground/70">(optional)</span>
+            Description <span className="normal-case text-muted-foreground">(optional)</span>
           </Label>
           <Input
             id="description"
@@ -114,9 +114,7 @@ export default async function ProjectDetailPage({
             {errorMessage}
           </p>
         )}
-        <Button type="submit" variant="outline" size="sm">
-          Save changes
-        </Button>
+        <SubmitButton variant="outline" size="sm">Save changes</SubmitButton>
       </form>
     </div>
   );

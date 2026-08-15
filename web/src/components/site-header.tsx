@@ -9,7 +9,7 @@ const CTA: Record<
   HeaderIntent,
   { href: string; label: string; shortLabel: string }
 > = {
-  audit: { href: "/#scan", label: "Run free audit", shortLabel: "Try free" },
+  audit: { href: "/#scan", label: "Run a free grade", shortLabel: "Free grade" },
   waitlist: { href: "#early-access", label: "Get early access", shortLabel: "Join" },
   grade: { href: "#grade", label: "Get my grade", shortLabel: "Grade" },
 };
@@ -42,7 +42,7 @@ export async function SiteHeader({
         {user ? (
           <Link
             href="/dashboard"
-            className="rounded-sm bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors duration-150 hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+            className="rounded-sm bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors duration-150 hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
           >
             Dashboard
           </Link>
@@ -64,7 +64,7 @@ export async function SiteHeader({
             ) : null}
             <Link
               href={cta.href}
-              className="rounded-sm bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors duration-150 hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              className="rounded-sm bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors duration-150 hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               <span className="sm:hidden">{cta.shortLabel}</span>
               <span className="hidden sm:inline">{cta.label}</span>

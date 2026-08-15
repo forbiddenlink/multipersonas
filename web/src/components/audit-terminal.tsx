@@ -193,9 +193,9 @@ export function AuditTerminal() {
             {done ? "0 / 1 — blocked" : "auditing…"}
           </span>
         </div>
-        <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10">
+        <div className="mt-2 h-1 overflow-hidden rounded-sm bg-white/10">
           <div
-            className="h-full rounded-full transition-[width] duration-300 ease-out"
+            className="h-full rounded-sm transition-[width] duration-300 ease-out"
             style={{ width: `${Math.round(progress * 100)}%`, backgroundColor: TEAL }}
           />
         </div>
@@ -209,9 +209,10 @@ function SummaryChip({ color, glyph, label }: { color: string; glyph: string; la
     <span
       className="inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 tabular-nums"
       style={{
+        // Outline chip, no fill — a faint tint drops severity-color text below AA.
+        // Matches the canonical SeverityChip primitive (forensic/severity-chip.tsx).
         color,
-        borderColor: `color-mix(in oklch, ${color} 40%, transparent)`,
-        backgroundColor: `color-mix(in oklch, ${color} 12%, transparent)`,
+        borderColor: `color-mix(in oklch, ${color} 55%, transparent)`,
       }}
     >
       <span className="text-[0.7em] leading-none">{glyph}</span>

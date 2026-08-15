@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 /** Wraps the delete Server Action with an inline two-step confirm — cascade-deletes every
  * saved run (and its findings) for the project via the FK, so this needs an explicit
@@ -25,9 +26,9 @@ export function DeleteProjectForm({
         <p className="font-mono text-xs text-destructive">
           Delete &ldquo;{projectName}&rdquo; permanently?
         </p>
-        <Button type="submit" variant="destructive" size="sm">
+        <SubmitButton variant="destructive" size="sm">
           Confirm
-        </Button>
+        </SubmitButton>
         <Button
           type="button"
           variant="ghost"
