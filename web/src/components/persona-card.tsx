@@ -57,11 +57,11 @@ export function PersonaCard({ persona }: { persona: Persona }) {
         <p className="font-mono text-[0.7rem] uppercase tracking-wide text-muted-foreground">
           Goals
         </p>
-        <ul className="mt-1.5 space-y-0.5 text-sm text-card-foreground/80">
+        <ul className="mt-1.5 space-y-0.5 text-sm text-card-foreground">
           {persona.goals.slice(0, 2).map((goal) => (
             <li
               key={goal}
-              className="line-clamp-1 before:mr-1.5 before:text-muted-foreground/50 before:content-['·']"
+              className="line-clamp-1 before:mr-1.5 before:text-muted-foreground before:content-['·']"
             >
               {goal}
             </li>

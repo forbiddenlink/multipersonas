@@ -91,7 +91,7 @@ export default function UpdatePasswordPage() {
             <p className="mt-2 text-sm text-muted-foreground">Your password has been changed.</p>
             <Link
               href="/dashboard"
-              className="mt-5 inline-flex w-full items-center justify-center rounded-sm bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              className="mt-5 inline-flex w-full items-center justify-center rounded-sm bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               Go to dashboard
             </Link>

@@ -109,7 +109,7 @@ export function WaitlistForm() {
           className="block font-mono text-xs uppercase tracking-wide text-muted-foreground"
         >
           Scale{" "}
-          <span className="normal-case font-sans text-muted-foreground/80">
+          <span className="normal-case font-sans text-muted-foreground">
             (optional, but it helps us prioritise)
           </span>
         </label>
@@ -133,7 +133,7 @@ export function WaitlistForm() {
           className="block font-mono text-xs uppercase tracking-wide text-muted-foreground"
         >
           What would make this a no-brainer for you?{" "}
-          <span className="normal-case font-sans text-muted-foreground/80">(optional)</span>
+          <span className="normal-case font-sans text-muted-foreground">(optional)</span>
         </label>
         <textarea
           id={noteId}
@@ -154,7 +154,7 @@ export function WaitlistForm() {
       <button
         type="submit"
         disabled={status === "submitting"}
-        className="inline-flex w-full items-center justify-center rounded-sm bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-[background-color,transform] hover:bg-primary/90 active:translate-y-px disabled:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] sm:w-auto"
+        className="inline-flex w-full items-center justify-center rounded-sm bg-foreground px-6 py-3.5 text-sm font-semibold text-background transition-[background-color,transform] hover:bg-foreground/90 active:translate-y-px disabled:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] sm:w-auto"
       >
         {status === "submitting" ? "Joining…" : "Get early access"}
       </button>
