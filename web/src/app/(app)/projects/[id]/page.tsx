@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BoxDivider } from "@/components/forensic/divider";
 import { updateProjectAction, deleteProjectAction } from "../actions";
+import { getSessionPlan, planAllowsPersonas } from "@/lib/entitlements";
+import { ProAuditUpsell } from "@/components/pro-audit-upsell";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { DeleteProjectForm } from "../delete-project-form";
 
@@ -36,6 +38,10 @@ export default async function ProjectDetailPage({
 
   const audits = await listAudits(supabase, { projectId: project.id });
   const regression = await compareProjectRuns(supabase, audits);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const canRunPersonas = planAllowsPersonas(await getSessionPlan(supabase, user?.id ?? null));
 
   const updateWithId = updateProjectAction.bind(null, project.id);
   const deleteWithId = deleteProjectAction.bind(null, project.id);
@@ -64,7 +70,11 @@ export default async function ProjectDetailPage({
 
       <BoxDivider label="new scan for this project" className="my-5" />
 
-      <AuditForm projectId={project.id} defaultUrl={project.url} submitLabel="Run audit" />
+      {canRunPersonas ? (
+        <AuditForm projectId={project.id} defaultUrl={project.url} submitLabel="Run audit" />
+      ) : (
+        <ProAuditUpsell />
+      )}
 
       {regression ? (
         <>
