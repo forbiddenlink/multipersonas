@@ -1,15 +1,22 @@
 import { describe, it, expect } from "vitest";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import type { Page } from "playwright";
 import { trimToWindow, HISTORY_WINDOW, executeAction } from "./engine.js";
 
 /**
- * Minimal fake Page for the click path. `resolveElement` tries getByRole first
- * and clicks the located element; `touched` records whether the page was
- * queried at all, so a blocked click can be proven to short-circuit before any
- * element resolution.
+ * Minimal fake Page for the click path. `resolveElement` tries an aria-ref
+ * locator first (when the selector looks like e12), then getByRole.
+ * `touched` records whether the page was queried at all, so a blocked click
+ * can be proven to short-circuit before any element resolution.
  */
 function fakePage() {
-  const state = { clicked: false, touched: false };
+  const state = {
+    clicked: false,
+    touched: false,
+    locatorArg: undefined as string | undefined,
+    roleQueried: false,
+  };
   const locator = {
     count: async () => 1,
     first: () => ({ click: async () => { state.clicked = true; } }),
@@ -19,11 +26,19 @@ function fakePage() {
     return locator;
   };
   const page = {
-    getByRole: touch,
+    getByRole: () => {
+      state.roleQueried = true;
+      state.touched = true;
+      return locator;
+    },
     getByLabel: touch,
     getByText: touch,
     getByPlaceholder: touch,
-    locator: touch,
+    locator: (sel?: string) => {
+      state.locatorArg = sel;
+      state.touched = true;
+      return locator;
+    },
   } as unknown as Page;
   return { page, state };
 }
@@ -112,5 +127,44 @@ describe("executeAction — destructive-action guard wiring", () => {
     );
     expect(result).toBe('Clicked "Add to cart"');
     expect(state.clicked).toBe(true);
+  });
+});
+
+describe("executeAction — aria-ref targeting", () => {
+  it("clicks via aria-ref when the selector is a snapshot ref", async () => {
+    const { page, state } = fakePage();
+    const result = await executeAction(page, "click", { selector: "e12" });
+    expect(result).toBe('Clicked "e12"');
+    expect(state.locatorArg).toBe("aria-ref=e12");
+    expect(state.roleQueried).toBe(false);
+    expect(state.clicked).toBe(true);
+  });
+
+  it("does not treat an accessible name as a ref", async () => {
+    const { page, state } = fakePage();
+    await executeAction(page, "click", { selector: "Place Order" });
+    expect(state.roleQueried).toBe(true);
+    expect(state.locatorArg).toBeUndefined();
+  });
+});
+
+describe("engine source guards (axe-feed + AI snapshot refs)", () => {
+  const src = fs.readFileSync(path.join(process.cwd(), "src/agent/engine.ts"), "utf-8");
+
+  it("takes an AI-mode aria snapshot so interactable nodes carry [ref=eN]", () => {
+    expect(src).toMatch(/ariaSnapshot\(\{\s*mode:\s*["']ai["']/);
+  });
+
+  it("feeds current-page axe verdicts to the model as read-only ground truth", () => {
+    expect(src).toMatch(/formatKnownAxeForPage/);
+    // Injected after the untrusted page fence so axe text is ours, not the page's.
+    const fence = src.lastIndexOf("</untrusted-page-content>");
+    const feed = src.indexOf("formatKnownAxeForPage(axeFindings");
+    expect(feed).toBeGreaterThan(fence);
+  });
+
+  it("resolves snapshot refs through Playwright's aria-ref locator", () => {
+    expect(src).toMatch(/parseAriaRef/);
+    expect(src).toMatch(/ariaRefLocator/);
   });
 });
