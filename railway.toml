@@ -7,13 +7,22 @@
 # Set these variables on the Railway service (never commit them):
 #   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY
 #   WORKER_POLL_MS (optional)
+#   AUDIT_BROWSER_PROXY=http://127.0.0.1:4750   — routes the audit browser through the
+#     in-container smokescreen egress guard (docs/ssrf-egress-hardening.md). Closes the
+#     DNS-rebinding SSRF residual that app-level url-guard.ts cannot close in-process.
+#   AUDIT_REQUIRE_EGRESS_PROXY=1 (recommended once the above is set and verified) — makes
+#     the worker refuse to launch the audit browser if the proxy is ever unset/unreachable
+#     (fail closed) instead of silently falling back to a direct, unguarded launch.
 
 [build]
 builder = "dockerfile"
 dockerfilePath = "worker/Dockerfile"
 
 [deploy]
-startCommand = "pnpm --filter worker start"
+# The image's own ENTRYPOINT (worker/entrypoint.sh) backgrounds smokescreen, then execs
+# the worker — startCommand must point at it or Railway's override skips smokescreen
+# entirely and silently reverts to a direct, unguarded browser launch.
+startCommand = "/usr/local/bin/entrypoint.sh"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
 numReplicas = 1

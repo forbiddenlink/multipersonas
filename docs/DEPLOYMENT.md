@@ -1,8 +1,10 @@
 # Deployment
 
-**Status: not yet public. The architecture is now deployable; one blocker (network
-isolation) plus env/host setup remain before flipping on a public anonymous deploy.**
-Snapshot as of 2026-07-26. See `docs/PLAN-2026-07-26-phase2-deploy-infra.md`.
+**Status: not yet public. The architecture is now deployable; the last code blocker
+(network isolation) has shipped — activating it is now an env-var + redeploy step, not
+engineering — plus the rest of env/host setup below remain before flipping on a public
+anonymous deploy.** Snapshot as of 2026-07-26, updated 2026-08-16.
+See `docs/PLAN-2026-07-26-phase2-deploy-infra.md`.
 
 ## Architecture (the worker split — BUILT)
 
@@ -33,18 +35,24 @@ that read that page choose where to go next. Public + anonymous is a hostile env
 2. **Spend cap + kill switch — DONE.** Reserve-then-run against a daily model-call cap
    (`reserve_model_calls`, migration 004; `web/src/lib/spend.ts`) plus `AUDIT_KILL_SWITCH`.
    Requires the service key.
-3. **Network isolation for the browser — REMAINING.** `src/security/url-guard.ts` resolves
-   and validates every navigation and the engine re-checks each document request, but DNS
-   rebinding cannot be fully closed in-process. The durable fix is running `worker/` where
-   its egress denies link-local + RFC1918 by default — Browserbase gives this for free; a
-   raw container host needs an egress firewall configured. This is the P2-C gate.
+3. **Network isolation for the browser — CODE SHIPPED, activation REMAINING.**
+   `src/security/url-guard.ts` resolves and validates every navigation and the engine
+   re-checks each document request, but DNS rebinding cannot be fully closed in-process.
+   The worker image now builds + backgrounds a `smokescreen` egress proxy
+   (`worker/Dockerfile`, `worker/entrypoint.sh`) that denies link-local + RFC1918 by
+   default — verified locally (public URL proxies 200, `169.254.169.254` denied 407).
+   Activating it on Railway needs `AUDIT_BROWSER_PROXY=http://127.0.0.1:4750` (+
+   `AUDIT_REQUIRE_EGRESS_PROXY=1` once verified) set on the worker service, then a
+   redeploy. See `docs/ssrf-egress-hardening.md`. This is the P2-C gate.
 
 ## Before flipping on a public deploy (checklist)
 
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` set on both the Vercel app and the worker host (without
       it, enqueue returns 503 and the rate-limit/spend-cap are disabled).
 - [ ] `ANTHROPIC_API_KEY` on the worker host.
-- [ ] Worker deployed to a host with egress isolation (blocker 3).
+- [ ] `AUDIT_BROWSER_PROXY=http://127.0.0.1:4750` + `AUDIT_REQUIRE_EGRESS_PROXY=1` set on
+      the worker host, and the worker redeployed with the smokescreen-enabled image
+      (blocker 3 — code shipped, this is the activation step).
 - [ ] Pre-existing Supabase advisors resolved (the `handle_new_user` / `set_updated_at`
       `search_path` + `SECURITY DEFINER` exec-by-anon warnings).
 - [ ] Load/abuse check against the durable limiter + cap.
@@ -77,16 +85,24 @@ railway logs                       # expect "[worker] started; polling every 300
 
 Set the SAME `SUPABASE_SERVICE_ROLE_KEY` on the Vercel app (so `/api/audit` can enqueue).
 
-### ⚠️ Network isolation on Railway (blocker #3 — not fully closed)
+### Network isolation on Railway (blocker #3 — code shipped, needs activation)
 
-Browserbase would give egress isolation for free; **Railway does not** — its containers
-have unrestricted outbound. The in-process `src/security/url-guard.ts` (rejects
-loopback/RFC1918/link-local/metadata and re-checks redirects) is the mitigation, but DNS
-rebinding — resolve here, Chromium re-resolves on connect — cannot be fully closed in
-process. So on Railway:
+Browserbase would give egress isolation for free; **Railway does not** by itself — its
+containers have unrestricted outbound. As of this change the worker image builds and runs
+its own `smokescreen` egress-guard sidecar (`worker/entrypoint.sh`), verified locally to
+deny link-local/metadata addresses. It does nothing yet on a running deploy until the
+worker is told to route through it:
 
-- **Acceptable now** for trusted/first-party target URLs or a gated (non-public) rollout.
-- **Before fully-public anonymous audits:** either put the worker behind an egress firewall
-  that denies link-local + RFC1918, or route the browser through Browserbase (connect over
-  CDP) from the Railway worker. Until then, an attacker-supplied URL that rebinds DNS to an
-  internal address is a residual risk.
+```bash
+railway variables --set AUDIT_BROWSER_PROXY=http://127.0.0.1:4750 \
+                   --set AUDIT_REQUIRE_EGRESS_PROXY=1
+railway up                         # redeploy — picks up the smokescreen-enabled image
+```
+
+- **Before this is set:** same as before — the in-process `src/security/url-guard.ts` is
+  the only mitigation, and an attacker-supplied URL that rebinds DNS to an internal address
+  is a residual risk. Acceptable for trusted/first-party target URLs or a gated rollout.
+- **After this is set + verified:** the DNS-rebinding TOCTOU is closed at the network layer
+  (smokescreen re-resolves and validates at connect time); `AUDIT_REQUIRE_EGRESS_PROXY=1`
+  makes the worker refuse to launch the browser at all if the proxy is ever unreachable,
+  rather than silently falling back to a direct connection.

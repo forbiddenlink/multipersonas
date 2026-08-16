@@ -1,7 +1,11 @@
 # Closing the DNS-rebinding SSRF residual (worker egress)
 
-Snapshot 2026-08-02. Status: OPEN. The one security item the 2026-08-02 audit could not
-close from the repo — it needs infra/network work on the worker host.
+Snapshot 2026-08-02, updated 2026-08-16. Status: CODE SHIPPED, activation OPEN. The
+worker image now builds and backgrounds `smokescreen` (`worker/Dockerfile` +
+`worker/entrypoint.sh`, option 1 below) — verified locally: proxies a public URL
+(`200`) and denies `169.254.169.254` (`407`, "Deny: Not Global Unicast"). What remains
+is purely operator-side on the Railway host: set `AUDIT_BROWSER_PROXY=http://127.0.0.1:4750`
+(+ `AUDIT_REQUIRE_EGRESS_PROXY=1` to fail closed) and redeploy — see `worker/README.md`.
 
 ## The residual
 
@@ -31,14 +35,18 @@ happens. By default it denies RFC1918, loopback (incl. `127.0.0.1`), link-local 
 `AUDIT_BROWSER_PROXY`; when set, every audit browser (crawler, grader, persona engine,
 persona-gen, session) launches with `proxy.server` pointing at it. Unset (CLI/local) it is
 a plain launch — no behaviour change off the worker. If the proxy is down the browser can't
-connect, so audits **fail closed** rather than bypassing the guard.
+connect, so audits **fail closed** rather than bypassing the guard. It also fails closed
+BEFORE launch when `AUDIT_REQUIRE_EGRESS_PROXY=1` and the proxy var is unset/blank.
 
-So only two things are left, both on the worker container/host (untested here — verify the
-Docker build + `smokescreen --help` flag names before relying on it):
-
-**a) Build + run smokescreen in the worker container.** Smokescreen ships no official
-binary or image, so build it from source with a multi-stage step, then run it as a second
-process via an entrypoint. Add to `worker/Dockerfile`:
+**a) DONE — smokescreen builds + runs in the worker container.** `worker/Dockerfile` has a
+`golang:1.23-bookworm` build stage (`go install github.com/stripe/smokescreen@latest`); only
+the compiled binary crosses into the runtime image. `worker/entrypoint.sh` backgrounds it on
+`127.0.0.1:4750` (with `--deny-range 240.0.0.0/4`, see below) then execs the worker; the
+image `CMD` and `railway.toml`'s `startCommand` both point at it. Verified locally (built +
+ran the image): a request to `example.com` through the proxy returns `200`; a request to
+`169.254.169.254` returns `407` with `decision_reason: "Deny: Not Global Unicast"` —
+confirming smokescreen's default deny covers link-local/metadata with no ACL file needed.
+For reference, this is what shipped:
 
 ```dockerfile
 # --- stage: build smokescreen from source (no official binary/image) ---
@@ -67,13 +75,18 @@ smokescreen --listen-ip 127.0.0.1 --listen-port 4750 --deny-range 240.0.0.0/4 &
 exec pnpm --filter worker start
 ```
 
-**b) Set the env on the worker (Railway):** `AUDIT_BROWSER_PROXY=http://127.0.0.1:4750`.
-Leave it UNSET everywhere else (CLI, tests) so only the worker is proxied.
+**b) REMAINING (Liz, on Railway) — set the env on the worker service:**
+`AUDIT_BROWSER_PROXY=http://127.0.0.1:4750`, then once verified working,
+`AUDIT_REQUIRE_EGRESS_PROXY=1` to fail closed. Leave both UNSET everywhere else (CLI,
+tests, local dev) so only the worker is proxied. Redeploy (`railway up`) to pick up the
+new image — the smokescreen stage only exists from this change forward, so a redeploy is
+required even though no worker source changed.
 
-Caveats: verify the exact smokescreen flags against `smokescreen --help` at build time;
-keep the app-layer `url-guard` as the first gate (it already blocks 240/4 and the rest, so
-it is the belt to smokescreen's suspenders). Keeps the browser local (no per-scan latency),
-proven in production, minimal moving parts.
+Caveats (resolved): smokescreen flags verified against `smokescreen --help` (`--listen-ip`,
+`--listen-port`, `--deny-range`, all repeatable/as documented) and confirmed working in a
+local build+run (see status line at top). Keep the app-layer `url-guard` as the first gate
+(it already blocks 240/4 and the rest, so it is the belt to smokescreen's suspenders).
+Keeps the browser local (no per-scan latency), proven in production, minimal moving parts.
 
 ### 2. Sandboxed browser service (Browserbase / Browserless)
 
@@ -96,16 +109,20 @@ connects to the IP the guard approved, not a re-resolved one. Defeats rebinding 
 proxy, but is fiddly with a crawler visiting many hosts (rules must be rebuilt per target)
 and does not guard subresources to other hosts. Weaker than option 1; note as a stopgap.
 
-## Until it's closed
+## Until it's activated
 
-Keep the deployed url-guard + per-request `context.route` guards (they block the *common*
-case; only an attacker-controlled DNS rebind slips through). If the public hosted product
-is exposed before egress isolation lands, gate it behind Vercel Deployment Protection per
+Until the Railway env vars (b, above) are set and the worker redeployed, keep relying on
+the deployed url-guard + per-request `context.route` guards (they block the *common* case;
+only an attacker-controlled DNS rebind slips through). The public grader (`/grade`,
+`docs/superpowers/plans/2026-08-01-public-grader.md`) widens the anonymous attack surface,
+so activating this is now higher priority than when it was written — not merely defense in
+depth. If needed sooner, gate the public surfaces behind Vercel Deployment Protection per
 `docs/DEPLOYMENT.md`. The CLI is unaffected in practice (the operator points it at a target
 they chose).
 
 ## Recommendation
 
-Ship **smokescreen as a worker sidecar** (option 1). If Railway makes sidecars painful,
-move the browser to **Browserbase** (option 2). Either closes the residual; the app-layer
-url-guard stays as the first line.
+**Smokescreen as a worker sidecar (option 1) is built and verified locally; only the two
+Railway env vars + a redeploy remain.** If that ever proves painful, option 2
+(Browserbase) is the documented fallback — either closes the residual; the app-layer
+url-guard stays as the first line either way.
