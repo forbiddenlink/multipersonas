@@ -54,8 +54,20 @@ that read that page choose where to go next. Public + anonymous is a hostile env
 - [x] `AUDIT_BROWSER_PROXY=http://127.0.0.1:4750` + `AUDIT_REQUIRE_EGRESS_PROXY=1` set on
       the worker host, and the worker redeployed with the smokescreen-enabled image
       (blocker 3 — DONE 2026-08-16, verified via `railway logs`).
-- [ ] Pre-existing Supabase advisors resolved (the `handle_new_user` / `set_updated_at`
-      `search_path` + `SECURITY DEFINER` exec-by-anon warnings).
+- [x] Supabase security advisors resolved (2026-08-16, verified via
+      `supabase db advisors --linked --type security`): `handle_new_user`/`set_updated_at`
+      search_path (006) and SECURITY DEFINER exec-by-anon on `handle_new_user` and the rate
+      limit/spend RPCs (007, 018) were already closed; migration 019 closed a live gap
+      migration 017 had left open on `reserve_model_calls_scoped` (revoked from
+      anon/authenticated but not PUBLIC — anon could call it directly over
+      `/rest/v1/rpc/...` and manipulate the spend-cap counters). Remaining, non-schema:
+      **Leaked Password Protection is disabled** — toggle it on in the Supabase Auth
+      dashboard (Authentication → Policies → Password); this is a project-level Auth
+      setting the CLI/migrations can't reach.
+      ⚠️ **Do not run `supabase config push`** to fix it — `web/supabase/config.toml`
+      still has the stale `site_url = "http://127.0.0.1:3000"` from local dev; pushing it
+      would revert the production Site URL fix (the 2026-07-31 auth-redirect bug). Fix
+      `config.toml` to match the live dashboard values first if config-as-code is wanted.
 - [ ] Load/abuse check against the durable limiter + cap.
 
 ## Local development
