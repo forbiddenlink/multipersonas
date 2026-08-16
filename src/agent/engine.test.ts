@@ -10,7 +10,7 @@ import { trimToWindow, HISTORY_WINDOW, executeAction } from "./engine.js";
  * `touched` records whether the page was queried at all, so a blocked click
  * can be proven to short-circuit before any element resolution.
  */
-function fakePage() {
+function fakePage(opts: { innerText?: string; ariaLabel?: string | null } = {}) {
   const state = {
     clicked: false,
     touched: false,
@@ -19,7 +19,12 @@ function fakePage() {
   };
   const locator = {
     count: async () => 1,
-    first: () => ({ click: async () => { state.clicked = true; } }),
+    first: () => ({
+      click: async () => { state.clicked = true; },
+      getAttribute: async (n: string) =>
+        n === "aria-label" ? (opts.ariaLabel ?? null) : null,
+      innerText: async () => opts.innerText ?? "",
+    }),
   };
   const touch = () => {
     state.touched = true;
@@ -145,6 +150,58 @@ describe("executeAction — aria-ref targeting", () => {
     await executeAction(page, "click", { selector: "Place Order" });
     expect(state.roleQueried).toBe(true);
     expect(state.locatorArg).toBeUndefined();
+  });
+});
+
+describe("executeAction — risk-aversion confirm + ref denylist", () => {
+  it("pauses a cautious persona on the first irreversible click, then proceeds", async () => {
+    const { page, state } = fakePage({ innerText: "Place Order" });
+    const irreversibleConfirm = { pending: null as string | null };
+    const first = await executeAction(
+      page,
+      "click",
+      { selector: "Place Order" },
+      { riskAversion: 0.7, irreversibleConfirm },
+    );
+    expect(first).toMatch(/paused to re-read/i);
+    expect(first).toContain("Place Order");
+    expect(state.clicked).toBe(false);
+    expect(irreversibleConfirm.pending).toBe("Place Order");
+
+    const second = await executeAction(
+      page,
+      "click",
+      { selector: "Place Order" },
+      { riskAversion: 0.7, irreversibleConfirm },
+    );
+    expect(second).toBe('Clicked "Place Order"');
+    expect(state.clicked).toBe(true);
+    expect(irreversibleConfirm.pending).toBeNull();
+  });
+
+  it("does not pause a neutral-risk persona (legacy default)", async () => {
+    const { page, state } = fakePage({ innerText: "Place Order" });
+    const result = await executeAction(
+      page,
+      "click",
+      { selector: "Place Order" },
+      { riskAversion: 0.5 },
+    );
+    expect(result).toBe('Clicked "Place Order"');
+    expect(state.clicked).toBe(true);
+  });
+
+  it("blocks a destructive aria-ref click by the element's accessible name", async () => {
+    const { page, state } = fakePage({ innerText: "Place Order" });
+    const result = await executeAction(
+      page,
+      "click",
+      { selector: "e12" },
+      { blockDestructiveActions: true },
+    );
+    expect(result.toLowerCase()).toContain("irreversible");
+    expect(state.locatorArg).toBe("aria-ref=e12");
+    expect(state.clicked).toBe(false);
   });
 });
 

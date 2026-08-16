@@ -97,3 +97,39 @@ export function nextGiveUpState(
   const next = streak + 1;
   return { streak: next, giveUp: next >= budget };
 }
+
+/**
+ * Cautious personas re-read once before an irreversible click (submit / pay /
+ * delete). Neutral 0.5 (the legacy default) never pauses, so existing runs stay
+ * byte-identical. Margaret (0.7) and Linda (0.85) do.
+ */
+export const IRREVERSIBLE_CONFIRM_THRESHOLD = 0.65;
+
+export function needsConfirmBeforeIrreversible(riskAversion: number): boolean {
+  return riskAversion >= IRREVERSIBLE_CONFIRM_THRESHOLD;
+}
+
+/**
+ * First encounter of this irreversible control is a pause; repeating the same
+ * identity is the confirm. Switching to a different control resets the pause.
+ */
+export function nextIrreversibleConfirm(
+  identity: string,
+  pending: string | null,
+): { pause: boolean; pending: string | null } {
+  if (pending === identity) return { pause: false, pending: null };
+  return { pause: true, pending: identity };
+}
+
+export const CONFIRM_PAUSE_PREFIX = "You paused to re-read";
+
+export function confirmPauseMessage(name: string): string {
+  return (
+    `${CONFIRM_PAUSE_PREFIX} "${name}" before committing. ` +
+    `If you still want to proceed, click it again. If anything looks off, finish instead.`
+  );
+}
+
+export function isConfirmPause(result: string): boolean {
+  return result.startsWith(CONFIRM_PAUSE_PREFIX);
+}

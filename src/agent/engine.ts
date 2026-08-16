@@ -6,7 +6,16 @@ import { z } from "zod";
 import * as fs from "fs";
 import * as path from "path";
 import type { Persona } from "../personas/types.js";
-import { deriveTraits, giveUpThreshold, maxDeadEnds, nextGiveUpState } from "../personas/traits.js";
+import {
+  deriveTraits,
+  giveUpThreshold,
+  maxDeadEnds,
+  nextGiveUpState,
+  needsConfirmBeforeIrreversible,
+  nextIrreversibleConfirm,
+  confirmPauseMessage,
+  isConfirmPause,
+} from "../personas/traits.js";
 import { resolveConditions } from "../personas/conditions.js";
 import { assertUrlAllowed, assertRequestAllowed, isInScope, BlockedUrlError } from "../security/url-guard.js";
 import { isDestructiveAction, destructiveActionRefusal } from "../security/action-guard.js";
@@ -46,6 +55,17 @@ export interface GuardOptions {
    * transacting against. See src/security/action-guard.ts.
    */
   blockDestructiveActions?: boolean;
+  /**
+   * Persona riskAversion (0..1). High-aversion personas pause once before an
+   * irreversible click (re-read/confirm). Neutral 0.5 is a no-op, so existing
+   * runs stay byte-identical. Ignored when blockDestructiveActions is on.
+   */
+  riskAversion?: number;
+  /**
+   * Mutable confirm slot for the pause-before-irreversible state machine.
+   * The engine owns the object; executeAction updates `.pending`.
+   */
+  irreversibleConfirm?: { pending: string | null };
 }
 
 // --- Types ---
@@ -201,6 +221,15 @@ async function resolveElement(
   throw new Error(
     `Could not find element matching "${selector}". Try a different selector based on the accessibility tree.`
   );
+}
+
+/** Accessible name of a resolved locator — aria-label, then visible text. */
+async function readAccessibleName(
+  el: { getAttribute(name: string): Promise<string | null>; innerText(): Promise<string> },
+): Promise<string> {
+  const label = (await el.getAttribute("aria-label"))?.trim();
+  if (label) return label;
+  return ((await el.innerText()) ?? "").replace(/\s+/g, " ").trim();
 }
 
 // --- Tool definitions ---
@@ -359,10 +388,41 @@ export async function executeAction(
       // opt-in (see GuardOptions.blockDestructiveActions): the refusal is
       // handed back to the model as a normal tool result so it finishes rather
       // than hunting for another way to press the same button.
+      // Name-based selectors can be judged before touching the page. Snapshot
+      // refs (e12) cannot — we resolve first, then read the accessible name,
+      // so a ref cannot bypass the denylist.
       if (guard.blockDestructiveActions && isDestructiveAction(selector)) {
         return destructiveActionRefusal(selector);
       }
       const el = await resolveElement(page, selector);
+      const name = (await readAccessibleName(el)) || selector;
+      const irreversible =
+        isDestructiveAction(selector) || isDestructiveAction(name);
+
+      if (guard.blockDestructiveActions && irreversible) {
+        return destructiveActionRefusal(name);
+      }
+
+      // Cautious personas re-read once before committing. Not a block: the
+      // second click on the same control proceeds. Neutral riskAversion (0.5)
+      // never pauses. Hosted runs with the denylist on never reach here.
+      if (
+        !guard.blockDestructiveActions &&
+        needsConfirmBeforeIrreversible(guard.riskAversion ?? 0) &&
+        irreversible
+      ) {
+        const next = nextIrreversibleConfirm(
+          name,
+          guard.irreversibleConfirm?.pending ?? null,
+        );
+        if (guard.irreversibleConfirm) {
+          guard.irreversibleConfirm.pending = next.pending;
+        }
+        if (next.pause) {
+          return confirmPauseMessage(name);
+        }
+      }
+
       await el.click({ timeout: ACTION_TIMEOUT });
       return `Clicked "${selector}"`;
     }
@@ -502,7 +562,12 @@ export async function runPersonaAgent(
     // Resolve the target before launching anything: its origin defines the audit's
     // scope, and every navigation below is checked against it.
     const safeUrl = await assertUrlAllowed(url, guard);
-    const scope: GuardOptions = { ...guard, scopeOrigin: guard.scopeOrigin ?? safeUrl.origin };
+    const scope: GuardOptions = {
+      ...guard,
+      scopeOrigin: guard.scopeOrigin ?? safeUrl.origin,
+      riskAversion: traits.riskAversion,
+      irreversibleConfirm: { pending: null },
+    };
 
     browser = await launchAuditBrowser({ headless: true });
     const context = await browser.newContext({
@@ -762,8 +827,11 @@ export async function runPersonaAgent(
 
       try {
         actionResult = await executeAction(page, toolName, input, scope);
-        // Wait briefly for page to settle after action
-        await page.waitForTimeout(500);
+        const paused = isConfirmPause(actionResult);
+        // A confirm pause did not change the page — skip the settle wait.
+        if (!paused) {
+          await page.waitForTimeout(500);
+        }
         await page.screenshot({ path: screenshotPath, fullPage: false });
       } catch (error) {
         const errMsg =
@@ -785,6 +853,7 @@ export async function runPersonaAgent(
       if (
         guard.runAxe !== false &&
         toolName !== "report_finding" &&
+        !isConfirmPause(actionResult) &&
         isScannablePageUrl(page.url())
       ) {
         try {
@@ -794,6 +863,7 @@ export async function runPersonaAgent(
         }
       }
 
+      const paused = isConfirmPause(actionResult);
       const detail =
         toolName === "navigate"
           ? String(input.url)
@@ -809,7 +879,7 @@ export async function runPersonaAgent(
 
       steps.push({
         step,
-        action: toolName,
+        action: paused ? "confirm" : toolName,
         detail,
         pageUrl: page.url(),
         screenshotPath,

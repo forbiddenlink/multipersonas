@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { deriveTraits, giveUpThreshold, maxDeadEnds, nextGiveUpState, type TraitVector } from "./traits.js";
+import { deriveTraits, giveUpThreshold, maxDeadEnds, nextGiveUpState, needsConfirmBeforeIrreversible, nextIrreversibleConfirm, type TraitVector } from "./traits.js";
+import { anxiousFirstTimer, elderlyUser, powerUserDeveloper } from "./library.js";
 
 describe("deriveTraits (back-compat)", () => {
   it("maps patienceLevel + techProficiency for a legacy persona (no traits)", () => {
@@ -73,6 +74,38 @@ describe("nextGiveUpState (code-enforced give-up decision)", () => {
     const persistent = maxDeadEnds(base({ persistence: 1 })); // 3
     expect(nextGiveUpState(true, 0, impatient).giveUp).toBe(true);
     expect(nextGiveUpState(true, 0, persistent).giveUp).toBe(false);
+  });
+});
+
+describe("needsConfirmBeforeIrreversible", () => {
+  it("is a no-op at the legacy-neutral 0.5, and trips for cautious personas", () => {
+    expect(needsConfirmBeforeIrreversible(0.5)).toBe(false);
+    expect(needsConfirmBeforeIrreversible(0)).toBe(false);
+    expect(needsConfirmBeforeIrreversible(0.7)).toBe(true);
+    expect(needsConfirmBeforeIrreversible(0.85)).toBe(true);
+  });
+});
+
+describe("nextIrreversibleConfirm", () => {
+  it("pauses on the first encounter and proceeds on the repeat", () => {
+    const first = nextIrreversibleConfirm("Place Order", null);
+    expect(first).toEqual({ pause: true, pending: "Place Order" });
+    const second = nextIrreversibleConfirm("Place Order", first.pending);
+    expect(second).toEqual({ pause: false, pending: null });
+  });
+
+  it("resets the pause when the control changes", () => {
+    const first = nextIrreversibleConfirm("Place Order", null);
+    const other = nextIrreversibleConfirm("Delete account", first.pending);
+    expect(other).toEqual({ pause: true, pending: "Delete account" });
+  });
+});
+
+describe("roster: cautious personas confirm, others do not", () => {
+  it("Margaret and Linda pause before irreversible clicks; Alex does not", () => {
+    expect(needsConfirmBeforeIrreversible(deriveTraits(elderlyUser).riskAversion)).toBe(true);
+    expect(needsConfirmBeforeIrreversible(deriveTraits(anxiousFirstTimer).riskAversion)).toBe(true);
+    expect(needsConfirmBeforeIrreversible(deriveTraits(powerUserDeveloper).riskAversion)).toBe(false);
   });
 });
 
