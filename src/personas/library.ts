@@ -180,6 +180,9 @@ export const anxiousFirstTimer: Persona = buildPersona({
   inputModality: "pointer",
   maxSteps: 25,
   patienceLevel: "high",
+  // Cautious first-time buyer — high risk-aversion is CODE-enforced (pause
+  // before Place Order / Pay now), not just prompt flavor.
+  traits: { riskAversion: 0.85, attentionToDetail: 0.7 },
 });
 
 // Export all personas as a record
