@@ -174,3 +174,108 @@ export function unlabeledControlRefusal(accessibleName: string): string {
 export function isUnlabeledRefusal(result: string): boolean {
   return result.startsWith(UNLABELED_REFUSAL_PREFIX);
 }
+
+export const MISREAD_RECORDED_PREFIX = "Misread recorded:";
+export const WRONG_CLICK_RECORDED_PREFIX = "Wrong click recorded:";
+
+/**
+ * Developer/auth/infra terms a low-tech persona cannot be assumed to know.
+ * Word-token match only: "Place Order" and "FAQ" stay ordinary. "REST" is
+ * skipped because it is also an English word.
+ */
+const JARGON_TERMS = [
+  "sso",
+  "oauth",
+  "oauth2",
+  "saml",
+  "jwt",
+  "oidc",
+  "openid",
+  "ldap",
+  "scim",
+  "2fa",
+  "mfa",
+  "totp",
+  "sdk",
+  "cli",
+  "api",
+  "apis",
+  "graphql",
+  "webhook",
+  "webhooks",
+  "npm",
+  "pnpm",
+  "kubernetes",
+  "k8s",
+  "cdn",
+  "csrf",
+  "xss",
+  "sql",
+  "nosql",
+  "grpc",
+  "protobuf",
+  "terraform",
+  "devops",
+  "hmac",
+  "bcrypt",
+  "json",
+  "yaml",
+  "endpoint",
+  "payload",
+] as const;
+
+const JARGON = new Set<string>(JARGON_TERMS);
+
+export function looksLikeJargon(text: string): boolean {
+  const tokens = text.split(/[^a-zA-Z0-9]+/).filter(Boolean);
+  return tokens.some((t) => JARGON.has(t.toLowerCase()));
+}
+
+export function shouldMisreadJargon(techLiteracy: number, label: string): boolean {
+  return needsVisibleLabel(techLiteracy) && looksLikeJargon(label);
+}
+
+export function jargonMisreadMessage(label: string): string {
+  return (
+    `${MISREAD_RECORDED_PREFIX} "${label}" uses technical language this persona does not understand. ` +
+    `This is not a click. Find a plainer control, or report the jargon as a usability issue and continue.`
+  );
+}
+
+/**
+ * First-class confusion actions (the banana-problem complement to give-up).
+ * The model can admit it misunderstood a control instead of fake-succeeding.
+ * These do not click and do not auto-insert a finding — they record the miss
+ * so task-success stays honest. Stochastic mis-clicks are not injected.
+ */
+
+export function misreadRecordedMessage(input: {
+  selector: string;
+  expected: string;
+  actual: string;
+}): string {
+  return (
+    `${MISREAD_RECORDED_PREFIX} you took "${input.selector}" to mean "${input.expected}", ` +
+    `but it is "${input.actual}". This is not a click. Find a clearer control, ` +
+    `or report the confusing copy as a usability issue and continue.`
+  );
+}
+
+export function isMisreadRecorded(result: string): boolean {
+  return result.startsWith(MISREAD_RECORDED_PREFIX);
+}
+
+export function wrongClickRecordedMessage(input: {
+  selector: string;
+  intended: string;
+}): string {
+  return (
+    `${WRONG_CLICK_RECORDED_PREFIX} you hit "${input.selector}" but meant "${input.intended}". ` +
+    `This did not click anything. Aim at the control you meant, ` +
+    `or report the confusing target as a usability issue and continue.`
+  );
+}
+
+export function isWrongClickRecorded(result: string): boolean {
+  return result.startsWith(WRONG_CLICK_RECORDED_PREFIX);
+}
