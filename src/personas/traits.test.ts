@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { deriveTraits, giveUpThreshold, maxDeadEnds, nextGiveUpState, needsConfirmBeforeIrreversible, nextIrreversibleConfirm, needsVisibleLabel, isIconOnlyName, unlabeledControlRefusal, isUnlabeledRefusal, type TraitVector } from "./traits.js";
+import { deriveTraits, giveUpThreshold, maxDeadEnds, nextGiveUpState, needsConfirmBeforeIrreversible, nextIrreversibleConfirm, needsVisibleLabel, isIconOnlyName, unlabeledControlRefusal, isUnlabeledRefusal, misreadRecordedMessage, isMisreadRecorded, wrongClickRecordedMessage, isWrongClickRecorded, type TraitVector } from "./traits.js";
 import { anxiousFirstTimer, elderlyUser, powerUserDeveloper } from "./library.js";
 import { firstTimeVisitor, keyboardTraversal } from "./prebuilt.js";
 
@@ -157,6 +157,32 @@ describe("roster: low-tech personas need visible labels; traversal does not", ()
     expect(needsVisibleLabel(deriveTraits(firstTimeVisitor).techLiteracy)).toBe(true);
     expect(needsVisibleLabel(deriveTraits(powerUserDeveloper).techLiteracy)).toBe(false);
     expect(needsVisibleLabel(deriveTraits(keyboardTraversal).techLiteracy)).toBe(false);
+  });
+});
+
+describe("misread / wrong_click recorded messages", () => {
+  it("records a misread without sounding like a click or a finding", () => {
+    const msg = misreadRecordedMessage({
+      selector: "SSO",
+      expected: "a search box",
+      actual: "single sign-on",
+    });
+    expect(isMisreadRecorded(msg)).toBe(true);
+    expect(msg).toContain("SSO");
+    expect(msg).toMatch(/not a click/i);
+    expect(msg).toMatch(/usability issue/i);
+    expect(msg).not.toMatch(/—/);
+  });
+
+  it("records a wrong click as an admission, not a click", () => {
+    const msg = wrongClickRecordedMessage({
+      selector: "Cancel",
+      intended: "Place Order",
+    });
+    expect(isWrongClickRecorded(msg)).toBe(true);
+    expect(msg).toContain("Cancel");
+    expect(msg).toMatch(/did not click/i);
+    expect(msg).not.toMatch(/—/);
   });
 });
 

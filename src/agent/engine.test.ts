@@ -287,6 +287,40 @@ describe("executeAction — tech-literacy visible-label targeting", () => {
   });
 });
 
+describe("executeAction — misread / wrong_click (observation only)", () => {
+  it("records a misread without clicking or filing a finding", async () => {
+    const { page, state } = fakePage({ innerText: "SSO" });
+    const result = await executeAction(page, "misread", {
+      selector: "SSO",
+      expected: "a search box",
+      actual: "single sign-on",
+    });
+    expect(result).toMatch(/^Misread recorded:/);
+    expect(result).toMatch(/not a click/i);
+    expect(state.clicked).toBe(false);
+    expect(state.touched).toBe(false);
+  });
+
+  it("rejects a misread missing required fields", async () => {
+    const { page, state } = fakePage();
+    const result = await executeAction(page, "misread", { selector: "SSO" });
+    expect(result).toMatch(/^Misread rejected/);
+    expect(state.clicked).toBe(false);
+  });
+
+  it("records a wrong click without touching the page", async () => {
+    const { page, state } = fakePage({ innerText: "Cancel" });
+    const result = await executeAction(page, "wrong_click", {
+      selector: "Cancel",
+      intended: "Place Order",
+    });
+    expect(result).toMatch(/^Wrong click recorded:/);
+    expect(result).toMatch(/did not click/i);
+    expect(state.clicked).toBe(false);
+    expect(state.touched).toBe(false);
+  });
+});
+
 describe("engine source guards (axe-feed + AI snapshot refs)", () => {
   const src = fs.readFileSync(path.join(process.cwd(), "src/agent/engine.ts"), "utf-8");
 
@@ -311,5 +345,12 @@ describe("engine source guards (axe-feed + AI snapshot refs)", () => {
     expect(src).toMatch(/techLiteracy:\s*traits\.techLiteracy/);
     expect(src).toMatch(/needsVisibleLabel/);
     expect(src).toMatch(/unlabeledControlRefusal/);
+  });
+
+  it("exposes misread and wrong_click as first-class tools that do not click", () => {
+    expect(src).toMatch(/misread:\s*tool\(/);
+    expect(src).toMatch(/wrong_click:\s*tool\(/);
+    expect(src).toMatch(/misreadRecordedMessage/);
+    expect(src).toMatch(/wrongClickRecordedMessage/);
   });
 });

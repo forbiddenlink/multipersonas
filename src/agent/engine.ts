@@ -19,6 +19,10 @@ import {
   isIconOnlyName,
   unlabeledControlRefusal,
   isUnlabeledRefusal,
+  misreadRecordedMessage,
+  isMisreadRecorded,
+  wrongClickRecordedMessage,
+  isWrongClickRecorded,
 } from "../personas/traits.js";
 import { resolveConditions } from "../personas/conditions.js";
 import { assertUrlAllowed, assertRequestAllowed, isInScope, BlockedUrlError } from "../security/url-guard.js";
@@ -268,6 +272,19 @@ export const finishSchema = z.object({
   summary: z.string().min(1),
 });
 
+/** A recorded misunderstanding. Observation only — never a finding, never a click. */
+export const misreadSchema = z.object({
+  selector: z.string().min(1),
+  expected: z.string().min(1),
+  actual: z.string().min(1),
+});
+
+/** A recorded near-miss click. Observation only — does not click the page. */
+export const wrongClickSchema = z.object({
+  selector: z.string().min(1),
+  intended: z.string().min(1),
+});
+
 /**
  * Map a finish tool call to a replay step's caption + monologue.
  *
@@ -376,6 +393,27 @@ const agentTools = {
           "'achieved' only if you actually accomplished your goal. 'blocked' if anything stopped you from completing it.",
         ),
       summary: z.string().describe("Summary of what happened"),
+    }),
+  }),
+  misread: tool({
+    description:
+      "Record that you misunderstood a control or piece of copy (jargon, an unclear label, an idiom). This does not click anything and does not file a finding. After recording it, look for a clearer path or report the confusing copy as a usability issue.",
+    inputSchema: z.object({
+      selector: z
+        .string()
+        .describe("Snapshot ref or visible name of what you misread"),
+      expected: z.string().describe("What you thought it meant"),
+      actual: z.string().describe("What it actually is, if you now know"),
+    }),
+  }),
+  wrong_click: tool({
+    description:
+      "Record that you aimed at the wrong control (nearby lookalikes, a misleading label). This does not click anything. Aim at the control you meant, or report the confusing target as a usability issue.",
+    inputSchema: z.object({
+      selector: z
+        .string()
+        .describe("Snapshot ref or name of the control you nearly hit"),
+      intended: z.string().describe("The control you meant to use"),
     }),
   }),
 };
@@ -520,6 +558,24 @@ export async function executeAction(
     }
     case "finish": {
       return `Session finished (${input.outcome as string}): ${input.summary as string}`;
+    }
+    case "misread": {
+      const parsed = misreadSchema.safeParse(input);
+      if (!parsed.success) {
+        return `Misread rejected. It was missing required fields (${parsed.error.issues
+          .map((i) => i.path.join("."))
+          .join(", ")}). Re-record it with every field filled in, or continue browsing.`;
+      }
+      return misreadRecordedMessage(parsed.data);
+    }
+    case "wrong_click": {
+      const parsed = wrongClickSchema.safeParse(input);
+      if (!parsed.success) {
+        return `Wrong click rejected. It was missing required fields (${parsed.error.issues
+          .map((i) => i.path.join("."))
+          .join(", ")}). Re-record it with every field filled in, or continue browsing.`;
+      }
+      return wrongClickRecordedMessage(parsed.data);
     }
     default:
       return `Unknown action: ${toolName}`;
@@ -865,8 +921,14 @@ export async function runPersonaAgent(
 
       try {
         actionResult = await executeAction(page, toolName, input, scope);
-        const skipped = isConfirmPause(actionResult) || isUnlabeledRefusal(actionResult);
-        // A confirm pause or unlabeled refusal did not change the page.
+        const skipped =
+          isConfirmPause(actionResult) ||
+          isUnlabeledRefusal(actionResult) ||
+          isMisreadRecorded(actionResult) ||
+          isWrongClickRecorded(actionResult) ||
+          toolName === "misread" ||
+          toolName === "wrong_click";
+        // A confirm pause, unlabeled refusal, or recorded miss did not change the page.
         if (!skipped) {
           await page.waitForTimeout(500);
         }
@@ -893,6 +955,10 @@ export async function runPersonaAgent(
         toolName !== "report_finding" &&
         !isConfirmPause(actionResult) &&
         !isUnlabeledRefusal(actionResult) &&
+        !isMisreadRecorded(actionResult) &&
+        !isWrongClickRecorded(actionResult) &&
+        toolName !== "misread" &&
+        toolName !== "wrong_click" &&
         isScannablePageUrl(page.url())
       ) {
         try {
@@ -914,7 +980,11 @@ export async function runPersonaAgent(
                 ? String(input.direction)
                 : toolName === "select_option"
                   ? `${String(input.selector)} -> "${String(input.option)}"`
-                  : (JSON.stringify(input) ?? toolName);
+                  : toolName === "misread"
+                    ? `${String(input.selector)}: expected "${String(input.expected)}", actual "${String(input.actual)}"`
+                    : toolName === "wrong_click"
+                      ? `${String(input.selector)} (meant ${String(input.intended)})`
+                      : (JSON.stringify(input) ?? toolName);
 
       steps.push({
         step,
