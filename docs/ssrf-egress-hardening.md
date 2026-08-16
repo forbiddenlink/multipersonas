@@ -1,11 +1,14 @@
 # Closing the DNS-rebinding SSRF residual (worker egress)
 
-Snapshot 2026-08-02, updated 2026-08-16. Status: CODE SHIPPED, activation OPEN. The
-worker image now builds and backgrounds `smokescreen` (`worker/Dockerfile` +
+Snapshot 2026-08-02, updated 2026-08-16. **Status: CLOSED, live in production.** The
+worker image builds and backgrounds `smokescreen` (`worker/Dockerfile` +
 `worker/entrypoint.sh`, option 1 below) — verified locally: proxies a public URL
-(`200`) and denies `169.254.169.254` (`407`, "Deny: Not Global Unicast"). What remains
-is purely operator-side on the Railway host: set `AUDIT_BROWSER_PROXY=http://127.0.0.1:4750`
-(+ `AUDIT_REQUIRE_EGRESS_PROXY=1` to fail closed) and redeploy — see `worker/README.md`.
+(`200`) and denies `169.254.169.254` (`407`, "Deny: Not Global Unicast"). Both
+`AUDIT_BROWSER_PROXY=http://127.0.0.1:4750` and `AUDIT_REQUIRE_EGRESS_PROXY=1` are now
+set on the Railway `multipersonas-worker` service; the redeployed container's logs
+confirm smokescreen's own `[INFO] starting` line followed by a clean
+`[worker] started; polling every 3000ms` boot, deployed in two phases (proxy first,
+then fail-closed once the first was confirmed running) per `worker/README.md`.
 
 ## The residual
 
@@ -75,12 +78,12 @@ smokescreen --listen-ip 127.0.0.1 --listen-port 4750 --deny-range 240.0.0.0/4 &
 exec pnpm --filter worker start
 ```
 
-**b) REMAINING (Liz, on Railway) — set the env on the worker service:**
-`AUDIT_BROWSER_PROXY=http://127.0.0.1:4750`, then once verified working,
-`AUDIT_REQUIRE_EGRESS_PROXY=1` to fail closed. Leave both UNSET everywhere else (CLI,
-tests, local dev) so only the worker is proxied. Redeploy (`railway up`) to pick up the
-new image — the smokescreen stage only exists from this change forward, so a redeploy is
-required even though no worker source changed.
+**b) DONE — env set on the worker service (Railway `multipersonas-worker`):**
+`AUDIT_BROWSER_PROXY=http://127.0.0.1:4750` set + redeployed first; verified via
+`railway logs` (smokescreen's `[INFO] starting` line, then a clean worker boot); THEN
+`AUDIT_REQUIRE_EGRESS_PROXY=1` set (auto-triggered a second redeploy, also verified
+clean). Both UNSET everywhere else (CLI, tests, local dev) so only the worker is
+proxied.
 
 Caveats (resolved): smokescreen flags verified against `smokescreen --help` (`--listen-ip`,
 `--listen-port`, `--deny-range`, all repeatable/as documented) and confirmed working in a
@@ -109,20 +112,18 @@ connects to the IP the guard approved, not a re-resolved one. Defeats rebinding 
 proxy, but is fiddly with a crawler visiting many hosts (rules must be rebuilt per target)
 and does not guard subresources to other hosts. Weaker than option 1; note as a stopgap.
 
-## Until it's activated
+## Now that it's activated
 
-Until the Railway env vars (b, above) are set and the worker redeployed, keep relying on
-the deployed url-guard + per-request `context.route` guards (they block the *common* case;
-only an attacker-controlled DNS rebind slips through). The public grader (`/grade`,
-`docs/superpowers/plans/2026-08-01-public-grader.md`) widens the anonymous attack surface,
-so activating this is now higher priority than when it was written — not merely defense in
-depth. If needed sooner, gate the public surfaces behind Vercel Deployment Protection per
-`docs/DEPLOYMENT.md`. The CLI is unaffected in practice (the operator points it at a target
-they chose).
+The deployed url-guard + per-request `context.route` guards remain the first line of
+defense (belt-and-suspenders); smokescreen closes the specific DNS-rebind TOCTOU they
+cannot. If smokescreen or the proxy env var is ever removed from the Railway service by
+accident, `AUDIT_REQUIRE_EGRESS_PROXY=1` makes the worker refuse to launch the browser
+rather than silently reverting to a direct connection — watch worker logs / Sentry for
+that error string if audits start failing after a config change.
 
 ## Recommendation
 
-**Smokescreen as a worker sidecar (option 1) is built and verified locally; only the two
-Railway env vars + a redeploy remain.** If that ever proves painful, option 2
-(Browserbase) is the documented fallback — either closes the residual; the app-layer
-url-guard stays as the first line either way.
+**Shipped: smokescreen as a worker sidecar (option 1), live on the Railway
+`multipersonas-worker` service since 2026-08-16.** If it ever proves operationally
+painful, option 2 (Browserbase) is the documented fallback; the app-layer url-guard
+stays as the first line either way.

@@ -1,9 +1,9 @@
 # Deployment
 
-**Status: not yet public. The architecture is now deployable; the last code blocker
-(network isolation) has shipped — activating it is now an env-var + redeploy step, not
-engineering — plus the rest of env/host setup below remain before flipping on a public
-anonymous deploy.** Snapshot as of 2026-07-26, updated 2026-08-16.
+**Status: not yet public. The architecture is deployable and all three security
+blockers (rate limiting, spend cap, network isolation) are now closed and live in
+production — the remaining checklist below is env/host setup, not engineering, before
+flipping on a public anonymous deploy.** Snapshot as of 2026-07-26, updated 2026-08-16.
 See `docs/PLAN-2026-07-26-phase2-deploy-infra.md`.
 
 ## Architecture (the worker split — BUILT)
@@ -35,24 +35,25 @@ that read that page choose where to go next. Public + anonymous is a hostile env
 2. **Spend cap + kill switch — DONE.** Reserve-then-run against a daily model-call cap
    (`reserve_model_calls`, migration 004; `web/src/lib/spend.ts`) plus `AUDIT_KILL_SWITCH`.
    Requires the service key.
-3. **Network isolation for the browser — CODE SHIPPED, activation REMAINING.**
+3. **Network isolation for the browser — DONE, live in production.**
    `src/security/url-guard.ts` resolves and validates every navigation and the engine
-   re-checks each document request, but DNS rebinding cannot be fully closed in-process.
-   The worker image now builds + backgrounds a `smokescreen` egress proxy
+   re-checks each document request, but DNS rebinding could not be fully closed
+   in-process. The worker image builds + backgrounds a `smokescreen` egress proxy
    (`worker/Dockerfile`, `worker/entrypoint.sh`) that denies link-local + RFC1918 by
-   default — verified locally (public URL proxies 200, `169.254.169.254` denied 407).
-   Activating it on Railway needs `AUDIT_BROWSER_PROXY=http://127.0.0.1:4750` (+
-   `AUDIT_REQUIRE_EGRESS_PROXY=1` once verified) set on the worker service, then a
-   redeploy. See `docs/ssrf-egress-hardening.md`. This is the P2-C gate.
+   default — verified locally (public URL proxies 200, `169.254.169.254` denied 407)
+   and now live on the Railway `multipersonas-worker` service:
+   `AUDIT_BROWSER_PROXY=http://127.0.0.1:4750` + `AUDIT_REQUIRE_EGRESS_PROXY=1` are both
+   set, and the redeployed container's logs confirm smokescreen's `[INFO] starting` line
+   followed by a clean worker boot. See `docs/ssrf-egress-hardening.md`. P2-C gate closed.
 
 ## Before flipping on a public deploy (checklist)
 
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` set on both the Vercel app and the worker host (without
       it, enqueue returns 503 and the rate-limit/spend-cap are disabled).
 - [ ] `ANTHROPIC_API_KEY` on the worker host.
-- [ ] `AUDIT_BROWSER_PROXY=http://127.0.0.1:4750` + `AUDIT_REQUIRE_EGRESS_PROXY=1` set on
+- [x] `AUDIT_BROWSER_PROXY=http://127.0.0.1:4750` + `AUDIT_REQUIRE_EGRESS_PROXY=1` set on
       the worker host, and the worker redeployed with the smokescreen-enabled image
-      (blocker 3 — code shipped, this is the activation step).
+      (blocker 3 — DONE 2026-08-16, verified via `railway logs`).
 - [ ] Pre-existing Supabase advisors resolved (the `handle_new_user` / `set_updated_at`
       `search_path` + `SECURITY DEFINER` exec-by-anon warnings).
 - [ ] Load/abuse check against the durable limiter + cap.
@@ -85,24 +86,22 @@ railway logs                       # expect "[worker] started; polling every 300
 
 Set the SAME `SUPABASE_SERVICE_ROLE_KEY` on the Vercel app (so `/api/audit` can enqueue).
 
-### Network isolation on Railway (blocker #3 — code shipped, needs activation)
+### Network isolation on Railway (blocker #3 — CLOSED, live)
 
 Browserbase would give egress isolation for free; **Railway does not** by itself — its
-containers have unrestricted outbound. As of this change the worker image builds and runs
-its own `smokescreen` egress-guard sidecar (`worker/entrypoint.sh`), verified locally to
-deny link-local/metadata addresses. It does nothing yet on a running deploy until the
-worker is told to route through it:
+containers have unrestricted outbound. The worker image builds and runs its own
+`smokescreen` egress-guard sidecar (`worker/entrypoint.sh`), verified locally to deny
+link-local/metadata addresses, and both env vars are now set on the
+`multipersonas-worker` service:
 
 ```bash
-railway variables --set AUDIT_BROWSER_PROXY=http://127.0.0.1:4750 \
-                   --set AUDIT_REQUIRE_EGRESS_PROXY=1
-railway up                         # redeploy — picks up the smokescreen-enabled image
+railway variables --set AUDIT_BROWSER_PROXY=http://127.0.0.1:4750   # set 2026-08-16, verified
+railway variables --set AUDIT_REQUIRE_EGRESS_PROXY=1                # set 2026-08-16, verified
 ```
 
-- **Before this is set:** same as before — the in-process `src/security/url-guard.ts` is
-  the only mitigation, and an attacker-supplied URL that rebinds DNS to an internal address
-  is a residual risk. Acceptable for trusted/first-party target URLs or a gated rollout.
-- **After this is set + verified:** the DNS-rebinding TOCTOU is closed at the network layer
-  (smokescreen re-resolves and validates at connect time); `AUDIT_REQUIRE_EGRESS_PROXY=1`
-  makes the worker refuse to launch the browser at all if the proxy is ever unreachable,
-  rather than silently falling back to a direct connection.
+Each `railway variables --set` auto-triggered a redeploy; both were confirmed clean via
+`railway logs` (smokescreen's `[INFO] starting`, then `[worker] started; polling`) before
+the next step. The DNS-rebinding TOCTOU is now closed at the network layer (smokescreen
+re-resolves and validates at connect time); `AUDIT_REQUIRE_EGRESS_PROXY=1` makes the
+worker refuse to launch the browser at all if the proxy is ever unreachable, rather than
+silently falling back to a direct connection.

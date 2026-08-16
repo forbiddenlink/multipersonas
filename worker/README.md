@@ -40,19 +40,19 @@ docker build -f worker/Dockerfile -t multipersonas-worker .
 docker run --rm -e SUPABASE_URL=... -e SUPABASE_SERVICE_ROLE_KEY=... -e ANTHROPIC_API_KEY=... multipersonas-worker
 ```
 
-**Network isolation (deploy blocker #3) — CODE SHIPPED, one env var away from closed.**
-The image now builds and backgrounds a `smokescreen` egress-guard proxy
+**Network isolation (deploy blocker #3) — CLOSED, live on the Railway service.**
+The image builds and backgrounds a `smokescreen` egress-guard proxy
 (`worker/entrypoint.sh`, built from source in the Dockerfile) that default-denies
 RFC1918, loopback, link-local (incl. `169.254.169.254`), CGNAT, the IPv6 equivalents,
 and Class E `240.0.0.0/4` at CONNECT time — closing the DNS-rebinding TOCTOU that
-app-level `url-guard.ts` cannot close in-process. To activate it on a running deploy,
-set on the host:
+app-level `url-guard.ts` cannot close in-process. Both env vars are set on
+`multipersonas-worker`:
 
 ```
 AUDIT_BROWSER_PROXY=http://127.0.0.1:4750
 AUDIT_REQUIRE_EGRESS_PROXY=1   # fail closed if the proxy is ever unset/unreachable
 ```
 
-Unset (the default today), the worker launches Chromium directly — unchanged behaviour,
-not yet hardened. See `docs/ssrf-egress-hardening.md` and
+Verified via `railway logs`: smokescreen's own `[INFO] starting` line, then a clean
+`[worker] started; polling every 3000ms` boot. See `docs/ssrf-egress-hardening.md` and
 `docs/PLAN-2026-07-26-phase2-deploy-infra.md` (P2-C).

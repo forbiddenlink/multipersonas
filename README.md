@@ -160,13 +160,13 @@ so a 3xx redirect can't bounce a clean host to a private one.
 
 Known limit: DNS rebinding is not fully closed in-process — we resolve, then Chromium
 resolves again on connect. Closing it needs an egress firewall on the browser host; the
-hosted worker now ships one (a `smokescreen` sidecar, `worker/entrypoint.sh`), verified
-locally, activated by an env var per [docs/ssrf-egress-hardening.md](docs/ssrf-egress-hardening.md).
+hosted worker ships one (a `smokescreen` sidecar, `worker/entrypoint.sh`), live on the
+Railway worker service per [docs/ssrf-egress-hardening.md](docs/ssrf-egress-hardening.md).
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 **Do not deploy the web app publicly** until the blockers in that doc are done —
-durable rate limiting, a spend cap, and network isolation (the last is code-complete,
-awaiting activation on the host).
+durable rate limiting, a spend cap, and network isolation (all three now closed;
+remaining items are env/host setup, not engineering).
 
 ## Cost
 
