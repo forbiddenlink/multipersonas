@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { deriveTraits, giveUpThreshold, maxDeadEnds, nextGiveUpState, needsConfirmBeforeIrreversible, nextIrreversibleConfirm, needsVisibleLabel, isIconOnlyName, unlabeledControlRefusal, isUnlabeledRefusal, misreadRecordedMessage, isMisreadRecorded, wrongClickRecordedMessage, isWrongClickRecorded, type TraitVector } from "./traits.js";
+import { deriveTraits, giveUpThreshold, maxDeadEnds, nextGiveUpState, needsConfirmBeforeIrreversible, nextIrreversibleConfirm, needsVisibleLabel, isIconOnlyName, unlabeledControlRefusal, isUnlabeledRefusal, looksLikeJargon, shouldMisreadJargon, jargonMisreadMessage, isMisreadRecorded, misreadRecordedMessage, wrongClickRecordedMessage, isWrongClickRecorded, type TraitVector } from "./traits.js";
 import { anxiousFirstTimer, elderlyUser, powerUserDeveloper } from "./library.js";
 import { firstTimeVisitor, keyboardTraversal } from "./prebuilt.js";
 
@@ -157,6 +157,36 @@ describe("roster: low-tech personas need visible labels; traversal does not", ()
     expect(needsVisibleLabel(deriveTraits(firstTimeVisitor).techLiteracy)).toBe(true);
     expect(needsVisibleLabel(deriveTraits(powerUserDeveloper).techLiteracy)).toBe(false);
     expect(needsVisibleLabel(deriveTraits(keyboardTraversal).techLiteracy)).toBe(false);
+  });
+});
+
+describe("looksLikeJargon / shouldMisreadJargon", () => {
+  it("flags developer and auth terms, not ordinary labels", () => {
+    expect(looksLikeJargon("Sign in with SSO")).toBe(true);
+    expect(looksLikeJargon("API documentation")).toBe(true);
+    expect(looksLikeJargon("OAuth")).toBe(true);
+    expect(looksLikeJargon("Download JSON")).toBe(true);
+    expect(looksLikeJargon("Place Order")).toBe(false);
+    expect(looksLikeJargon("FAQ")).toBe(false);
+    expect(looksLikeJargon("Search")).toBe(false);
+    expect(looksLikeJargon("OK")).toBe(false);
+    expect(looksLikeJargon("Restaurant")).toBe(false);
+  });
+
+  it("is a no-op at neutral literacy and trips for proficiency 1–2", () => {
+    expect(shouldMisreadJargon(0.5, "SSO")).toBe(false);
+    expect(shouldMisreadJargon(0, "SSO")).toBe(true);
+    expect(shouldMisreadJargon(0.25, "Sign in with SSO")).toBe(true);
+    expect(shouldMisreadJargon(0, "Place Order")).toBe(false);
+  });
+
+  it("records a jargon misread as a misread, not a click", () => {
+    const msg = jargonMisreadMessage("Sign in with SSO");
+    expect(isMisreadRecorded(msg)).toBe(true);
+    expect(msg).toContain("Sign in with SSO");
+    expect(msg).toMatch(/not a click/i);
+    expect(msg).toMatch(/usability issue/i);
+    expect(msg).not.toMatch(/—/);
   });
 });
 

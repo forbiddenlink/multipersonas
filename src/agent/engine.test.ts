@@ -285,6 +285,31 @@ describe("executeAction — tech-literacy visible-label targeting", () => {
     expect(ok).toBe('Typed "hi" into "e3"');
     expect(labeled.state.filled).toBe(true);
   });
+
+  it("records a jargon click as a misread for a low-tech persona, not a click", async () => {
+    const { page, state } = fakePage({ innerText: "Sign in with SSO" });
+    const result = await executeAction(
+      page,
+      "click",
+      { selector: "Sign in with SSO" },
+      { techLiteracy: 0 },
+    );
+    expect(result).toMatch(/^Misread recorded:/);
+    expect(result).toContain("Sign in with SSO");
+    expect(state.clicked).toBe(false);
+  });
+
+  it("allows a jargon click for a neutral-literacy persona", async () => {
+    const { page, state } = fakePage({ innerText: "Sign in with SSO" });
+    const result = await executeAction(
+      page,
+      "click",
+      { selector: "Sign in with SSO" },
+      { techLiteracy: 0.5 },
+    );
+    expect(result).toBe('Clicked "Sign in with SSO"');
+    expect(state.clicked).toBe(true);
+  });
 });
 
 describe("executeAction — misread / wrong_click (observation only)", () => {
@@ -352,5 +377,10 @@ describe("engine source guards (axe-feed + AI snapshot refs)", () => {
     expect(src).toMatch(/wrong_click:\s*tool\(/);
     expect(src).toMatch(/misreadRecordedMessage/);
     expect(src).toMatch(/wrongClickRecordedMessage/);
+  });
+
+  it("code-enforces jargon as a misread for low-tech personas", () => {
+    expect(src).toMatch(/shouldMisreadJargon/);
+    expect(src).toMatch(/jargonMisreadMessage/);
   });
 });

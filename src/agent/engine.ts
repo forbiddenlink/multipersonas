@@ -19,6 +19,8 @@ import {
   isIconOnlyName,
   unlabeledControlRefusal,
   isUnlabeledRefusal,
+  shouldMisreadJargon,
+  jargonMisreadMessage,
   misreadRecordedMessage,
   isMisreadRecorded,
   wrongClickRecordedMessage,
@@ -483,6 +485,12 @@ export async function executeAction(
         return unlabeledControlRefusal(accessible);
       }
 
+      // Same gate: labeled but written in developer jargon. Code-enforced so
+      // the cooperative model cannot click "SSO" and pretend it understood.
+      if (shouldMisreadJargon(guard.techLiteracy ?? 0.5, accessible || name)) {
+        return jargonMisreadMessage(accessible || name);
+      }
+
       await el.click({ timeout: ACTION_TIMEOUT });
       return `Clicked "${selector}"`;
     }
@@ -495,6 +503,9 @@ export async function executeAction(
         isIconOnlyName(accessible)
       ) {
         return unlabeledControlRefusal(accessible);
+      }
+      if (shouldMisreadJargon(guard.techLiteracy ?? 0.5, accessible || selector)) {
+        return jargonMisreadMessage(accessible || selector);
       }
       await el.fill(input.text as string, { timeout: ACTION_TIMEOUT });
       return `Typed "${input.text}" into "${selector}"`;
@@ -521,6 +532,9 @@ export async function executeAction(
         isIconOnlyName(accessible)
       ) {
         return unlabeledControlRefusal(accessible);
+      }
+      if (shouldMisreadJargon(guard.techLiteracy ?? 0.5, accessible || selector)) {
+        return jargonMisreadMessage(accessible || selector);
       }
       await el.selectOption({ label: option }, { timeout: ACTION_TIMEOUT });
       return `Selected "${option}" in "${selector}"`;
