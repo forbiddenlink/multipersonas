@@ -158,9 +158,12 @@ patterns before implementing.
   Playwright cannot disable the mouse; real enforcement means redesigning the agent's
   action space (Tab/Enter nav, reject pointer clicks) — a substantial change with
   regression risk on the core loop.
-- **New ability-based roster personas.** DEFERRED: needs engine↔web display-meta sync (the
-  web `PERSONA_DATA` picker). Existing personas + Margaret's conditions already demonstrate
-  the system end-to-end.
+- ~~**New ability-based roster personas.**~~ DELIVERED 2026-08-16: three situational-
+  constraint personas (keyboard-office-worker, one-handed-mobile, gloved-outdoor-courier),
+  spectrum-tagged per Microsoft's Persona Spectrum, using only already-real primitives
+  (traits, inputModality, viewport/connection — no fabricated zoom/throttle). The
+  engine↔web display-meta sync gap is closed by a new test
+  (`web/src/__tests__/lib/personas-engine-sync.test.ts`) that fails if the two ever drift.
 - **Refusal intent-tests with a live model.** DEFERRED: needs adversarial/out-of-spec
   fixtures + non-deterministic model runs. The give-up *decision* is now deterministically
   tested (`nextGiveUpState`); the full-loop refusal behavior against broken fixtures is the
