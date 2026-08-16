@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { deriveTraits, giveUpThreshold, maxDeadEnds, nextGiveUpState, needsConfirmBeforeIrreversible, nextIrreversibleConfirm, type TraitVector } from "./traits.js";
+import { deriveTraits, giveUpThreshold, maxDeadEnds, nextGiveUpState, needsConfirmBeforeIrreversible, nextIrreversibleConfirm, needsVisibleLabel, isIconOnlyName, unlabeledControlRefusal, isUnlabeledRefusal, type TraitVector } from "./traits.js";
 import { anxiousFirstTimer, elderlyUser, powerUserDeveloper } from "./library.js";
+import { firstTimeVisitor, keyboardTraversal } from "./prebuilt.js";
 
 describe("deriveTraits (back-compat)", () => {
   it("maps patienceLevel + techProficiency for a legacy persona (no traits)", () => {
@@ -106,6 +107,56 @@ describe("roster: cautious personas confirm, others do not", () => {
     expect(needsConfirmBeforeIrreversible(deriveTraits(elderlyUser).riskAversion)).toBe(true);
     expect(needsConfirmBeforeIrreversible(deriveTraits(anxiousFirstTimer).riskAversion)).toBe(true);
     expect(needsConfirmBeforeIrreversible(deriveTraits(powerUserDeveloper).riskAversion)).toBe(false);
+  });
+});
+
+describe("needsVisibleLabel", () => {
+  it("is a no-op at the legacy-neutral 0.5, and trips for proficiency 1–2", () => {
+    expect(needsVisibleLabel(0.5)).toBe(false);
+    expect(needsVisibleLabel(1)).toBe(false);
+    expect(needsVisibleLabel(0.35)).toBe(false);
+    expect(needsVisibleLabel(0.25)).toBe(true);
+    expect(needsVisibleLabel(0)).toBe(true);
+  });
+});
+
+describe("isIconOnlyName", () => {
+  it("treats empty, symbol-only, and single-letter names as unlabeled", () => {
+    expect(isIconOnlyName("")).toBe(true);
+    expect(isIconOnlyName("   ")).toBe(true);
+    expect(isIconOnlyName("×")).toBe(true);
+    expect(isIconOnlyName("🛒")).toBe(true);
+    expect(isIconOnlyName("X")).toBe(true);
+    expect(isIconOnlyName("i")).toBe(true);
+  });
+
+  it("treats short words as labels", () => {
+    expect(isIconOnlyName("Go")).toBe(false);
+    expect(isIconOnlyName("OK")).toBe(false);
+    expect(isIconOnlyName("Menu")).toBe(false);
+    expect(isIconOnlyName("Place Order")).toBe(false);
+    expect(isIconOnlyName("email")).toBe(false);
+  });
+});
+
+describe("unlabeledControlRefusal", () => {
+  it("is detectable and tells the model to find a labeled control", () => {
+    const empty = unlabeledControlRefusal("");
+    expect(isUnlabeledRefusal(empty)).toBe(true);
+    expect(empty).toMatch(/usability issue/i);
+    expect(empty).not.toMatch(/—/);
+    const shown = unlabeledControlRefusal("×");
+    expect(shown).toContain('it reads as "×"');
+  });
+});
+
+describe("roster: low-tech personas need visible labels; traversal does not", () => {
+  it("Margaret, Linda, and Sarah must see a label; Alex and keyboard traversal must not be gated", () => {
+    expect(needsVisibleLabel(deriveTraits(elderlyUser).techLiteracy)).toBe(true);
+    expect(needsVisibleLabel(deriveTraits(anxiousFirstTimer).techLiteracy)).toBe(true);
+    expect(needsVisibleLabel(deriveTraits(firstTimeVisitor).techLiteracy)).toBe(true);
+    expect(needsVisibleLabel(deriveTraits(powerUserDeveloper).techLiteracy)).toBe(false);
+    expect(needsVisibleLabel(deriveTraits(keyboardTraversal).techLiteracy)).toBe(false);
   });
 });
 

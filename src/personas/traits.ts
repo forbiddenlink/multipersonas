@@ -133,3 +133,44 @@ export function confirmPauseMessage(name: string): string {
 export function isConfirmPause(result: string): boolean {
   return result.startsWith(CONFIRM_PAUSE_PREFIX);
 }
+
+/**
+ * Low-tech personas cannot infer meaning from icons. They only operate controls
+ * with a readable text label. Neutral 0.5 (techProficiency 3) is a no-op.
+ * Proficiency 1–2 (literacy 0 / 0.25) must see a name.
+ */
+export const VISIBLE_LABEL_THRESHOLD = 0.35;
+
+export function needsVisibleLabel(techLiteracy: number): boolean {
+  return techLiteracy < VISIBLE_LABEL_THRESHOLD;
+}
+
+/**
+ * True when the accessible name is empty, symbol-only, or a single letter
+ * (the "X" close / "i" info pattern). "Go", "OK", "Menu" are labels.
+ */
+export function isIconOnlyName(name: string): boolean {
+  const n = name.trim();
+  if (!n) return true;
+  if (!/\p{L}/u.test(n)) return true;
+  if (/^\p{L}$/u.test(n)) return true;
+  return false;
+}
+
+export const UNLABELED_REFUSAL_PREFIX =
+  "You could not tell what that control does.";
+
+export function unlabeledControlRefusal(accessibleName: string): string {
+  const shown = accessibleName.trim()
+    ? ` (it reads as "${accessibleName.trim()}")`
+    : "";
+  return (
+    `${UNLABELED_REFUSAL_PREFIX} It has no readable text label${shown}. ` +
+    `This persona does not infer meaning from icons. Find a control with a visible name, ` +
+    `or report the unlabeled control as a usability issue and continue.`
+  );
+}
+
+export function isUnlabeledRefusal(result: string): boolean {
+  return result.startsWith(UNLABELED_REFUSAL_PREFIX);
+}
