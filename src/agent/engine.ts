@@ -15,6 +15,10 @@ import {
   nextIrreversibleConfirm,
   confirmPauseMessage,
   isConfirmPause,
+  needsVisibleLabel,
+  isIconOnlyName,
+  unlabeledControlRefusal,
+  isUnlabeledRefusal,
 } from "../personas/traits.js";
 import { resolveConditions } from "../personas/conditions.js";
 import { assertUrlAllowed, assertRequestAllowed, isInScope, BlockedUrlError } from "../security/url-guard.js";
@@ -66,6 +70,11 @@ export interface GuardOptions {
    * The engine owns the object; executeAction updates `.pending`.
    */
   irreversibleConfirm?: { pending: string | null };
+  /**
+   * Persona techLiteracy (0..1). Low-literacy personas refuse icon-only
+   * controls (no readable text label). Neutral 0.5 is a no-op.
+   */
+  techLiteracy?: number;
 }
 
 // --- Types ---
@@ -229,6 +238,8 @@ async function readAccessibleName(
 ): Promise<string> {
   const label = (await el.getAttribute("aria-label"))?.trim();
   if (label) return label;
+  const placeholder = (await el.getAttribute("placeholder"))?.trim();
+  if (placeholder) return placeholder;
   return ((await el.innerText()) ?? "").replace(/\s+/g, " ").trim();
 }
 
@@ -395,7 +406,8 @@ export async function executeAction(
         return destructiveActionRefusal(selector);
       }
       const el = await resolveElement(page, selector);
-      const name = (await readAccessibleName(el)) || selector;
+      const accessible = await readAccessibleName(el);
+      const name = accessible || selector;
       const irreversible =
         isDestructiveAction(selector) || isDestructiveAction(name);
 
@@ -423,13 +435,31 @@ export async function executeAction(
         }
       }
 
+      // Low-tech personas cannot infer icon meaning. Judge the raw accessible
+      // name, not the selector fallback — "e12" is a snapshot id, not a label.
+      // Neutral 0.5 (techProficiency 3) is a no-op so legacy runs stay identical.
+      if (
+        needsVisibleLabel(guard.techLiteracy ?? 0.5) &&
+        isIconOnlyName(accessible)
+      ) {
+        return unlabeledControlRefusal(accessible);
+      }
+
       await el.click({ timeout: ACTION_TIMEOUT });
       return `Clicked "${selector}"`;
     }
     case "type": {
-      const el = await resolveElement(page, input.selector as string);
+      const selector = input.selector as string;
+      const el = await resolveElement(page, selector);
+      const accessible = await readAccessibleName(el);
+      if (
+        needsVisibleLabel(guard.techLiteracy ?? 0.5) &&
+        isIconOnlyName(accessible)
+      ) {
+        return unlabeledControlRefusal(accessible);
+      }
       await el.fill(input.text as string, { timeout: ACTION_TIMEOUT });
-      return `Typed "${input.text}" into "${input.selector}"`;
+      return `Typed "${input.text}" into "${selector}"`;
     }
     case "scroll": {
       const distance = input.direction === "down" ? 600 : -600;
@@ -446,6 +476,13 @@ export async function executeAction(
         el = await resolveElement(page, selector);
       } catch {
         el = page.locator("select").filter({ hasText: option }).first();
+      }
+      const accessible = await readAccessibleName(el);
+      if (
+        needsVisibleLabel(guard.techLiteracy ?? 0.5) &&
+        isIconOnlyName(accessible)
+      ) {
+        return unlabeledControlRefusal(accessible);
       }
       await el.selectOption({ label: option }, { timeout: ACTION_TIMEOUT });
       return `Selected "${option}" in "${selector}"`;
@@ -566,6 +603,7 @@ export async function runPersonaAgent(
       ...guard,
       scopeOrigin: guard.scopeOrigin ?? safeUrl.origin,
       riskAversion: traits.riskAversion,
+      techLiteracy: traits.techLiteracy,
       irreversibleConfirm: { pending: null },
     };
 
@@ -827,9 +865,9 @@ export async function runPersonaAgent(
 
       try {
         actionResult = await executeAction(page, toolName, input, scope);
-        const paused = isConfirmPause(actionResult);
-        // A confirm pause did not change the page — skip the settle wait.
-        if (!paused) {
+        const skipped = isConfirmPause(actionResult) || isUnlabeledRefusal(actionResult);
+        // A confirm pause or unlabeled refusal did not change the page.
+        if (!skipped) {
           await page.waitForTimeout(500);
         }
         await page.screenshot({ path: screenshotPath, fullPage: false });
@@ -854,6 +892,7 @@ export async function runPersonaAgent(
         guard.runAxe !== false &&
         toolName !== "report_finding" &&
         !isConfirmPause(actionResult) &&
+        !isUnlabeledRefusal(actionResult) &&
         isScannablePageUrl(page.url())
       ) {
         try {

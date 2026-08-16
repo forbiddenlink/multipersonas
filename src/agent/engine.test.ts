@@ -10,9 +10,14 @@ import { trimToWindow, HISTORY_WINDOW, executeAction } from "./engine.js";
  * `touched` records whether the page was queried at all, so a blocked click
  * can be proven to short-circuit before any element resolution.
  */
-function fakePage(opts: { innerText?: string; ariaLabel?: string | null } = {}) {
+function fakePage(opts: {
+  innerText?: string;
+  ariaLabel?: string | null;
+  placeholder?: string | null;
+} = {}) {
   const state = {
     clicked: false,
+    filled: false,
     touched: false,
     locatorArg: undefined as string | undefined,
     roleQueried: false,
@@ -21,8 +26,12 @@ function fakePage(opts: { innerText?: string; ariaLabel?: string | null } = {}) 
     count: async () => 1,
     first: () => ({
       click: async () => { state.clicked = true; },
-      getAttribute: async (n: string) =>
-        n === "aria-label" ? (opts.ariaLabel ?? null) : null,
+      fill: async () => { state.filled = true; },
+      getAttribute: async (n: string) => {
+        if (n === "aria-label") return opts.ariaLabel ?? null;
+        if (n === "placeholder") return opts.placeholder ?? null;
+        return null;
+      },
       innerText: async () => opts.innerText ?? "",
     }),
   };
@@ -205,6 +214,79 @@ describe("executeAction — risk-aversion confirm + ref denylist", () => {
   });
 });
 
+describe("executeAction — tech-literacy visible-label targeting", () => {
+  it("refuses an unlabeled click for a low-tech persona", async () => {
+    const { page, state } = fakePage();
+    const result = await executeAction(
+      page,
+      "click",
+      { selector: "e12" },
+      { techLiteracy: 0 },
+    );
+    expect(result).toMatch(/no readable text label/i);
+    expect(result).toMatch(/usability issue/i);
+    expect(state.clicked).toBe(false);
+  });
+
+  it("refuses a symbol-only control, quoting what it reads as", async () => {
+    const { page, state } = fakePage({ innerText: "×" });
+    const result = await executeAction(
+      page,
+      "click",
+      { selector: "e12" },
+      { techLiteracy: 0.25 },
+    );
+    expect(result).toContain('it reads as "×"');
+    expect(state.clicked).toBe(false);
+  });
+
+  it("allows a labeled click for a low-tech persona", async () => {
+    const { page, state } = fakePage({ innerText: "Place Order" });
+    const result = await executeAction(
+      page,
+      "click",
+      { selector: "Place Order" },
+      { techLiteracy: 0 },
+    );
+    expect(result).toBe('Clicked "Place Order"');
+    expect(state.clicked).toBe(true);
+  });
+
+  it("does not gate a neutral-literacy persona (legacy default)", async () => {
+    const { page, state } = fakePage();
+    const result = await executeAction(
+      page,
+      "click",
+      { selector: "e12" },
+      { techLiteracy: 0.5 },
+    );
+    expect(result).toBe('Clicked "e12"');
+    expect(state.clicked).toBe(true);
+  });
+
+  it("refuses typing into an unlabeled input, but accepts a placeholder as a label", async () => {
+    const unlabeled = fakePage();
+    const refused = await executeAction(
+      unlabeled.page,
+      "type",
+      { selector: "e3", text: "hi" },
+      { techLiteracy: 0 },
+    );
+    expect(refused).toMatch(/no readable text label/i);
+    expect(unlabeled.state.filled).toBe(false);
+
+    const labeled = fakePage({ placeholder: "Email" });
+    const ok = await executeAction(
+      labeled.page,
+      "type",
+      { selector: "e3", text: "hi" },
+      { techLiteracy: 0 },
+    );
+    expect(ok).toBe('Typed "hi" into "e3"');
+    expect(labeled.state.filled).toBe(true);
+  });
+});
+
 describe("engine source guards (axe-feed + AI snapshot refs)", () => {
   const src = fs.readFileSync(path.join(process.cwd(), "src/agent/engine.ts"), "utf-8");
 
@@ -223,5 +305,11 @@ describe("engine source guards (axe-feed + AI snapshot refs)", () => {
   it("resolves snapshot refs through Playwright's aria-ref locator", () => {
     expect(src).toMatch(/parseAriaRef/);
     expect(src).toMatch(/ariaRefLocator/);
+  });
+
+  it("wires persona techLiteracy onto the guard so low-tech runs refuse unlabeled controls", () => {
+    expect(src).toMatch(/techLiteracy:\s*traits\.techLiteracy/);
+    expect(src).toMatch(/needsVisibleLabel/);
+    expect(src).toMatch(/unlabeledControlRefusal/);
   });
 });
