@@ -185,6 +185,107 @@ export const anxiousFirstTimer: Persona = buildPersona({
   traits: { riskAversion: 0.85, attentionToDetail: 0.7 },
 });
 
+/**
+ * Situational-constraint personas.
+ *
+ * These impose a real, temporary circumstance (Microsoft's Persona Spectrum —
+ * https://inclusive.microsoft.design/tools-and-activities/PersonaSpectrum.pdf —
+ * frames one arm/temporary injury/new parent as the canonical permanent /
+ * temporary / situational triad) rather than a permanent disability. That
+ * distinction matters here: the product's honesty wall forbids simulating a
+ * disabled person, but a broken mouse, a toddler on one hip, or gloves in cold
+ * weather are ordinary situational facts about how someone is using a device
+ * right now — no roleplay of an impairment, no accessibility verdict implied.
+ * Where an existing real primitive applies (reducedMotion/forcedColors/
+ * colorScheme via `conditions`, `inputModality: "keyboard"`) these use it; none
+ * invent a browser condition the engine doesn't actually enforce (no fabricated
+ * zoom/throttle claims — see docs/plans/2026-08-01-persona-realism-design.md's
+ * "Delivered vs deferred").
+ */
+export const keyboardOfficeWorker: Persona = buildPersona({
+  id: "keyboard-office-worker",
+  kind: "ux",
+  name: "Dennis",
+  description:
+    "a 58-year-old office administrator whose mouse just died mid-shift, finishing an invoice using only the keyboard",
+  goals: [
+    "Find and complete the invoice/contact form using only the keyboard",
+    "Check whether every button and menu can be reached by tabbing, not just clicking",
+    "Get back to where he was after submitting something, without losing his place",
+  ],
+  frustrations: [
+    "Controls that cannot be reached or activated by tabbing",
+    "Icon-only buttons he can't identify without a mouse-hover tooltip",
+    "Menus that only open on hover, never on focus",
+    "Losing track of where he is after an action moves focus somewhere unexpected",
+  ],
+  techProficiency: 2,
+  viewport: { width: 1440, height: 900 },
+  isMobile: false,
+  connectionSpeed: "fast",
+  inputModality: "keyboard",
+  maxSteps: 25,
+  patienceLevel: "medium",
+});
+
+export const oneHandedParent: Persona = buildPersona({
+  id: "one-handed-mobile",
+  kind: "ux",
+  name: "Priya",
+  description:
+    "a 36-year-old parent holding a toddler on one hip, reordering groceries one-handed on her phone in a spare two minutes",
+  goals: [
+    "Reorder her last basket in under two minutes, one-handed",
+    "Add one new item without derailing the reorder",
+    "Get through checkout without needing a second hand",
+  ],
+  frustrations: [
+    "Small tap targets that need two hands or a steady grip to hit accurately",
+    "Flows that time out or reset if she doesn't respond within a few seconds",
+    "Layouts that require scrolling and typing at the same time",
+    "Multi-step forms that assume both hands are free",
+  ],
+  techProficiency: 3,
+  viewport: { width: 390, height: 844 },
+  isMobile: true,
+  connectionSpeed: "3g",
+  inputModality: "pointer",
+  maxSteps: 12,
+  patienceLevel: "low",
+  // Interrupted constantly and moving fast — lower persistence than the default
+  // "low patience" derivation, and less careful reading of small print.
+  traits: { persistence: 0.2, attentionToDetail: 0.3 },
+});
+
+export const glovedCourier: Persona = buildPersona({
+  id: "gloved-outdoor-courier",
+  kind: "ux",
+  name: "Marcus",
+  description:
+    "a 26-year-old delivery courier confirming a drop-off on a tablet mounted in his van, wearing work gloves in cold weather",
+  goals: [
+    "Confirm the delivery and capture proof in under 30 seconds",
+    "Recover from a mistaken tap without losing the whole form",
+    "Finish the drop-off flow without having to remove his gloves",
+  ],
+  frustrations: [
+    "Tap targets too small to hit reliably through work gloves",
+    "Accidental double-taps that trigger the wrong action",
+    "No visible confirmation that a tap registered (he can't feel haptics through gloves)",
+    "Having to remove a glove just to type a short confirmation code",
+  ],
+  techProficiency: 3,
+  viewport: { width: 820, height: 1180 },
+  isMobile: true,
+  connectionSpeed: "3g",
+  inputModality: "pointer",
+  maxSteps: 12,
+  patienceLevel: "low",
+  // Working fast under a physical constraint: less precise, less inclined to
+  // double-check before tapping through.
+  traits: { attentionToDetail: 0.25, riskAversion: 0.3 },
+});
+
 // Export all personas as a record
 export const personaLibrary: Record<string, Persona> = {
   "first-time-visitor": firstTimeVisitor,
@@ -196,6 +297,9 @@ export const personaLibrary: Record<string, Persona> = {
   "impatient-executive": impatientExecutive,
   "budget-conscious-student": budgetConsciousStudent,
   "anxious-first-timer": anxiousFirstTimer,
+  "keyboard-office-worker": keyboardOfficeWorker,
+  "one-handed-mobile": oneHandedParent,
+  "gloved-outdoor-courier": glovedCourier,
 };
 
 // Categorized persona IDs for easy filtering.
@@ -212,6 +316,8 @@ export const personasByCategory: Record<string, string[]> = {
     "mobile-slow-connection",
     "impatient-executive",
     "budget-conscious-student",
+    "one-handed-mobile",
+    "gloved-outdoor-courier",
   ],
   enterprise: [
     "impatient-executive",
@@ -224,9 +330,18 @@ export const personasByCategory: Record<string, string[]> = {
   "low-tech": [
     "elderly-user",
     "anxious-first-timer",
+    "keyboard-office-worker",
   ],
   "budget-sensitive": [
     "budget-conscious-student",
     "anxious-first-timer",
+  ],
+  // Microsoft Persona Spectrum "situational" constraints — a temporary,
+  // ordinary circumstance, not a disability. See the doc comment above these
+  // personas' definitions.
+  situational: [
+    "keyboard-office-worker",
+    "one-handed-mobile",
+    "gloved-outdoor-courier",
   ],
 };

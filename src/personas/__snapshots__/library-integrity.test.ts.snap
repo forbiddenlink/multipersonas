@@ -6,10 +6,13 @@ exports[`persona library integrity > matches the committed roster (catches accid
   "budget-conscious-student · ux",
   "elderly-user · ux",
   "first-time-visitor · ux",
+  "gloved-outdoor-courier · ux",
   "impatient-executive · ux",
+  "keyboard-office-worker · ux",
   "keyboard-traversal · traversal",
   "mobile-slow-connection · ux",
   "non-native-english · ux",
+  "one-handed-mobile · ux",
   "power-user-developer · ux",
 ]
 `;

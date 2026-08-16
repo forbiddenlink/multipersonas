@@ -59,6 +59,24 @@ export const PERSONA_DATA = {
     role: "Cautious first-time buyer",
     description: "Small-business owner making a first SaaS purchase; wary of online payment",
   },
+  "keyboard-office-worker": {
+    id: "keyboard-office-worker",
+    name: "Dennis",
+    role: "Keyboard-only, situational",
+    description: "Office admin whose mouse died mid-shift; finishing a form using only the keyboard",
+  },
+  "one-handed-mobile": {
+    id: "one-handed-mobile",
+    name: "Priya",
+    role: "One-handed, situational",
+    description: "Parent holding a toddler, reordering groceries one-handed on her phone",
+  },
+  "gloved-outdoor-courier": {
+    id: "gloved-outdoor-courier",
+    name: "Marcus",
+    role: "Gloved touchscreen, situational",
+    description: "Delivery courier confirming a drop-off on a tablet, wearing work gloves outdoors",
+  },
 } as const;
 
 export type PersonaId = keyof typeof PERSONA_DATA;
