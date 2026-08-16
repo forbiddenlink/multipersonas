@@ -30,6 +30,16 @@ updates:
         versions: [">=10"]
       - dependency-name: "@eslint/js"
         versions: [">=10"]
+      # typescript 7 breaks two things at once, confirmed by PR #45's CI (all of
+      # CI/E2E/a11y-dogfood failed on this alone, 2026-08-11): typescript-eslint
+      # 8.65.0 hard-errors ("does not support TS 7.0") so `eslint .` exits 2, and
+      # Next.js 16.2.12's `next build`/`next dev` can't use TS 7's compiler API
+      # ("does not provide the compiler API required by Next.js"). Left in the
+      # major group it poisons the whole grouped PR the same way eslint 10 did.
+      # Hold until typescript-eslint + Next.js both support TS 7, then bump
+      # manually and remove this ignore.
+      - dependency-name: "typescript"
+        versions: [">=7"]
     labels: ["dependencies"]
     commit-message:
       prefix: "chore(deps):"
