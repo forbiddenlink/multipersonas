@@ -42,9 +42,9 @@
   "license": "MIT",
   "packageManager": "pnpm@10.32.1",
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.96",
+    "@ai-sdk/anthropic": "^4.0.16",
     "@axe-core/playwright": "^4.12.1",
-    "ai": "^6.0.224",
+    "ai": "^7.0.31",
     "chalk": "^5.6.2",
     "commander": "^15.0.0",
     "ora": "^9.4.1",
@@ -53,7 +53,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
-    "@types/node": "^25.9.5",
+    "@types/node": "^26.1.1",
     "eslint": "^9.39.5",
     "tsx": "^4.23.12",
     "typescript": "^6.0.3",
