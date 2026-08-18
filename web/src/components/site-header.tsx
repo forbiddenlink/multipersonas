@@ -39,6 +39,12 @@ export async function SiteHeader({
       </Link>
       <nav aria-label="Primary" className="flex items-center gap-3">
         <ThemeToggle />
+        <Link
+          href="/for-agencies"
+          className="hidden rounded-sm px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] sm:inline"
+        >
+          For agencies
+        </Link>
         {user ? (
           <Link
             href="/dashboard"

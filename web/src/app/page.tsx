@@ -12,6 +12,7 @@ import { Meter } from "@/components/forensic/meter";
 import { FocusDemo } from "@/components/forensic/focus-demo";
 import { ContrastBadge } from "@/components/forensic/contrast-badge";
 import { BoxDivider } from "@/components/forensic/divider";
+import { LogReveal } from "@/components/log-reveal";
 import Link from "next/link";
 
 // Canonical only — title/description are inherited from the root layout default.
@@ -46,10 +47,10 @@ export default function Home() {
             <h1 className="mt-6 text-[clamp(2.4rem,5.5vw,3.75rem)] font-bold leading-[1.03] tracking-tight text-balance">
               Scan the pages a crawler can&apos;t reach.
             </h1>
-            <p className="fade-up mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "0.19s" }}>
+            <p className="fade-up mt-5 max-w-xl font-serif text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "0.19s" }}>
               Personaudit crawls your site with a saved session — through checkout, dashboards, and
               multi-step flows a page-level scanner never reaches — and runs{" "}
-              <strong className="font-medium text-foreground">axe-core</strong> at every state.
+              <strong className="font-medium text-foreground not-italic">axe-core</strong> at every state.
               Behind-login scanning runs from the CLI, so your credentials never leave your machine.
             </p>
             <div className="fade-up mt-8 flex flex-col gap-3 sm:flex-row sm:items-center" style={{ animationDelay: "0.26s" }}>
@@ -87,7 +88,7 @@ export default function Home() {
         <div className="grid gap-6 sm:grid-cols-[1.4fr_1fr] sm:items-center">
           <FocusDemo />
           <div className="flex items-center gap-3 sm:justify-end">
-            <span className="text-sm text-foreground">Body text here:</span>
+            <span className="font-mono text-xs text-muted-foreground">body text contrast:</span>
             <ContrastBadge ratio="17.5:1" level="AAA" />
           </div>
         </div>
@@ -131,25 +132,29 @@ export default function Home() {
           <div className="border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
             <span className="select-none text-[var(--primary)]">┌─ </span>personaudit ~/run
           </div>
-          <ol className="divide-y divide-border">
-            {RUN_LOG.map((l) => (
-              <li key={l.src} className="flex gap-3 px-4 py-3 leading-relaxed">
-                <span className="select-none text-[var(--primary)]">›</span>
-                <span>
-                  <span className="text-muted-foreground">[{l.src}]</span>{" "}
-                  <span className="text-card-foreground">{l.text}</span>
-                </span>
-              </li>
-            ))}
-          </ol>
+          <LogReveal>
+            <ol className="divide-y divide-border">
+              {RUN_LOG.map((l) => (
+                <li key={l.src} className="log-line flex gap-3 px-4 py-3 leading-relaxed">
+                  <span className="select-none text-[var(--primary)]">›</span>
+                  <span>
+                    <span className="text-muted-foreground">[{l.src}]</span>{" "}
+                    <span className="text-card-foreground">{l.text}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </LogReveal>
         </div>
       </section>
 
       {/* Two outputs, never blurred — the honesty wall. */}
       <section className="border-y border-border bg-card px-6 section-y">
         <div className="mx-auto w-full max-w-3xl">
-        <p className="label-mono">honesty wall</p>
-        <h2 className="mt-3 text-2xl font-semibold tracking-tight">Two outputs, never blurred</h2>
+        <p className="font-serif text-[clamp(1.3rem,2.6vw,1.8rem)] leading-[1.3] font-medium text-balance text-foreground">
+          &ldquo;Violation&rdquo; and &ldquo;opinion&rdquo; are different words for a reason.
+        </p>
+        <p className="mt-2 label-mono">honesty wall</p>
         <div className="mt-6 grid gap-6 sm:grid-cols-2 sm:gap-10">
           <div>
             <div className="flex items-center gap-2">
@@ -234,8 +239,9 @@ export default function Home() {
       {/* CI gate — already built in the CLI; surface it as a selling point. */}
       <section className="border-y border-border bg-card px-6 section-y-sm">
         <div className="mx-auto max-w-3xl">
-          <p className="label-mono">
-            CI gate
+          <p className="font-mono text-sm">
+            <span className="select-none text-[var(--primary)]">›&nbsp;</span>
+            <span className="text-muted-foreground/70"># ci-gate</span>
           </p>
           <h2 className="mt-3 text-2xl font-semibold tracking-tight">
             Fail the build only on new defects.
@@ -270,10 +276,10 @@ mpersonas scan https://app.example.com --session ./session.json \\
       {/* Bottom CTA — account save only; primary scan CTA lives at #scan / sticky. */}
       <section className="border-t border-border px-6 section-y">
         <div className="mx-auto flex max-w-3xl flex-col items-start gap-4">
-          <h2 className="text-2xl font-semibold tracking-tight">Keep every audit you run.</h2>
-          <p className="max-w-md text-muted-foreground">
-            Create an account and every scan from here on is saved — axe verdicts and persona
-            task-success, so you can see what you&apos;ve cleared over time.
+          <h2 className="text-2xl font-semibold tracking-tight">Build the audit trail.</h2>
+          <p className="max-w-md font-serif text-muted-foreground leading-relaxed">
+            Sign up and every grade you run becomes a record — axe violations by state, persona
+            task-success, and what cleared between runs. Evidence that accumulates.
           </p>
           <div className="mt-2 flex flex-col gap-3 sm:flex-row">
             <Link

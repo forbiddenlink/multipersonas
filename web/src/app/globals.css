@@ -200,6 +200,43 @@
   animation: fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Scan sweep beam — evidence-materialized moment when an audit completes. */
+@keyframes scan-sweep-beam {
+  0%   { opacity: 0; left: -30%; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { opacity: 0; left: 115%; }
+}
+
+/* Running shimmer for progress bars and scan indicators. */
+@keyframes shimmer-scan {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* Staggered log-line entrance — add .log-lines-reveal to parent to trigger. */
+@keyframes log-line-in {
+  from { opacity: 0; transform: translateX(-5px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.log-line {
+  opacity: 0;
+  animation: log-line-in 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-play-state: paused;
+}
+
+.log-lines-reveal .log-line {
+  animation-play-state: running;
+}
+
+.log-lines-reveal .log-line:nth-child(1) { animation-delay: 0ms; }
+.log-lines-reveal .log-line:nth-child(2) { animation-delay: 90ms; }
+.log-lines-reveal .log-line:nth-child(3) { animation-delay: 180ms; }
+.log-lines-reveal .log-line:nth-child(4) { animation-delay: 270ms; }
+.log-lines-reveal .log-line:nth-child(5) { animation-delay: 360ms; }
+.log-lines-reveal .log-line:nth-child(6) { animation-delay: 450ms; }
+
 /* Grain — subtle fractal-noise overlay to stop banding on large dark fills. Sits
  * BEHIND content on its own layer; text lives on solid card backgrounds above it,
  * so grain never lowers text contrast below the verified AA values. Apply `.grain`

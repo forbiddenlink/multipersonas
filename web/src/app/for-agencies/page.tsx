@@ -7,6 +7,7 @@ import { Reveal } from "@/components/reveal";
 import { AuditTerminal } from "@/components/audit-terminal";
 import { ConsolePreview } from "@/components/forensic/console-preview";
 import { ReportPaper } from "@/components/forensic/report-paper";
+import { StatCount } from "@/components/forensic/stat-count";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/for-agencies" },
@@ -92,7 +93,9 @@ export default function ForAgenciesPage() {
             </div>
             <ul className="divide-y divide-border">
               <li className="flex flex-col gap-1 px-4 py-4 sm:flex-row sm:items-baseline sm:gap-6">
-                <p className="shrink-0 text-2xl tabular-nums text-foreground">$1,000,000</p>
+                <p className="shrink-0 text-2xl text-foreground">
+                  <StatCount value={1000000} prefix="$" />
+                </p>
                 <p className="text-sm leading-relaxed text-muted-foreground font-sans">
                   FTC fine against an overlay vendor for claiming a script makes a site
                   compliant.<sup>1</sup>
@@ -106,7 +109,9 @@ export default function ForAgenciesPage() {
                 </p>
               </li>
               <li className="flex flex-col gap-1 px-4 py-4 sm:flex-row sm:items-baseline sm:gap-6">
-                <p className="shrink-0 text-2xl tabular-nums text-foreground">5,500+</p>
+                <p className="shrink-0 text-2xl text-foreground">
+                  <StatCount value={5500} suffix="+" />
+                </p>
                 <p className="text-sm leading-relaxed text-muted-foreground font-sans">
                   Projected US federal ADA web-accessibility filings in 2026, most against
                   companies under $25M revenue.<sup>3</sup>
@@ -293,7 +298,7 @@ mpersonas scan https://client.app --session ./session.json \\
           <h2 className="font-heading text-[clamp(1.8rem,3.6vw,2.75rem)] leading-tight text-balance">
             We don&apos;t sell a fix. We sell the truth.
           </h2>
-          <div className="mt-6 space-y-4 text-lg text-muted-foreground">
+          <div className="mt-6 space-y-4 font-serif text-lg leading-relaxed text-muted-foreground">
             <p>
               No overlay. No &ldquo;one line of JavaScript makes you compliant.&rdquo; We audit
               the real DOM with axe-core — on public pages in the hosted product, and behind

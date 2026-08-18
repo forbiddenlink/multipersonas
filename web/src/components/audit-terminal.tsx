@@ -61,6 +61,8 @@ export function AuditTerminal() {
   const [inView, setInView] = useState(false);
   const [revealed, setRevealed] = useState(0); // fully-typed lines
   const [typing, setTyping] = useState(""); // partial current line
+  const [sweeping, setSweeping] = useState(false);
+  const prevDoneRef = useRef(false);
 
   useEffect(() => {
     const el = rootRef.current;
@@ -133,14 +135,39 @@ export function AuditTerminal() {
   const done = shownCount >= SCRIPT.length;
   const progress = Math.min(shownCount / SCRIPT.length, 1);
 
+  // Brief scan-sweep beam when the audit completes — evidence-materialized moment.
+  useEffect(() => {
+    if (done && !prevDoneRef.current && !reduced) {
+      setSweeping(true);
+      const t = setTimeout(() => setSweeping(false), 800);
+      prevDoneRef.current = true;
+      return () => clearTimeout(t);
+    }
+    if (!done) {
+      prevDoneRef.current = false;
+    }
+  }, [done, reduced]);
+
   return (
     <div
       ref={rootRef}
       role="img"
       aria-label={ALT}
-      className="overflow-hidden rounded-md border border-white/10 font-mono text-[13px] leading-relaxed text-white/85 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.6)]"
+      className="relative overflow-hidden rounded-md border border-white/10 font-mono text-[13px] leading-relaxed text-white/85 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.6)]"
       style={{ backgroundColor: "oklch(0.19 0.006 70)" }}
     >
+      {/* Scan-sweep beam: evidence-materialized flash when audit completes. */}
+      {sweeping && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-10"
+          style={{
+            width: "30%",
+            background: "linear-gradient(90deg, transparent 0%, oklch(0.72 0.12 195 / 0.09) 40%, oklch(0.72 0.12 195 / 0.16) 50%, oklch(0.72 0.12 195 / 0.09) 60%, transparent 100%)",
+            animation: "scan-sweep-beam 700ms cubic-bezier(0.4,0,0.6,1) forwards",
+          }}
+        />
+      )}
       {/* prompt line: host label + single live dot (no fake traffic-light dots) */}
       <div className="flex items-center gap-2 border-b border-white/10 px-4 py-2.5 text-xs">
         <span className="select-none text-white/40" aria-hidden="true">
@@ -195,8 +222,18 @@ export function AuditTerminal() {
         </div>
         <div className="mt-2 h-1 overflow-hidden rounded-sm bg-white/10">
           <div
-            className="h-full rounded-sm transition-[width] duration-300 ease-out"
-            style={{ width: `${Math.round(progress * 100)}%`, backgroundColor: TEAL }}
+            className="h-full rounded-sm"
+            style={{
+              width: `${Math.round(progress * 100)}%`,
+              transition: "width 300ms ease-out",
+              ...(done
+                ? { backgroundColor: "var(--severity-serious)" }
+                : {
+                    background: `linear-gradient(90deg, ${TEAL} 0%, oklch(0.82 0.14 195) 50%, ${TEAL} 100%)`,
+                    backgroundSize: "200% 100%",
+                    animation: "shimmer-scan 1.4s linear infinite",
+                  }),
+            }}
           />
         </div>
       </div>
