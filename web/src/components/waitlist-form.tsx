@@ -25,7 +25,6 @@ export function WaitlistForm() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    setStatus("submitting");
 
     const form = e.currentTarget;
     const data = new FormData(form);
@@ -34,6 +33,19 @@ export function WaitlistForm() {
       sitesCount: String(data.get("sitesCount") || "") || undefined,
       note: String(data.get("note") || "").trim() || undefined,
     };
+
+    if (!payload.email) {
+      setError("Email is required.");
+      setStatus("error");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
+      setError("Enter a valid email address.");
+      setStatus("error");
+      return;
+    }
+
+    setStatus("submitting");
 
     try {
       const res = await fetch("/api/waitlist", {

@@ -48,8 +48,8 @@ them on the test app — `experiments/net-new-violations/`), and `scan` is built
 that. Personas do *not* beat a crawler at finding them
 (`experiments/personas-vs-crawler/`), so the pitch shifted from "AI personas find what
 crawlers can't" to "authenticated accessibility scanning, plus a persona task-success
-layer." The web app is not deployed and cannot be as written — see
-[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+layer." The web app now uses a queue + persistent worker architecture; see
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the remaining public-launch checklist.
 
 ## Install
 
@@ -164,16 +164,17 @@ hosted worker ships one (a `smokescreen` sidecar, `worker/entrypoint.sh`), live 
 Railway worker service per [docs/ssrf-egress-hardening.md](docs/ssrf-egress-hardening.md).
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-**Do not deploy the web app publicly** until the blockers in that doc are done —
-durable rate limiting, a spend cap, and network isolation (all three now closed;
-remaining items are env/host setup, not engineering).
+The hosted web app's engineering blockers are closed: durable rate limiting, a spend
+cap, and worker network isolation are built. Before a public anonymous launch, finish
+the env/host checklist in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Cost
 
 `scan` costs zero model calls. A `run` with three personas is on the order of 65 model
 calls (per-persona step budgets). The agent sends a bounded window of recent history rather than the full
 transcript (`HISTORY_WINDOW` in `src/agent/engine.ts`), which keeps input tokens flat
-across a run instead of growing with every step. There is no global spend cap yet.
+across a run instead of growing with every step. Hosted runs reserve against the daily
+model-call cap before enqueueing.
 
 ## Development
 

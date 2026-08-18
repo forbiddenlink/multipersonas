@@ -71,7 +71,7 @@ export function GradeForm() {
           type="submit"
           size="lg"
           disabled={loading || !url}
-          className="h-10 shrink-0 px-6 font-mono text-xs uppercase tracking-wide"
+          className="h-10 shrink-0 px-6 font-mono text-sm uppercase tracking-wide"
         >
           {loading ? "Grading…" : "Get my grade"}
         </Button>

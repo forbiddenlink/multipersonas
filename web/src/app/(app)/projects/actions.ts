@@ -49,9 +49,8 @@ export async function createProjectAction(formData: FormData): Promise<void> {
       url: normalizedUrl,
       description,
     });
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Could not create the project.";
-    redirect(`/projects?error=${encodeURIComponent(message)}`);
+  } catch {
+    redirect(`/projects?error=${encodeURIComponent("Could not create the project.")}`);
   }
   if (!project) {
     redirect(`/projects?error=${encodeURIComponent("Could not create the project.")}`);
@@ -76,9 +75,8 @@ export async function updateProjectAction(id: string, formData: FormData): Promi
   let updated;
   try {
     updated = await updateProject(supabase, id, { name, description });
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Could not update the project.";
-    redirect(`/projects/${id}?error=${encodeURIComponent(message)}`);
+  } catch {
+    redirect(`/projects/${id}?error=${encodeURIComponent("Could not update the project.")}`);
   }
   if (!updated) {
     redirect(`/projects/${id}?error=${encodeURIComponent("Could not update the project.")}`);
@@ -96,7 +94,11 @@ export async function deleteProjectAction(id: string): Promise<void> {
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login?next=/projects");
 
-  await deleteProject(supabase, id);
+  try {
+    await deleteProject(supabase, id);
+  } catch {
+    redirect(`/projects/${id}?error=${encodeURIComponent("Could not delete the project.")}`);
+  }
 
   revalidatePath("/projects");
   redirect("/projects");

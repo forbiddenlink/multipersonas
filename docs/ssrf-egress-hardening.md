@@ -3,7 +3,10 @@
 Snapshot 2026-08-02, updated 2026-08-16. **Status: CLOSED, live in production.** The
 worker image builds and backgrounds `smokescreen` (`worker/Dockerfile` +
 `worker/entrypoint.sh`, option 1 below) — verified locally: proxies a public URL
-(`200`) and denies `169.254.169.254` (`407`, "Deny: Not Global Unicast"). Both
+(`200`) and denies `169.254.169.254` (`407`, "Deny: Not Global Unicast"). The
+entrypoint now passes explicit `--deny-range` flags for private, loopback,
+link-local, reserved, NAT64/6to4, and multicast ranges so the guard does not depend on
+smokescreen defaults or hostname ACL config. Both
 `AUDIT_BROWSER_PROXY=http://127.0.0.1:4750` and `AUDIT_REQUIRE_EGRESS_PROXY=1` are now
 set on the Railway `multipersonas-worker` service; the redeployed container's logs
 confirm smokescreen's own `[INFO] starting` line followed by a clean
@@ -44,11 +47,10 @@ BEFORE launch when `AUDIT_REQUIRE_EGRESS_PROXY=1` and the proxy var is unset/bla
 **a) DONE — smokescreen builds + runs in the worker container.** `worker/Dockerfile` has a
 `golang:1.23-bookworm` build stage (`go install github.com/stripe/smokescreen@latest`); only
 the compiled binary crosses into the runtime image. `worker/entrypoint.sh` backgrounds it on
-`127.0.0.1:4750` (with `--deny-range 240.0.0.0/4`, see below) then execs the worker; the
+`127.0.0.1:4750` with explicit deny ranges then execs the worker; the
 image `CMD` and `railway.toml`'s `startCommand` both point at it. Verified locally (built +
 ran the image): a request to `example.com` through the proxy returns `200`; a request to
-`169.254.169.254` returns `407` with `decision_reason: "Deny: Not Global Unicast"` —
-confirming smokescreen's default deny covers link-local/metadata with no ACL file needed.
+`169.254.169.254` returns `407` with `decision_reason: "Deny: Not Global Unicast"`.
 For reference, this is what shipped:
 
 ```dockerfile
@@ -70,11 +72,11 @@ CMD ["/usr/local/bin/entrypoint.sh"]
 ```sh
 #!/bin/sh
 set -e
-# Egress SSRF guard. Default-denies private/reserved ranges; ALSO deny Class E
-# 240.0.0.0/4, which smokescreen default-ALLOWS (known DNS-rebind bypass, spearbit
-# 2026-06-18). Backgrounded; the worker's browser egress goes through it via
-# AUDIT_BROWSER_PROXY, so if it dies the browser can't connect (fail closed).
-smokescreen --listen-ip 127.0.0.1 --listen-port 4750 --deny-range 240.0.0.0/4 &
+# Egress SSRF guard. Explicitly denies private/reserved ranges. Backgrounded; the
+# worker's browser egress goes through it via AUDIT_BROWSER_PROXY, so if it dies the
+# browser can't connect (fail closed).
+DENY_RANGES="--deny-range 0.0.0.0/8 ... --deny-range ff00::/8"
+smokescreen --listen-ip 127.0.0.1 --listen-port 4750 $DENY_RANGES &
 exec pnpm --filter worker start
 ```
 
@@ -88,7 +90,7 @@ proxied.
 Caveats (resolved): smokescreen flags verified against `smokescreen --help` (`--listen-ip`,
 `--listen-port`, `--deny-range`, all repeatable/as documented) and confirmed working in a
 local build+run (see status line at top). Keep the app-layer `url-guard` as the first gate
-(it already blocks 240/4 and the rest, so it is the belt to smokescreen's suspenders).
+(it blocks the same ranges before enqueue; smokescreen is the belt to that suspenders).
 Keeps the browser local (no per-scan latency), proven in production, minimal moving parts.
 
 ### 2. Sandboxed browser service (Browserbase / Browserless)

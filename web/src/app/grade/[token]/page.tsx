@@ -142,7 +142,7 @@ function GradeReportView({ report }: { report: GradeReport }) {
             value={report.score}
             total={100}
             label="score"
-            unit={`across ${report.pagesScanned} page${report.pagesScanned === 1 ? "" : "s"}`}
+            unit={`across ${report.pagesScanned ?? 0} page${(report.pagesScanned ?? 0) === 1 ? "" : "s"}`}
             tone={meterTone(report.grade)}
           />
         </div>
@@ -159,7 +159,7 @@ function GradeReportView({ report }: { report: GradeReport }) {
               <div key={severity} className="flex items-center justify-between px-4 py-3">
                 <SeverityChip severity={severity} />
                 <span className="font-mono text-sm tabular-nums text-foreground">
-                  {report.byImpact[severity]}
+                  {report.byImpact?.[severity] ?? 0}
                 </span>
               </div>
             ))}
@@ -211,7 +211,7 @@ function GradeReportView({ report }: { report: GradeReport }) {
       ) : null}
 
       {/* Per-page list */}
-      {report.perPage.length > 0 && (
+      {(report.perPage?.length ?? 0) > 0 && (
         <div className="space-y-3">
           <h2 className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
             Pages scanned

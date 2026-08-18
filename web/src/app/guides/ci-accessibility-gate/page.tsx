@@ -88,16 +88,42 @@ mpersonas scan https://app.example.com --session ./session.json \\
         <code className="font-mono text-xs text-foreground">vars.MPERSONAS_TARGET_URL</code>, upload
         the Markdown report as an artifact.
       </p>
-      <p className="mt-3 text-sm text-muted-foreground">
-        <a
-          href="https://github.com/forbiddenlink/multipersonas/tree/main/examples/github-actions"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-sm font-medium text-foreground underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-        >
-          examples/github-actions
-        </a>
-      </p>
+      <pre className="mt-4 overflow-x-auto rounded-sm border border-border bg-card p-4 font-mono text-xs leading-relaxed text-foreground">
+{`name: Accessibility gate
+on: pull_request
+
+jobs:
+  a11y:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install -g multipersonas
+      - run: npx playwright install --with-deps chromium
+
+      # Session is optional — omit for a public site.
+      - name: Restore session
+        if: \${{ secrets.MPERSONAS_SESSION != '' }}
+        run: printf '%s' "$MPERSONAS_SESSION" > session.json && chmod 600 session.json
+        env:
+          MPERSONAS_SESSION: \${{ secrets.MPERSONAS_SESSION }}
+
+      - name: Scan and gate on new critical/serious defects
+        run: |
+          mpersonas scan "\${{ vars.MPERSONAS_TARGET_URL }}" \\
+            \${{ secrets.MPERSONAS_SESSION != '' && '--session session.json' || '' }} \\
+            --baseline mpersonas-baseline.json \\
+            --fail-on serious
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-report
+          path: mpersonas-report/scan.md`}
+      </pre>
 
       <BoxDivider label="honesty" className="mt-10" />
       <p className="mt-4 text-sm leading-relaxed text-muted-foreground">

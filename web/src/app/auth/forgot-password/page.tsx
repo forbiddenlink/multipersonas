@@ -140,6 +140,11 @@ export default function ForgotPasswordPage() {
                 Sign in
               </Link>
             </p>
+            <p className="text-center text-xs text-muted-foreground">
+              <Link href="/" className="rounded-sm hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
+                &larr; Back to home
+              </Link>
+            </p>
           </div>
         </div>
       </div>

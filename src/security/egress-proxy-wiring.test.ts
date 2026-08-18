@@ -16,6 +16,23 @@ const dockerfile = readFileSync(new URL("../../worker/Dockerfile", import.meta.u
 const entrypoint = readFileSync(new URL("../../worker/entrypoint.sh", import.meta.url), "utf8");
 const railwayToml = readFileSync(new URL("../../railway.toml", import.meta.url), "utf8");
 const browserSrc = readFileSync(new URL("./browser.ts", import.meta.url), "utf8");
+const requiredDenyRanges = [
+  "0.0.0.0/8",
+  "10.0.0.0/8",
+  "100.64.0.0/10",
+  "127.0.0.0/8",
+  "169.254.0.0/16",
+  "172.16.0.0/12",
+  "192.168.0.0/16",
+  "240.0.0.0/4",
+  "::/128",
+  "::1/128",
+  "64:ff9b::/96",
+  "2002::/16",
+  "fc00::/7",
+  "fe80::/10",
+  "ff00::/8",
+];
 
 describe("smokescreen egress-guard wiring", () => {
   it("Dockerfile builds smokescreen from source and ships the binary", () => {
@@ -30,9 +47,9 @@ describe("smokescreen egress-guard wiring", () => {
 
   it("entrypoint backgrounds smokescreen on localhost before execing the worker", () => {
     expect(entrypoint).toMatch(/smokescreen .*--listen-ip 127\.0\.0\.1.*&/);
-    // Class E 240.0.0.0/4 is a documented smokescreen default-allow / DNS-rebind
-    // bypass — must stay explicitly denied.
-    expect(entrypoint).toMatch(/--deny-range 240\.0\.0\.0\/4/);
+    for (const range of requiredDenyRanges) {
+      expect(entrypoint).toContain(`--deny-range ${range}`);
+    }
     expect(entrypoint).toMatch(/exec pnpm --filter worker start/);
   });
 

@@ -27,7 +27,15 @@ export default async function ProjectsPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { error } = await searchParams;
-  const errorMessage = typeof error === "string" ? error : null;
+  // Whitelist known server-action messages — prevents arbitrary text injection
+  // via crafted URLs even though React escapes XSS.
+  const KNOWN_PROJECT_ERRORS = new Set([
+    "Give the project a name.",
+    "Enter a valid http(s) URL.",
+    "Could not create the project.",
+  ]);
+  const errorMessage =
+    typeof error === "string" && KNOWN_PROJECT_ERRORS.has(error) ? error : null;
 
   const supabase = await createClient();
   const projects = await listProjects(supabase);

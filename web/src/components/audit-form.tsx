@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -88,7 +88,7 @@ type PollOutcome =
  * passes. The run happens in a worker, not the request, so the browser can take as
  * long as it needs — a "timeout" outcome means we stopped watching, not that the job
  * died, so the caller decides whether to keep the jobId around for a manual re-check. */
-async function pollAuditJob(jobId: string): Promise<PollOutcome> {
+async function pollAuditJob(jobId: string, signal?: AbortSignal): Promise<PollOutcome> {
   // A real multi-persona run (browser + axe + LLM per persona) routinely runs several
   // minutes; the old 3-minute deadline made the timeout branch the *default* outcome for
   // genuine scans. Ten minutes covers the worst case, and the worker keeps running past
@@ -96,12 +96,17 @@ async function pollAuditJob(jobId: string): Promise<PollOutcome> {
   const deadlineMs = Date.now() + 10 * 60 * 1000;
   while (Date.now() < deadlineMs) {
     await new Promise((r) => setTimeout(r, 2500));
+    if (signal?.aborted) return { status: "timeout" };
     let data: { status?: string; result?: AuditResponse; error?: string };
     try {
-      const res = await fetch(`/api/audit/${jobId}`);
+      const res = await fetch(`/api/audit/${jobId}`, { signal });
       if (!res.ok) continue;
       data = await res.json();
-    } catch {
+    } catch (err) {
+      // AbortError = navigated away or component unmounted — stop cleanly.
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return { status: "timeout" };
+      }
       // Transient network error (offline blip, dropped connection). The job is still
       // running server-side, so keep polling rather than throwing and freezing the UI.
       continue;
@@ -133,6 +138,7 @@ export function AuditForm({
   submitLabel?: string;
 } = {}) {
   const router = useRouter();
+  const abortRef = useRef<AbortController | null>(null);
   const [url, setUrl] = useState(defaultUrl ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -201,6 +207,11 @@ export function AuditForm({
   /** Poll `jobId` to completion. Shared by a fresh submit, a mount-time resume, and
    * a manual "Check status" click so none of those paths can ever re-submit. */
   async function watchJob(jobId: string, personaIds: string[]) {
+    // Abort any in-flight poll before starting a new one.
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+
     setLoading(true);
     setTimedOut(false);
     setError(null);
@@ -208,7 +219,7 @@ export function AuditForm({
 
     let outcome: PollOutcome;
     try {
-      outcome = await pollAuditJob(jobId);
+      outcome = await pollAuditJob(jobId, ctrl.signal);
     } catch {
       // Safety net: pollAuditJob already swallows transient network errors, but any
       // unexpected throw here must never leave the spinner stuck (watchJob is called
@@ -275,6 +286,8 @@ export function AuditForm({
     queueMicrotask(() => {
       void watchJob(jobId, personaIds);
     });
+    // Abort the poll if the component unmounts before the scan completes.
+    return () => { abortRef.current?.abort(); };
     // Resume-on-mount only — intentionally run once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -287,7 +300,7 @@ export function AuditForm({
     );
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setUpgrade(false);
@@ -484,8 +497,7 @@ export function AuditForm({
             </span>
             <span className="flex items-center gap-1.5">
               <span
-                className="size-1.5 rounded-full bg-[var(--primary)]"
-                style={{ animation: "pulse 1.4s ease-in-out infinite" }}
+                className="size-1.5 rounded-full bg-[var(--primary)] motion-safe:animate-pulse"
                 aria-hidden
               />
               scanning

@@ -42,9 +42,10 @@ docker run --rm -e SUPABASE_URL=... -e SUPABASE_SERVICE_ROLE_KEY=... -e ANTHROPI
 
 **Network isolation (deploy blocker #3) — CLOSED, live on the Railway service.**
 The image builds and backgrounds a `smokescreen` egress-guard proxy
-(`worker/entrypoint.sh`, built from source in the Dockerfile) that default-denies
-RFC1918, loopback, link-local (incl. `169.254.169.254`), CGNAT, the IPv6 equivalents,
-and Class E `240.0.0.0/4` at CONNECT time — closing the DNS-rebinding TOCTOU that
+(`worker/entrypoint.sh`, built from source in the Dockerfile) with explicit deny ranges
+for RFC1918, loopback, link-local (incl. `169.254.169.254`), CGNAT, reserved IPv4,
+the IPv6 equivalents, NAT64/6to4 wrappers, and Class E `240.0.0.0/4` at CONNECT time —
+closing the DNS-rebinding TOCTOU that
 app-level `url-guard.ts` cannot close in-process. Both env vars are set on
 `multipersonas-worker`:
 

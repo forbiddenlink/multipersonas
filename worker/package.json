@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@sentry/node": "^10.69.0",
-    "@supabase/supabase-js": "^2.112.2",
+    "@supabase/supabase-js": "^2.112.3",
     "multipersonas": "workspace:*",
     "tsx": "^4.23.12"
   },

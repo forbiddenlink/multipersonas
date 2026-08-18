@@ -255,22 +255,13 @@ mpersonas scan https://app.example.com --session ./session.json \\
   --baseline mpersonas-baseline.json --fail-on serious`}
           </pre>
           <p className="mt-4 text-sm text-muted-foreground">
-            Full walkthrough:{" "}
+            Full walkthrough and ready-to-use GitHub Action:{" "}
             <Link
               href="/guides/ci-accessibility-gate"
               className="rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               CI accessibility gate
             </Link>
-            . Ready-to-use GitHub Action:{" "}
-            <a
-              href="https://github.com/forbiddenlink/multipersonas/tree/main/examples/github-actions"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-            >
-              examples/github-actions
-            </a>
             .
           </p>
         </div>

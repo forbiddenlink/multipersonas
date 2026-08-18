@@ -30,7 +30,13 @@ export default async function ProjectDetailPage({
 }) {
   const { id } = await params;
   const { error } = await searchParams;
-  const errorMessage = typeof error === "string" ? error : null;
+  const KNOWN_PROJECT_DETAIL_ERRORS = new Set([
+    "Give the project a name.",
+    "Could not update the project.",
+    "Could not delete the project.",
+  ]);
+  const errorMessage =
+    typeof error === "string" && KNOWN_PROJECT_DETAIL_ERRORS.has(error) ? error : null;
 
   const supabase = await createClient();
   const project = await getProject(supabase, id);

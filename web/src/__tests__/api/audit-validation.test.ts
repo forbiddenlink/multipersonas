@@ -146,8 +146,12 @@ describe("POST /api/audit — anonymous access", () => {
         },
       }),
     }));
+    vi.doMock("@engine/security/url-guard", () => ({
+      assertUrlAllowed: vi.fn().mockResolvedValue(new URL("https://example.com/")),
+      BlockedUrlError: class BlockedUrlError extends Error {},
+    }));
 
-    // Clear module cache to pick up new mock
+    // Clear module cache to pick up new mocks
     vi.resetModules();
     const mod = await import("@/app/api/audit/route");
 

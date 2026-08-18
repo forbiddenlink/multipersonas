@@ -35,8 +35,7 @@ export function GradePoll({ token }: { token: string }) {
       className="mt-8 flex flex-wrap items-center gap-2.5 rounded-md border border-border bg-card px-4 py-3 font-mono text-sm text-muted-foreground"
     >
       <span
-        className="size-1.5 shrink-0 rounded-full bg-[var(--primary)]"
-        style={{ animation: "pulse 1.4s ease-in-out infinite" }}
+        className="size-1.5 shrink-0 rounded-full bg-[var(--primary)] motion-safe:animate-pulse"
         aria-hidden
       />
       still scanning — {paused ? "auto-refresh paused" : "updates automatically"}, or{" "}

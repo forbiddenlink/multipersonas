@@ -39,8 +39,8 @@ that read that page choose where to go next. Public + anonymous is a hostile env
    `src/security/url-guard.ts` resolves and validates every navigation and the engine
    re-checks each document request, but DNS rebinding could not be fully closed
    in-process. The worker image builds + backgrounds a `smokescreen` egress proxy
-   (`worker/Dockerfile`, `worker/entrypoint.sh`) that denies link-local + RFC1918 by
-   default — verified locally (public URL proxies 200, `169.254.169.254` denied 407)
+   (`worker/Dockerfile`, `worker/entrypoint.sh`) with explicit private/reserved
+   `--deny-range` flags — verified locally (public URL proxies 200, `169.254.169.254` denied 407)
    and now live on the Railway `multipersonas-worker` service:
    `AUDIT_BROWSER_PROXY=http://127.0.0.1:4750` + `AUDIT_REQUIRE_EGRESS_PROXY=1` are both
    set, and the redeployed container's logs confirm smokescreen's `[INFO] starting` line
@@ -54,16 +54,19 @@ that read that page choose where to go next. Public + anonymous is a hostile env
 - [x] `AUDIT_BROWSER_PROXY=http://127.0.0.1:4750` + `AUDIT_REQUIRE_EGRESS_PROXY=1` set on
       the worker host, and the worker redeployed with the smokescreen-enabled image
       (blocker 3 — DONE 2026-08-16, verified via `railway logs`).
-- [x] Supabase security advisors resolved (2026-08-16, verified via
-      `supabase db advisors --linked --type security`): `handle_new_user`/`set_updated_at`
-      search_path (006) and SECURITY DEFINER exec-by-anon on `handle_new_user` and the rate
-      limit/spend RPCs (007, 018) were already closed; migration 019 closed a live gap
-      migration 017 had left open on `reserve_model_calls_scoped` (revoked from
-      anon/authenticated but not PUBLIC — anon could call it directly over
-      `/rest/v1/rpc/...` and manipulate the spend-cap counters). Remaining, non-schema:
-      **Leaked Password Protection is disabled** — toggle it on in the Supabase Auth
-      dashboard (Authentication → Policies → Password); this is a project-level Auth
-      setting the CLI/migrations can't reach.
+- [x] Supabase security advisors checked (2026-08-16, verified via the Supabase
+      connector after the CLI hung): no schema WARN/ERROR remains. The current INFO lints
+      are expected deny-by-default tables with RLS enabled and no client policies:
+      `grader_scans` (read through the service-role capability-token API only),
+      `rate_limits`, `usage_counters`, and `usage_counters_by_caller` (service-role/RPC
+      internals). `handle_new_user`/`set_updated_at` search_path (006) and SECURITY
+      DEFINER exec-by-anon on `handle_new_user` and the rate limit/spend RPCs (007, 018)
+      were already closed; migration 019 closed a live gap migration 017 had left open on
+      `reserve_model_calls_scoped` (revoked from anon/authenticated but not PUBLIC — anon
+      could call it directly over `/rest/v1/rpc/...` and manipulate the spend-cap
+      counters). Remaining, non-schema WARN: **Leaked Password Protection is disabled** —
+      toggle it on in the Supabase Auth dashboard (Authentication → Policies → Password);
+      this is a project-level Auth setting the CLI/migrations can't reach.
       ⚠️ **Do not run `supabase config push`** to fix it — `web/supabase/config.toml`
       still has the stale `site_url = "http://127.0.0.1:3000"` from local dev; pushing it
       would revert the production Site URL fix (the 2026-07-31 auth-redirect bug). Fix
@@ -102,8 +105,9 @@ Set the SAME `SUPABASE_SERVICE_ROLE_KEY` on the Vercel app (so `/api/audit` can 
 
 Browserbase would give egress isolation for free; **Railway does not** by itself — its
 containers have unrestricted outbound. The worker image builds and runs its own
-`smokescreen` egress-guard sidecar (`worker/entrypoint.sh`), verified locally to deny
-link-local/metadata addresses, and both env vars are now set on the
+`smokescreen` egress-guard sidecar (`worker/entrypoint.sh`), with explicit deny ranges
+for private/reserved destinations and verified locally to deny link-local/metadata
+addresses. Both env vars are now set on the
 `multipersonas-worker` service:
 
 ```bash

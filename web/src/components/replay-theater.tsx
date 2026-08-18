@@ -251,12 +251,26 @@ export function ReplayTheater({
               // Signed, short-lived private URL — plain img avoids next/image remote config
               // and the query-string signing next/image would strip. Fills the pane so a
               // tall narration column never leaves a dead band under the frame.
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={step.screenshotUrl}
-                alt={`${meta.name} — step ${sIdx + 1}: ${step.action}`}
-                className="absolute inset-0 h-full w-full object-cover object-top transition-opacity duration-300 motion-reduce:transition-none"
-              />
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={step.screenshotUrl}
+                  alt={`${meta.name} — step ${sIdx + 1}: ${step.action}`}
+                  className="absolute inset-0 h-full w-full object-cover object-top transition-opacity duration-300 motion-reduce:transition-none"
+                  onError={(e) => {
+                    const el = e.currentTarget;
+                    el.style.display = "none";
+                    const placeholder = el.nextElementSibling as HTMLElement | null;
+                    if (placeholder) placeholder.style.display = "flex";
+                  }}
+                />
+                <div
+                  className="absolute inset-0 hidden items-center justify-center px-6 text-center font-mono text-xs text-muted-foreground"
+                  aria-hidden="true"
+                >
+                  screenshot expired — reload to refresh
+                </div>
+              </>
             ) : (
               <div className="flex h-full w-full items-center justify-center px-6 text-center font-mono text-xs text-muted-foreground">
                 no frame captured for this step
