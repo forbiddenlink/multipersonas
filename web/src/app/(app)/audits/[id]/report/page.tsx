@@ -67,6 +67,20 @@ export default async function ReportPage({
     (pid) => PERSONA_DATA[pid as keyof typeof PERSONA_DATA]?.name ?? pid,
   );
   const totalViolations = report.verdicts.length;
+  const manualReviewRows = report.conformance.rows.filter(
+    (row) => row.status === "needs-manual-review",
+  );
+  const csvRows = report.verdicts.map((v) => ({
+    ruleId: v.ruleId,
+    title: v.title,
+    severity: v.severity,
+    criteria: v.criteria.map((c) => `${c.code} ${c.name}`),
+    locations: v.locations,
+    recommendation: v.recommendation,
+  }));
+  const priorityVerdicts = [...report.verdicts]
+    .sort((a, b) => b.priorityScore - a.priorityScore)
+    .slice(0, 5);
 
   return (
     <div>
@@ -98,7 +112,10 @@ export default async function ReportPage({
           <Link href={`/audits/${id}`} className={buttonVariants({ variant: "outline" })}>
             Back to audit
           </Link>
-          <ExportButton />
+          <ExportButton
+            csvRows={csvRows}
+            filename={`personaudit-${report.runId}-verdicts.csv`}
+          />
         </div>
       </div>
 
@@ -174,6 +191,94 @@ export default async function ReportPage({
             </div>
           )}
         </section>
+
+        {report.personaImpact.length > 0 && (
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>Persona task-success impact</h2>
+            <p className={styles.disclaimer}>
+              Personas are user-outcome evidence, not compliance verdicts. They show which
+              real-shaped flows reached the states where deterministic axe verdicts were captured.
+            </p>
+            <div className={styles.summary}>
+              {report.personaImpact.map((persona) => {
+                const name = PERSONA_DATA[persona.personaId as keyof typeof PERSONA_DATA]?.name ?? persona.personaId;
+                const role = PERSONA_DATA[persona.personaId as keyof typeof PERSONA_DATA]?.role ?? "Persona";
+                return (
+                  <div key={persona.personaId} className={styles.count}>
+                    <div className={styles.countNum} style={{ color: persona.goalCompleted ? "#137333" : "#b3261e" }}>
+                      {persona.goalCompleted ? "Reached" : "Blocked"}
+                    </div>
+                    <div className={styles.countLabel}>
+                      {name} · {role} · {persona.steps} steps · {persona.verdictStates} verdict states
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {priorityVerdicts.length > 0 && (
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>Fix first</h2>
+            <p className={styles.disclaimer}>
+              Priority combines axe severity with persona task impact. It is a planning score,
+              not a conformance score.
+            </p>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th style={{ width: "12%" }}>Score</th>
+                  <th style={{ width: "34%" }}>Issue</th>
+                  <th style={{ width: "18%" }}>Severity</th>
+                  <th style={{ width: "36%" }}>Why first</th>
+                </tr>
+              </thead>
+              <tbody>
+                {priorityVerdicts.map((v) => {
+                  const meta = SEVERITY_META[v.severity as Severity] ?? SEVERITY_META.minor;
+                  return (
+                    <tr key={v.id}>
+                      <td className={styles.sev}>{v.priorityScore}</td>
+                      <td>{v.title}</td>
+                      <td style={{ color: meta.color }}>{meta.label}</td>
+                      <td>{v.priorityReason}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </section>
+        )}
+
+        {report.fixClusters.length > 0 && (
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>Remediation clusters</h2>
+            <p className={styles.disclaimer}>
+              Clustered by likely ownership so teams can turn violations into fix work.
+              This is planning guidance; the verdict table remains the source of record.
+            </p>
+            <div className={styles.clusterGrid}>
+              {report.fixClusters.map((cluster) => (
+                <div key={cluster.id} className={styles.clusterCard}>
+                  <div className={styles.clusterHeader}>
+                    <h3>{cluster.label}</h3>
+                    <span>{cluster.verdictCount}</span>
+                  </div>
+                  <p>{cluster.summary}</p>
+                  <p className={styles.clusterStep}>{cluster.nextStep}</p>
+                  <div className={styles.clusterSeverities}>
+                    {SEVERITY_ORDER.filter((sev) => cluster.severities[sev] > 0).map((sev) => (
+                      <span key={sev} style={{ color: SEVERITY_META[sev].color }}>
+                        {SEVERITY_META[sev].label}: {cluster.severities[sev]}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>
@@ -283,6 +388,39 @@ export default async function ReportPage({
                     </tr>
                   );
                 })}
+              </tbody>
+            </table>
+          </section>
+        )}
+
+        {manualReviewRows.length > 0 && (
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>
+              Manual review checklist ({manualReviewRows.length})
+            </h2>
+            <p className={styles.disclaimer}>
+              axe-core cannot prove these criteria. Test them with keyboard navigation,
+              assistive technology, and representative user tasks before making a
+              conformance claim.
+            </p>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th style={{ width: "24%" }}>Success criterion</th>
+                  <th style={{ width: "8%" }}>Level</th>
+                  <th style={{ width: "68%" }}>Manual check</th>
+                </tr>
+              </thead>
+              <tbody>
+                {manualReviewRows.map((row) => (
+                  <tr key={row.code}>
+                    <td>
+                      <strong>{row.code}</strong> {row.name}
+                    </td>
+                    <td>{row.level}</td>
+                    <td>{row.remarks}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </section>

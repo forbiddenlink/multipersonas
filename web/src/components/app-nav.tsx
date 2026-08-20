@@ -118,7 +118,7 @@ export function AppNav({
       )}
 
       {/* Desktop sidebar */}
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-card md:flex">
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-card md:sticky md:top-0 md:flex md:h-dvh md:self-start">
         <div className="px-6 py-5">
           <Link
             href="/dashboard"

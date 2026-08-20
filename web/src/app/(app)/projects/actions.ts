@@ -3,7 +3,9 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { createProject, updateProject, deleteProject } from "@/lib/projects";
+import { createProject, updateProject, deleteProject, getProject } from "@/lib/projects";
+import { getSessionPlan, planAllowsPersonas } from "@/lib/entitlements";
+import { isScanInterval, upsertProjectSchedule } from "@/lib/schedules";
 
 function readProjectFields(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
@@ -102,4 +104,46 @@ export async function deleteProjectAction(id: string): Promise<void> {
 
   revalidatePath("/projects");
   redirect("/projects");
+}
+
+export async function upsertProjectScheduleAction(
+  projectId: string,
+  formData: FormData,
+): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect(`/auth/login?next=/projects/${projectId}`);
+
+  const project = await getProject(supabase, projectId);
+  if (!project) {
+    redirect(`/projects/${projectId}?error=${encodeURIComponent("Project not found.")}`);
+  }
+
+  const plan = await getSessionPlan(supabase, user.id);
+  if (!planAllowsPersonas(plan)) {
+    redirect(`/projects/${projectId}?error=${encodeURIComponent("Scheduled scans are a Pro feature.")}`);
+  }
+
+  const intervalRaw = String(formData.get("interval") ?? "weekly");
+  if (!isScanInterval(intervalRaw)) {
+    redirect(`/projects/${projectId}?error=${encodeURIComponent("Choose a valid scan interval.")}`);
+  }
+
+  const enabled = formData.get("enabled") === "on";
+
+  try {
+    await upsertProjectSchedule(supabase, {
+      userId: user.id,
+      projectId: project.id,
+      interval: intervalRaw,
+      enabled,
+    });
+  } catch {
+    redirect(`/projects/${projectId}?error=${encodeURIComponent("Could not save the scan schedule.")}`);
+  }
+
+  revalidatePath(`/projects/${projectId}`);
+  redirect(`/projects/${projectId}`);
 }

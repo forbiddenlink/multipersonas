@@ -4,6 +4,7 @@ import { STORAGE_STATE } from "./tests/e2e/constants";
 // E2E for the auth-gated app, run against a LOCAL Supabase stack (see tests/e2e/run.sh).
 // The dev server inherits SUPABASE env from the shell that launches the run.
 const PORT = Number(process.env.E2E_PORT ?? 3100);
+const REUSE_EXISTING_SERVER = process.env.E2E_REUSE_SERVER === "1";
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -23,7 +24,7 @@ export default defineConfig({
   webServer: {
     command: `pnpm exec next dev --webpack -p ${PORT}`,
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: REUSE_EXISTING_SERVER,
     timeout: 120_000,
   },
 });

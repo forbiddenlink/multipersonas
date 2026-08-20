@@ -5,5 +5,12 @@ import { test, expect } from "@playwright/test";
 test("projects page lists the seeded project", async ({ page }) => {
   await page.goto("/projects");
   await expect(page).toHaveURL(/\/projects/);
-  await expect(page.getByRole("link", { name: /Acme Marketing Site/ })).toBeVisible();
+  const project = page.getByRole("link", { name: /Acme Marketing Site/ });
+  await expect(project).toBeVisible();
+  await Promise.all([
+    page.waitForURL(/\/projects\/[0-9a-f-]+$/),
+    project.click(),
+  ]);
+  await expect(page.getByText("latest open")).toBeVisible();
+  await expect(page.getByText("persona outcome")).toBeVisible();
 });

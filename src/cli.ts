@@ -6,7 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import { z } from "zod";
-import { personaLibrary, personasByCategory, isBuiltinPersonaId } from "./personas/library.js";
+import { personasByCategory, isBuiltinPersonaId } from "./personas/library.js";
 import { RETIRED_PERSONA_IDS } from "./personas/prebuilt.js";
 import { generatePersonasFromUrl, generatePersonasFromDescription } from "./personas/generator.js";
 import { runMultiPersonaTest, type ProgressEvent } from "./agent/orchestrator.js";

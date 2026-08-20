@@ -85,16 +85,21 @@ export type Database = {
           description: string
           dismissed: boolean
           id: string
+          notes: string | null
+          owner: string | null
           page_url: string
           persona_id: string
           recommendation: string
+          resolved_at: string | null
           rule_id: string | null
           screenshot_url: string | null
           severity: string
           source: string
+          status: string
           target: string | null
           test_run_id: string
           title: string
+          updated_at: string
           wcag_tags: string[] | null
         }
         Insert: {
@@ -103,16 +108,21 @@ export type Database = {
           description: string
           dismissed?: boolean
           id?: string
+          notes?: string | null
+          owner?: string | null
           page_url: string
           persona_id: string
           recommendation: string
+          resolved_at?: string | null
           rule_id?: string | null
           screenshot_url?: string | null
           severity: string
           source?: string
+          status?: string
           target?: string | null
           test_run_id: string
           title: string
+          updated_at?: string
           wcag_tags?: string[] | null
         }
         Update: {
@@ -121,16 +131,21 @@ export type Database = {
           description?: string
           dismissed?: boolean
           id?: string
+          notes?: string | null
+          owner?: string | null
           page_url?: string
           persona_id?: string
           recommendation?: string
+          resolved_at?: string | null
           rule_id?: string | null
           screenshot_url?: string | null
           severity?: string
           source?: string
+          status?: string
           target?: string | null
           test_run_id?: string
           title?: string
+          updated_at?: string
           wcag_tags?: string[] | null
         }
         Relationships: [
@@ -349,6 +364,70 @@ export type Database = {
           },
         ]
       }
+      project_scan_schedules: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          interval: string
+          last_job_id: string | null
+          last_run_at: string | null
+          next_run_at: string
+          persona_ids: string[]
+          project_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          interval?: string
+          last_job_id?: string | null
+          last_run_at?: string | null
+          next_run_at?: string
+          persona_ids?: string[]
+          project_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          interval?: string
+          last_job_id?: string | null
+          last_run_at?: string | null
+          next_run_at?: string
+          persona_ids?: string[]
+          project_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_scan_schedules_last_job_id_fkey"
+            columns: ["last_job_id"]
+            isOneToOne: false
+            referencedRelation: "audit_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_scan_schedules_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_scan_schedules_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rate_limits: {
         Row: {
           count: number
@@ -522,6 +601,13 @@ export type Database = {
         Args: { p_key: string; p_max: number; p_window_seconds: number }
         Returns: boolean
       }
+      enqueue_due_project_scan_schedules: {
+        Args: { p_limit?: number }
+        Returns: {
+          job_id: string
+          schedule_id: string
+        }[]
+      }
       reap_stale_audit_jobs: {
         Args: { p_max_attempts: number; p_timeout_seconds: number }
         Returns: number
@@ -676,4 +762,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-

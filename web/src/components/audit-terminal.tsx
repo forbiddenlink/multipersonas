@@ -187,7 +187,7 @@ export function AuditTerminal() {
       </div>
 
       {/* stream — wraps within the card; mono lines never break page layout */}
-      <div aria-hidden="true" className="min-h-[236px] space-y-1 px-4 py-4">
+      <div aria-hidden="true" className="min-h-[384px] space-y-1 px-4 py-4 sm:min-h-[236px]">
         {SCRIPT.slice(0, shownCount).map((l, i) => (
           <TerminalLine key={i} line={l} />
         ))}
@@ -205,15 +205,13 @@ export function AuditTerminal() {
 
       {/* on completion the card transforms to a summary chip row + task-success meter */}
       <div className="border-t border-white/10 px-4 py-3">
-        {done ? (
-          <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
-            <SummaryChip color={SEV_CRITICAL} glyph="■" label="1 critical" />
-            <SummaryChip color={SEV_SERIOUS} glyph="▲" label="1 serious" />
-            <span className="rounded-sm border border-white/15 px-2 py-0.5 text-white/60">
-              export report →
-            </span>
-          </div>
-        ) : null}
+        <div className={`mb-3 flex min-h-6 flex-wrap items-center gap-2 text-xs ${done ? "" : "invisible"}`}>
+          <SummaryChip color={SEV_CRITICAL} glyph="■" label="1 critical" />
+          <SummaryChip color={SEV_SERIOUS} glyph="▲" label="1 serious" />
+          <span className="rounded-sm border border-white/15 px-2 py-0.5 text-white/60">
+            export report →
+          </span>
+        </div>
         <div className="flex items-center justify-between text-xs">
           <span className="text-white/60">task success</span>
           <span className="tabular-nums text-white/70">
@@ -267,7 +265,7 @@ function TypedPrefix() {
 }
 
 function SourceTag({ src }: { src: string }) {
-  return <span className="select-none text-white/30">[{src}]&nbsp;</span>;
+  return <span className="select-none text-white/55">[{src}]&nbsp;</span>;
 }
 
 function TerminalLine({ line }: { line: Line }) {

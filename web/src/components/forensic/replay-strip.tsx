@@ -61,7 +61,7 @@ export function ReplayStrip({ className = "" }: { className?: string }) {
         )}
       </div>
 
-      <div className="flex items-stretch divide-x divide-border" role="tablist" aria-label="Replay steps">
+      <div className="flex flex-col divide-y divide-border sm:flex-row sm:items-stretch sm:divide-x sm:divide-y-0" role="tablist" aria-label="Replay steps">
         {SAMPLE_REPLAY_FRAMES.map((f, i) => {
           const active = i === index;
           const tabId = `${baseId}-tab-${f.id}`;
@@ -92,7 +92,7 @@ export function ReplayStrip({ className = "" }: { className?: string }) {
                   document.getElementById(`${baseId}-tab-${SAMPLE_REPLAY_FRAMES[next]!.id}`)?.focus();
                 });
               }}
-              className={`flex-1 px-3 py-3 text-left transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
+              className={`w-full px-3 py-3 text-left transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] sm:flex-1 ${
                 active
                   ? "bg-muted text-foreground"
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"

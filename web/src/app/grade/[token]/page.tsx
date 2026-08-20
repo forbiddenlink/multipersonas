@@ -240,9 +240,24 @@ function GradeReportView({ report }: { report: GradeReport }) {
           Scanned {report.pagesScanned} public page{report.pagesScanned === 1 ? "" : "s"} only.
           It does not see behind login, PDFs, or real user flows.
         </p>
-        <Link href="/for-agencies" className={buttonVariants({ variant: "outline", size: "sm" })}>
-          Agency workspace &amp; scheduled scans — join the waitlist
-        </Link>
+        <div>
+          <h2 className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
+            What to check next
+          </h2>
+          <ul className="mt-3 space-y-2 text-sm leading-relaxed text-muted-foreground">
+            <li>› Keyboard-only navigation through the highest-value path.</li>
+            <li>› Screen reader pass on forms, dialogs, menus, and checkout states.</li>
+            <li>› Logged-in pages, PDFs, and multi-step flows the public scan cannot reach.</li>
+          </ul>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Link href="/guides/screen-reader-testing" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            Manual testing guide
+          </Link>
+          <Link href="/for-agencies" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            Agency workspace &amp; scheduled scans
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -11,6 +11,15 @@ import { EmptyPrompt } from "@/components/forensic/empty-prompt";
 import { SEVERITY_ORDER, type Severity } from "@/components/forensic/severity";
 import { loadJourney } from "@/lib/journey";
 import { ReplayTheater, type ReplayFinding } from "@/components/replay-theater";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { SubmitButton } from "@/components/ui/submit-button";
+import {
+  FINDING_STATUS_LABELS,
+  FINDING_STATUSES,
+  isFindingStatus,
+} from "@/lib/finding-workflow";
+import { updateFindingWorkflowAction } from "./actions";
 
 export const metadata: Metadata = {
   title: "Audit details",
@@ -38,10 +47,32 @@ export default async function AuditDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ persona?: string; step?: string }>;
+  searchParams: Promise<{
+    persona?: string;
+    step?: string;
+    error?: string;
+    status?: string;
+    owner?: string;
+  }>;
 }) {
   const { id } = await params;
-  const { persona: personaParam, step: stepParam } = await searchParams;
+  const {
+    persona: personaParam,
+    step: stepParam,
+    error,
+    status: statusParam,
+    owner: ownerParam,
+  } = await searchParams;
+  const KNOWN_AUDIT_ERRORS = new Set([
+    "Choose a valid finding status.",
+    "Could not update the finding.",
+  ]);
+  const errorMessage = typeof error === "string" && KNOWN_AUDIT_ERRORS.has(error) ? error : null;
+  const selectedStatus =
+    typeof statusParam === "string" && (statusParam === "all" || isFindingStatus(statusParam))
+      ? statusParam
+      : "all";
+  const selectedOwner = typeof ownerParam === "string" ? ownerParam.trim() : "";
   const supabase = await createClient();
 
   // RLS scopes this to the caller's own rows; a mismatched or missing id both
@@ -57,7 +88,7 @@ export default async function AuditDetailPage({
   const { data: findingRows } = await supabase
     .from("findings")
     .select(
-      "id,persona_id,source,severity,category,title,description,recommendation,page_url"
+      "id,persona_id,source,severity,category,title,description,recommendation,page_url,status,owner,notes,resolved_at"
     )
     .eq("test_run_id", run.id)
     .order("created_at", { ascending: true });
@@ -78,6 +109,21 @@ export default async function AuditDetailPage({
   const sortedAxeFindings = [...axeFindings].sort(
     (a, b) => severityRank(a.severity) - severityRank(b.severity),
   );
+  const workflowCounts = Object.fromEntries(
+    FINDING_STATUSES.map((status) => [
+      status,
+      axeFindings.filter((f) => (f.status ?? "open") === status).length,
+    ]),
+  ) as Record<(typeof FINDING_STATUSES)[number], number>;
+  const openWorkflowCount = axeFindings.filter(
+    (f) => !["fixed", "accepted-risk", "false-positive"].includes(f.status ?? "open"),
+  ).length;
+  const owners = [...new Set(axeFindings.map((f) => f.owner?.trim()).filter(Boolean))].sort();
+  const filteredAxeFindings = sortedAxeFindings.filter((f) => {
+    const matchesStatus = selectedStatus === "all" || (f.status ?? "open") === selectedStatus;
+    const matchesOwner = !selectedOwner || f.owner === selectedOwner;
+    return matchesStatus && matchesOwner;
+  });
 
   const total = run.task_success_total ?? 0;
   const achieved = run.task_success_achieved ?? 0;
@@ -99,6 +145,52 @@ export default async function AuditDetailPage({
     const meta = PERSONA_DATA[j.personaId as keyof typeof PERSONA_DATA];
     personaMeta[j.personaId] = { name: meta?.name ?? j.personaId, role: meta?.role ?? "" };
   }
+  const personaImpact = journeys.map((j) => {
+    const pagesWithVerdicts = new Set(
+      j.steps
+        .map((step) => step.pageUrl)
+        .filter((url): url is string => typeof url === "string" && (findingsByUrl[url]?.length ?? 0) > 0),
+    );
+    return {
+      personaId: j.personaId,
+      name: personaMeta[j.personaId]?.name ?? j.personaId,
+      role: personaMeta[j.personaId]?.role ?? "",
+      goalCompleted: j.goalCompleted,
+      steps: j.steps.length,
+      verdictStates: pagesWithVerdicts.size,
+      maxFrustration: Math.max(0, ...j.steps.map((step) => step.frustration)),
+    };
+  });
+  const journeyRows = journeys.flatMap((journey) =>
+    journey.steps.map((step) => ({
+      personaId: journey.personaId,
+      goalCompleted: journey.goalCompleted,
+      pageUrl: step.pageUrl,
+    })),
+  );
+  const priorityFindings = sortedAxeFindings
+    .map((f) => {
+      const impacted = new Set<string>();
+      const blocked = new Set<string>();
+      for (const row of journeyRows) {
+        if (!row.pageUrl || row.pageUrl !== f.page_url) continue;
+        impacted.add(row.personaId);
+        if (!row.goalCompleted) blocked.add(row.personaId);
+      }
+      const base = f.severity === "critical" ? 80 : f.severity === "serious" ? 60 : f.severity === "moderate" ? 35 : 15;
+      return {
+        ...f,
+        priorityScore: Math.min(100, base + blocked.size * 15 + impacted.size * 5),
+        priorityReason:
+          blocked.size > 0
+            ? `${blocked.size} blocked persona${blocked.size === 1 ? "" : "s"} reached this state`
+            : impacted.size > 0
+              ? `${impacted.size} persona${impacted.size === 1 ? "" : "s"} reached this state`
+              : "Prioritized by axe severity",
+      };
+    })
+    .sort((a, b) => b.priorityScore - a.priorityScore)
+    .slice(0, 3);
 
   const initialStep = Number.isFinite(Number(stepParam)) ? Number(stepParam) : 0;
 
@@ -168,6 +260,11 @@ export default async function AuditDetailPage({
           unit="personas reached their goal"
           tone={successTone(achieved, total)}
         />
+        {errorMessage && (
+          <p className="text-sm text-destructive" role="alert">
+            {errorMessage}
+          </p>
+        )}
       </div>
 
       {/* Persona Replay Theater — the scrubbable walk a real user took */}
@@ -186,6 +283,75 @@ export default async function AuditDetailPage({
             initialPersona={personaParam}
             initialStep={initialStep}
           />
+        </div>
+      )}
+
+      {/* Fix first — what to remediate before the full evidence wall. */}
+      {priorityFindings.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-lg font-semibold tracking-tight">Fix first</h2>
+            <p className="font-mono text-xs text-muted-foreground">
+              severity plus persona task impact
+            </p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {priorityFindings.map((f) => (
+              <div key={f.id} className="rounded-md border border-border p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <SeverityChip severity={f.severity} />
+                  <span className="font-mono text-lg font-semibold tabular-nums">{f.priorityScore}</span>
+                </div>
+                <p className="mt-3 text-sm font-medium">{f.title}</p>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{f.priorityReason}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Persona impact — the client story before the raw evidence. */}
+      {personaImpact.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-lg font-semibold tracking-tight">Persona impact</h2>
+            <p className="font-mono text-xs text-muted-foreground">
+              who got through, who got blocked, and where proof appeared
+            </p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {personaImpact.map((persona) => (
+              <Link
+                key={persona.personaId}
+                href={`/audits/${run.id}?persona=${encodeURIComponent(persona.personaId)}&step=0`}
+                className="rounded-md border border-border p-4 transition-colors hover:border-foreground/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium">{persona.name}</p>
+                    <p className="text-xs text-muted-foreground">{persona.role}</p>
+                  </div>
+                  <span className={`rounded-sm border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide ${persona.goalCompleted ? "border-[var(--severity-minor)] text-[var(--severity-minor)]" : "border-[var(--severity-critical)] text-[var(--severity-critical)]"}`}>
+                    {persona.goalCompleted ? "reached" : "blocked"}
+                  </span>
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2 font-mono text-xs text-muted-foreground">
+                  <div>
+                    <p className="text-lg font-semibold tabular-nums text-foreground">{persona.steps}</p>
+                    <p>steps</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold tabular-nums text-foreground">{persona.verdictStates}</p>
+                    <p>states</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold tabular-nums text-foreground">{persona.maxFrustration}</p>
+                    <p>friction</p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 
@@ -241,26 +407,90 @@ export default async function AuditDetailPage({
       )}
 
       {/* Axe findings */}
-      {sortedAxeFindings.length > 0 && (
+      {axeFindings.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold tracking-tight">
             Accessibility issues (axe-core)
           </h2>
+          <div className="grid gap-2 sm:grid-cols-4">
+            <div className="rounded-md border border-border p-3">
+              <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">open work</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">{openWorkflowCount}</p>
+            </div>
+            {FINDING_STATUSES.slice(1, 4).map((status) => (
+              <div key={status} className="rounded-md border border-border p-3">
+                <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {FINDING_STATUS_LABELS[status]}
+                </p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums">{workflowCounts[status]}</p>
+              </div>
+            ))}
+          </div>
+          <form className="grid gap-3 rounded-md border border-border p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+            <div className="space-y-1.5">
+              <Label htmlFor="status-filter" className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                Status filter
+              </Label>
+              <select
+                id="status-filter"
+                name="status"
+                defaultValue={selectedStatus}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              >
+                <option value="all">All statuses</option>
+                {FINDING_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {FINDING_STATUS_LABELS[status]} ({workflowCounts[status]})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="owner-filter" className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                Owner filter
+              </Label>
+              <select
+                id="owner-filter"
+                name="owner"
+                defaultValue={selectedOwner}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              >
+                <option value="">All owners</option>
+                {owners.map((owner) => (
+                  <option key={owner} value={owner}>
+                    {owner}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button type="submit" className={buttonVariants({ variant: "outline", size: "sm" })}>
+              Apply
+            </button>
+          </form>
           <div className="overflow-hidden rounded-md border border-border bg-card">
             <div className="flex items-center gap-2 border-b border-border px-4 py-2.5 font-mono text-xs text-muted-foreground">
               <span className="text-[var(--primary)]">›</span>
               <span>verdicts — deterministic, cited to WCAG</span>
               <span className="ml-auto rounded-sm border border-border px-1.5 py-0.5 tabular-nums">
-                {sortedAxeFindings.length}
+                {filteredAxeFindings.length} / {axeFindings.length}
               </span>
             </div>
             <div className="divide-y divide-border">
-              {sortedAxeFindings.map((f) => (
+              {filteredAxeFindings.length === 0 && (
+                <div className="px-4 py-6 text-sm text-muted-foreground sm:px-5">
+                  No issues match those filters.
+                </div>
+              )}
+              {filteredAxeFindings.map((f) => (
                 <div key={f.id} className="px-4 py-4 sm:px-5">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                     <SeverityChip severity={f.severity} />
                     <span className="text-sm font-medium text-card-foreground">
                       {f.title}
+                    </span>
+                    <span className="rounded-sm border border-border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {FINDING_STATUS_LABELS[f.status as keyof typeof FINDING_STATUS_LABELS] ??
+                        "Open"}
                     </span>
                   </div>
                   <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted-foreground">
@@ -275,6 +505,68 @@ export default async function AuditDetailPage({
                       {formatLocation(f.page_url)}
                     </p>
                   )}
+                  <form
+                    action={updateFindingWorkflowAction.bind(null, run.id, f.id)}
+                    className="mt-4 grid gap-3 rounded-md border border-border bg-background/60 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+                  >
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor={`status-${f.id}`}
+                        className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground"
+                      >
+                        Status
+                      </Label>
+                      <select
+                        id={`status-${f.id}`}
+                        name="status"
+                        defaultValue={f.status ?? "open"}
+                        className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                      >
+                        {FINDING_STATUSES.map((status) => (
+                          <option key={status} value={status}>
+                            {FINDING_STATUS_LABELS[status]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor={`owner-${f.id}`}
+                        className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground"
+                      >
+                        Owner
+                      </Label>
+                      <Input
+                        id={`owner-${f.id}`}
+                        name="owner"
+                        defaultValue={f.owner ?? ""}
+                        placeholder="Design, dev, or email"
+                        maxLength={200}
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <SubmitButton variant="outline" size="sm" className="w-full sm:w-auto">
+                        Save
+                      </SubmitButton>
+                    </div>
+                    <div className="space-y-1.5 sm:col-span-3">
+                      <Label
+                        htmlFor={`notes-${f.id}`}
+                        className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground"
+                      >
+                        Notes
+                      </Label>
+                      <textarea
+                        id={`notes-${f.id}`}
+                        name="notes"
+                        defaultValue={f.notes ?? ""}
+                        maxLength={2000}
+                        rows={2}
+                        className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                        placeholder="Fix plan, acceptance note, or handoff context"
+                      />
+                    </div>
+                  </form>
                 </div>
               ))}
             </div>

@@ -36,11 +36,30 @@ export interface ReportVerdict {
   title: string;
   ruleId: string | null;
   severity: string;
+  priorityScore: number;
+  priorityReason: string;
   criteria: Criterion[];
   description: string;
   recommendation: string;
   /** Per-state location(s) where axe saw the defect. */
   locations: string[];
+}
+
+export interface PersonaImpact {
+  personaId: string;
+  goalCompleted: boolean;
+  steps: number;
+  verdictStates: number;
+  blockedVerdictStates: number;
+}
+
+export interface FixCluster {
+  id: string;
+  label: string;
+  summary: string;
+  nextStep: string;
+  verdictCount: number;
+  severities: Record<Severity, number>;
 }
 
 export interface ReportData {
@@ -50,6 +69,10 @@ export interface ReportData {
   personaIds: string[];
   severityCounts: Record<Severity, number>;
   verdicts: ReportVerdict[];
+  /** Persona task-success summary, separate from compliance verdicts. */
+  personaImpact: PersonaImpact[];
+  /** Action-oriented grouping for remediation planning. */
+  fixClusters: FixCluster[];
   /** WCAG 2.2 A+AA conformance table (the honest automated ACR). */
   conformance: ConformanceSummary;
   /** Client project name when the run is linked to a project. */
@@ -58,9 +81,141 @@ export interface ReportData {
   agencyName: string | null;
 }
 
+interface JourneyRow {
+  persona_id: string;
+  goal_completed: boolean;
+  page_url: string | null;
+  step: number;
+}
+
 function severityRank(severity: string): number {
   const i = (SEVERITY_ORDER as readonly string[]).indexOf(severity);
   return i === -1 ? SEVERITY_ORDER.length : i;
+}
+
+function priorityBase(severity: string): number {
+  switch (severity) {
+    case "critical":
+      return 80;
+    case "serious":
+      return 60;
+    case "moderate":
+      return 35;
+    case "minor":
+      return 15;
+    default:
+      return 10;
+  }
+}
+
+const CLUSTER_META: Record<string, Omit<FixCluster, "verdictCount" | "severities">> = {
+  labels: {
+    id: "labels",
+    label: "Labels & form names",
+    summary: "Inputs and form controls are missing programmatic names or instructions.",
+    nextStep: "Pair every input/control with a visible label or accessible name, then retest forms keyboard-only.",
+  },
+  contrast: {
+    id: "contrast",
+    label: "Color contrast",
+    summary: "Text or UI states do not meet minimum contrast at the tested state.",
+    nextStep: "Adjust tokens or component variants, then verify contrast in light, dark, hover, disabled, and focus states.",
+  },
+  media: {
+    id: "media",
+    label: "Images & media alternatives",
+    summary: "Images, media, or non-text content need useful alternatives.",
+    nextStep: "Add meaningful alt text for informative media and empty alt text for decorative assets.",
+  },
+  navigation: {
+    id: "navigation",
+    label: "Structure, headings & landmarks",
+    summary: "Page structure is hard to navigate by assistive technology.",
+    nextStep: "Verify one main landmark, sensible heading order, page language, and named regions.",
+  },
+  controls: {
+    id: "controls",
+    label: "Interactive controls & ARIA",
+    summary: "Buttons, links, widgets, or ARIA patterns are missing reliable name/role/value behavior.",
+    nextStep: "Prefer native controls, remove unnecessary ARIA, and test every custom widget by keyboard and screen reader.",
+  },
+  keyboard: {
+    id: "keyboard",
+    label: "Keyboard & focus",
+    summary: "Keyboard reachability or focus visibility needs manual confirmation.",
+    nextStep: "Tab through the full task path, confirm focus is visible and never hidden behind sticky UI.",
+  },
+  content: {
+    id: "content",
+    label: "Content, language & documents",
+    summary: "Language, copy, downloadable documents, or status messages need review.",
+    nextStep: "Check page language, error/status announcements, PDF/document alternatives, and redundant-entry flows.",
+  },
+  other: {
+    id: "other",
+    label: "Other detected defects",
+    summary: "Detected violations that do not fit a common remediation cluster.",
+    nextStep: "Review each rule in context and decide whether it needs design, content, or code ownership.",
+  },
+};
+
+function clusterIdFor(v: ReportVerdict): keyof typeof CLUSTER_META {
+  const haystack = `${v.ruleId ?? ""} ${v.title} ${v.description} ${v.recommendation}`.toLowerCase();
+  const criteria = v.criteria.map((c) => c.code).join(" ");
+
+  if (/(label|input|form|autocomplete|error-message|instructions)/.test(haystack)) {
+    return "labels";
+  }
+  if (/(contrast|color)/.test(haystack) || criteria.includes("1.4.3")) {
+    return "contrast";
+  }
+  if (/(image|img|alt|audio|video|media|caption)/.test(haystack) || criteria.startsWith("1.1")) {
+    return "media";
+  }
+  if (/(landmark|region|heading|h1|language|html-has-lang|page-has-heading)/.test(haystack)) {
+    return "navigation";
+  }
+  if (/(aria|button|link|role|name|value|menu|dialog|tabindex)/.test(haystack)) {
+    return "controls";
+  }
+  if (/(keyboard|focus|skip-link|bypass|target-size)/.test(haystack) || criteria.includes("2.4.7")) {
+    return "keyboard";
+  }
+  if (/(document|pdf|status|message|redundant|authentication|help|language)/.test(haystack)) {
+    return "content";
+  }
+  return "other";
+}
+
+export function buildFixClusters(verdicts: ReportVerdict[]): FixCluster[] {
+  const clusters = new Map<string, FixCluster>();
+
+  for (const verdict of verdicts) {
+    const id = clusterIdFor(verdict);
+    const meta = CLUSTER_META[id];
+    if (!meta) throw new Error(`Unknown fix cluster: ${id}`);
+    const existing =
+      clusters.get(id) ??
+      ({
+        ...meta,
+        verdictCount: 0,
+        severities: { critical: 0, serious: 0, moderate: 0, minor: 0 },
+      } satisfies FixCluster);
+
+    existing.verdictCount += 1;
+    if (verdict.severity in existing.severities) {
+      existing.severities[verdict.severity as Severity] += 1;
+    }
+    clusters.set(id, existing);
+  }
+
+  return [...clusters.values()].sort((a, b) => {
+    const severityDelta =
+      SEVERITY_ORDER.findIndex((s) => a.severities[s] > 0) -
+      SEVERITY_ORDER.findIndex((s) => b.severities[s] > 0);
+    if (severityDelta !== 0) return severityDelta;
+    return b.verdictCount - a.verdictCount;
+  });
 }
 
 /** Split a stored page_url that may be a comma-joined seenOn list into clean locations. */
@@ -72,6 +227,67 @@ export function splitLocations(pageUrl: string | null | undefined): string[] {
     .filter(Boolean);
 }
 
+function buildPersonaImpact(rows: JourneyRow[], findings: FindingRow[]): PersonaImpact[] {
+  if (rows.length === 0) return [];
+
+  const verdictUrls = new Set(
+    findings
+      .filter((f) => f.source === "axe")
+      .flatMap((f) => splitLocations(f.page_url)),
+  );
+  const grouped = new Map<string, JourneyRow[]>();
+  for (const row of rows) {
+    const list = grouped.get(row.persona_id) ?? [];
+    list.push(row);
+    grouped.set(row.persona_id, list);
+  }
+
+  return [...grouped.entries()].map(([personaId, list]) => {
+    const goalCompleted = list[0]?.goal_completed ?? false;
+    const states = new Set(
+      list
+        .map((row) => row.page_url)
+        .filter((url): url is string => typeof url === "string" && verdictUrls.has(url)),
+    );
+    return {
+      personaId,
+      goalCompleted,
+      steps: new Set(list.map((row) => row.step)).size,
+      verdictStates: states.size,
+      blockedVerdictStates: goalCompleted ? 0 : states.size,
+    };
+  });
+}
+
+function priorityForVerdict(
+  severity: string,
+  locations: string[],
+  journeyRows: JourneyRow[],
+): { score: number; reason: string } {
+  const locationSet = new Set(locations);
+  const personasAtState = new Set<string>();
+  const blockedAtState = new Set<string>();
+
+  for (const row of journeyRows) {
+    if (!row.page_url || !locationSet.has(row.page_url)) continue;
+    personasAtState.add(row.persona_id);
+    if (!row.goal_completed) blockedAtState.add(row.persona_id);
+  }
+
+  const score = Math.min(
+    100,
+    priorityBase(severity) + blockedAtState.size * 15 + personasAtState.size * 5,
+  );
+  const reason =
+    blockedAtState.size > 0
+      ? `${blockedAtState.size} blocked persona${blockedAtState.size === 1 ? "" : "s"} reached this state`
+      : personasAtState.size > 0
+        ? `${personasAtState.size} persona${personasAtState.size === 1 ? "" : "s"} reached this state`
+        : "Prioritized by axe severity";
+
+  return { score, reason };
+}
+
 /**
  * Pure assembly of a report from a run + its findings. The compliance hard wall lives
  * here: only `source === 'axe'` findings become verdicts, so a persona opinion can never
@@ -81,20 +297,32 @@ export function splitLocations(pageUrl: string | null | undefined): string[] {
 export function assembleReport(
   run: RunRow,
   rows: FindingRow[],
+  journeyRowsOrBranding: JourneyRow[] | { clientName?: string | null; agencyName?: string | null } = [],
   branding: { clientName?: string | null; agencyName?: string | null } = {},
 ): ReportData {
+  const journeyRows = Array.isArray(journeyRowsOrBranding) ? journeyRowsOrBranding : [];
+  const resolvedBranding = Array.isArray(journeyRowsOrBranding)
+    ? branding
+    : journeyRowsOrBranding;
+  const personaImpact = buildPersonaImpact(journeyRows, rows);
   const verdicts: ReportVerdict[] = rows
     .filter((f) => f.source === "axe")
-    .map((f) => ({
-      id: f.id,
-      title: f.title,
-      ruleId: f.rule_id,
-      severity: f.severity,
-      criteria: wcagTagsToCriteria(f.wcag_tags),
-      description: f.description,
-      recommendation: f.recommendation,
-      locations: splitLocations(f.page_url),
-    }))
+    .map((f) => {
+      const locations = splitLocations(f.page_url);
+      const priority = priorityForVerdict(f.severity, locations, journeyRows);
+      return {
+        id: f.id,
+        title: f.title,
+        ruleId: f.rule_id,
+        severity: f.severity,
+        priorityScore: priority.score,
+        priorityReason: priority.reason,
+        criteria: wcagTagsToCriteria(f.wcag_tags),
+        description: f.description,
+        recommendation: f.recommendation,
+        locations,
+      };
+    })
     .sort((a, b) => severityRank(a.severity) - severityRank(b.severity));
 
   const severityCounts = SEVERITY_ORDER.reduce(
@@ -112,9 +340,11 @@ export function assembleReport(
     personaIds: run.persona_ids,
     severityCounts,
     verdicts,
+    personaImpact,
+    fixClusters: buildFixClusters(verdicts),
     conformance: buildConformance(verdicts, WCAG22_AA_CATALOG, AXE_TESTABLE_CODES),
-    clientName: branding.clientName ?? null,
-    agencyName: branding.agencyName ?? null,
+    clientName: resolvedBranding.clientName ?? null,
+    agencyName: resolvedBranding.agencyName ?? null,
   };
 }
 
@@ -143,7 +373,12 @@ export async function buildReport(supabase: SB, id: string): Promise<ReportData 
         .eq("test_run_id", run.id)
         .eq("source", "axe");
 
-      return { run, findingRows: findingRows ?? [] };
+      const { data: journeyRows } = await supabase
+        .from("journey_steps")
+        .select("persona_id,goal_completed,page_url,step")
+        .eq("test_run_id", run.id);
+
+      return { run, findingRows: findingRows ?? [], journeyRows: journeyRows ?? [] };
     })(),
     (async () => {
       const {
@@ -161,7 +396,7 @@ export async function buildReport(supabase: SB, id: string): Promise<ReportData 
   ]);
 
   if (!runAndFindings) return null;
-  const { run, findingRows } = runAndFindings;
+  const { run, findingRows, journeyRows } = runAndFindings;
 
   let clientName: string | null = null;
   if (run.project_id) {
@@ -173,5 +408,5 @@ export async function buildReport(supabase: SB, id: string): Promise<ReportData 
     clientName = project?.name ?? null;
   }
 
-  return assembleReport(run, findingRows, { clientName, agencyName });
+  return assembleReport(run, findingRows, journeyRows, { clientName, agencyName });
 }

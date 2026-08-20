@@ -23,7 +23,7 @@ export default function AccessibilityPage() {
   return (
     <MarketingShell>
       <h1 className="text-2xl font-semibold tracking-tight font-heading">Accessibility Statement</h1>
-      <p className="mt-2 text-xs text-muted-foreground">Last updated: 2 August 2026.</p>
+      <p className="mt-2 text-xs text-muted-foreground">Last updated: 20 August 2026.</p>
 
       <div className="mt-6 space-y-3 text-sm text-muted-foreground">
         <p>
@@ -33,8 +33,9 @@ export default function AccessibilityPage() {
 
         <Section title="Standard we target">
           <p>
-            We aim to conform to <strong className="text-foreground">WCAG 2.2 Level AA</strong>, the
-            standard referenced by the European Accessibility Act (EAA), the ADA, and Section 508.
+            We aim to conform to <strong className="text-foreground">WCAG 2.2 Level AA</strong>.
+            WCAG 2.2 is backwards-compatible with WCAG 2.1 and WCAG 2.0, which are the versions
+            commonly referenced by current laws and procurement standards.
           </p>
         </Section>
 

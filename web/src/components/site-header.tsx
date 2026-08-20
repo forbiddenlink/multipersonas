@@ -30,14 +30,14 @@ export async function SiteHeader({
   const cta = CTA[intent];
 
   return (
-    <header className="flex items-center justify-between border-b border-border px-6 py-4">
+    <header className="flex items-center justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
       <Link
         href="/"
         className="rounded-sm text-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
       >
         <Wordmark className="text-lg text-foreground" />
       </Link>
-      <nav aria-label="Primary" className="flex items-center gap-3">
+      <nav aria-label="Primary" className="flex min-w-0 items-center gap-2 sm:gap-3">
         <ThemeToggle />
         <Link
           href="/for-agencies"
@@ -56,7 +56,7 @@ export async function SiteHeader({
           <>
             <Link
               href="/auth/login"
-              className="rounded-sm px-4 py-2 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              className="whitespace-nowrap rounded-sm px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] sm:px-4"
             >
               Sign in
             </Link>
@@ -70,7 +70,7 @@ export async function SiteHeader({
             ) : null}
             <Link
               href={cta.href}
-              className="rounded-sm bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors duration-150 hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              className="whitespace-nowrap rounded-sm bg-foreground px-3 py-2 text-sm font-medium text-background transition-colors duration-150 hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] sm:px-4"
             >
               <span className="sm:hidden">{cta.shortLabel}</span>
               <span className="hidden sm:inline">{cta.label}</span>

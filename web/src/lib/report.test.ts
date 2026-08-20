@@ -106,4 +106,69 @@ describe("assembleReport", () => {
     expect(report.clientName).toBe("Meridian Clinic");
     expect(report.agencyName).toBe("Northwind Agency");
   });
+
+  it("summarizes persona impact and raises priority when a blocked persona hits the verdict state", () => {
+    const report = assembleReport(
+      run,
+      [row({ id: "blocked", severity: "serious" })],
+      [
+        {
+          persona_id: "elderly-user",
+          goal_completed: false,
+          page_url: "https://client.example/checkout",
+          step: 1,
+        },
+        {
+          persona_id: "elderly-user",
+          goal_completed: false,
+          page_url: "https://client.example/checkout",
+          step: 2,
+        },
+      ],
+    );
+
+    expect(report.personaImpact).toEqual([
+      {
+        personaId: "elderly-user",
+        goalCompleted: false,
+        steps: 2,
+        verdictStates: 1,
+        blockedVerdictStates: 1,
+      },
+    ]);
+    expect(report.verdicts[0]).toMatchObject({
+      priorityScore: 80,
+      priorityReason: "1 blocked persona reached this state",
+    });
+  });
+
+  it("groups axe verdicts into remediation clusters", () => {
+    const report = assembleReport(run, [
+      row({
+        id: "contrast",
+        rule_id: "color-contrast",
+        title: "Elements must have sufficient color contrast",
+        severity: "serious",
+      }),
+      row({
+        id: "label",
+        rule_id: "label",
+        title: "Form elements must have labels",
+        severity: "critical",
+      }),
+      row({
+        id: "persona",
+        source: "persona",
+        rule_id: "label",
+        title: "Persona opinion is not a verdict",
+      }),
+    ]);
+
+    expect(report.fixClusters.map((c) => c.id)).toEqual(["labels", "contrast"]);
+    expect(report.fixClusters[0]).toMatchObject({
+      label: "Labels & form names",
+      verdictCount: 1,
+      severities: { critical: 1, serious: 0, moderate: 0, minor: 0 },
+    });
+  });
 });

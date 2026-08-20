@@ -195,6 +195,42 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Persona wedge — the product's memorable reason to exist. */}
+      <section className="mx-auto w-full max-w-6xl px-6 section-y" aria-labelledby="persona-wedge-heading">
+        <p className="label-mono">persona layer</p>
+        <h2 id="persona-wedge-heading" className="mt-3 max-w-3xl text-2xl font-semibold tracking-tight">
+          The report says what broke. The persona shows why it mattered.
+        </h2>
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          Agencies do not just need another violation list. They need the client story: the
+          first-time buyer who never found pricing, the keyboard-only path that got trapped,
+          the mobile visitor who abandoned checkout, and the fix owner who can clear it.
+        </p>
+        <div className="mt-8 grid gap-3 md:grid-cols-3">
+          <div className="rounded-md border border-border p-4">
+            <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">Sarah</p>
+            <h3 className="mt-2 text-sm font-medium">First-time buyer</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Finds the promise, pricing, proof, and next step before trust runs out.
+            </p>
+          </div>
+          <div className="rounded-md border border-border p-4">
+            <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">Keyboard traversal</p>
+            <h3 className="mt-2 text-sm font-medium">Reachability harness</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Drives focus through real states so axe can judge screens a URL scan misses.
+            </p>
+          </div>
+          <div className="rounded-md border border-border p-4">
+            <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">Maria</p>
+            <h3 className="mt-2 text-sm font-medium">Slow mobile visitor</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Surfaces the messy mobile moments that decide whether a flow survives contact.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* What you get — instrument gallery: report paper, replay, console. */}
       <section id="example" className="mx-auto w-full max-w-6xl px-6 section-y">
         <p className="label-mono">output</p>
@@ -241,7 +277,7 @@ export default function Home() {
         <div className="mx-auto max-w-3xl">
           <p className="font-mono text-sm">
             <span className="select-none text-[var(--primary)]">›&nbsp;</span>
-            <span className="text-muted-foreground/70"># ci-gate</span>
+            <span className="text-muted-foreground"># ci-gate</span>
           </p>
           <h2 className="mt-3 text-2xl font-semibold tracking-tight">
             Fail the build only on new defects.
@@ -300,19 +336,6 @@ mpersonas scan https://app.example.com --session ./session.json \\
       </main>
 
       <SiteFooter />
-
-      {/* Spacer for sticky CTA on mobile so footer isn't obscured */}
-      <div className="h-20 sm:hidden" aria-hidden="true" />
-
-      {/* Sticky mobile CTA */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden">
-        <Link
-          href="#scan"
-          className="block w-full rounded-sm bg-foreground py-3 text-center text-sm font-medium text-background transition-colors hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-        >
-          Run a free grade
-        </Link>
-      </div>
     </div>
   );
 }

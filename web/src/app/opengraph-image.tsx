@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
 export const alt = "Personaudit — accessibility scanning for the pages behind your login";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -42,9 +41,9 @@ export default function OGImage() {
         >
           <span>Person</span>
           <span style={{ color: MUTED }}>audit</span>
-          <span
-            style={{
-              display: "inline-block",
+            <span
+              style={{
+              display: "flex",
               width: "10px",
               height: "26px",
               marginLeft: "4px",
