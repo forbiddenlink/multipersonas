@@ -5,7 +5,7 @@ import * as Sentry from "@sentry/node";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { runMultiPersonaTest, type TestResult } from "multipersonas/orchestrator";
 import { gradeScan } from "multipersonas/grader";
-import { personaLibrary } from "multipersonas/personas/library";
+import { personaLibrary, isBuiltinPersonaId } from "multipersonas/personas/library";
 
 // --- config ---------------------------------------------------------------
 // The worker runs personas against URLs strangers supply via POST /api/audit, so
@@ -87,6 +87,7 @@ interface AuditJob {
   project_id: string | null;
   reserved_calls: number;
   kind: string;
+  caller_key: string | null;
 }
 
 /** Reject if `promise` doesn't settle within ms. The underlying work keeps running
@@ -121,6 +122,17 @@ async function notify(text: string): Promise<void> {
  * self-heals at UTC midnight. */
 async function releaseReservation(job: AuditJob): Promise<void> {
   if (!job.reserved_calls) return;
+  // Prefer the scoped refund so a failed run does not lock the caller out of
+  // their daily sub-cap until UTC midnight. Fall back to global-only for rows
+  // claimed before caller_key existed, or if the scoped RPC is not yet deployed.
+  if (job.caller_key) {
+    const { error } = await supabase.rpc("release_model_calls_scoped", {
+      p_calls: job.reserved_calls,
+      p_caller: job.caller_key,
+    });
+    if (!error) return;
+    console.error(`[worker] release_model_calls_scoped failed for ${job.id}: ${error.message}`);
+  }
   const { error } = await supabase.rpc("release_model_calls", { p_calls: job.reserved_calls });
   if (error) console.error(`[worker] release_model_calls failed for ${job.id}: ${error.message}`);
 }
@@ -403,6 +415,7 @@ async function claimAndRun(): Promise<boolean> {
 
   try {
     const personas = claimed.persona_ids
+      .filter((id) => isBuiltinPersonaId(id))
       .map((id) => personaLibrary[id])
       .filter((p) => Boolean(p));
 

@@ -20,13 +20,13 @@ export function useCountUp(target: number, { duration = 1500 }: CountUpOptions =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ) {
-      setValue(target);
-      return;
+      const id = requestAnimationFrame(() => setValue(target));
+      return () => cancelAnimationFrame(id);
     }
 
     if (typeof IntersectionObserver === "undefined") {
-      setValue(target);
-      return;
+      const id = requestAnimationFrame(() => setValue(target));
+      return () => cancelAnimationFrame(id);
     }
 
     const io = new IntersectionObserver(

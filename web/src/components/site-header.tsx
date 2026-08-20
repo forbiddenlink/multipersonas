@@ -11,7 +11,7 @@ const CTA: Record<
 > = {
   audit: { href: "/#scan", label: "Run a free grade", shortLabel: "Free grade" },
   waitlist: { href: "#early-access", label: "Get early access", shortLabel: "Join" },
-  grade: { href: "#grade", label: "Get my grade", shortLabel: "Grade" },
+  grade: { href: "/grade", label: "Get my grade", shortLabel: "Grade" },
 };
 
 /**

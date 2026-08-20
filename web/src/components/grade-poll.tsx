@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+/** Stop auto-refresh after this long. The worker's in-process cap is 5 minutes
+ * and the reaper fires at 10; ten minutes of watching is past both, and matches
+ * the signed-in audit poller. A "timeout" here means we stopped watching — the
+ * job may still finish, which is why the manual refresh link stays. */
+const POLL_DEADLINE_MS = 10 * 60 * 1000;
+
 /**
  * Live status line for an in-progress grade.
  *
@@ -21,12 +27,42 @@ import Link from "next/link";
 export function GradePoll({ token }: { token: string }) {
   const router = useRouter();
   const [paused, setPaused] = useState(false);
+  const [stale, setStale] = useState(false);
 
   useEffect(() => {
-    if (paused) return;
-    const id = setInterval(() => router.refresh(), 5000);
+    if (paused || stale) return;
+    const started = Date.now();
+    const id = setInterval(() => {
+      if (Date.now() - started >= POLL_DEADLINE_MS) {
+        setStale(true);
+        return;
+      }
+      router.refresh();
+    }, 5000);
     return () => clearInterval(id);
-  }, [router, paused]);
+  }, [router, paused, stale]);
+
+  if (stale) {
+    return (
+      <div
+        role="status"
+        className="mt-8 rounded-md border border-border bg-card px-4 py-4 font-mono text-sm text-muted-foreground"
+      >
+        <p className="text-foreground">This is taking longer than expected.</p>
+        <p className="mt-1.5">
+          The scan may still finish —{" "}
+          <Link href={`/grade/${token}`} className="text-foreground underline underline-offset-4">
+            refresh now
+          </Link>
+          , or{" "}
+          <Link href="/grade" className="text-foreground underline underline-offset-4">
+            try another URL
+          </Link>
+          .
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -44,8 +44,8 @@ export async function reserveSpend(personaCount: number, callerKey: string): Pro
 /**
  * Refund a prior reservation when a run never happens after reserveSpend — e.g. enqueue
  * fails. When `callerKey` is provided, also refunds the per-caller sub-cap (fairness
- * ceiling must not charge for a job that never started). Worker/reaper failures keep
- * using the global-only RPC via releaseSpend(personaCount) with no caller.
+ * ceiling must not charge for a job that never started). Worker/reaper failures refund
+ * the same way once the job row carries `caller_key` (migration 020).
  *
  * Best-effort: a failure to release must not fail the request (counters self-heal at
  * UTC midnight). No-op when enforcement isn't configured.

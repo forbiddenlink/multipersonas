@@ -67,4 +67,5 @@ declare module "multipersonas/orchestrator" {
 
 declare module "multipersonas/personas/library" {
   export const personaLibrary: Record<string, unknown>;
+  export function isBuiltinPersonaId(id: string): boolean;
 }

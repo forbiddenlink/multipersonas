@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { personaLibrary } from "./library.js";
+import { personaLibrary, isBuiltinPersonaId } from "./library.js";
 import { generateSystemPrompt } from "./types.js";
 import type { Persona } from "./types.js";
 
@@ -28,6 +28,13 @@ describe("persona library integrity", () => {
   it("has no duplicate ids", () => {
     const ids = entries.map(([, p]) => p.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("does not treat Object.prototype keys as runnable personas", () => {
+    expect(isBuiltinPersonaId("constructor")).toBe(false);
+    expect(isBuiltinPersonaId("toString")).toBe(false);
+    expect(isBuiltinPersonaId("__proto__")).toBe(false);
+    expect(isBuiltinPersonaId("first-time-visitor")).toBe(true);
   });
 
   describe.each(entries)("persona %s", (_id, persona: Persona) => {

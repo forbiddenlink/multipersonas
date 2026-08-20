@@ -20,6 +20,7 @@ export type Database = {
           persona_ids: string[]
           project_id: string | null
           reserved_calls: number
+          caller_key: string | null
           result: Json | null
           started_at: string | null
           status: string
@@ -36,6 +37,7 @@ export type Database = {
           persona_ids?: string[]
           project_id?: string | null
           reserved_calls?: number
+          caller_key?: string | null
           result?: Json | null
           started_at?: string | null
           status?: string
@@ -52,6 +54,7 @@ export type Database = {
           persona_ids?: string[]
           project_id?: string | null
           reserved_calls?: number
+          caller_key?: string | null
           result?: Json | null
           started_at?: string | null
           status?: string
@@ -501,6 +504,7 @@ export type Database = {
           persona_ids: string[]
           project_id: string | null
           reserved_calls: number
+          caller_key: string | null
           result: Json | null
           started_at: string | null
           status: string

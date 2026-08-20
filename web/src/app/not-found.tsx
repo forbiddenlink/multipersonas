@@ -10,10 +10,10 @@ export default function NotFound() {
           personaudit ~/404
         </div>
         <div className="space-y-3 px-4 py-5">
-          <p className="text-foreground">
+          <h1 className="text-sm font-normal text-foreground">
             <span aria-hidden="true" className="select-none text-[var(--primary)]">›&nbsp;</span>
             no such route — the page you&apos;re looking for doesn&apos;t exist
-          </p>
+          </h1>
           <Link
             href="/"
             className="inline-block rounded-sm border border-border px-3 py-1.5 transition-colors hover:border-[var(--primary)]/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"

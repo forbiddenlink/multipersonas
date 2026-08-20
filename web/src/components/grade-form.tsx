@@ -26,7 +26,10 @@ export function GradeForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
       });
-      const data = await res.json();
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        token?: string;
+      };
 
       if (!res.ok) {
         setError(data.error || "Something went wrong");
@@ -59,12 +62,17 @@ export function GradeForm() {
         <input
           type="url"
           value={url}
-          onChange={(e) => setUrl(e.target.value)}
+          onChange={(e) => {
+            setUrl(e.target.value);
+            if (error) setError(null);
+          }}
           placeholder="https://example.com"
           required
           disabled={loading}
           autoComplete="url"
           aria-label="Website URL to grade"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? "grade-form-error" : undefined}
           className="h-10 flex-1 rounded-sm border border-border bg-card px-4 text-base text-foreground transition-colors duration-150 placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] disabled:opacity-50 md:text-sm"
         />
         <Button
@@ -78,7 +86,7 @@ export function GradeForm() {
       </form>
 
       {error && (
-        <div role="alert" className="mt-4 text-center">
+        <div id="grade-form-error" role="alert" className="mt-4 text-center">
           <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
@@ -90,8 +98,7 @@ export function GradeForm() {
           className="mt-6 flex items-center gap-2.5 rounded-md border border-border bg-card px-4 py-3 font-mono text-sm text-muted-foreground"
         >
           <span
-            className="size-1.5 shrink-0 rounded-full bg-[var(--primary)]"
-            style={{ animation: "pulse 1.4s ease-in-out infinite" }}
+            className="size-1.5 shrink-0 rounded-full bg-[var(--primary)] motion-safe:animate-pulse"
             aria-hidden
           />
           <span>

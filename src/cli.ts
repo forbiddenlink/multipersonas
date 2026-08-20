@@ -6,7 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import { z } from "zod";
-import { personaLibrary, personasByCategory } from "./personas/library.js";
+import { personaLibrary, personasByCategory, isBuiltinPersonaId } from "./personas/library.js";
 import { RETIRED_PERSONA_IDS } from "./personas/prebuilt.js";
 import { generatePersonasFromUrl, generatePersonasFromDescription } from "./personas/generator.js";
 import { runMultiPersonaTest, type ProgressEvent } from "./agent/orchestrator.js";
@@ -568,7 +568,7 @@ program
         );
         process.exit(1);
       }
-      filteredIds = categoryIds.filter((id) => id in allPersonas);
+      filteredIds = categoryIds.filter((id) => Object.hasOwn(allPersonas, id));
     } else {
       filteredIds = Object.keys(allPersonas);
     }
@@ -751,7 +751,7 @@ program
   .description("Delete a custom persona")
   .argument("<id>", "Persona ID to delete")
   .action((id: string) => {
-    if (id in personaLibrary && !isCustomPersona(id)) {
+    if (isBuiltinPersonaId(id) && !isCustomPersona(id)) {
       console.error(chalk.red(`Cannot delete built-in persona: ${id}`));
       process.exit(1);
     }

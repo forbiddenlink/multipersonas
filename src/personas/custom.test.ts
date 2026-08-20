@@ -64,6 +64,12 @@ describe("project personas", () => {
     expect(getAllPersonas(cwd)["good"]).toBeDefined();
   });
 
+  it("does not treat Object.prototype keys as built-in personas", () => {
+    expect(personaSource("constructor", cwd)).toBe("unknown");
+    expect(personaSource("toString", cwd)).toBe("unknown");
+    expect(personaSource("__proto__", cwd)).toBe("unknown");
+  });
+
   it("survives a project with no personas directory", () => {
     expect(() => getAllPersonas(cwd)).not.toThrow();
     expect(hasProjectPersonas(cwd)).toBe(false);

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
-import { personaLibrary } from "@engine/personas/library";
+import { isBuiltinPersonaId } from "@engine/personas/library";
 import { assertUrlAllowed, BlockedUrlError } from "@engine/security/url-guard";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
   const requested = Array.isArray(body.personaIds)
     ? body.personaIds.filter((id): id is string => typeof id === "string")
     : [];
-  const validIds = [...new Set(requested)].filter((id) => id in personaLibrary);
+  const validIds = [...new Set(requested)].filter((id) => isBuiltinPersonaId(id));
   const chosenIds = (validIds.length > 0 ? validIds : DEFAULT_PERSONA_IDS).slice(
     0,
     MAX_PERSONAS,
@@ -165,6 +165,8 @@ export async function POST(request: Request) {
       project_id: projectId,
       // Record what we reserved so the worker/reaper can refund exactly this on failure.
       reserved_calls: estimatedCallsFor(chosenIds.length),
+      // Stored so a worker/reaper failure can refund the per-caller sub-cap too.
+      caller_key: rateLimitKey,
     })
     .select("id")
     .single();

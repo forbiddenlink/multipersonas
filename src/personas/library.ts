@@ -287,6 +287,13 @@ export const glovedCourier: Persona = buildPersona({
 });
 
 // Export all personas as a record
+export function isBuiltinPersonaId(id: string): boolean {
+  // Own-property only. `id in personaLibrary` is true for prototype keys
+  // ("constructor", "toString", "__proto__") and would let those strings
+  // through the hosted picker / worker as if they were runnable personas.
+  return Object.hasOwn(personaLibrary, id);
+}
+
 export const personaLibrary: Record<string, Persona> = {
   "first-time-visitor": firstTimeVisitor,
   "keyboard-traversal": keyboardTraversal,

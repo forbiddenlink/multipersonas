@@ -84,12 +84,12 @@ export function getAllPersonas(cwd: string = process.cwd()): Record<string, Pers
 }
 
 export function isCustomPersona(id: string, cwd: string = process.cwd()): boolean {
-  return id in loadCustomPersonas(cwd);
+  return Object.hasOwn(loadCustomPersonas(cwd), id);
 }
 
 export function personaSource(id: string, cwd: string = process.cwd()): "project" | "global" | "builtin" | "unknown" {
-  if (id in readPersonaDir(projectDir(cwd))) return "project";
-  if (id in readPersonaDir(LEGACY_GLOBAL_DIR)) return "global";
-  if (id in personaLibrary) return "builtin";
+  if (Object.hasOwn(readPersonaDir(projectDir(cwd)), id)) return "project";
+  if (Object.hasOwn(readPersonaDir(LEGACY_GLOBAL_DIR), id)) return "global";
+  if (Object.hasOwn(personaLibrary, id)) return "builtin";
   return "unknown";
 }

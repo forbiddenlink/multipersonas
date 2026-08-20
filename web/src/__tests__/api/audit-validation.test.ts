@@ -12,13 +12,17 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 // Mock the engine imports to avoid loading Playwright
-vi.mock("@engine/personas/library", () => ({
-  personaLibrary: {
+vi.mock("@engine/personas/library", () => {
+  const personaLibrary = {
     "first-time-visitor": { id: "first-time-visitor", name: "Test" },
     "keyboard-traversal": { id: "keyboard-traversal", name: "Test" },
     "mobile-slow-connection": { id: "mobile-slow-connection", name: "Test" },
-  },
-}));
+  };
+  return {
+    personaLibrary,
+    isBuiltinPersonaId: (id: string) => Object.hasOwn(personaLibrary, id),
+  };
+});
 
 vi.mock("@engine/agent/orchestrator", () => ({
   runMultiPersonaTest: vi.fn(),
