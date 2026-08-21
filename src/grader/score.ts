@@ -5,7 +5,9 @@
 // floored to 0 on real sites; this one derives from axe's own pass/fail counts
 // and is reported beside a traceable per-impact table so nothing is invented.
 
-export type Impact = "critical" | "serious" | "moderate" | "minor";
+import { SEVERITIES, type Severity } from "../domain/vocab.js";
+
+export type Impact = Severity;
 
 /** Deque's documented severity weights. */
 export const IMPACT_WEIGHT: Record<Impact, number> = {
@@ -51,7 +53,7 @@ export interface GradeReport {
   rules: GradeRuleHit[];
 }
 
-const IMPACTS: Impact[] = ["critical", "serious", "moderate", "minor"];
+const IMPACTS: Impact[] = [...SEVERITIES];
 
 function bandFor(score: number): GradeReport["grade"] {
   if (score >= 95) return "A";

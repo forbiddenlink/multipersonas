@@ -4,11 +4,13 @@ import type { Database } from "@/lib/supabase/types";
 import { wcagTagsToCriteria, AXE_TESTABLE_CODES, type Criterion } from "./wcag";
 import { buildConformance, type ConformanceSummary } from "./conformance";
 import { WCAG22_AA_CATALOG } from "./wcag-catalog";
+import { SEVERITIES, severityRank as domainSeverityRank, type Severity } from "@engine/domain/vocab";
+
+export type { Severity };
 
 type SB = SupabaseClient<Database>;
 
-const SEVERITY_ORDER = ["critical", "serious", "moderate", "minor"] as const;
-export type Severity = (typeof SEVERITY_ORDER)[number];
+const SEVERITY_ORDER = SEVERITIES;
 
 /** The finding columns the report reads. Kept narrow — the report is verdicts-only. */
 export interface FindingRow {
@@ -89,8 +91,9 @@ interface JourneyRow {
 }
 
 function severityRank(severity: string): number {
-  const i = (SEVERITY_ORDER as readonly string[]).indexOf(severity);
-  return i === -1 ? SEVERITY_ORDER.length : i;
+  return SEVERITIES.includes(severity as Severity)
+    ? domainSeverityRank(severity as Severity)
+    : SEVERITY_ORDER.length;
 }
 
 function priorityBase(severity: string): number {

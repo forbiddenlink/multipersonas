@@ -1,4 +1,5 @@
 import type { Finding, AgentResult } from "../agent/engine.js";
+import { SEVERITIES, severityRank as domainSeverityRank } from "../domain/vocab.js";
 import type { Persona } from "../personas/types.js";
 
 /**
@@ -33,11 +34,8 @@ function severityEmoji(s: Finding["severity"]): string {
   }
 }
 
-const SEVERITY_ORDER: Finding["severity"][] = ["critical", "serious", "moderate", "minor"];
-
 function severityRank(s: Finding["severity"]): number {
-  const i = SEVERITY_ORDER.indexOf(s);
-  return i === -1 ? SEVERITY_ORDER.length : i;
+  return domainSeverityRank(s);
 }
 
 function bySeverity(a: Finding, b: Finding): number {
@@ -55,7 +53,7 @@ function countBySeverity(findings: HasSeverity[]): Record<string, number> {
 
 function severityLine(findings: HasSeverity[]): string {
   const counts = countBySeverity(findings);
-  const parts = SEVERITY_ORDER.filter((s) => counts[s]).map((s) => `${counts[s]} ${s}`);
+  const parts = SEVERITIES.filter((s) => counts[s]).map((s) => `${counts[s]} ${s}`);
   return parts.length ? parts.join(", ") : "none";
 }
 

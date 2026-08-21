@@ -6,6 +6,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { runMultiPersonaTest, type TestResult } from "multipersonas/orchestrator";
 import { gradeScan } from "multipersonas/grader";
 import { personaLibrary, isBuiltinPersonaId } from "multipersonas/personas/library";
+import { clampFindingCategory, clampSeverity } from "multipersonas/domain/vocab";
 
 // --- config ---------------------------------------------------------------
 // The worker runs personas against URLs strangers supply via POST /api/audit, so
@@ -185,11 +186,6 @@ const onFatal = (evt: string) => (err: unknown) => {
 process.on("uncaughtException", onFatal("uncaughtException"));
 process.on("unhandledRejection", onFatal("unhandledRejection"));
 
-const SEVERITIES = ["critical", "serious", "moderate", "minor"];
-const CATEGORIES = ["accessibility", "usability", "performance", "content"];
-const clampSeverity = (s: string) => (SEVERITIES.includes(s) ? s : "moderate");
-const clampCategory = (c: string) => (CATEGORIES.includes(c) ? c : "usability");
-
 /** Build the client-facing response (no file paths), mirroring the old inline route. */
 function toResponse(result: TestResult) {
   return {
@@ -290,7 +286,7 @@ async function persistHistory(
         persona_id: p.id,
         source: "persona",
         severity: clampSeverity(f.severity),
-        category: clampCategory(f.category),
+        category: clampFindingCategory(f.category),
         title: f.title,
         description: f.description,
         recommendation: f.recommendation,
@@ -377,7 +373,6 @@ async function claimAndRun(): Promise<boolean> {
   // Public grader jobs (kind='grade') are axe-only: no personas, no model spend,
   // no session, results to the public grader_scans row. Handled inline then done.
   if (claimed.kind === "grade") {
-    await supabase.from("grader_scans").update({ status: "running" }).eq("job_id", claimed.id);
     try {
       const { report, pagesVisited } = await withTimeout(
         gradeScan(claimed.url, { maxPages: 10 }),
@@ -386,7 +381,7 @@ async function claimAndRun(): Promise<boolean> {
       );
       await supabase
         .from("grader_scans")
-        .update({ status: "completed", report, pages_visited: pagesVisited })
+        .update({ report, pages_visited: pagesVisited, error: null })
         .eq("job_id", claimed.id);
       await supabase
         .from("audit_jobs")
@@ -398,7 +393,7 @@ async function claimAndRun(): Promise<boolean> {
       const publicMsg = publicJobError(e);
       await supabase
         .from("grader_scans")
-        .update({ status: "failed", error: publicMsg })
+        .update({ error: publicMsg })
         .eq("job_id", claimed.id);
       await supabase
         .from("audit_jobs")

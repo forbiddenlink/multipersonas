@@ -69,3 +69,8 @@ declare module "multipersonas/personas/library" {
   export const personaLibrary: Record<string, unknown>;
   export function isBuiltinPersonaId(id: string): boolean;
 }
+
+declare module "multipersonas/domain/vocab" {
+  export function clampSeverity(value: string): "critical" | "serious" | "moderate" | "minor";
+  export function clampFindingCategory(value: string): "accessibility" | "usability" | "performance" | "content";
+}

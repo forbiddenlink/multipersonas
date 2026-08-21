@@ -2,6 +2,7 @@ import { launchAuditBrowser } from "../security/browser.js";
 import { AxeBuilder } from "@axe-core/playwright";
 import { assertUrlAllowed, isUrlAllowed, assertRequestAllowed } from "../security/url-guard.js";
 import { computeGrade, type PageAxe, type Impact, type GradeReport, type GradeRuleHit } from "./score.js";
+import { SEVERITIES } from "../domain/vocab.js";
 
 // Public-only accessibility grader scan — the free teaser wedge.
 //
@@ -35,7 +36,7 @@ const AA_TAGS = new Set([
   "wcag22a",
   "wcag22aa",
 ]);
-const IMPACTS: Impact[] = ["critical", "serious", "moderate", "minor"];
+const IMPACTS: Impact[] = [...SEVERITIES];
 
 function emptyImpacts(): Record<Impact, number> {
   return { critical: 0, serious: 0, moderate: 0, minor: 0 };

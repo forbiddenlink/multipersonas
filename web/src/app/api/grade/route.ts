@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { killSwitchEnabled, positiveEnvInt } from "@/lib/limits";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { getClientIP } from "@/lib/client-ip";
+import { enqueueAuditJob } from "@/lib/audit-jobs";
 
 // Public accessibility grader: anonymous, axe-only, no model spend. Enqueues a
 // kind='grade' job onto the shared audit_jobs queue; the worker runs gradeScan and
@@ -73,15 +74,14 @@ export async function POST(request: Request) {
     );
   }
 
-  // persona_ids / reserved_calls / status all have DB defaults; user_id is null (anon).
-  const { data: job, error: jobErr } = await admin
-    .from("audit_jobs")
-    .insert({ url: entryUrl, kind: "grade", user_id: null })
-    .select("id")
-    .single();
-  if (jobErr || !job) {
+  const { id: jobId, error: jobErr } = await enqueueAuditJob(admin, {
+    url: entryUrl,
+    kind: "grade",
+    userId: null,
+  });
+  if (jobErr || !jobId) {
     console.error("[grade] job insert failed:", jobErr?.message);
-    Sentry.captureException(jobErr ?? new Error("audit_jobs (grade) insert returned no row"), {
+    Sentry.captureException(jobErr ?? new Error("audit_jobs (grade) insert returned no id"), {
       tags: { route: "grade", stage: "enqueue-job" },
     });
     return NextResponse.json({ error: "Could not queue the grade." }, { status: 500 });
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
 
   const { data: scan, error: scanErr } = await admin
     .from("grader_scans")
-    .insert({ job_id: job.id, entry_url: entryUrl })
+    .insert({ job_id: jobId, entry_url: entryUrl })
     .select("token")
     .single();
   if (scanErr || !scan) {
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
     });
     // Don't leave an orphaned grade job on the queue — the worker would run a
     // scan with no public token for the user.
-    await admin.from("audit_jobs").delete().eq("id", job.id);
+    await admin.from("audit_jobs").delete().eq("id", jobId);
     return NextResponse.json({ error: "Could not queue the grade." }, { status: 500 });
   }
 

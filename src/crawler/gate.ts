@@ -1,5 +1,6 @@
 import type { Finding } from "../agent/engine.js";
 import { defectKey } from "../agent/defect-key.js";
+import { severityAtLeast, type Severity } from "../domain/vocab.js";
 
 /**
  * CI gating for scan.
@@ -14,14 +15,7 @@ import { defectKey } from "../agent/defect-key.js";
  * safe to run on every pull request.
  */
 
-export type Severity = "critical" | "serious" | "moderate" | "minor";
-
-const SEVERITY_ORDER: Severity[] = ["minor", "moderate", "serious", "critical"];
-
-/** True if `sev` is at least as severe as `threshold`. */
-export function severityAtLeast(sev: Severity, threshold: Severity): boolean {
-  return SEVERITY_ORDER.indexOf(sev) >= SEVERITY_ORDER.indexOf(threshold);
-}
+export { severityAtLeast, type Severity };
 
 /** A baseline is the set of defect keys already known and accepted. */
 export interface Baseline {

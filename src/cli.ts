@@ -14,6 +14,7 @@ import { crawl } from "./crawler/crawl.js";
 import { gradeScan } from "./grader/scan.js";
 import { evaluateGate, baselineFromFindings, type Severity } from "./crawler/gate.js";
 import { groupAxeByRule, generateScanReport } from "./report/generator.js";
+import { SEVERITIES } from "./domain/vocab.js";
 import type { Persona } from "./personas/types.js";
 import { getAllPersonas, saveCustomPersona, deleteCustomPersona, isCustomPersona, personaSource, hasProjectPersonas, PROJECT_DIR } from "./personas/custom.js";
 import { generateSystemPrompt } from "./personas/types.js";
@@ -72,9 +73,8 @@ program
   .option("--baseline <file>", "Compare against this baseline; only defects not in it count as new")
   .option("--update-baseline", "Write the current defects to --baseline (or ./mpersonas-baseline.json) and exit 0")
   .action(async (url: string, options: { output: string; session?: string; maxPages: string; allowPrivate?: boolean; failOn?: string; baseline?: string; updateBaseline?: boolean }) => {
-    const VALID_SEVERITIES = ["critical", "serious", "moderate", "minor"];
-    if (options.failOn && !VALID_SEVERITIES.includes(options.failOn)) {
-      console.error(chalk.red(`  --fail-on must be one of: ${VALID_SEVERITIES.join(", ")}`));
+    if (options.failOn && !SEVERITIES.includes(options.failOn as (typeof SEVERITIES)[number])) {
+      console.error(chalk.red(`  --fail-on must be one of: ${SEVERITIES.join(", ")}`));
       process.exit(1);
     }
     // Vet the target up front; crawl() checks again but this fails fast with a
