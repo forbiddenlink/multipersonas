@@ -373,7 +373,7 @@ export function ReplayTheater({
         </div>
 
         {/* Transport */}
-        <div className="mt-3 flex items-center gap-2 font-mono text-xs">
+        <div className="mt-3 flex flex-wrap items-center gap-2 font-mono text-xs">
           <button
             onClick={() => go(-1)}
             disabled={sIdx === 0}
@@ -401,6 +401,9 @@ export function ReplayTheater({
           >
             next ⏭
           </button>
+          <span className="hidden text-[10px] text-muted-foreground lg:inline">
+            [←/→] step · [Space] play
+          </span>
           <button
             onClick={copyMoment}
             aria-label="Copy a link to this moment"

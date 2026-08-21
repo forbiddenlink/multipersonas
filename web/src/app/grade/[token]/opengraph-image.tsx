@@ -2,43 +2,33 @@ import { ImageResponse } from "next/og";
 import { getGraderScan } from "@/lib/grade";
 import type { GradeReport } from "@engine/grader/score";
 
-export const alt = "Free accessibility grade — Personaudit";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// Forensic-terminal warm-dark palette — literal values (Satori/ImageResponse doesn't
-// resolve CSS custom properties or oklch()), mirrored from globals.css .dark block and
-// the same literal set used by src/app/opengraph-image.tsx / global-error.tsx.
+// Forensic-terminal warm-dark palette — literal hex values for Satori/ImageResponse.
 const BG = "#17130e";
 const FG = "#f4f1ec";
 const MUTED = "#a39e95";
 const BORDER = "rgba(244, 241, 236, 0.14)";
 const TEAL = "#4ecdc0";
-const MODERATE = "#e4b750";
-const SERIOUS = "#ef852e";
-const CRITICAL = "#f0623f";
 
-function gradeColor(grade: GradeReport["grade"]): string {
-  if (grade === "A" || grade === "B") return TEAL;
-  if (grade === "C") return MODERATE;
-  if (grade === "D") return SERIOUS;
-  return CRITICAL;
+function gradeColor(grade: string): string {
+  if (grade === "A" || grade === "B") return "#4ecdc0";
+  if (grade === "C") return "#f59e0b";
+  if (grade === "D") return "#f97316";
+  return "#ef4444";
 }
 
-export default async function OGImage({
+export default async function Image({
   params,
 }: {
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
   const scan = await getGraderScan(token);
-  const report =
-    scan?.status === "completed" && scan.report
-      ? (scan.report as unknown as GradeReport)
-      : null;
 
-  let host = "a page";
-  if (scan) {
+  let host = "Website";
+  if (scan?.entry_url) {
     try {
       host = new URL(scan.entry_url).host;
     } catch {
@@ -46,21 +36,34 @@ export default async function OGImage({
     }
   }
 
-  // Fallback frame: scan missing, still running, or failed — no grade to show yet.
-  if (!report) {
-    return new ImageResponse(
-      (
+  const report = (scan?.report as unknown as GradeReport) ?? null;
+  const grade = report?.grade ?? "–";
+  const score = report?.score ?? 0;
+  const violations = report?.totalViolations ?? 0;
+  const color = gradeColor(grade);
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          width: "100%",
+          height: "100%",
+          backgroundColor: BG,
+          color: FG,
+          fontFamily: "system-ui, sans-serif",
+          padding: "60px 80px",
+          justifyContent: "space-between",
+        }}
+      >
+        {/* Header wordmark and label */}
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center",
+            justifyContent: "space-between",
             width: "100%",
-            height: "100%",
-            backgroundColor: BG,
-            color: FG,
-            fontFamily: "system-ui, sans-serif",
           }}
         >
           <div
@@ -68,17 +71,15 @@ export default async function OGImage({
               display: "flex",
               alignItems: "baseline",
               gap: "2px",
-              marginBottom: "32px",
-              fontSize: "28px",
+              fontSize: "30px",
               fontWeight: 600,
-              letterSpacing: "-0.02em",
             }}
           >
             <span>Person</span>
             <span style={{ color: MUTED }}>audit</span>
             <span
               style={{
-                display: "inline-block",
+                display: "flex",
                 width: "10px",
                 height: "26px",
                 marginLeft: "4px",
@@ -89,102 +90,109 @@ export default async function OGImage({
           </div>
           <div
             style={{
-              fontSize: "44px",
-              fontWeight: 700,
-              textAlign: "center",
-              maxWidth: "800px",
-              lineHeight: 1.2,
-              letterSpacing: "-0.02em",
+              display: "flex",
+              padding: "6px 14px",
+              borderRadius: "4px",
+              border: `1px solid ${BORDER}`,
+              fontSize: "14px",
+              color: MUTED,
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
             }}
           >
-            Grading {host}…
-          </div>
-          <div style={{ display: "flex", fontSize: "22px", color: MUTED, marginTop: "24px" }}>
-            Free accessibility grade — axe-core, no signup
+            ACCESSIBILITY GRADE REPORT
           </div>
         </div>
-      ),
-      { ...size },
-    );
-  }
 
-  const color = gradeColor(report.grade);
-
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          width: "100%",
-          height: "100%",
-          backgroundColor: BG,
-          color: FG,
-          fontFamily: "system-ui, sans-serif",
-        }}
-      >
+        {/* Center Card */}
         <div
           style={{
             display: "flex",
-            alignItems: "baseline",
-            gap: "2px",
-            marginBottom: "28px",
-            fontSize: "24px",
-            fontWeight: 600,
-            letterSpacing: "-0.02em",
-            color: MUTED,
+            alignItems: "center",
+            justifyContent: "space-between",
+            backgroundColor: "rgba(255, 255, 255, 0.03)",
+            border: `1px solid ${BORDER}`,
+            borderRadius: "12px",
+            padding: "40px 50px",
           }}
         >
-          <span style={{ color: FG }}>Person</span>
-          <span>audit</span>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "40px" }}>
-          <div
-            style={{
-              display: "flex",
-              fontSize: "220px",
-              fontWeight: 700,
-              lineHeight: 1,
-              color,
-            }}
-          >
-            {report.grade}
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            <div style={{ display: "flex", fontSize: "36px", fontWeight: 600, color: FG }}>
+          <div style={{ display: "flex", flexDirection: "column", maxWidth: "650px" }}>
+            <div style={{ fontSize: "18px", color: MUTED, marginBottom: "8px" }}>
+              Public Scan Result for
+            </div>
+            <div
+              style={{
+                fontSize: "40px",
+                fontWeight: 700,
+                letterSpacing: "-0.02em",
+                color: FG,
+                wordBreak: "break-all",
+              }}
+            >
               {host}
             </div>
-            <div style={{ display: "flex", fontSize: "24px", color: MUTED }}>
-              {report.totalViolations} violation{report.totalViolations === 1 ? "" : "s"} ·{" "}
-              {report.pagesScanned} page{report.pagesScanned === 1 ? "" : "s"} scanned
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: "16px", marginTop: "48px" }}>
-          {["axe-core verdicts", "public pages only", "no signup"].map((name) => (
             <div
-              key={name}
               style={{
                 display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "8px 16px",
-                borderRadius: "4px",
-                border: `1px solid ${BORDER}`,
-                fontSize: "14px",
+                gap: "20px",
+                marginTop: "24px",
+                fontSize: "18px",
                 color: MUTED,
               }}
             >
-              {name}
+              <span>
+                Score: <strong style={{ color: FG }}>{score}/100</strong>
+              </span>
+              <span>·</span>
+              <span>
+                Violations: <strong style={{ color: FG }}>{violations}</strong>
+              </span>
+              <span>·</span>
+              <span>axe-core verified</span>
             </div>
-          ))}
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "140px",
+              height: "140px",
+              borderRadius: "12px",
+              border: `2px solid ${color}`,
+              backgroundColor: "rgba(255, 255, 255, 0.02)",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "80px",
+                fontWeight: 800,
+                color: color,
+                lineHeight: 1,
+              }}
+            >
+              {grade}
+            </span>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            fontSize: "15px",
+            color: MUTED,
+          }}
+        >
+          <span>Deterministic WCAG 2.1 / 2.2 testing · axe-core</span>
+          <span>personaudit.com</span>
         </div>
       </div>
     ),
-    { ...size },
+    { ...size }
   );
 }

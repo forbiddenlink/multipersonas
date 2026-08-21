@@ -11,6 +11,7 @@ import { RETIRED_PERSONA_IDS } from "./personas/prebuilt.js";
 import { generatePersonasFromUrl, generatePersonasFromDescription } from "./personas/generator.js";
 import { runMultiPersonaTest, type ProgressEvent } from "./agent/orchestrator.js";
 import { crawl } from "./crawler/crawl.js";
+import { gradeScan } from "./grader/scan.js";
 import { evaluateGate, baselineFromFindings, type Severity } from "./crawler/gate.js";
 import { groupAxeByRule, generateScanReport } from "./report/generator.js";
 import type { Persona } from "./personas/types.js";
@@ -185,7 +186,79 @@ program
     console.log("");
   });
 
-// --- Run command ---
+// --- Grade command (Fast, keyless, Deque-weighted public score) ---
+
+program
+  .command("grade")
+  .description("Crawl and grade a public site with Deque-weighted axe scores (fast, deterministic, keyless)")
+  .argument("<url>", "Public URL to grade")
+  .option("--max-pages <n>", "How many pages to crawl and grade", "10")
+  .option("--json", "Output raw JSON report")
+  .action(async (url: string, options: { maxPages: string; json?: boolean }) => {
+    try {
+      await assertUrlAllowed(url);
+    } catch (error) {
+      if (error instanceof BlockedUrlError) {
+        console.error("");
+        console.error(chalk.red(`  ${error.message}`));
+        console.error("");
+        process.exit(1);
+      }
+      throw error;
+    }
+
+    console.log("");
+    console.log(chalk.bold(`  MultiPersonas v${pkg.version}`));
+    console.log(chalk.dim(`  Grading public site: ${url}`));
+    console.log("");
+
+    const spinner = ora("Grading...").start();
+    const result = await gradeScan(url, {
+      maxPages: parseInt(options.maxPages, 10),
+      onPage: (pageUrl, i) => {
+        spinner.text = `Grading... ${i + 1} states, at ${pageUrl}`;
+      },
+    });
+    spinner.succeed(`Graded ${result.pagesVisited.length} states`);
+
+    if (options.json) {
+      console.log(JSON.stringify(result.report, null, 2));
+      return;
+    }
+
+    const { grade, score, byImpact, wcagAAViolations, rules, totalViolations } = result.report;
+    const gradeColor =
+      grade === "A" || grade === "B"
+        ? chalk.cyan
+        : grade === "C"
+          ? chalk.yellow
+          : chalk.red;
+
+    console.log("");
+    console.log(`  Grade: ${gradeColor.bold(grade)}  Score: ${chalk.bold(`${score}/100`)}`);
+    console.log(chalk.dim(`  Scanned ${result.pagesVisited.length} public state(s)`));
+    console.log("");
+    console.log(chalk.bold("  Violations by Impact:"));
+    console.log(`    ■ Critical: ${byImpact.critical}`);
+    console.log(`    ▲ Serious:  ${byImpact.serious}`);
+    console.log(`    ◆ Moderate: ${byImpact.moderate}`);
+    console.log(`    ● Minor:    ${byImpact.minor}`);
+    console.log(chalk.dim(`    WCAG 2.x A/AA violations: ${wcagAAViolations}`));
+    console.log(chalk.dim(`    Total violations across all nodes: ${totalViolations}`));
+
+    if (rules.length > 0) {
+      console.log("");
+      console.log(chalk.bold("  Top Rules Found:"));
+      for (const r of rules.slice(0, 6)) {
+        const flag = r.wcagAA ? "" : chalk.dim(" (best-practice)");
+        console.log(`    [${r.impact}] ${chalk.cyan(r.id)}${flag} — ${r.help} (${r.nodes} nodes)`);
+      }
+    }
+
+    console.log("");
+  });
+
+// --- Auth command ---
 
 program
   .command("auth")
@@ -225,6 +298,8 @@ program
     console.log(chalk.dim(`  Use it:  mpersonas run ${url} --session ${options.save}`));
     console.log("");
   });
+
+// --- Run command ---
 
 program
   .command("run")
@@ -369,8 +444,12 @@ program
             console.error(
               chalk.dim(
                 replacement
-                  ? `  Use "${replacement}" instead. We no longer simulate disabled users —\n  accessibility is measured by axe-core at every state reached.\n  See docs/PLAN-2026-07-15-repositioning.md`
-                  : `  It was removed: colour contrast is checked deterministically by axe-core,\n  which is more reliable than a model roleplaying a disability.\n  See docs/PLAN-2026-07-15-repositioning.md`
+                  ? `  Use "${replacement}" instead. We no longer simulate disabled users —
+  accessibility is measured by axe-core at every state reached.
+  See docs/PLAN-2026-07-15-repositioning.md`
+                  : `  It was removed: colour contrast is checked deterministically by axe-core,
+  which is more reliable than a model roleplaying a disability.
+  See docs/PLAN-2026-07-15-repositioning.md`
               )
             );
             process.exit(1);

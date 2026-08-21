@@ -5,6 +5,7 @@ import { getGraderScan } from "@/lib/grade";
 import { buttonVariants } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { GradePoll } from "@/components/grade-poll";
+import { GradeBadgeEmbed } from "@/components/grade-badge-embed";
 import { Meter } from "@/components/forensic/meter";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { BoxDivider } from "@/components/forensic/divider";
@@ -116,7 +117,11 @@ export default async function GradeResultPage({
           )}
 
           {scan.status === "completed" && scan.report && (
-            <GradeReportView report={scan.report as unknown as GradeReport} />
+            <GradeReportView
+              token={token}
+              host={host}
+              report={scan.report as unknown as GradeReport}
+            />
           )}
         </div>
       </main>
@@ -124,7 +129,15 @@ export default async function GradeResultPage({
   );
 }
 
-function GradeReportView({ report }: { report: GradeReport }) {
+function GradeReportView({
+  token,
+  host,
+  report,
+}: {
+  token: string;
+  host: string;
+  report: GradeReport;
+}) {
   return (
     <div className="mt-8 space-y-10">
       {/* Big letter grade + score meter */}
@@ -231,6 +244,9 @@ function GradeReportView({ report }: { report: GradeReport }) {
           </div>
         </div>
       )}
+
+      {/* Embed Badge Widget */}
+      <GradeBadgeEmbed token={token} host={host} />
 
       <BoxDivider />
 
