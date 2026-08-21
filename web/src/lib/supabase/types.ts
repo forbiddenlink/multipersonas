@@ -601,6 +601,18 @@ export type Database = {
         Args: { p_key: string; p_max: number; p_window_seconds: number }
         Returns: boolean
       }
+      enqueue_audit_job: {
+        Args: {
+          p_caller_key?: string | null
+          p_kind?: string
+          p_persona_ids?: string[]
+          p_project_id?: string | null
+          p_reserved_calls?: number
+          p_url: string
+          p_user_id?: string | null
+        }
+        Returns: string
+      }
       enqueue_due_project_scan_schedules: {
         Args: { p_limit?: number }
         Returns: {

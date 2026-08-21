@@ -11,6 +11,7 @@
     "./personas/library": { "types": "./dist/personas/library.d.ts", "default": "./dist/personas/library.js" },
     "./personas/generator": { "types": "./dist/personas/generator.d.ts", "default": "./dist/personas/generator.js" },
     "./personas/prebuilt": { "types": "./dist/personas/prebuilt.d.ts", "default": "./dist/personas/prebuilt.js" },
+    "./domain/vocab": { "types": "./dist/domain/vocab.d.ts", "default": "./dist/domain/vocab.js" },
     "./grader": { "types": "./dist/grader/scan.d.ts", "default": "./dist/grader/scan.js" }
   },
   "bin": {

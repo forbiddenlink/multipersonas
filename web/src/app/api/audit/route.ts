@@ -10,6 +10,7 @@ import { killSwitchEnabled, estimatedCallsFor } from "@/lib/limits";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { reserveSpend, releaseSpend } from "@/lib/spend";
 import { getClientIP } from "@/lib/client-ip";
+import { enqueueAuditJob } from "@/lib/audit-jobs";
 
 // Rate limiting + spend cap are enforced durably in Postgres (lib/rate-limit.ts,
 // lib/spend.ts) — shared across instances and not resettable, unlike the in-process
@@ -156,22 +157,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: job, error: enqueueError } = await admin
-    .from("audit_jobs")
-    .insert({
-      user_id: user?.id ?? null,
-      url: parsedUrl.href,
-      persona_ids: chosenIds,
-      project_id: projectId,
-      // Record what we reserved so the worker/reaper can refund exactly this on failure.
-      reserved_calls: estimatedCallsFor(chosenIds.length),
-      // Stored so a worker/reaper failure can refund the per-caller sub-cap too.
-      caller_key: rateLimitKey,
-    })
-    .select("id")
-    .single();
+  const { id: jobId, error: enqueueError } = await enqueueAuditJob(admin, {
+    userId: user?.id ?? null,
+    url: parsedUrl.href,
+    personaIds: chosenIds,
+    projectId,
+    reservedCalls: estimatedCallsFor(chosenIds.length),
+    callerKey: rateLimitKey,
+  });
 
-  if (enqueueError || !job) {
+  if (enqueueError || !jobId) {
     // This failure (bad service key, RLS regression, schema drift) is caught and
     // turned into a clean 500, so it never bubbles to Next's onRequestError hook —
     // report it explicitly or the enqueue path goes dark in prod.
@@ -188,5 +183,5 @@ export async function POST(request: Request) {
     );
   }
 
-  return NextResponse.json({ jobId: job.id, status: "queued" }, { status: 202 });
+  return NextResponse.json({ jobId, status: "queued" }, { status: 202 });
 }

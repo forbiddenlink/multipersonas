@@ -2,6 +2,7 @@ import { AxeBuilder } from "@axe-core/playwright";
 import type { Page } from "playwright";
 import type { Finding } from "./engine.js";
 import { defectKey } from "./defect-key.js";
+import type { Severity } from "../domain/vocab.js";
 
 /**
  * Deterministic accessibility scanning.
@@ -19,7 +20,7 @@ import { defectKey } from "./defect-key.js";
 
 interface AxeViolation {
   id: string;
-  impact: "critical" | "serious" | "moderate" | "minor" | null;
+  impact: Severity | null;
   description: string;
   help: string;
   helpUrl: string;
@@ -27,7 +28,7 @@ interface AxeViolation {
   nodes: { html: string; target: string[] }[];
 }
 
-const impactToSeverity: Record<string, Finding["severity"]> = {
+const impactToSeverity: Record<Severity, Finding["severity"]> = {
   critical: "critical",
   serious: "serious",
   moderate: "moderate",

@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { PERSONA_DATA } from "@/lib/personas";
 import { formatLocation } from "@/lib/format-location";
+import { SEVERITY_ORDER } from "@/components/forensic/severity";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { Meter } from "@/components/forensic/meter";
 
@@ -81,7 +82,7 @@ export function AuditResults({
         />
         {results.axeFindings.length > 0 ? (
           <div className={`flex flex-wrap gap-2 ${compact ? "" : "justify-center"}`}>
-            {(["critical", "serious", "moderate", "minor"] as const).map((sev) => {
+            {SEVERITY_ORDER.map((sev) => {
               const n = results.axeFindings.filter((f) => f.severity === sev).length;
               if (!n) return null;
               return (

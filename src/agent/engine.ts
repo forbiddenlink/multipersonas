@@ -32,6 +32,12 @@ import { isDestructiveAction, destructiveActionRefusal } from "../security/actio
 import { runAxeScan, mergeAxeFindings } from "./axe-scan.js";
 import { formatKnownAxeForPage } from "./known-axe.js";
 import { parseAriaRef, ariaRefLocator } from "./aria-ref.js";
+import {
+  FINDING_CATEGORIES,
+  SEVERITIES,
+  type FindingCategory,
+  type Severity,
+} from "../domain/vocab.js";
 
 /**
  * Per-run guard settings threaded down to every navigation decision.
@@ -86,8 +92,8 @@ export interface GuardOptions {
 // --- Types ---
 
 export interface Finding {
-  severity: "critical" | "serious" | "moderate" | "minor";
-  category: "accessibility" | "usability" | "performance" | "content";
+  severity: Severity;
+  category: FindingCategory;
   title: string;
   description: string;
   recommendation: string;
@@ -261,8 +267,8 @@ async function readAccessibleName(
  * renderer, which crashed at the end of a full run (2026-07-15).
  */
 export const findingSchema = z.object({
-  severity: z.enum(["critical", "serious", "moderate", "minor"]),
-  category: z.enum(["accessibility", "usability", "performance", "content"]),
+  severity: z.enum(SEVERITIES),
+  category: z.enum(FINDING_CATEGORIES),
   title: z.string().min(1),
   description: z.string().min(1),
   recommendation: z.string().min(1),
@@ -371,10 +377,10 @@ const agentTools = {
       "Report a UX or usability observation. Do not re-report axe violations listed under KNOWN AXE VIOLATIONS — those are already recorded.",
     inputSchema: z.object({
       severity: z
-        .enum(["critical", "serious", "moderate", "minor"])
+        .enum(SEVERITIES)
         .describe("How severe the issue is"),
       category: z
-        .enum(["accessibility", "usability", "performance", "content"])
+        .enum(FINDING_CATEGORIES)
         .describe("Category of the issue"),
       title: z.string().describe("Short title summarizing the issue"),
       description: z

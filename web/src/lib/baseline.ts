@@ -7,6 +7,7 @@ import {
   evaluateGate,
   type Severity,
 } from "@engine/crawler/gate";
+import { clampSeverity } from "@engine/domain/vocab";
 import type { Database } from "@/lib/supabase/types";
 import type { AuditListItem } from "@/lib/audits";
 
@@ -49,10 +50,8 @@ export interface RunRegression {
   identityPartial: boolean;
 }
 
-const SEVERITIES: Severity[] = ["critical", "serious", "moderate", "minor"];
-
 function asSeverity(s: string): Severity {
-  return (SEVERITIES.includes(s as Severity) ? s : "moderate") as Severity;
+  return clampSeverity(s);
 }
 
 /** Map a persisted axe row into the engine Finding shape the gate expects. */

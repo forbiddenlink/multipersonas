@@ -14,12 +14,13 @@ vi.mock("@/lib/supabase/server", () => ({
 // Mock the engine imports to avoid loading Playwright
 vi.mock("@engine/personas/library", () => {
   const personaLibrary = {
-    "first-time-visitor": { id: "first-time-visitor", name: "Test" },
-    "keyboard-traversal": { id: "keyboard-traversal", name: "Test" },
-    "mobile-slow-connection": { id: "mobile-slow-connection", name: "Test" },
+    "first-time-visitor": { id: "first-time-visitor", name: "Test", description: "Test" },
+    "keyboard-traversal": { id: "keyboard-traversal", name: "Test", description: "Test" },
+    "mobile-slow-connection": { id: "mobile-slow-connection", name: "Test", description: "Test" },
   };
   return {
     personaLibrary,
+    personaDisplayRegistry: personaLibrary,
     isBuiltinPersonaId: (id: string) => Object.hasOwn(personaLibrary, id),
   };
 });

@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { personaDisplayRegistry } from "@engine/personas/library";
 import {
   PERSONA_DATA,
   PERSONA_IDS,
@@ -7,6 +8,15 @@ import {
 } from "@/lib/personas";
 
 describe("PERSONA_DATA", () => {
+  it("derives id/name/description from the engine display registry", () => {
+    expect(PERSONA_IDS).toEqual(Object.keys(personaDisplayRegistry));
+    for (const id of PERSONA_IDS) {
+      expect(PERSONA_DATA[id].id).toBe(personaDisplayRegistry[id].id);
+      expect(PERSONA_DATA[id].name).toBe(personaDisplayRegistry[id].name);
+      expect(PERSONA_DATA[id].description).toBe(personaDisplayRegistry[id].description);
+    }
+  });
+
   it("has required fields on every persona", () => {
     for (const id of PERSONA_IDS) {
       const persona = PERSONA_DATA[id];

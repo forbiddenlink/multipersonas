@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
 
 const mockRpc = vi.fn();
 
@@ -48,5 +50,16 @@ describe("POST /api/schedules/run-due", () => {
     expect(mockRpc).toHaveBeenCalledWith("enqueue_due_project_scan_schedules", {
       p_limit: 25,
     });
+  });
+});
+
+describe("scheduled scan SQL", () => {
+  it("routes scheduled jobs through the shared audit enqueue RPC", async () => {
+    const sql = fs.readFileSync(
+      path.join(process.cwd(), "supabase/migrations/022_audit_job_enqueue_boundary.sql"),
+      "utf8",
+    );
+    expect(sql).toMatch(/create or replace function public\.enqueue_audit_job/);
+    expect(sql).toMatch(/public\.enqueue_audit_job\(/);
   });
 });

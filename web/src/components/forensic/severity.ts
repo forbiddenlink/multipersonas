@@ -1,18 +1,15 @@
-// Single source of truth for the axe severity vocabulary. Every surface (terminal,
-// chip, results, report) reads shape + token + label from here so severity is always
-// rendered as color + icon + text — never color alone — and stays consistent.
+import { SEVERITIES, isSeverity, type Severity } from "@engine/domain/vocab";
+
+// Single source of truth for web severity presentation. The vocabulary itself lives
+// in the engine domain module; every web surface reads shape + token + label here
+// so severity is always rendered as color + icon + text — never color alone.
 //
 // Shapes are deliberately distinct (square / triangle / diamond / circle) so the four
 // levels are distinguishable without color, satisfying the colorblind-safe requirement.
 
-export type Severity = "critical" | "serious" | "moderate" | "minor";
+export type { Severity };
 
-export const SEVERITY_ORDER: Severity[] = [
-  "critical",
-  "serious",
-  "moderate",
-  "minor",
-];
+export const SEVERITY_ORDER: Severity[] = [...SEVERITIES];
 
 type SeverityMeta = {
   label: string;
@@ -29,9 +26,7 @@ export const SEVERITY: Record<Severity, SeverityMeta> = {
   minor: { label: "Minor", token: "var(--severity-minor)", glyph: "●" },
 };
 
-export function isSeverity(value: string): value is Severity {
-  return value === "critical" || value === "serious" || value === "moderate" || value === "minor";
-}
+export { isSeverity };
 
 /** Resolve any incoming string to a severity token, defaulting unknown → minor. */
 export function severityToken(value: string): string {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { personaLibrary, personasByCategory } from "./library.js";
+import { isBuiltinPersonaId, personaLibrary, personasByCategory } from "./library.js";
 import { prebuiltPersonas } from "./prebuilt.js";
 import { generateSystemPrompt } from "./types.js";
 
@@ -160,7 +160,10 @@ describe("category registry", () => {
   it("references only personas that exist", () => {
     for (const [category, ids] of Object.entries(personasByCategory)) {
       for (const id of ids) {
-        expect(personaLibrary[id], `${category} -> ${id}`).toBeDefined();
+        expect(isBuiltinPersonaId(id), `${category} -> ${id}`).toBe(true);
+        if (isBuiltinPersonaId(id)) {
+          expect(personaLibrary[id], `${category} -> ${id}`).toBeDefined();
+        }
       }
     }
   });

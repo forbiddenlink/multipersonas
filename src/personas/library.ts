@@ -287,14 +287,14 @@ export const glovedCourier: Persona = buildPersona({
 });
 
 // Export all personas as a record
-export function isBuiltinPersonaId(id: string): boolean {
+export function isBuiltinPersonaId(id: string): id is BuiltinPersonaId {
   // Own-property only. `id in personaLibrary` is true for prototype keys
   // ("constructor", "toString", "__proto__") and would let those strings
   // through the hosted picker / worker as if they were runnable personas.
   return Object.hasOwn(personaLibrary, id);
 }
 
-export const personaLibrary: Record<string, Persona> = {
+export const personaLibrary = {
   "first-time-visitor": firstTimeVisitor,
   "keyboard-traversal": keyboardTraversal,
   "mobile-slow-connection": mobileSlowConnection,
@@ -307,6 +307,23 @@ export const personaLibrary: Record<string, Persona> = {
   "keyboard-office-worker": keyboardOfficeWorker,
   "one-handed-mobile": oneHandedParent,
   "gloved-outdoor-courier": glovedCourier,
+} satisfies Record<string, Persona>;
+
+export type BuiltinPersonaId = keyof typeof personaLibrary;
+
+export const personaDisplayRegistry: {
+  [K in BuiltinPersonaId]: Pick<Persona, "id" | "name" | "description">;
+} = Object.fromEntries(
+  Object.entries(personaLibrary).map(([id, persona]) => [
+    id,
+    {
+      id: persona.id,
+      name: persona.name,
+      description: persona.description,
+    },
+  ]),
+) as {
+  [K in BuiltinPersonaId]: Pick<Persona, "id" | "name" | "description">;
 };
 
 // Categorized persona IDs for easy filtering.
