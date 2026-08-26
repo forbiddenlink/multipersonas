@@ -7,6 +7,7 @@ import { consumeRateLimit } from "@/lib/rate-limit";
 import { getClientIP } from "@/lib/client-ip";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { enqueueAuditJob } from "@/lib/audit-jobs";
+import { logAuditEvent } from "@/lib/audit-log";
 
 // Public accessibility grader: anonymous, axe-only, no model spend. Enqueues a
 // kind='grade' job onto the shared audit_jobs queue; the worker runs gradeScan and
@@ -113,6 +114,13 @@ export async function POST(request: Request) {
     await admin.from("audit_jobs").delete().eq("id", jobId);
     return NextResponse.json({ error: "Could not queue the grade." }, { status: 500 });
   }
+
+  await logAuditEvent(admin, {
+    action: "grade.job_queued",
+    resourceType: "audit_job",
+    resourceId: jobId,
+    metadata: { kind: "grade", token: scan.token },
+  });
 
   return NextResponse.json({ token: scan.token }, { status: 202 });
 }

@@ -9,6 +9,44 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      audit_events: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          id: string
+          metadata: Json
+          resource_id: string | null
+          resource_type: string
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          resource_id?: string | null
+          resource_type: string
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          resource_id?: string | null
+          resource_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_events_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_jobs: {
         Row: {
           attempts: number

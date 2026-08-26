@@ -78,6 +78,25 @@ const supabase: SupabaseClient = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
+async function logWorkerEvent(
+  job: Pick<AuditJob, "id" | "kind" | "project_id" | "user_id">,
+  action: string,
+  metadata: Record<string, unknown> = {},
+): Promise<void> {
+  const { error } = await supabase.from("audit_events").insert({
+    actor_user_id: job.user_id,
+    action,
+    resource_type: "audit_job",
+    resource_id: job.id,
+    metadata: {
+      kind: job.kind,
+      projectId: job.project_id,
+      ...metadata,
+    },
+  });
+  if (error) console.error(`[worker] audit event failed for ${job.id}: ${error.message}`);
+}
+
 // --- types (local; the job row + the client-facing response shape) ---------
 interface AuditJob {
   id: string;
@@ -89,6 +108,7 @@ interface AuditJob {
   reserved_calls: number;
   kind: string;
   caller_key: string | null;
+  attempts?: number;
 }
 
 /** Reject if `promise` doesn't settle within ms. The underlying work keeps running
@@ -369,6 +389,7 @@ async function claimAndRun(): Promise<boolean> {
   if (!claimed || !claimed.id) return false; // empty queue
 
   console.log(`[worker] claimed ${claimed.id} — ${claimed.url}`);
+  await logWorkerEvent(claimed, "audit_job.claimed", { attempt: claimed.attempts });
 
   // Public grader jobs (kind='grade') are axe-only: no personas, no model spend,
   // no session, results to the public grader_scans row. Handled inline then done.
@@ -387,6 +408,7 @@ async function claimAndRun(): Promise<boolean> {
         .from("audit_jobs")
         .update({ status: "completed", completed_at: new Date().toISOString() })
         .eq("id", claimed.id);
+      await logWorkerEvent(claimed, "audit_job.completed", { pagesVisited: pagesVisited.length });
       console.log(`[worker] graded ${claimed.id}`);
     } catch (e) {
       const detail = e instanceof Error ? e.message : "Unknown error";
@@ -399,6 +421,7 @@ async function claimAndRun(): Promise<boolean> {
         .from("audit_jobs")
         .update({ status: "failed", error: publicMsg, completed_at: new Date().toISOString() })
         .eq("id", claimed.id);
+      await logWorkerEvent(claimed, "audit_job.failed", { error: publicMsg });
       Sentry.captureException(e, { tags: { jobId: claimed.id, kind: "grade" } });
       console.error(`[worker] grade failed ${claimed.id}: ${detail}`);
       await notify(`grade ${claimed.id} failed: ${detail}`);
@@ -444,6 +467,11 @@ async function claimAndRun(): Promise<boolean> {
       .from("audit_jobs")
       .update({ status: "completed", result: response, completed_at: new Date().toISOString() })
       .eq("id", claimed.id);
+    await logWorkerEvent(claimed, "audit_job.completed", {
+      personas: personas.length,
+      findings:
+        response.axeFindings.length + response.personas.reduce((n, p) => n + p.findings.length, 0),
+    });
     console.log(`[worker] completed ${claimed.id}`);
   } catch (e) {
     const detail = e instanceof Error ? e.message : "Unknown error";
@@ -455,6 +483,7 @@ async function claimAndRun(): Promise<boolean> {
     // Refund the budget this failed run reserved (P0 #3) so a run of failures can't
     // fill the daily cap and refuse legitimate audits.
     await releaseReservation(claimed);
+    await logWorkerEvent(claimed, "audit_job.failed", { error: publicMsg });
     Sentry.captureException(e, { tags: { jobId: claimed.id } });
     console.error(`[worker] failed ${claimed.id}: ${detail}`);
     await notify(`job ${claimed.id} failed: ${detail}`);

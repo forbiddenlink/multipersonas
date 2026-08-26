@@ -11,6 +11,7 @@ import { consumeRateLimit } from "@/lib/rate-limit";
 import { reserveSpend, releaseSpend } from "@/lib/spend";
 import { getClientIP } from "@/lib/client-ip";
 import { enqueueAuditJob } from "@/lib/audit-jobs";
+import { logAuditEvent } from "@/lib/audit-log";
 
 // Rate limiting + spend cap are enforced durably in Postgres (lib/rate-limit.ts,
 // lib/spend.ts) — shared across instances and not resettable, unlike the in-process
@@ -182,6 +183,14 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+
+  await logAuditEvent(admin, {
+    actorUserId: user?.id ?? null,
+    action: "audit.job_queued",
+    resourceType: "audit_job",
+    resourceId: jobId,
+    metadata: { kind: "audit", projectId, personaCount: chosenIds.length },
+  });
 
   return NextResponse.json({ jobId, status: "queued" }, { status: 202 });
 }
