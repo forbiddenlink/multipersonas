@@ -1,8 +1,8 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Turnstile } from "@marsidev/react-turnstile";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 
 // Public site key is safe to expose (that's its purpose). When unset (local/preview),
@@ -23,6 +23,12 @@ export function GradeForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance | undefined>(undefined);
+
+  function resetTurnstile() {
+    setTurnstileToken(null);
+    turnstileRef.current?.reset();
+  }
 
   // Only require a solved challenge when the widget is actually configured.
   const turnstileReady = !TURNSTILE_SITE_KEY || turnstileToken !== null;
@@ -68,7 +74,7 @@ export function GradeForm() {
 
       if (!res.ok) {
         // Turnstile tokens are single-use; force a re-solve after any rejection.
-        setTurnstileToken(null);
+        resetTurnstile();
         setError(data.error || "Something went wrong");
         return;
       }
@@ -81,6 +87,7 @@ export function GradeForm() {
 
       router.push(`/grade/${token}`);
     } catch (err) {
+      resetTurnstile();
       setError(
         err instanceof Error
           ? err.message
@@ -131,6 +138,7 @@ export function GradeForm() {
         </p>
         {TURNSTILE_SITE_KEY && (
           <Turnstile
+            ref={turnstileRef}
             siteKey={TURNSTILE_SITE_KEY}
             options={{ theme: "auto", size: "flexible" }}
             onSuccess={(token) => setTurnstileToken(token)}

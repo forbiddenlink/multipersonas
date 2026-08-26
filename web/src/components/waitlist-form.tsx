@@ -1,8 +1,8 @@
 "use client";
 
-import { Turnstile } from "@marsidev/react-turnstile";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 type Status = "idle" | "submitting" | "success" | "already" | "error";
 
@@ -23,6 +23,12 @@ export function WaitlistForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance | undefined>(undefined);
+
+  function resetTurnstile() {
+    setTurnstileToken(null);
+    turnstileRef.current?.reset();
+  }
 
   const done = status === "success" || status === "already";
   const turnstileReady = !TURNSTILE_SITE_KEY || turnstileToken !== null;
@@ -67,14 +73,14 @@ export function WaitlistForm() {
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(json.error || "Something went wrong. Please try again.");
-        setTurnstileToken(null);
+        resetTurnstile();
         setStatus("error");
         return;
       }
       setStatus(json.already ? "already" : "success");
     } catch {
       setError("Network error. Please try again.");
-      setTurnstileToken(null);
+      resetTurnstile();
       setStatus("error");
     }
   }
@@ -172,6 +178,7 @@ export function WaitlistForm() {
 
       {TURNSTILE_SITE_KEY && (
         <Turnstile
+          ref={turnstileRef}
           siteKey={TURNSTILE_SITE_KEY}
           onSuccess={(token) => setTurnstileToken(token)}
           onError={() => setTurnstileToken(null)}
