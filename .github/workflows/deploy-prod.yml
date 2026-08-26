@@ -42,7 +42,11 @@ jobs:
           node-version: "22"
       - name: Pull Vercel production env
         run: pnpm dlx vercel@latest pull --yes --environment=production
+      - name: Check production env
+        run: node ../scripts/check-prod-env.mjs --prod --env-path .vercel/.env.production.local
       - name: Build
         run: pnpm dlx vercel@latest build --prod
       - name: Deploy prebuilt to production
         run: pnpm dlx vercel@latest deploy --prebuilt --prod
+      - name: Smoke production
+        run: node ../scripts/prod-smoke.mjs

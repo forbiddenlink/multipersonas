@@ -73,6 +73,9 @@ jobs:
         working-directory: web
         run: pnpm build
 
+      - name: Check bundle budget
+        run: pnpm check:bundle
+
       # Dependency advisories are handled by Dependabot (active on this repo),
       # not here: npm retired the `pnpm audit` REST endpoint (410 Gone), so the
       # step failed on the dead endpoint rather than on real vulnerabilities.
