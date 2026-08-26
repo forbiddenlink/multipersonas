@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+const STALE_RUNNING_SECONDS = 15 * 60;
+
 // Never cached — a health check must reflect the current state on every hit.
 export const dynamic = "force-dynamic";
 
@@ -19,20 +21,57 @@ export async function GET() {
     );
   }
 
-  const { error, count } = await admin
+  const [{ error, count }, queued, running, staleRunning] = await Promise.all([
+    admin
     .from("audit_jobs")
     .select("id", { count: "exact", head: true })
-    .in("status", ["queued", "running"]);
+      .in("status", ["queued", "running"]),
+    admin
+      .from("audit_jobs")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "queued"),
+    admin
+      .from("audit_jobs")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "running"),
+    admin
+      .from("audit_jobs")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "running")
+      .lt("started_at", new Date(Date.now() - STALE_RUNNING_SECONDS * 1000).toISOString()),
+  ]);
 
-  if (error) {
+  const queueError = error ?? queued.error ?? running.error ?? staleRunning.error;
+  if (queueError) {
     return NextResponse.json(
       { status: "degraded", checks: { database: "error", queue: "error" } },
       { status: 503 },
     );
   }
 
+  if ((staleRunning.count ?? 0) > 0) {
+    return NextResponse.json(
+      {
+        status: "degraded",
+        checks: { database: "ok", queue: "stale-running" },
+        backlog: count ?? 0,
+        queued: queued.count ?? 0,
+        running: running.count ?? 0,
+        staleRunning: staleRunning.count ?? 0,
+      },
+      { status: 503 },
+    );
+  }
+
   return NextResponse.json(
-    { status: "ok", checks: { database: "ok", queue: "ok" }, backlog: count ?? 0 },
+    {
+      status: "ok",
+      checks: { database: "ok", queue: "ok" },
+      backlog: count ?? 0,
+      queued: queued.count ?? 0,
+      running: running.count ?? 0,
+      staleRunning: staleRunning.count ?? 0,
+    },
     { status: 200 },
   );
 }

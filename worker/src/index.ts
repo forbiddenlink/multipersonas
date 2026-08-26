@@ -507,8 +507,16 @@ async function reapStaleJobs(): Promise<void> {
   });
   if (error) {
     console.error(`[worker] reap failed: ${error.message}`);
+    Sentry.captureException(error, { tags: { operation: "reap_stale_audit_jobs" } });
+    await notify(`reap failed: ${error.message}`);
   } else if (typeof data === "number" && data > 0) {
     console.log(`[worker] reaped ${data} stale job(s)`);
+    Sentry.captureMessage("Reaped stale audit jobs", {
+      level: "warning",
+      tags: { operation: "reap_stale_audit_jobs" },
+      extra: { count: data },
+    });
+    await notify(`reaped ${data} stale job(s)`);
   }
 }
 

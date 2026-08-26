@@ -3,6 +3,7 @@
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import Link from "next/link";
 import { useId, useRef, useState } from "react";
+import { trackProductEvent } from "@/lib/analytics";
 
 type Status = "idle" | "submitting" | "success" | "already" | "error";
 
@@ -63,6 +64,11 @@ export function WaitlistForm() {
     }
 
     setStatus("submitting");
+    trackProductEvent("waitlist_submit_started", {
+      sites_count: payload.sitesCount,
+      note_provided: Boolean(payload.note),
+      turnstile_configured: Boolean(TURNSTILE_SITE_KEY),
+    });
 
     try {
       const res = await fetch("/api/waitlist", {
@@ -75,13 +81,22 @@ export function WaitlistForm() {
         setError(json.error || "Something went wrong. Please try again.");
         resetTurnstile();
         setStatus("error");
+        trackProductEvent("waitlist_submit_rejected", {
+          status_code: res.status,
+          turnstile_configured: Boolean(TURNSTILE_SITE_KEY),
+        });
         return;
       }
       setStatus(json.already ? "already" : "success");
+      trackProductEvent(json.already ? "waitlist_already_joined" : "waitlist_joined", {
+        sites_count: payload.sitesCount,
+        note_provided: Boolean(payload.note),
+      });
     } catch {
       setError("Network error. Please try again.");
       resetTurnstile();
       setStatus("error");
+      trackProductEvent("waitlist_submit_rejected", { reason: "network_error" });
     }
   }
 

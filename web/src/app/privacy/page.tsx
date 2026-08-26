@@ -56,7 +56,7 @@ export default function PrivacyPage() {
             <li><strong className="text-foreground">Vercel</strong> — web hosting and delivery.</li>
             <li><strong className="text-foreground">Railway</strong> — the worker that runs browser audits.</li>
             <li><strong className="text-foreground">Sentry</strong> — error monitoring (active only when configured); we scrub personal data from error reports.</li>
-            <li><strong className="text-foreground">PostHog</strong> — product analytics (active only when configured); we capture pageviews only, disable session recording and autocapture, respect Do Not Track, and remove query strings from URLs before capture.</li>
+            <li><strong className="text-foreground">PostHog</strong> — product analytics (active only when configured); we capture pageviews and coarse product events, disable session recording and autocapture, respect Do Not Track, remove query strings from URLs, and do not send emails, notes, result tokens, or full submitted URLs.</li>
           </ul>
         </Section>
 
@@ -75,7 +75,7 @@ export default function PrivacyPage() {
         <Section title="What we don't do">
           <p>
             We do not sell your data. We do not use advertising trackers. When product analytics are
-            enabled, they are limited to privacy-conservative pageview analytics; otherwise we set no
+            enabled, they are limited to privacy-conservative pageview and product-flow analytics; otherwise we set no
             non-essential cookies (only the session cookie required to keep you signed in).
           </p>
         </Section>

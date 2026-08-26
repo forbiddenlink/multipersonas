@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Wordmark } from "@/components/forensic/wordmark";
 import { Eye, EyeOff } from "lucide-react";
 import { safeRedirectPath } from "@/lib/safe-redirect";
+import { trackProductEvent } from "@/lib/analytics";
 
 // Same-origin path only — mirrors login-form so a crafted ?returnTo=//evil.com
 // can't turn signup/OAuth into an open redirect.
@@ -122,6 +123,7 @@ export function SignupForm() {
     if (!validateAll()) return;
 
     setLoading(true);
+    trackProductEvent("signup_started", { method: "password" });
     try {
       const supabase = createClient();
       const { data, error } = await supabase.auth.signUp({
@@ -134,6 +136,7 @@ export function SignupForm() {
 
       if (error) {
         setFormError(error.message);
+        trackProductEvent("signup_rejected", { method: "password", reason: "auth_error" });
         return;
       }
 
@@ -141,14 +144,23 @@ export function SignupForm() {
       // the user is already logged in — send them to their intended destination instead of the
       // (dead-end) "check your email" screen.
       if (data.session) {
+        trackProductEvent("signup_completed", {
+          method: "password",
+          email_confirmation_required: false,
+        });
         router.refresh();
         router.push(returnTo);
         return;
       }
 
+      trackProductEvent("signup_completed", {
+        method: "password",
+        email_confirmation_required: true,
+      });
       setSuccess(true);
     } catch {
       setFormError("Something went wrong. Please try again.");
+      trackProductEvent("signup_rejected", { method: "password", reason: "network_error" });
     } finally {
       setLoading(false);
     }
@@ -157,6 +169,7 @@ export function SignupForm() {
   async function handleGitHubSignup() {
     setFormError("");
     setLoading(true);
+    trackProductEvent("signup_oauth_started", { provider: "github" });
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
@@ -169,11 +182,19 @@ export function SignupForm() {
       if (error) {
         setFormError(error.message);
         setLoading(false);
+        trackProductEvent("signup_oauth_rejected", {
+          provider: "github",
+          reason: "auth_error",
+        });
       }
       // On success the browser navigates away — leave loading true.
     } catch {
       setFormError("Something went wrong. Please try again.");
       setLoading(false);
+      trackProductEvent("signup_oauth_rejected", {
+        provider: "github",
+        reason: "network_error",
+      });
     }
   }
 

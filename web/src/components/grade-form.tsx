@@ -4,6 +4,7 @@ import { useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
+import { safeAnalyticsHost, trackProductEvent } from "@/lib/analytics";
 
 // Public site key is safe to expose (that's its purpose). When unset (local/preview),
 // the widget is skipped and the server-side gate is a no-op, so the form behaves as before.
@@ -57,6 +58,10 @@ export function GradeForm() {
 
     setError(null);
     setLoading(true);
+    trackProductEvent("grade_submit_started", {
+      target_host: safeAnalyticsHost(parsedUrl.toString()),
+      turnstile_configured: Boolean(TURNSTILE_SITE_KEY),
+    });
 
     try {
       const res = await fetch("/api/grade", {
@@ -76,15 +81,24 @@ export function GradeForm() {
         // Turnstile tokens are single-use; force a re-solve after any rejection.
         resetTurnstile();
         setError(data.error || "Something went wrong");
+        trackProductEvent("grade_submit_rejected", {
+          status_code: res.status,
+          turnstile_configured: Boolean(TURNSTILE_SITE_KEY),
+        });
         return;
       }
 
       const token = data.token as string | undefined;
       if (!token) {
         setError("Could not queue the grade. Please try again.");
+        trackProductEvent("grade_submit_rejected", { reason: "missing_token" });
         return;
       }
 
+      trackProductEvent("grade_queued", {
+        target_host: safeAnalyticsHost(parsedUrl.toString()),
+        turnstile_configured: Boolean(TURNSTILE_SITE_KEY),
+      });
       router.push(`/grade/${token}`);
     } catch (err) {
       resetTurnstile();
@@ -93,6 +107,7 @@ export function GradeForm() {
           ? err.message
           : "Failed to connect to the server. Please try again.",
       );
+      trackProductEvent("grade_submit_rejected", { reason: "network_error" });
     } finally {
       // Clear so a stalled navigation (or back/restore) doesn't leave a frozen spinner.
       // On a successful push the page unmounts anyway.

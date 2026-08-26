@@ -1,9 +1,10 @@
 # Deployment
 
-**Status: not yet public. The architecture is deployable and all three security
-blockers (rate limiting, spend cap, network isolation) are now closed and live in
-production — the remaining checklist below is env/host setup, not engineering, before
-flipping on a public anonymous deploy.** Snapshot as of 2026-07-26, updated 2026-08-16.
+**Status: public production app, still pending two owner-dashboard hardening checks.**
+The architecture is deployable and the original three security blockers (rate
+limiting, spend cap, network isolation) are closed and live in production. The
+remaining public-launch risks are Turnstile production keys and Supabase Auth dashboard
+settings, not application code. Snapshot updated 2026-08-26.
 See `docs/PLAN-2026-07-26-phase2-deploy-infra.md`.
 
 ## Architecture (the worker split — BUILT)
@@ -46,11 +47,11 @@ that read that page choose where to go next. Public + anonymous is a hostile env
    set, and the redeployed container's logs confirm smokescreen's `[INFO] starting` line
    followed by a clean worker boot. See `docs/ssrf-egress-hardening.md`. P2-C gate closed.
 
-## Before flipping on a public deploy (checklist)
+## Production readiness checklist
 
-- [ ] `SUPABASE_SERVICE_ROLE_KEY` set on both the Vercel app and the worker host (without
-      it, enqueue returns 503 and the rate-limit/spend-cap are disabled).
-- [ ] `ANTHROPIC_API_KEY` on the worker host.
+- [x] `SUPABASE_SERVICE_ROLE_KEY` set on the Vercel app and the worker host (verified by
+      production smoke tests and service health checks; values must never be printed).
+- [x] `ANTHROPIC_API_KEY` on the worker host.
 - [x] `AUDIT_BROWSER_PROXY=http://127.0.0.1:4750` + `AUDIT_REQUIRE_EGRESS_PROXY=1` set on
       the worker host, and the worker redeployed with the smokescreen-enabled image
       (blocker 3 — DONE 2026-08-16, verified via `railway logs`).
@@ -71,13 +72,25 @@ that read that page choose where to go next. Public + anonymous is a hostile env
       still has the stale `site_url = "http://127.0.0.1:3000"` from local dev; pushing it
       would revert the production Site URL fix (the 2026-07-31 auth-redirect bug). Fix
       `config.toml` to match the live dashboard values first if config-as-code is wanted.
-- [ ] Load/abuse check against the durable limiter + cap.
+- [x] Load/abuse guardrails against the durable limiter + cap are implemented:
+      `/api/grade` uses Turnstile when configured, `GRADE_QUEUE_CAP`, and
+      `consume_rate_limit`; `/api/audit` uses durable rate limiting plus the model-call
+      spend cap.
 - [ ] **CAPTCHA on the public grader — code-complete, pending keys.** Provision a
       Cloudflare Turnstile widget and set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (all envs) and
       `TURNSTILE_SECRET_KEY` (secret, prod) on the Vercel app. Unset = the gate is a no-op,
       so shipping the code changes nothing until the keys land. See "Bot protection" below.
 - [ ] **Supabase "Confirm email" ON** (Authentication → Providers → Email). Nothing else
       gates free-tier signup abuse on unverified emails.
+- [ ] **Supabase Leaked Password Protection ON** (Authentication → Policies → Password).
+      This is still a project-level dashboard setting.
+- [ ] **Supabase backup restore proof.** Confirm Point-in-Time Recovery / backups in the
+      Supabase dashboard, then perform a restore into a temporary branch/project and run
+      the production smoke checks against it. Do not restore over production as a drill.
+- [ ] **Railway Config as Code migration.** `railway.toml` still works today, but Railway
+      has announced a 2026-12-01 cutoff. `railway config migrate` produced a sparse dry-run,
+      so review/apply the generated `.railway/railway.ts` before that date instead of
+      accepting the migration blindly.
 
 ## Bot protection on the public grader (Cloudflare Turnstile)
 
@@ -105,6 +118,50 @@ Provisioning (owner does this — the agent never holds the secret):
      there), marked Sensitive.
 3. Redeploy. Verify: the grade form now shows the widget and a tokenless
    `POST /api/grade` returns 403.
+
+## Monitoring and analytics
+
+Production monitoring should cover both the web app and the async worker path:
+
+- **Vercel runtime:** Sentry is configured for the web project and `NEXT_PUBLIC_SENTRY_DSN`
+  is present in production. Vercel runtime logs should stay at zero `error`/`fatal` after
+  each deploy.
+- **Worker runtime:** the Railway worker reports to the `personaudit-worker` Sentry project.
+  Job failures notify through Sentry and `WORKER_ALERT_WEBHOOK` when set. The worker now
+  also alerts when `reap_stale_audit_jobs` fails or reaps stuck jobs.
+- **Health endpoint:** monitor `https://personaudit.com/api/health`. It returns `200` only
+  when Supabase is reachable and no job has been running longer than 15 minutes. It returns
+  `503` on missing config, database/queue errors, or stale running jobs.
+- **Uptime checks:** at minimum, monitor `https://personaudit.com/`,
+  `https://personaudit.com/grade`, and `https://personaudit.com/api/health`. The local
+  `hq status --json` service check verifies the UptimeRobot integration token, but `hq`
+  does not expose monitor creation.
+- **PostHog:** production env has `NEXT_PUBLIC_POSTHOG_KEY` and
+  `NEXT_PUBLIC_POSTHOG_HOST`. The client disables autocapture, session recording, surveys,
+  feature flags, external dependency loading, and respects Do Not Track. Product events
+  intentionally omit emails, notes, grade result tokens, and full submitted URLs.
+- **PostHog dashboard:** `Personaudit Activation`
+  (`https://us.posthog.com/project/325061/dashboard/2036035`) contains saved insights for
+  grade submission conversion, waitlist demand, and signup conversion. The insights will
+  populate after the instrumentation is deployed and real browser traffic fires the events.
+
+## Production env inventory
+
+Expected production env names (presence only; never print values):
+
+- Vercel: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+  `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SENTRY_DSN`,
+  `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `ADMIN_EMAILS`,
+  `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`,
+  `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`.
+- Railway worker: `SUPABASE_URL` or `NEXT_PUBLIC_SUPABASE_URL`,
+  `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `SENTRY_DSN`,
+  `AUDIT_BROWSER_PROXY`, `AUDIT_REQUIRE_EGRESS_PROXY`, and optional
+  `WORKER_ALERT_WEBHOOK`, `WORKER_POLL_MS`, `WORKER_JOB_TIMEOUT_SECONDS`,
+  `WORKER_REAP_AFTER_SECONDS`, `WORKER_MAX_ATTEMPTS`.
+
+As of the 2026-08-26 Vercel env check, the PostHog, Supabase, Sentry, site URL, and admin
+variables are present in production. The Turnstile variables are not present yet.
 
 ## Local development
 
