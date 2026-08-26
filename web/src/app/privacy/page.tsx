@@ -23,7 +23,7 @@ export default function PrivacyPage() {
   return (
     <MarketingShell>
       <h1 className="text-2xl font-semibold tracking-tight font-heading">Privacy Policy</h1>
-      <p className="mt-2 text-xs text-muted-foreground">Last updated: 2 August 2026.</p>
+      <p className="mt-2 text-xs text-muted-foreground">Last updated: 26 August 2026.</p>
 
       <div className="mt-6 space-y-3 text-sm text-muted-foreground">
         <p>
@@ -56,6 +56,7 @@ export default function PrivacyPage() {
             <li><strong className="text-foreground">Vercel</strong> — web hosting and delivery.</li>
             <li><strong className="text-foreground">Railway</strong> — the worker that runs browser audits.</li>
             <li><strong className="text-foreground">Sentry</strong> — error monitoring (active only when configured); we scrub personal data from error reports.</li>
+            <li><strong className="text-foreground">PostHog</strong> — product analytics (active only when configured); we capture pageviews only, disable session recording and autocapture, respect Do Not Track, and remove query strings from URLs before capture.</li>
           </ul>
         </Section>
 
@@ -73,7 +74,8 @@ export default function PrivacyPage() {
 
         <Section title="What we don't do">
           <p>
-            We do not sell your data. We do not use analytics or advertising trackers, and we set no
+            We do not sell your data. We do not use advertising trackers. When product analytics are
+            enabled, they are limited to privacy-conservative pageview analytics; otherwise we set no
             non-essential cookies (only the session cookie required to keep you signed in).
           </p>
         </Section>

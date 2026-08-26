@@ -15,7 +15,7 @@ const cspReportOnly = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self'",
-  "connect-src 'self' https://*.supabase.co https://*.sentry.io https://*.ingest.sentry.io",
+  "connect-src 'self' https://*.supabase.co https://*.sentry.io https://*.ingest.sentry.io https://us.i.posthog.com https://eu.i.posthog.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

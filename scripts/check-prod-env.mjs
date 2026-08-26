@@ -61,6 +61,18 @@ function requireHttpsUrl(key) {
   }
 }
 
+function hostAllowed(key, allowed) {
+  if (!present(key)) return;
+  try {
+    const host = new URL(env[key]).host;
+    if (!allowed.includes(host)) {
+      failures.push(`${key} host must be one of: ${allowed.join(", ")}`);
+    }
+  } catch {
+    failures.push(`${key} must be a valid URL`);
+  }
+}
+
 if (prod) {
   requirePresent("NEXT_PUBLIC_SUPABASE_URL");
   requirePresent("NEXT_PUBLIC_SUPABASE_ANON_KEY");
@@ -72,10 +84,14 @@ if (prod) {
   requireNotRedacted("NEXT_PUBLIC_SITE_URL");
   requireNotRedacted("NEXT_PUBLIC_SENTRY_DSN");
   requireNotRedacted("NEXT_PUBLIC_TURNSTILE_SITE_KEY");
+  requireNotRedacted("NEXT_PUBLIC_POSTHOG_KEY");
+  requireNotRedacted("NEXT_PUBLIC_POSTHOG_HOST");
 
   requireHttpsUrl("NEXT_PUBLIC_SUPABASE_URL");
   requireHttpsUrl("NEXT_PUBLIC_SITE_URL");
   requireHttpsUrl("NEXT_PUBLIC_SENTRY_DSN");
+  requireHttpsUrl("NEXT_PUBLIC_POSTHOG_HOST");
+  hostAllowed("NEXT_PUBLIC_POSTHOG_HOST", ["us.i.posthog.com", "eu.i.posthog.com"]);
 }
 
 const hasTurnstileSiteKey = present("NEXT_PUBLIC_TURNSTILE_SITE_KEY");
@@ -88,6 +104,16 @@ if (hasTurnstileSiteKey !== hasTurnstileSecret) {
 
 if (!hasTurnstileSiteKey && prod) {
   warnings.push("Turnstile is not configured; public grade/waitlist forms rely on rate limits only");
+}
+
+const hasPostHogKey = present("NEXT_PUBLIC_POSTHOG_KEY");
+const hasPostHogHost = present("NEXT_PUBLIC_POSTHOG_HOST");
+if (hasPostHogHost && !hasPostHogKey) {
+  failures.push("PostHog is half-configured; set NEXT_PUBLIC_POSTHOG_KEY with NEXT_PUBLIC_POSTHOG_HOST, or neither");
+}
+
+if (!hasPostHogKey && prod) {
+  warnings.push("PostHog is not configured; product analytics are disabled");
 }
 
 if (failures.length > 0) {

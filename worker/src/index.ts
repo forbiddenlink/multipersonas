@@ -52,6 +52,8 @@ if (process.env.SENTRY_DSN) {
   const EMAIL_RE = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
+    environment: process.env.RAILWAY_ENVIRONMENT_NAME ?? process.env.NODE_ENV ?? "production",
+    release: process.env.RAILWAY_GIT_COMMIT_SHA,
     tracesSampleRate: 0.1,
     beforeSend(event) {
       for (const v of event.exception?.values ?? []) {

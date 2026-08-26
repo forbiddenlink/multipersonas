@@ -14,6 +14,8 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs" || process.env.NEXT_RUNTIME === "edge") {
     Sentry.init({
       dsn,
+      environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
+      release: process.env.VERCEL_GIT_COMMIT_SHA,
       tracesSampleRate: 0.1,
       beforeSend: (event) => scrubEvent(event),
     });
