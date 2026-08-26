@@ -10,9 +10,14 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 const mockConsumeRateLimit = vi.fn().mockResolvedValue({ allowed: true, retryAfterSeconds: 0 });
+const mockVerifyTurnstile = vi.fn().mockResolvedValue({ configured: false, ok: true });
 
 vi.mock("@/lib/rate-limit", () => ({
   consumeRateLimit: (...args: unknown[]) => mockConsumeRateLimit(...args),
+}));
+
+vi.mock("@/lib/turnstile", () => ({
+  verifyTurnstile: (...args: unknown[]) => mockVerifyTurnstile(...args),
 }));
 
 describe("POST /api/waitlist", () => {
@@ -23,6 +28,7 @@ describe("POST /api/waitlist", () => {
     vi.clearAllMocks();
     mockInsert.mockResolvedValue({ error: null });
     mockConsumeRateLimit.mockResolvedValue({ allowed: true, retryAfterSeconds: 0 });
+    mockVerifyTurnstile.mockResolvedValue({ configured: false, ok: true });
     const mod = await import("@/app/api/waitlist/route");
     POST = mod.POST;
   });
@@ -41,6 +47,7 @@ describe("POST /api/waitlist", () => {
     const data = await res.json();
     expect(data.error).toBeDefined();
     expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockVerifyTurnstile).not.toHaveBeenCalled();
     expect(mockConsumeRateLimit).not.toHaveBeenCalled();
   });
 
@@ -51,11 +58,23 @@ describe("POST /api/waitlist", () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data).toEqual({ ok: true });
+    expect(mockVerifyTurnstile).toHaveBeenCalledWith(undefined, "unknown");
     expect(mockInsert).toHaveBeenCalledWith({
       email: "foo@example.com",
       sites_count: "6-20",
       note: "hi",
     });
+  });
+
+  it("rejects a failed Turnstile check before rate-limit or insert", async () => {
+    mockVerifyTurnstile.mockResolvedValue({ configured: true, ok: false });
+
+    const res = await POST(makeRequest({ email: "a@example.com", turnstileToken: "bad" }));
+    expect(res.status).toBe(403);
+    const data = await res.json();
+    expect(data.error).toBe("Verification failed. Please refresh the page and try again.");
+    expect(mockConsumeRateLimit).not.toHaveBeenCalled();
+    expect(mockInsert).not.toHaveBeenCalled();
   });
 
   it("returns ok+already on a unique-violation (23505)", async () => {

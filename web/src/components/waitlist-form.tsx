@@ -1,9 +1,12 @@
 "use client";
 
+import { Turnstile } from "@marsidev/react-turnstile";
 import Link from "next/link";
 import { useId, useState } from "react";
 
 type Status = "idle" | "submitting" | "success" | "already" | "error";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 const SITE_BANDS = [
   { value: "", label: "How many client sites do you ship?" },
@@ -19,8 +22,10 @@ export function WaitlistForm() {
   const noteId = useId();
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const done = status === "success" || status === "already";
+  const turnstileReady = !TURNSTILE_SITE_KEY || turnstileToken !== null;
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -32,6 +37,7 @@ export function WaitlistForm() {
       email: String(data.get("email") || "").trim(),
       sitesCount: String(data.get("sitesCount") || "") || undefined,
       note: String(data.get("note") || "").trim() || undefined,
+      turnstileToken: turnstileToken ?? undefined,
     };
 
     if (!payload.email) {
@@ -41,6 +47,11 @@ export function WaitlistForm() {
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
       setError("Enter a valid email address.");
+      setStatus("error");
+      return;
+    }
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setError("Please complete the verification check.");
       setStatus("error");
       return;
     }
@@ -56,12 +67,14 @@ export function WaitlistForm() {
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(json.error || "Something went wrong. Please try again.");
+        setTurnstileToken(null);
         setStatus("error");
         return;
       }
       setStatus(json.already ? "already" : "success");
     } catch {
       setError("Network error. Please try again.");
+      setTurnstileToken(null);
       setStatus("error");
     }
   }
@@ -157,6 +170,16 @@ export function WaitlistForm() {
         />
       </div>
 
+      {TURNSTILE_SITE_KEY && (
+        <Turnstile
+          siteKey={TURNSTILE_SITE_KEY}
+          onSuccess={(token) => setTurnstileToken(token)}
+          onError={() => setTurnstileToken(null)}
+          onExpire={() => setTurnstileToken(null)}
+          options={{ theme: "auto" }}
+        />
+      )}
+
       {error && (
         <p id={`${emailId}-err`} role="alert" className="text-sm text-destructive">
           {error}
@@ -165,7 +188,7 @@ export function WaitlistForm() {
 
       <button
         type="submit"
-        disabled={status === "submitting"}
+        disabled={status === "submitting" || !turnstileReady}
         className="inline-flex w-full items-center justify-center rounded-sm bg-foreground px-6 py-3.5 text-sm font-semibold text-background transition-[background-color,transform] hover:bg-foreground/90 active:translate-y-px disabled:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] sm:w-auto"
       >
         {status === "submitting" ? "Joining…" : "Get early access"}

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { getClientIP } from "@/lib/client-ip";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 // Demand-test capture for the /for-agencies landing page. Insert-only — see
 // supabase/migrations/008_waitlist.sql for the RLS policy (no select/update/delete,
@@ -12,6 +13,7 @@ const waitlistSchema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.string().email()),
   sitesCount: z.enum(["1", "2-5", "6-20", "20+"]).optional(),
   note: z.string().max(500).optional(),
+  turnstileToken: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -32,7 +34,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const rate = await consumeRateLimit(`waitlist:${getClientIP(request)}`, "waitlist");
+  const ip = getClientIP(request);
+  const turnstile = await verifyTurnstile(parsed.data.turnstileToken, ip);
+  if (!turnstile.ok) {
+    return NextResponse.json(
+      { error: "Verification failed. Please refresh the page and try again." },
+      { status: 403 },
+    );
+  }
+
+  const rate = await consumeRateLimit(`waitlist:${ip}`, "waitlist");
   if (!rate.allowed) {
     return NextResponse.json(
       { error: "Too many signups from this network. Please try again shortly." },
