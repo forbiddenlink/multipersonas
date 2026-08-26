@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { killSwitchEnabled, positiveEnvInt } from "@/lib/limits";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { getClientIP } from "@/lib/client-ip";
+import { verifyTurnstile } from "@/lib/turnstile";
 import { enqueueAuditJob } from "@/lib/audit-jobs";
 
 // Public accessibility grader: anonymous, axe-only, no model spend. Enqueues a
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { url?: string };
+  let body: { url?: string; turnstileToken?: string };
   try {
     body = await request.json();
   } catch {
@@ -31,6 +32,17 @@ export async function POST(request: Request) {
   const { url } = body;
   if (!url || typeof url !== "string") {
     return NextResponse.json({ error: "Please enter a URL to grade" }, { status: 400 });
+  }
+
+  // Bot gate before any DNS/DB work: a scripted flood without a valid token never
+  // reaches url-guard's resolution or the queue. No-op unless TURNSTILE_SECRET_KEY is set.
+  const ip = getClientIP(request);
+  const turnstile = await verifyTurnstile(body.turnstileToken, ip);
+  if (!turnstile.ok) {
+    return NextResponse.json(
+      { error: "Verification failed. Please refresh the page and try again." },
+      { status: 403 },
+    );
   }
 
   // Validate before consuming a rate-limit slot so typos / blocked URLs don't
@@ -65,7 +77,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const ip = getClientIP(request);
   const rate = await consumeRateLimit(`grade:${ip}`, "grade");
   if (!rate.allowed) {
     return NextResponse.json(

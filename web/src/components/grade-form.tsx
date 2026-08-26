@@ -2,7 +2,12 @@
 
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
+
+// Public site key is safe to expose (that's its purpose). When unset (local/preview),
+// the widget is skipped and the server-side gate is a no-op, so the form behaves as before.
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 /**
  * Queue a public grade, then land on `/grade/[token]` immediately. That page already
@@ -17,6 +22,10 @@ export function GradeForm() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
+  // Only require a solved challenge when the widget is actually configured.
+  const turnstileReady = !TURNSTILE_SITE_KEY || turnstileToken !== null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,6 +44,11 @@ export function GradeForm() {
       return;
     }
 
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setError("Please complete the verification below.");
+      return;
+    }
+
     setError(null);
     setLoading(true);
 
@@ -42,7 +56,10 @@ export function GradeForm() {
       const res = await fetch("/api/grade", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: parsedUrl.toString() }),
+        body: JSON.stringify({
+          url: parsedUrl.toString(),
+          turnstileToken: turnstileToken ?? undefined,
+        }),
       });
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
@@ -50,6 +67,8 @@ export function GradeForm() {
       };
 
       if (!res.ok) {
+        // Turnstile tokens are single-use; force a re-solve after any rejection.
+        setTurnstileToken(null);
         setError(data.error || "Something went wrong");
         return;
       }
@@ -101,7 +120,7 @@ export function GradeForm() {
           <Button
             type="submit"
             size="lg"
-            disabled={loading || !url.trim()}
+            disabled={loading || !url.trim() || !turnstileReady}
             className="h-10 shrink-0 px-6 font-mono text-sm uppercase tracking-wide"
           >
             {loading ? "Grading..." : "Get my grade"}
@@ -110,6 +129,15 @@ export function GradeForm() {
         <p id={hintId} className="font-mono text-xs leading-relaxed text-muted-foreground">
           Public pages only. Use the CLI for logged-in flows.
         </p>
+        {TURNSTILE_SITE_KEY && (
+          <Turnstile
+            siteKey={TURNSTILE_SITE_KEY}
+            options={{ theme: "auto", size: "flexible" }}
+            onSuccess={(token) => setTurnstileToken(token)}
+            onError={() => setTurnstileToken(null)}
+            onExpire={() => setTurnstileToken(null)}
+          />
+        )}
       </form>
 
       {error && (

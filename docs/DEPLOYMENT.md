@@ -72,6 +72,39 @@ that read that page choose where to go next. Public + anonymous is a hostile env
       would revert the production Site URL fix (the 2026-07-31 auth-redirect bug). Fix
       `config.toml` to match the live dashboard values first if config-as-code is wanted.
 - [ ] Load/abuse check against the durable limiter + cap.
+- [ ] **CAPTCHA on the public grader — code-complete, pending keys.** Provision a
+      Cloudflare Turnstile widget and set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (all envs) and
+      `TURNSTILE_SECRET_KEY` (secret, prod) on the Vercel app. Unset = the gate is a no-op,
+      so shipping the code changes nothing until the keys land. See "Bot protection" below.
+- [ ] **Supabase "Confirm email" ON** (Authentication → Providers → Email). Nothing else
+      gates free-tier signup abuse on unverified emails.
+
+## Bot protection on the public grader (Cloudflare Turnstile)
+
+The free grader (`/api/grade`) is anonymous and axe-only (no model spend), but each call
+still queues a real Chromium crawl. A per-IP rate limit can't stop a botnet that mints
+fresh IPs, so promoting the grader publicly (Product Hunt, Reddit, SEO) without a bot gate
+invites scripted queue-saturation. Cloudflare Turnstile raises the cost of scripted abuse
+and is free, privacy-first, and usually invisible (no puzzle for real users).
+
+Wiring (already shipped, `web/src/lib/turnstile.ts` + `api/grade/route.ts` +
+`components/grade-form.tsx`):
+- Server verifies the token before url-guard runs, so a flood without a valid token never
+  reaches DNS resolution or the queue.
+- Env-gated + enforce-only-when-configured (same shape as `AUDIT_REQUIRE_EGRESS_PROXY`):
+  secret unset -> skip; secret set -> deny on missing/invalid token; Cloudflare/network
+  error -> **fail closed** (deny), because this is an abuse gate on a public compute
+  surface, not the availability rate limit.
+
+Provisioning (owner does this — the agent never holds the secret):
+1. Cloudflare dashboard -> Turnstile -> Add widget. Add the production hostname (and
+   `localhost` if you want it locally). Copy the **Site Key** (public) and **Secret Key**.
+2. Vercel -> the web project -> Settings -> Environment Variables:
+   - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` = site key, all environments.
+   - `TURNSTILE_SECRET_KEY` = secret key, Production (and Preview if you want it enforced
+     there), marked Sensitive.
+3. Redeploy. Verify: the grade form now shows the widget and a tokenless
+   `POST /api/grade` returns 403.
 
 ## Local development
 
