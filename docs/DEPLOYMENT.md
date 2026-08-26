@@ -55,7 +55,7 @@ that read that page choose where to go next. Public + anonymous is a hostile env
 - [x] `AUDIT_BROWSER_PROXY=http://127.0.0.1:4750` + `AUDIT_REQUIRE_EGRESS_PROXY=1` set on
       the worker host, and the worker redeployed with the smokescreen-enabled image
       (blocker 3 — DONE 2026-08-16, verified via `railway logs`).
-- [x] Supabase security advisors checked (2026-08-16, verified via the Supabase
+- [x] Supabase security advisors checked (2026-08-26, verified via the Supabase
       connector after the CLI hung): no schema WARN/ERROR remains. The current INFO lints
       are expected deny-by-default tables with RLS enabled and no client policies:
       `grader_scans` (read through the service-role capability-token API only),
