@@ -45,15 +45,37 @@ function requirePresent(key) {
   if (!present(key)) failures.push(`${key} is required`);
 }
 
+function redactedPlaceholder(key) {
+  return present(key) && env[key].trim() === "[SENSITIVE]";
+}
+
+function requireNotRedacted(key) {
+  if (redactedPlaceholder(key)) {
+    failures.push(`${key} is a redacted placeholder; store NEXT_PUBLIC_* values as non-sensitive config`);
+  }
+}
+
+function requireHttpsUrl(key) {
+  if (present(key) && !env[key].startsWith("https://")) {
+    failures.push(`${key} must be an https:// URL in production`);
+  }
+}
+
 if (prod) {
   requirePresent("NEXT_PUBLIC_SUPABASE_URL");
   requirePresent("NEXT_PUBLIC_SUPABASE_ANON_KEY");
   requirePresent("SUPABASE_SERVICE_ROLE_KEY");
   requirePresent("NEXT_PUBLIC_SITE_URL");
 
-  if (present("NEXT_PUBLIC_SITE_URL") && !env.NEXT_PUBLIC_SITE_URL.startsWith("https://")) {
-    failures.push("NEXT_PUBLIC_SITE_URL must be an https:// URL in production");
-  }
+  requireNotRedacted("NEXT_PUBLIC_SUPABASE_URL");
+  requireNotRedacted("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  requireNotRedacted("NEXT_PUBLIC_SITE_URL");
+  requireNotRedacted("NEXT_PUBLIC_SENTRY_DSN");
+  requireNotRedacted("NEXT_PUBLIC_TURNSTILE_SITE_KEY");
+
+  requireHttpsUrl("NEXT_PUBLIC_SUPABASE_URL");
+  requireHttpsUrl("NEXT_PUBLIC_SITE_URL");
+  requireHttpsUrl("NEXT_PUBLIC_SENTRY_DSN");
 }
 
 const hasTurnstileSiteKey = present("NEXT_PUBLIC_TURNSTILE_SITE_KEY");

@@ -23,9 +23,6 @@ jobs:
     if: ${{ github.event.inputs.confirm == 'deploy' }}
     runs-on: ubuntu-latest
     environment: production
-    defaults:
-      run:
-        working-directory: web
     env:
       # Vercel CLI reads these from the environment — never pass --token on argv (it leaks
       # into logs). Set all three in repo Settings → Secrets/Variables → Actions.
@@ -43,10 +40,10 @@ jobs:
       - name: Pull Vercel production env
         run: pnpm dlx vercel@latest pull --yes --environment=production
       - name: Check production env
-        run: node ../scripts/check-prod-env.mjs --prod --env-path .vercel/.env.production.local
+        run: node scripts/check-prod-env.mjs --prod --env-path .vercel/.env.production.local
       - name: Build
         run: pnpm dlx vercel@latest build --prod
       - name: Deploy prebuilt to production
         run: pnpm dlx vercel@latest deploy --prebuilt --prod
       - name: Smoke production
-        run: node ../scripts/prod-smoke.mjs
+        run: node scripts/prod-smoke.mjs

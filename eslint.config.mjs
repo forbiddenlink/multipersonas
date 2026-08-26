@@ -9,6 +9,7 @@ export default tseslint.config(
     // CLI + experiments/scripts, and never touches build output.
     ignores: [
       "dist/**",
+      ".vercel/**",
       "node_modules/**",
       "web/**",
       "worker/**",
