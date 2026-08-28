@@ -1,0 +1,20 @@
+{
+  "name": "multipersonas",
+  "context": "personal",
+  "ownerContext": "personal",
+  "kind": "tool",
+  "surface": "internal",
+  "lifecycle": "prototype",
+  "systems": ["solo-control-tower", "agent-tooling"],
+  "tags": ["anthropic", "eslint", "playwright", "vitest"],
+  "hosting": [],
+  "observability": [],
+  "automationLevel": "manual",
+  "confidentialContext": "secrets",
+  "allowedForCodex": false,
+  "urls": {
+    "repository": "https://github.com/forbiddenlink/multipersonas"
+  },
+  "lastReviewedAt": "2026-08-27",
+  "notes": "Protective catalog entry only. Root private env file detected; do not inspect with Codex until secrets boundary is removed."
+}
