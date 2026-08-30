@@ -37,6 +37,13 @@ rocket-vitals' job); an agent that **experiences** a site as different real-shap
 - "Credentials never leave your machine" — currently true only because behind-login
   scanning is CLI-only. Hosting it is an open architecture fork (see ADRs, TBD).
 
+- **No surface may claim hosted behind-login until it ships.** Behind-login is CLI-only.
+  Any page, paywall, or pitch implying the hosted product scans behind a login is false
+  today — and it is worst on the paywall, where it oversells to someone about to pay.
+  Known violation as of 2026-08-29: the Pro upsell. The one honest phrasing is: hosted
+  task-success on public flows, behind-login via CLI, hosted behind-login is what
+  founding purchases fund.
+
 ## Resolved 2026-07-27
 
 - **Opinion** — a persona LLM's labeled usability hypothesis (copy, trust, confusion).
@@ -61,3 +68,30 @@ rocket-vitals' job); an agent that **experiences** a site as different real-shap
   or store your password." Convenient; a session token is still a bearer credential
   (minimized, not zero-risk) — see ADR 0001.
 - **CLI / local** — fully local, credentials never leave the machine. For prod / sensitive.
+
+## Resolved 2026-08-29
+
+- **Public launch** — RETIRED as a term. It conflated two unrelated things: deploy
+  readiness (done — the product is already publicly reachable) and the Demand test
+  (not run). Neither needs a "launch": the Demand test is a warm-list ask, not a
+  traffic event. Say "Demand test" or name the specific infra item instead.
+
+- **Demand test** — the gate in ADR 0001 that must pass before hosted behind-login
+  scanning is built. It passes on **money actually charged**: agencies paying the
+  founding-tier price before the hosted pipeline exists. A free waitlist email does
+  **not** pass it — that measures interest, not willingness to pay, and a gate that
+  cannot fail is not a gate. Threshold: of ~15 agencies asked, **2 or more paying = the
+  wedge is real; zero = the wedge is wrong**, and the answer is the product, not the funnel.
+
+- **Founding tier** — the single offer the Demand test sells: the agency workspace at
+  one named price, paid before the hosted pipeline exists. Single-tier on purpose — the
+  sample is too small to split across offers. "Founding" is what licenses the price to
+  move later without breaking faith with early buyers.
+  It is sold as a **pre-order**: the buyer gets every hosted capability that exists today
+  and is told plainly that hosted behind-login does not yet exist, runs via CLI meanwhile,
+  and is what their purchase funds. Sold any other way the Demand test measures the
+  bundle rather than the one claim it exists to test.
+
+- **Auth need** — how many of a respondent's client sites require scanning behind a login.
+  Captured from buyers **and decliners**, because "we don't audit behind logins anyway"
+  and "$199 is too much" are opposite results that a raw yes/no cannot tell apart.

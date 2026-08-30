@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/for-agencies" },
   title: "For agencies — one audit trail for every client site",
   description:
-    "Personaudit walks every client site behind the login, runs axe-core at each state, and hands you the evidence report. Real audits, not an overlay widget. Early access for agencies.",
+    "Run axe-core at every state your client sites reach, including behind the login, without a client password ever leaving your machine. Evidence reports per client. Real audits, not an overlay widget.",
 };
 
 // Fictional client domains — illustrative, not real client sites.
@@ -23,6 +23,8 @@ const SITES = [
   { domain: "harborview-realty.com", status: "clean", note: "0 new · scanned 1h ago", ok: true },
   { domain: "atlas-freight.io", status: "1 finding", note: "contrast · dashboard", ok: false },
 ];
+
+const FOUNDING_CHECKOUT_URL = process.env.NEXT_PUBLIC_FOUNDING_CHECKOUT_URL;
 
 export default function ForAgenciesPage() {
   return (
@@ -45,10 +47,11 @@ export default function ForAgenciesPage() {
             Every client site is your liability now.
           </h1>
           <p className="fade-up mt-6 max-w-[52ch] text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "0.19s" }}>
-            Personaudit walks each client&apos;s site the way a real user does — behind the
-            login, through checkout — runs <span className="text-foreground">axe-core</span> at
-            every state it reaches, and hands you the evidence report. Not a widget bolted to
-            the page. An actual audit.
+            Personaudit runs <span className="text-foreground">axe-core</span> at every state
+            your client&apos;s site actually reaches, including behind the login and through
+            checkout, then hands you the evidence report. Authenticated scans run in the CLI,
+            so a client password never leaves your machine and never touches our servers.
+            Not a widget bolted to the page. An actual audit.
           </p>
           <div className="fade-up mt-9 flex flex-col gap-3 sm:flex-row sm:items-center" style={{ animationDelay: "0.26s" }}>
             <Link
@@ -330,25 +333,66 @@ mpersonas scan https://client.app --session ./session.json \\
         <div className="mx-auto grid w-full max-w-6xl gap-12 px-6 py-20 sm:py-28 lg:grid-cols-[1fr_1fr] lg:gap-16">
           <Reveal>
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Early access
+              Founding access
             </p>
             <h2 className="mt-4 font-heading text-[clamp(1.9rem,4vw,3rem)] leading-tight text-balance">
-              Help shape the agency workspace.
+              $199 a month. One price, no sales call.
             </h2>
             <p className="mt-5 text-lg text-muted-foreground">
-              The engine is live — free public scans on the web, behind-login scanning via
-              the CLI (credentials stay on your machine), multi-site projects with
-              new/cleared regression vs the last run, and a verdicts-only compliance report
-              you can white-label with your agency name and print to PDF.
+              Every client site you ship, one workspace. Multi-site projects with new and
+              cleared findings against the last run, scheduled re-scans, a CI gate your devs
+              can&apos;t merge past, and a verdicts-only compliance report you white-label
+              with your agency name and hand to the client.
             </p>
-            <p className="mt-4 text-muted-foreground">
-              Join early if you ship many client sites under ADA / EAA pressure. Tell us how
-              you&apos;d use it — scheduled re-scans are next on the list for agencies who
-              raise their hand.
+
+            {/* Honest pre-order boundary (ADR 0002). Hosted behind-login does NOT exist:
+                /api/audit takes a URL, and no storageState handling exists in web/. Say so
+                here, plainly, on the surface where someone decides to pay. */}
+            <div className="mt-6 rounded-sm border border-border bg-background p-5">
+              <p className="font-mono text-xs uppercase tracking-wide text-[var(--primary)]">
+                What is and isn&apos;t built
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Behind-login scanning runs in the <span className="text-foreground">CLI</span>{" "}
+                today. Your client&apos;s password never leaves your machine, which is the
+                whole point, and it is the part enterprise crawlers get wrong. Running those
+                scans <span className="text-foreground">hosted</span> is not built yet. It is
+                what founding access funds.
+              </p>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                You are paying before that ships. We would rather say that than sell you a
+                screenshot of it. If we never build it, you get your money back.
+              </p>
+            </div>
+
+            <p className="mt-6 text-muted-foreground">
+              Founding price is locked for as long as you stay. It goes up for everyone after.
             </p>
           </Reveal>
           <Reveal delay={80}>
-            <WaitlistForm />
+            {FOUNDING_CHECKOUT_URL ? (
+              <div className="rounded-sm border border-border bg-background p-6">
+                <p className="font-heading text-2xl tracking-tight">Start founding access</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  $199 per month, cancel any time. Takes about a minute.
+                </p>
+                <a
+                  href={FOUNDING_CHECKOUT_URL}
+                  className="mt-5 inline-flex w-full items-center justify-center rounded-sm bg-foreground px-6 py-3 text-sm font-semibold text-background transition-[background-color] hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                >
+                  Get founding access — $199/mo
+                </a>
+                <p className="mt-6 border-t border-border pt-5 text-sm text-muted-foreground">
+                  Not ready to commit? Tell us what would change that. A no is as useful to us
+                  as a yes, and more honest than silence.
+                </p>
+                <div className="mt-4">
+                  <WaitlistForm />
+                </div>
+              </div>
+            ) : (
+              <WaitlistForm />
+            )}
           </Reveal>
         </div>
       </section>

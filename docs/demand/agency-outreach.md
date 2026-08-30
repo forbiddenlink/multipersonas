@@ -1,10 +1,23 @@
 # Agency demand campaign — Personaudit
 
-Goal: get real agency yeses (waitlist + replies) before more Phase B infra
-(hosted session artifact, Stripe). Target: **10 outreaches in 7 days**, measure
-signups on `/for-agencies` and waitlist rows.
+Updated 2026-08-29 to match **ADR 0002**. The ask is now a **paid pre-order**, not a
+waitlist signup. A free email cannot fail, so it was not a gate.
 
-Landing: https://personaudit.com/for-agencies  
+Goal: find out whether the agency wedge is real before building the hosted
+session-artifact pipeline (ADR 0001).
+
+- **Ask:** $199/mo founding tier, via a Stripe **Payment Link**. No checkout build.
+- **Target:** ~15 agencies.
+- **Pass:** 2 or more pay. **Fail:** zero pay, and the answer is the product, not the funnel.
+- **Also capture, from buyers AND decliners:** how many of their client sites sit behind a
+  login (*Auth need*), and whether they would rather run those scans **locally** or hand us
+  a session. That second answer decides whether ADR 0001 gets built at all, so do not skip
+  it on a no. A "we would never upload a client session" is a finding, not a rejection.
+
+Landing: https://personaudit.com/for-agencies
+Checkout: set `NEXT_PUBLIC_FOUNDING_CHECKOUT_URL` on Vercel to the Stripe Payment Link.
+Until it is set, the page shows the waitlist form alone and no one can pay.
+Fulfilment: manual, `docs/pro-access.md` (`update public.profiles set plan = 'pro'`).
 Owner signal: `/waitlist` (set `ADMIN_EMAILS` on Vercel to your login email).
 
 ---
@@ -23,13 +36,15 @@ clients if you already ship sites for them.
 
 ## LinkedIn DM (short)
 
-> Hi {Name} — I built Personaudit for agencies juggling many client sites under
-> ADA/EAA pressure. It runs axe-core at every state a persona reaches (including
-> behind login via CLI), exports a verdicts-only compliance report, and tracks
-> projects per client. Not an overlay.
+> Hi {Name}, I built Personaudit for agencies juggling many client sites under ADA/EAA
+> pressure. It runs axe-core at every state a persona reaches, exports a verdicts-only
+> compliance report, and tracks projects per client. Behind-login scans run in the CLI, so
+> a client password never leaves your machine. Not an overlay.
 >
-> Early access is open: https://personaudit.com/for-agencies
-> Curious whether multi-site + client reports would fit how you ship.
+> Founding access is $199/mo: https://personaudit.com/for-agencies
+>
+> Even if it's a no, one thing would help me: how many of your client sites sit behind a
+> login, and would you rather scan those locally or hand a session to a hosted tool?
 
 ---
 
@@ -47,12 +62,19 @@ clients if you already ship sites for them.
 > Behind-login stays on your machine via the CLI. Hosted public scans are free to try.
 >
 > If you ship multiple client sites and need something between free DIY and a $25k
-> enterprise monitor, join early access:
+> enterprise monitor, founding access is $199/mo:
 > https://personaudit.com/for-agencies
+>
+> Straight about where it stands: hosted behind-login isn't built. That runs in the CLI
+> today, which is also why your client's password never touches my servers. Founding
+> access is what funds the hosted version, and if I don't build it you get your money back.
 >
 > Happy to jump on a 15-min call and scan one of your staging sites.
 >
-> — Elizabeth
+> Two questions I'd value even if this is a no: how many of your client sites sit behind a
+> login, and would you rather run those scans locally or hand a session to a hosted tool?
+>
+> Elizabeth
 
 ---
 

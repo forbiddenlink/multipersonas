@@ -178,15 +178,24 @@ export function WaitlistForm() {
           htmlFor={noteId}
           className="block font-mono text-xs uppercase tracking-wide text-muted-foreground"
         >
-          What would make this a no-brainer for you?{" "}
+          How many client sites sit behind a login?{" "}
           <span className="normal-case font-sans text-muted-foreground">(optional)</span>
         </label>
+        {/* This field carries the two answers the demand test exists to get (ADR 0002):
+            "Auth need" (how much of their work is authenticated at all) and the
+            local-vs-hosted preference that decides whether ADR 0001's hosted pipeline is
+            worth building. Asked as free text on the existing `note` column on purpose:
+            no migration, no schema change, same signal. */}
+        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+          And would you rather run those scans locally, where a client password never leaves
+          your machine, or hand us a short-lived session and let us run them?
+        </p>
         <textarea
           id={noteId}
           name="note"
           rows={3}
           maxLength={500}
-          placeholder="e.g. one report I can white-label per client, scheduled monthly re-scans, a CI check my devs can't ignore…"
+          placeholder="e.g. 6 of 12 sites, mostly checkout and account dashboards. Local only, our clients would never let us upload their session."
           className="mt-2 w-full resize-y rounded-sm border border-input bg-background px-4 py-3 text-base md:text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         />
       </div>
