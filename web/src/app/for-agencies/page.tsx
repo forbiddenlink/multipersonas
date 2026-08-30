@@ -335,8 +335,12 @@ mpersonas scan https://client.app --session ./session.json \\
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
               Founding access
             </p>
+            {/* Never advertise a price with no way to pay. Until the Payment Link is set
+                on Vercel, this reads as early access and the waitlist form is the only ask. */}
             <h2 className="mt-4 font-heading text-[clamp(1.9rem,4vw,3rem)] leading-tight text-balance">
-              $199 a month. One price, no sales call.
+              {FOUNDING_CHECKOUT_URL
+                ? "$199 a month. One price, no sales call."
+                : "Help shape the agency workspace."}
             </h2>
             <p className="mt-5 text-lg text-muted-foreground">
               Every client site you ship, one workspace. Multi-site projects with new and
@@ -366,7 +370,9 @@ mpersonas scan https://client.app --session ./session.json \\
             </div>
 
             <p className="mt-6 text-muted-foreground">
-              Founding price is locked for as long as you stay. It goes up for everyone after.
+              {FOUNDING_CHECKOUT_URL
+                ? "Founding price is locked for as long as you stay. It goes up for everyone after."
+                : "Founding access opens shortly. Leave your email and I'll send you the link first."}
             </p>
           </Reveal>
           <Reveal delay={80}>
