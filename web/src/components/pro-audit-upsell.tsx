@@ -5,6 +5,13 @@ import Link from "next/link";
  * otherwise render. The hosted audit (`/api/audit`) is Pro; a free user submitting the
  * real form only earns a 402, so present the boundary up front instead — point them at
  * the free axe grade and a no-Stripe "Request Pro" contact (docs/pro-access.md).
+ *
+ * HONESTY BOUNDARY (CONTEXT.md, ADR 0002): the hosted audit takes a URL only —
+ * `/api/audit` accepts `{ url, personaIds, projectId }` and no credentials, and no
+ * storageState handling exists anywhere in `web/`. This copy must never imply the
+ * HOSTED product scans behind a login. Behind-login is CLI-only until the ADR 0001
+ * pipeline ships. Selling the unbuilt capability here is worst of all, because this is
+ * the surface someone reads while deciding to pay.
  */
 export function ProAuditUpsell() {
   const supportHref = process.env.NEXT_PUBLIC_SUPPORT_EMAIL
@@ -18,10 +25,14 @@ export function ProAuditUpsell() {
         The hosted persona audit is a Pro feature.
       </p>
       <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-muted-foreground">
-        Task-success personas walk a real-shaped user through your flows behind the login —
-        the one thing a crawler can&apos;t measure. Free accounts get the deterministic
-        axe-core grade: run one on any public URL, or request Pro to unlock hosted persona
-        runs.
+        Task-success personas walk a real-shaped user through your public flows and report
+        whether they actually finished the job. A crawler can&apos;t measure that. Free
+        accounts get the deterministic axe-core grade on any public URL.
+      </p>
+      <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
+        Scanning behind a login runs in the CLI today, where your client&apos;s credentials
+        never leave your machine. Hosted behind-login is what founding access funds. We
+        won&apos;t sell it as shipped before it is.
       </p>
       <div className="mt-4 flex flex-wrap gap-3">
         <Link

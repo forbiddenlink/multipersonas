@@ -45,13 +45,14 @@ export default function Home() {
             {/* No entrance animation on the headline: it's the LCP element, so it must
                 paint immediately rather than fade in from opacity:0. */}
             <h1 className="mt-6 text-[clamp(2.4rem,5.5vw,3.75rem)] font-bold leading-[1.03] tracking-tight text-balance">
-              Scan the pages a crawler can&apos;t reach.
+              Scan behind the login. The password stays on your machine.
             </h1>
             <p className="fade-up mt-5 max-w-xl font-serif text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "0.19s" }}>
-              Personaudit crawls your site with a saved session — through checkout, dashboards, and
-              multi-step flows a page-level scanner never reaches — and runs{" "}
-              <strong className="font-medium text-foreground not-italic">axe-core</strong> at every state.
-              Behind-login scanning runs from the CLI, so your credentials never leave your machine.
+              Every SaaS scanner that audits your checkout wants your client&apos;s login first.
+              Personaudit crawls with a saved session from your own machine, through checkout,
+              dashboards, and multi-step flows a page-level scanner never reaches, and runs{" "}
+              <strong className="font-medium text-foreground not-italic">axe-core</strong> at every
+              state it lands on. Nothing to hand over.
             </p>
             <div className="fade-up mt-8 flex flex-col gap-3 sm:flex-row sm:items-center" style={{ animationDelay: "0.26s" }}>
               <Link
@@ -73,7 +74,7 @@ export default function Home() {
             <AuditTerminal />
             <p className="mt-3 flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
               <span className="inline-block size-1.5 rounded-full bg-[var(--primary)] motion-safe:animate-pulse" aria-hidden="true" />
-              a persona is walking a checkout behind login — this is the actual instrument, not a mockup
+              a persona walking a checkout behind login in the CLI. the actual instrument, not a mockup
             </p>
           </div>
         </div>
@@ -94,9 +95,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* The free entry — a public grade anyone can run (axe-core, no signup). The
-          behind-login persona audit is the Pro layer, linked below; the CLI runs the
-          full crawl free. Keeps the landing's promise honest: what's here is free. */}
+      {/* The free entry — a public grade anyone can run (axe-core, no signup). Pro unlocks
+          the HOSTED persona audit, which is public-URL only (/api/audit takes
+          { url, personaIds, projectId } and no credentials). Behind-login belongs to the
+          CLI, which runs the full crawl free. Do not conflate the two in copy. */}
       <section id="scan" className="border-y border-border bg-card px-6 py-16">
         <div className="mx-auto max-w-3xl">
           <p className="mb-6 font-mono text-xs text-muted-foreground">
