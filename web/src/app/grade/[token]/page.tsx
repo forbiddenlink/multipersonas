@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { GradeOfferLink } from "@/components/grade-offer-link";
 import { notFound } from "next/navigation";
 import { getGraderScan } from "@/lib/grade";
 import { buttonVariants } from "@/components/ui/button";
@@ -270,9 +271,9 @@ function GradeReportView({
           <Link href="/guides/screen-reader-testing" className={buttonVariants({ variant: "outline", size: "sm" })}>
             Manual testing guide
           </Link>
-          <Link href="/for-agencies" className={buttonVariants({ variant: "outline", size: "sm" })}>
-            Agency workspace &amp; scheduled scans
-          </Link>
+          <GradeOfferLink className={buttonVariants({ variant: "outline", size: "sm" })}>
+            Scan behind the login
+          </GradeOfferLink>
         </div>
       </div>
     </div>
