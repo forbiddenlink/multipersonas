@@ -24,6 +24,30 @@ const SITES = [
   { domain: "atlas-freight.io", status: "1 finding", note: "contrast · dashboard", ok: false },
 ];
 
+// The buyer's plan, not the tool's steps: what the first week actually looks like.
+// Every claim here must be something that runs today. The one gap (hosted behind-login)
+// is named as the gap, because it is what founding access funds.
+const FIRST_WEEK: { when: string; title: string; body: string }[] = [
+  {
+    when: "day one",
+    title: "Point it at one real client site",
+    body:
+      "Save a browser session on your own machine, then run the CLI against the logged-in app: checkout, dashboard, the multi-step flows a page scanner never reaches. The client's password never leaves your laptop, and nothing gets installed on their server.",
+  },
+  {
+    when: "day two",
+    title: "Put the gate in their pipeline",
+    body:
+      "Drop the CI check into that client's repo so a new violation fails the build instead of shipping to their users. The scan takes no API key, so it runs in CI without a secret to rotate.",
+  },
+  {
+    when: "day three",
+    title: "Hand over the evidence",
+    body:
+      "The CLI writes a Markdown report from the behind-login run. The hosted workspace exports a verdicts-only VPAT-lite report under your agency's name. Joining those two, so the behind-login run lands in the hosted report, is exactly what founding access funds.",
+  },
+];
+
 const FOUNDING_CHECKOUT_URL = process.env.NEXT_PUBLIC_FOUNDING_CHECKOUT_URL;
 
 export default function ForAgenciesPage() {
@@ -326,6 +350,32 @@ mpersonas scan https://client.app --session ./session.json \\
             </p>
           </div>
         </Reveal>
+      </section>
+
+      {/* ── The plan: three steps, in the buyer's terms, not the tool's ─── */}
+      <section className="mx-auto w-full max-w-6xl px-6 pb-20 sm:pb-28">
+        <Reveal>
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            Your first week
+          </p>
+          <h2 className="mt-4 max-w-2xl font-heading text-[clamp(1.8rem,3.6vw,2.75rem)] leading-tight text-balance">
+            Three steps to a report you can put in front of a client.
+          </h2>
+        </Reveal>
+        <ol className="mt-12 grid gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-3">
+          {FIRST_WEEK.map((step, i) => (
+            <li key={step.title} className="bg-background">
+              <Reveal delay={i * 80} className="h-full p-6">
+                <p className="font-mono text-xs text-[var(--primary)]">
+                  <span className="select-none tabular-nums">{`0${i + 1} · `}</span>
+                  {step.when}
+                </p>
+                <p className="mt-3 font-heading text-lg leading-snug">{step.title}</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
+              </Reveal>
+            </li>
+          ))}
+        </ol>
       </section>
 
       {/* ── Early access / waitlist ────────────────────────────────────── */}
