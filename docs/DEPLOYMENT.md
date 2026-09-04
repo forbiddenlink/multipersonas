@@ -7,6 +7,22 @@ remaining public-launch risks are Turnstile production keys and Supabase Auth da
 settings, not application code. Snapshot updated 2026-08-26.
 See `docs/PLAN-2026-07-26-phase2-deploy-infra.md`.
 
+## Deploy model: a push to `main` is live
+
+Vercel's git integration deploys `main` to production automatically (reconnected
+2026-08-02, `docs/audit-2026-08-02.md`). **There is no human gate between a merge and
+production.** Treat every merge to `main` as a production release.
+
+Two consequences worth holding onto:
+
+- `.github/workflows/deploy-prod.yml` is not a gate, and its name ("manual") describes only
+  its own trigger. It is the *verified* deploy path: it runs `scripts/check-prod-env.mjs`
+  and `scripts/prod-smoke.mjs`, which the automatic git-integration deploy skips. Reach for
+  it after an env change or to confirm prod health, not to control what ships.
+- `.github/workflows/dependabot-automerge.yml` squash-merges patch and minor dependency PRs
+  once CI is green, so those reach production unattended. The guard is the cooldown in
+  `.github/dependabot.yml` (patch 3 days, minor 7, major 30) plus the CI gate, not review.
+
 ## Architecture (the worker split — BUILT)
 
 ```
@@ -152,6 +168,7 @@ Expected production env names (presence only; never print values):
 - Vercel: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
   `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SENTRY_DSN`,
   `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`, `ADMIN_EMAILS`,
+  `CRON_SECRET`,
   `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`,
   `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`.
 - Railway worker: `SUPABASE_URL` or `NEXT_PUBLIC_SUPABASE_URL`,

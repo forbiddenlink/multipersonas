@@ -1,9 +1,14 @@
 name: Deploy production (manual)
 
-# Deliberately NOT on: push. Production ships on an explicit human action, preserving the
-# "a push to main is not live until someone deploys" property. This just moves that deploy
-# off a single laptop and into a reproducible, reviewable CI run. Add required reviewers to
-# the `production` environment (repo Settings → Environments) to gate it behind sign-off.
+# ⚠️ THIS IS NOT A GATE. A push to `main` IS live: Vercel's git integration deploys it
+# automatically (reconnected 2026-08-02, see docs/audit-2026-08-02.md). An earlier version of
+# this comment claimed "a push to main is not live until someone deploys" — that was true
+# before the reconnect and is false now. Do not read this workflow as protecting production.
+#
+# What it is instead: the *verified* deploy path. The git-integration deploy skips
+# scripts/check-prod-env.mjs and scripts/prod-smoke.mjs; this run does both. Use it to
+# re-deploy deliberately after an env change, or to confirm prod is healthy. Adding required
+# reviewers to the `production` environment gates THIS path only — it cannot gate a push.
 on:
   workflow_dispatch:
     inputs:
