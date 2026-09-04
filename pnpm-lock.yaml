@@ -36,6 +36,9 @@ importers:
       commander:
         specifier: ^15.0.0
         version: 15.0.0
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
       ora:
         specifier: ^9.4.1
         version: 9.4.1
