@@ -24,7 +24,7 @@ export default function TermsPage() {
   return (
     <MarketingShell>
       <h1 className="text-2xl font-semibold tracking-tight font-heading">Terms of Service</h1>
-      <p className="mt-2 text-xs text-muted-foreground">Last updated: 2 August 2026.</p>
+      <p className="mt-2 text-xs text-muted-foreground">Last updated: 4 September 2026.</p>
 
       <div className="mt-6 space-y-3 text-sm text-muted-foreground">
         <p>
@@ -61,6 +61,39 @@ export default function TermsPage() {
             personas and are opinion: they may contain inaccuracies and are not authoritative for
             accessibility compliance. Do not rely on persona findings as the sole basis for
             compliance decisions, and verify results before acting on them.
+          </p>
+        </Section>
+
+        <Section title="Founding access: billing, cancellation, and refunds">
+          <p>
+            Founding access is a{" "}
+            <strong className="text-foreground">paid pre-order</strong> at $199 per month,
+            billed monthly through Stripe until you cancel. The founding price stays fixed for
+            as long as the subscription runs continuously.
+          </p>
+          <p>
+            <strong className="text-foreground">What you are buying, plainly.</strong> You get
+            every hosted capability that exists today: multi-site projects, new-versus-cleared
+            findings against the previous run, scheduled re-scans, the CI gate, and the
+            white-labelled verdicts-only report. Running authenticated, behind-login scans{" "}
+            <em>hosted</em> is not built yet. It runs in the CLI meanwhile, and it is what
+            founding access funds. You are paying before that ships, and we would rather say so
+            here than let you find out later.
+          </p>
+          <p>
+            <strong className="text-foreground">Cancellation.</strong> You can cancel at any
+            time. Cancelling stops future charges and access continues to the end of the period
+            you have already paid for. We do not pro-rate a partial month by default.
+          </p>
+          <p>
+            <strong className="text-foreground">Refund commitment.</strong> If hosted
+            behind-login scanning is never delivered, you get every dollar you paid for founding
+            access back, on request, with no time limit and no argument. That is the obligation
+            attached to selling a capability before it exists. Ask for it at{" "}
+            <a href="mailto:hello@personaudit.com" className={focusLink}>
+              hello@personaudit.com
+            </a>{" "}
+            and we will process it.
           </p>
         </Section>
 

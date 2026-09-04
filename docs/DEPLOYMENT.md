@@ -108,6 +108,41 @@ that read that page choose where to go next. Public + anonymous is a hostile env
       so review/apply the generated `.railway/railway.ts` before that date instead of
       accepting the migration blindly.
 
+## Founding tier payment link (ADR 0002 demand test)
+
+The demand test cannot run until this exists. Verified 2026-09-04: the live Stripe account
+has **zero payment links and no Personaudit product**, and
+`NEXT_PUBLIC_FOUNDING_CHECKOUT_URL` is unset in Vercel production, so `/for-agencies`
+renders the waitlist fallback instead of the $199 offer. Terms of Service now carries the
+billing, cancellation and refund section that ADR 0002 requires; do not create the link
+before that is deployed.
+
+1. **Stripe → Product catalogue → Add product.** Name it for the buyer, not the repo (the
+   name appears on the checkout page and the card statement). Add a recurring price:
+   **$199.00 USD, monthly**. One tier only, per ADR 0002.
+2. **Stripe → Payment links → Create.** Select that price. Then:
+   - Quantity adjustment **off**. One subscription per agency.
+   - Add a **custom field** capturing *Auth need*: how many client sites need scanning
+     behind a login. ADR 0002 requires this from buyers, because "we don't audit behind
+     logins anyway" and "$199 is too much" are opposite findings that a bare yes/no cannot
+     separate. Ask decliners the same question by hand.
+   - Set the **terms of service URL** to `https://personaudit.com/terms` so the refund
+     commitment is attached to the purchase rather than living only in marketing copy.
+3. **Enable the Stripe customer portal** (Settings → Billing → Customer portal, allow
+   subscription cancellation). `/for-agencies` promises "cancel any time"; without the
+   portal that promise resolves to emailing a human, which is not the same thing.
+4. **Copy the `https://buy.stripe.com/...` URL** into Vercel as
+   `NEXT_PUBLIC_FOUNDING_CHECKOUT_URL` (production, and preview if you want to click it on
+   a preview deploy first).
+5. **Redeploy.** ⚠️ This is read at module scope in a server component
+   (`web/src/app/for-agencies/page.tsx`), so saving the variable in Vercel changes nothing
+   until a new build runs. Use the `Deploy production (manual)` workflow, which also runs
+   the prod env check and smoke test.
+6. **Verify:** `/for-agencies` shows "$199 a month. One price, no sales call." and the
+   "Get founding access" button, and a click fires `founding_checkout_clicked` in PostHog.
+   That event is the denominator the demand test reads against, so confirm it lands before
+   sending any of the 15 messages.
+
 ## Bot protection on the public grader (Cloudflare Turnstile)
 
 The free grader (`/api/grade`) is anonymous and axe-only (no model spend), but each call
