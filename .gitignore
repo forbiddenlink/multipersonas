@@ -28,3 +28,7 @@ mpersonas-report/
 # workspace members share the root lockfile
 web/pnpm-lock.yaml
 worker/pnpm-lock.yaml
+
+# Claude Code local state: build cache and editor launch config, not project source.
+.claude/tsc-cache/
+.claude/launch.json
