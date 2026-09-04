@@ -12,6 +12,7 @@ vi.mock("@/lib/supabase/admin", () => ({
 
 describe("POST /api/schedules/run-due", () => {
   let POST: (req: Request) => Promise<Response>;
+  let GET: (req: Request) => Promise<Response>;
   const originalSecret = process.env.CRON_SECRET;
 
   beforeEach(async () => {
@@ -21,15 +22,16 @@ describe("POST /api/schedules/run-due", () => {
     mockRpc.mockResolvedValue({ data: [{ schedule_id: "schedule-1", job_id: "job-1" }], error: null });
     const mod = await import("@/app/api/schedules/run-due/route");
     POST = mod.POST;
+    GET = mod.GET;
   });
 
   afterEach(() => {
     process.env.CRON_SECRET = originalSecret;
   });
 
-  function request(secret = "test-cron-secret") {
+  function request(secret = "test-cron-secret", method = "POST") {
     return new Request("http://localhost/api/schedules/run-due", {
-      method: "POST",
+      method,
       headers: { authorization: `Bearer ${secret}` },
     });
   }
@@ -47,6 +49,14 @@ describe("POST /api/schedules/run-due", () => {
       enqueued: 1,
       jobs: [{ schedule_id: "schedule-1", job_id: "job-1" }],
     });
+    expect(mockRpc).toHaveBeenCalledWith("enqueue_due_project_scan_schedules", {
+      p_limit: 25,
+    });
+  });
+
+  it("accepts Vercel's authenticated GET cron invocation", async () => {
+    const res = await GET(request("test-cron-secret", "GET"));
+    expect(res.status).toBe(200);
     expect(mockRpc).toHaveBeenCalledWith("enqueue_due_project_scan_schedules", {
       p_limit: 25,
     });

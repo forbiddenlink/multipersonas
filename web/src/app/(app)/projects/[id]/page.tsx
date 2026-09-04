@@ -218,7 +218,7 @@ export default async function ProjectDetailPage({
             </p>
           </div>
           <p className="font-mono text-xs text-muted-foreground">
-            runner: {scheduleRunnerConfigured ? "configured" : "needs CRON_SECRET + scheduled POST"}
+            runner: {scheduleRunnerConfigured ? "configured" : "needs CRON_SECRET + scheduled runner"}
           </p>
           <SubmitButton variant="outline" size="sm">Save schedule</SubmitButton>
         </form>

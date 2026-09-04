@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+async function runDueSchedules(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
     return NextResponse.json(
@@ -41,3 +41,6 @@ export async function POST(request: Request) {
     jobs: data ?? [],
   });
 }
+
+export const GET = runDueSchedules;
+export const POST = runDueSchedules;

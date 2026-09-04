@@ -78,6 +78,7 @@ if (prod) {
   requirePresent("NEXT_PUBLIC_SUPABASE_ANON_KEY");
   requirePresent("SUPABASE_SERVICE_ROLE_KEY");
   requirePresent("NEXT_PUBLIC_SITE_URL");
+  requirePresent("CRON_SECRET");
 
   requireNotRedacted("NEXT_PUBLIC_SUPABASE_URL");
   requireNotRedacted("NEXT_PUBLIC_SUPABASE_ANON_KEY");
