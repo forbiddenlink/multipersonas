@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { killSwitchEnabled, DAILY_MODEL_CALL_CAP, CALLER_DAILY_CALL_CAP, CALLS_PER_PERSONA } from "@/lib/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,13 @@ async function runDueSchedules(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  if (killSwitchEnabled()) {
+    return NextResponse.json(
+      { error: "Audits are temporarily unavailable. Please try again later." },
+      { status: 503, headers: { "Retry-After": "3600" } },
+    );
+  }
+
   const admin = createAdminClient();
   if (!admin) {
     return NextResponse.json(
@@ -27,6 +35,9 @@ async function runDueSchedules(request: Request) {
 
   const { data, error } = await admin.rpc("enqueue_due_project_scan_schedules", {
     p_limit: 25,
+    p_daily_cap: DAILY_MODEL_CALL_CAP,
+    p_caller_cap: CALLER_DAILY_CALL_CAP,
+    p_calls_per_persona: CALLS_PER_PERSONA,
   });
 
   if (error) {

@@ -32,3 +32,8 @@ worker/pnpm-lock.yaml
 # Claude Code local state: build cache and editor launch config, not project source.
 .claude/tsc-cache/
 .claude/launch.json
+
+# Local Playwright login cookies and browser-test artifacts.
+web/tests/e2e/.auth/
+web/test-results/
+web/playwright-report/

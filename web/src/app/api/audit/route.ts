@@ -31,7 +31,11 @@ export async function POST(request: Request) {
 
   let body: { url?: string; personaIds?: unknown; projectId?: unknown };
   try {
-    body = await request.json();
+    const parsed: unknown = await request.json();
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+    body = parsed;
   } catch {
     return NextResponse.json(
       { error: "Invalid JSON body" },
@@ -130,6 +134,12 @@ export async function POST(request: Request) {
   const rateLimitType = user ? "authenticated" : "anonymous";
 
   const rateLimit = await consumeRateLimit(rateLimitKey, rateLimitType);
+  if (rateLimit.unavailable) {
+    return NextResponse.json(
+      { error: "This service is temporarily unavailable. Please try again shortly." },
+      { status: 503, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } },
+    );
+  }
   if (!rateLimit.allowed) {
     const message = user
       ? "You've reached the audit limit (5 per 10 minutes). Please wait and try again."

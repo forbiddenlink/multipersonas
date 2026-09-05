@@ -1,0 +1,1616 @@
+{
+  "source": "/Volumes/LizsDisk/_reference/audit-prompt-pack.html",
+  "date": "2026-09-04",
+  "scope": "Bounded evidence and applicability, not a claim every checkbox passed. Production evidence and user data boundaries limit completion.",
+  "prompts": [
+    {
+      "id": "ctx",
+      "phase": "Setup",
+      "title": "Master context block",
+      "status": "reviewed",
+      "result": "Scoped personal SaaS CLI/web/worker; extracted pack without executing it, used grounded source review, red-green regressions and independent skeptical review. Broad precheck scripts were not run against secret files.",
+      "evidence": [
+        "package.json",
+        "web/package.json",
+        "worker/package.json",
+        "docs/audit-2026-09-04.md"
+      ]
+    },
+    {
+      "id": "workflow",
+      "phase": "Setup",
+      "title": "How to run this pack (agent workflow)",
+      "status": "reviewed",
+      "result": "Scoped personal SaaS CLI/web/worker; extracted pack without executing it, used grounded source review, red-green regressions and independent skeptical review. Broad precheck scripts were not run against secret files.",
+      "evidence": [
+        "package.json",
+        "web/package.json",
+        "worker/package.json",
+        "docs/audit-2026-09-04.md"
+      ]
+    },
+    {
+      "id": "viability",
+      "phase": "Viability & fit",
+      "title": "Project viability \u2014 what is this, and is it worth continuing?",
+      "status": "requires_owner_evidence",
+      "result": "Market demand, customer research, financial evidence and launch strategy cannot be established from source code or synthetic tests. No market-validation or revenue-readiness claim.",
+      "evidence": [
+        "docs/pro-access.md",
+        "web/src/lib/entitlements.ts"
+      ]
+    },
+    {
+      "id": "sellable",
+      "phase": "Viability & fit",
+      "title": "Sellability \u2014 as a product, and as an asset",
+      "status": "requires_owner_evidence",
+      "result": "Market demand, customer research, financial evidence and launch strategy cannot be established from source code or synthetic tests. No market-validation or revenue-readiness claim.",
+      "evidence": [
+        "docs/pro-access.md",
+        "web/src/lib/entitlements.ts"
+      ]
+    },
+    {
+      "id": "makesellable",
+      "phase": "Viability & fit",
+      "title": "Make it sellable \u2014 the gap-closing plan",
+      "status": "requires_owner_evidence",
+      "result": "Market demand, customer research, financial evidence and launch strategy cannot be established from source code or synthetic tests. No market-validation or revenue-readiness claim.",
+      "evidence": [
+        "docs/pro-access.md",
+        "web/src/lib/entitlements.ts"
+      ]
+    },
+    {
+      "id": "demand-validation",
+      "phase": "Viability & fit",
+      "title": "New idea demand validation & build-vs-skip",
+      "status": "requires_owner_evidence",
+      "result": "Market demand, customer research, financial evidence and launch strategy cannot be established from source code or synthetic tests. No market-validation or revenue-readiness claim.",
+      "evidence": [
+        "docs/pro-access.md",
+        "web/src/lib/entitlements.ts"
+      ]
+    },
+    {
+      "id": "dd-readiness",
+      "phase": "Viability & fit",
+      "title": "Acquisition & due-diligence readiness",
+      "status": "requires_owner_evidence",
+      "result": "Market demand, customer research, financial evidence and launch strategy cannot be established from source code or synthetic tests. No market-validation or revenue-readiness claim.",
+      "evidence": [
+        "docs/pro-access.md",
+        "web/src/lib/entitlements.ts"
+      ]
+    },
+    {
+      "id": "ux",
+      "phase": "Product quality",
+      "title": "UX flow audit",
+      "status": "deferred_to_claude",
+      "result": "User instructions route user-facing taste, copy and product/API design to Claude. Mechanical functional/accessibility defects are covered separately; no taste redesign performed.",
+      "evidence": [
+        "web/src/app/page.tsx",
+        "web/src/app/for-agencies/page.tsx",
+        "web/public/llms.txt"
+      ]
+    },
+    {
+      "id": "design",
+      "phase": "Product quality",
+      "title": "Design quality and anti-template audit",
+      "status": "deferred_to_claude",
+      "result": "User instructions route user-facing taste, copy and product/API design to Claude. Mechanical functional/accessibility defects are covered separately; no taste redesign performed.",
+      "evidence": [
+        "web/src/app/page.tsx",
+        "web/src/app/for-agencies/page.tsx",
+        "web/public/llms.txt"
+      ]
+    },
+    {
+      "id": "design-research",
+      "phase": "Product quality",
+      "title": "Design research and direction for this specific product",
+      "status": "deferred_to_claude",
+      "result": "User instructions route user-facing taste, copy and product/API design to Claude. Mechanical functional/accessibility defects are covered separately; no taste redesign performed.",
+      "evidence": [
+        "web/src/app/page.tsx",
+        "web/src/app/for-agencies/page.tsx",
+        "web/public/llms.txt"
+      ]
+    },
+    {
+      "id": "writing",
+      "phase": "Product quality",
+      "title": "Writing quality and AI slop detection",
+      "status": "deferred_to_claude",
+      "result": "User instructions route user-facing taste, copy and product/API design to Claude. Mechanical functional/accessibility defects are covered separately; no taste redesign performed.",
+      "evidence": [
+        "web/src/app/page.tsx",
+        "web/src/app/for-agencies/page.tsx",
+        "web/public/llms.txt"
+      ]
+    },
+    {
+      "id": "content",
+      "phase": "Product quality",
+      "title": "Content and states completeness",
+      "status": "deferred_to_claude",
+      "result": "User instructions route user-facing taste, copy and product/API design to Claude. Mechanical functional/accessibility defects are covered separately; no taste redesign performed.",
+      "evidence": [
+        "web/src/app/page.tsx",
+        "web/src/app/for-agencies/page.tsx",
+        "web/public/llms.txt"
+      ]
+    },
+    {
+      "id": "conversion",
+      "phase": "Product quality",
+      "title": "Conversion and trust signals audit",
+      "status": "deferred_to_claude",
+      "result": "User instructions route user-facing taste, copy and product/API design to Claude. Mechanical functional/accessibility defects are covered separately; no taste redesign performed.",
+      "evidence": [
+        "web/src/app/page.tsx",
+        "web/src/app/for-agencies/page.tsx",
+        "web/public/llms.txt"
+      ]
+    },
+    {
+      "id": "forms",
+      "phase": "Product quality",
+      "title": "Form and input UX deep-dive",
+      "status": "partial",
+      "result": "Synthetic login, dashboard, projects and audit report browser flows exercised. Added non-object JSON validation and clipboard denied/unavailable feedback. Signup/recovery email delivery, OAuth expiry and live model-backed scan completion remain unverified.",
+      "evidence": [
+        "web/tests/e2e",
+        "web/src/__tests__/api/grade-validation.test.ts",
+        "web/src/components/grade-badge-embed.tsx",
+        "web/src/components/replay-theater.tsx"
+      ]
+    },
+    {
+      "id": "crossbrowser",
+      "phase": "Product quality",
+      "title": "Cross-browser and device compatibility",
+      "status": "partial",
+      "result": "Production app tested with desktop/mobile Chromium; Safari and Firefox engines unavailable locally, so no cross-engine pass claim.",
+      "evidence": [
+        "web/playwright.config.ts",
+        "web/tests/e2e"
+      ]
+    },
+    {
+      "id": "i18n",
+      "phase": "Product quality",
+      "title": "i18n & Localization Audit",
+      "status": "not_applicable",
+      "result": "Current product is English-only with lang=en. No multilingual scope was supplied; locale expansion and RTL are not claimed ready.",
+      "evidence": [
+        "web/src/app/layout.tsx"
+      ]
+    },
+    {
+      "id": "darkmode",
+      "phase": "Product quality",
+      "title": "Dark mode correctness",
+      "status": "partial",
+      "result": "Theme persistence/prepaint and reduced-motion code inspected. Native-control color-scheme, forced colors and retained stagger delays need dedicated browser checks; no source-only issue promoted to a confirmed runtime failure.",
+      "evidence": [
+        "web/src/components/theme-toggle.tsx",
+        "web/src/app/globals.css"
+      ]
+    },
+    {
+      "id": "motion",
+      "phase": "Product quality",
+      "title": "Motion & animation quality",
+      "status": "partial",
+      "result": "Theme persistence/prepaint and reduced-motion code inspected. Native-control color-scheme, forced colors and retained stagger delays need dedicated browser checks; no source-only issue promoted to a confirmed runtime failure.",
+      "evidence": [
+        "web/src/components/theme-toggle.tsx",
+        "web/src/app/globals.css"
+      ]
+    },
+    {
+      "id": "onboarding",
+      "phase": "Product quality",
+      "title": "Onboarding & first-run",
+      "status": "partial",
+      "result": "Synthetic login, dashboard, projects and audit report browser flows exercised. Added non-object JSON validation and clipboard denied/unavailable feedback. Signup/recovery email delivery, OAuth expiry and live model-backed scan completion remain unverified.",
+      "evidence": [
+        "web/tests/e2e",
+        "web/src/__tests__/api/grade-validation.test.ts",
+        "web/src/components/grade-badge-embed.tsx",
+        "web/src/components/replay-theater.tsx"
+      ]
+    },
+    {
+      "id": "microcopy",
+      "phase": "Product quality",
+      "title": "Microcopy & empty states",
+      "status": "deferred_to_claude",
+      "result": "User instructions route user-facing taste, copy and product/API design to Claude. Mechanical functional/accessibility defects are covered separately; no taste redesign performed.",
+      "evidence": [
+        "web/src/app/page.tsx",
+        "web/src/app/for-agencies/page.tsx",
+        "web/public/llms.txt"
+      ]
+    },
+    {
+      "id": "paywall-ux",
+      "phase": "Product quality",
+      "title": "Usage limits & metering UX (the paywall moment)",
+      "status": "deferred_to_claude",
+      "result": "User instructions route user-facing taste, copy and product/API design to Claude. Mechanical functional/accessibility defects are covered separately; no taste redesign performed.",
+      "evidence": [
+        "web/src/app/page.tsx",
+        "web/src/app/for-agencies/page.tsx",
+        "web/public/llms.txt"
+      ]
+    },
+    {
+      "id": "structure",
+      "phase": "Code health",
+      "title": "Codebase structure and hygiene",
+      "status": "reviewed",
+      "result": "Bounded architecture and contributor-context review complete; no justified mass reorganization. Machine-readable credential-local wording needs Claude review.",
+      "evidence": [
+        "CONTRIBUTING.md",
+        "CONTEXT.md",
+        "web/public/llms.txt"
+      ]
+    },
+    {
+      "id": "organizing-model",
+      "phase": "Code health",
+      "title": "Data structure & organizing-model simplification audit",
+      "status": "partial",
+      "result": "Representative domain vocabulary, polling states, server/client and mutation boundaries reviewed; no claim that every abstraction/component was exhaustively assessed.",
+      "evidence": [
+        "web/src/lib/finding-workflow.ts",
+        "web/src/components/audit-form.tsx",
+        "web/src/app/(app)/settings/actions.ts"
+      ]
+    },
+    {
+      "id": "docs",
+      "phase": "Code health",
+      "title": "Documentation, README, and gitignore audit",
+      "status": "partial",
+      "result": "Setup/system context exists; recovery knowledge, operator access and clean install remain unproven. Added this audit and coordinated rollout procedure, not a README.",
+      "evidence": [
+        "CONTRIBUTING.md",
+        "docs/DEPLOYMENT.md",
+        "docs/audit-2026-09-04.md"
+      ]
+    },
+    {
+      "id": "deps",
+      "phase": "Code health",
+      "title": "Dependency audit",
+      "status": "blocked",
+      "result": "Automatic approval review rejected transmitting private dependency names/versions to npm advisory service; specific approval remains pending. Installed Next16.3.3 follows root override despite web pin16.3.4. Offline re-resolution failed on missing cached metadata; manifests unchanged. No CVE clearance.",
+      "evidence": [
+        "package.json",
+        "pnpm-lock.yaml",
+        "web/package.json"
+      ]
+    },
+    {
+      "id": "quality",
+      "phase": "Code health",
+      "title": "Code quality and Next.js best practices",
+      "status": "partial",
+      "result": "Representative domain vocabulary, polling states, server/client and mutation boundaries reviewed; no claim that every abstraction/component was exhaustively assessed.",
+      "evidence": [
+        "web/src/lib/finding-workflow.ts",
+        "web/src/components/audit-form.tsx",
+        "web/src/app/(app)/settings/actions.ts"
+      ]
+    },
+    {
+      "id": "testing",
+      "phase": "Code health",
+      "title": "Testing strategy and coverage audit",
+      "status": "partial",
+      "result": "Local lint/types/unit suites, SQL adversarial tests and production-build browser tests executed; worker added to root lint. CI runs database boundary and synthetic Docker-context checks. Live branch protection/CI execution not verified.",
+      "evidence": [
+        "eslint.config.mjs",
+        ".github/workflows/ci.yml",
+        ".github/workflows/e2e.yml",
+        ".github/workflows/worker-image.yml",
+        "web/playwright.config.ts"
+      ]
+    },
+    {
+      "id": "cicd",
+      "phase": "Code health",
+      "title": "CI/CD pipeline audit",
+      "status": "partial",
+      "result": "Local lint/types/unit suites, SQL adversarial tests and production-build browser tests executed; worker added to root lint. CI runs database boundary and synthetic Docker-context checks. Live branch protection/CI execution not verified.",
+      "evidence": [
+        "eslint.config.mjs",
+        ".github/workflows/ci.yml",
+        ".github/workflows/e2e.yml",
+        ".github/workflows/worker-image.yml",
+        "web/playwright.config.ts"
+      ]
+    },
+    {
+      "id": "featureflags",
+      "phase": "Code health",
+      "title": "Feature flags and safe rollout audit",
+      "status": "partial",
+      "result": "Audit, grade and scheduler admission honor server kill switch; scheduler bypass fixed. Runtime host updates and cancellation of already-running jobs require operational verification.",
+      "evidence": [
+        "web/src/lib/limits.ts",
+        "web/src/app/api/schedules/run-due/route.ts"
+      ]
+    },
+    {
+      "id": "migrations",
+      "phase": "Code health",
+      "title": "Database migration safety audit",
+      "status": "partial",
+      "result": "Clean isolated Supabase migrations and seven SQL regressions pass. Security migrations change rollout compatibility; report requires coordinated maintenance, draining old workers and matching web deployment. No live migration/restore/rollback performed.",
+      "evidence": [
+        "web/supabase/migrations/024_scheduled_scan_spend_guards.sql",
+        "web/supabase/migrations/027_waitlist_server_boundary.sql",
+        "docs/audit-2026-09-04.md"
+      ]
+    },
+    {
+      "id": "agent-code-trust",
+      "phase": "Code health",
+      "title": "AI-agent-authored code trust & verification",
+      "status": "partial",
+      "result": "Local lint/types/unit suites, SQL adversarial tests and production-build browser tests executed; worker added to root lint. CI runs database boundary and synthetic Docker-context checks. Live branch protection/CI execution not verified.",
+      "evidence": [
+        "eslint.config.mjs",
+        ".github/workflows/ci.yml",
+        ".github/workflows/e2e.yml",
+        ".github/workflows/worker-image.yml",
+        "web/playwright.config.ts"
+      ]
+    },
+    {
+      "id": "supabase",
+      "phase": "Stack-specific",
+      "title": "Supabase security and configuration",
+      "status": "partial",
+      "result": "Fixed self-service plan escalation and direct waitlist bypass; tested authenticated/anonymous roles, two-tenant ownership, service-only RPCs and clean seed grants. Live Auth/storage/provider settings and complete offboarding remain unverified.",
+      "evidence": [
+        "web/supabase/tests/profile-entitlements.sql",
+        "web/supabase/tests/tenant-isolation.sql",
+        "web/supabase/tests/waitlist-boundary.sql",
+        "web/supabase/seed.sql"
+      ]
+    },
+    {
+      "id": "stripe",
+      "phase": "Stack-specific",
+      "title": "Stripe integration and payments",
+      "status": "not_applicable",
+      "result": "Required subsystem is absent from the inspected app: Supabase auth/Postgres queue, manual paid access, browser/text AI findings; no direct billing webhook, listed alternate data/auth stack, RAG, offline service worker, realtime voice, public MCP or generated-media pipeline.",
+      "evidence": [
+        "package.json",
+        "web/package.json",
+        "worker/package.json"
+      ]
+    },
+    {
+      "id": "envvars",
+      "phase": "Stack-specific",
+      "title": "Environment variable audit",
+      "status": "partial",
+      "result": "Reviewed names and code boundaries only; actual secret files, host values, rotation and synchronization were intentionally not inspected under the user data boundary.",
+      "evidence": [
+        "web/src/lib/supabase/admin.ts",
+        "web/src/lib/limits.ts",
+        ".dockerignore",
+        "worker/src/job-process.ts"
+      ]
+    },
+    {
+      "id": "drizzle",
+      "phase": "Stack-specific",
+      "title": "Drizzle ORM and Neon Postgres audit",
+      "status": "not_applicable",
+      "result": "Required subsystem is absent from the inspected app: Supabase auth/Postgres queue, manual paid access, browser/text AI findings; no direct billing webhook, listed alternate data/auth stack, RAG, offline service worker, realtime voice, public MCP or generated-media pipeline.",
+      "evidence": [
+        "package.json",
+        "web/package.json",
+        "worker/package.json"
+      ]
+    },
+    {
+      "id": "betterauth",
+      "phase": "Stack-specific",
+      "title": "better-auth Deep Security Audit",
+      "status": "not_applicable",
+      "result": "Required subsystem is absent from the inspected app: Supabase auth/Postgres queue, manual paid access, browser/text AI findings; no direct billing webhook, listed alternate data/auth stack, RAG, offline service worker, realtime voice, public MCP or generated-media pipeline.",
+      "evidence": [
+        "package.json",
+        "web/package.json",
+        "worker/package.json"
+      ]
+    },
+    {
+      "id": "craft",
+      "phase": "Stack-specific",
+      "title": "Craft CMS and PHP audit",
+      "status": "not_applicable",
+      "result": "Required subsystem is absent from the inspected app: Supabase auth/Postgres queue, manual paid access, browser/text AI findings; no direct billing webhook, listed alternate data/auth stack, RAG, offline service worker, realtime voice, public MCP or generated-media pipeline.",
+      "evidence": [
+        "package.json",
+        "web/package.json",
+        "worker/package.json"
+      ]
+    },
+    {
+      "id": "secretmgmt",
+      "phase": "Stack-specific",
+      "title": "Secret management audit (age/sops \u00b7 Vercel \u00b7 gitleaks)",
+      "status": "partial",
+      "result": "Reviewed names and code boundaries only; actual secret files, host values, rotation and synchronization were intentionally not inspected under the user data boundary.",
+      "evidence": [
+        "web/src/lib/supabase/admin.ts",
+        "web/src/lib/limits.ts",
+        ".dockerignore",
+        "worker/src/job-process.ts"
+      ]
+    },
+    {
+      "id": "triggerjobs",
+      "phase": "Stack-specific",
+      "title": "Background jobs and async workflow audit",
+      "status": "partial",
+      "result": "Actual implementation is Postgres polling, not Trigger.dev. Added isolated scan subprocess, Linux orphan cleanup, fatal cleanup handling, checked terminal writes, bounded retries and conservative started-job spend retention. Live worker image rollout and long-running model scan not exercised.",
+      "evidence": [
+        "worker/src/job-process.ts",
+        "worker/src/scan-supervisor.py",
+        "worker/src/job-write.ts",
+        "web/supabase/migrations/026_retain_started_job_spend.sql"
+      ]
+    },
+    {
+      "id": "multiproviderai",
+      "phase": "Stack-specific",
+      "title": "Multi-provider AI architecture audit",
+      "status": "partial",
+      "result": "Inspected Anthropic AI SDK integration, bounded model steps/output/history, destructive-action guard and URL/egress controls. Fixed scheduled spend bypass and retry/refund accounting. No paid provider calls, promptfoo model probes, real-user evaluation set or dollar-cost/load measurement.",
+      "evidence": [
+        "src/agent/engine.ts",
+        "src/security/action-guard.ts",
+        "src/security/url-guard.ts",
+        "web/supabase/migrations/024_scheduled_scan_spend_guards.sql",
+        "worker/src/config.ts"
+      ]
+    },
+    {
+      "id": "tailwindv4",
+      "phase": "Stack-specific",
+      "title": "Tailwind CSS v4 Migration Audit",
+      "status": "reviewed",
+      "result": "Bounded source check found CSS-first Tailwind/PostCSS wiring; no obsolete-utility migration justified. No visual taste overhaul.",
+      "evidence": [
+        "web/src/app/globals.css",
+        "web/postcss.config.mjs",
+        "web/package.json"
+      ]
+    },
+    {
+      "id": "msal",
+      "phase": "Stack-specific",
+      "title": "MSAL / Microsoft Entra ID authentication audit",
+      "status": "not_applicable",
+      "result": "Required subsystem is absent from the inspected app: Supabase auth/Postgres queue, manual paid access, browser/text AI findings; no direct billing webhook, listed alternate data/auth stack, RAG, offline service worker, realtime voice, public MCP or generated-media pipeline.",
+      "evidence": [
+        "package.json",
+        "web/package.json",
+        "worker/package.json"
+      ]
+    },
+    {
+      "id": "prisma",
+      "phase": "Stack-specific",
+      "title": "Prisma ORM and Postgres audit",
+      "status": "not_applicable",
+      "result": "Required subsystem is absent from the inspected app: Supabase auth/Postgres queue, manual paid access, browser/text AI findings; no direct billing webhook, listed alternate data/auth stack, RAG, offline service worker, realtime voice, public MCP or generated-media pipeline.",
+      "evidence": [
+        "package.json",
+        "web/package.json",
+        "worker/package.json"
+      ]
+    },
+    {
+      "id": "resend",
+      "phase": "Stack-specific",
+      "title": "Resend Deliverability & Email Infrastructure Audit",
+      "status": "not_applicable",
+      "result": "Required subsystem is absent from the inspected app: Supabase auth/Postgres queue, manual paid access, browser/text AI findings; no direct billing webhook, listed alternate data/auth stack, RAG, offline service worker, realtime voice, public MCP or generated-media pipeline.",
+      "evidence": [
+        "package.json",
+        "web/package.json",
+        "worker/package.json"
+      ]
+    },
+    {
+      "id": "upstash",
+      "phase": "Stack-specific",
+      "title": "Upstash Redis & Rate-Limiting Audit",
+      "status": "not_applicable",
+      "result": "Required subsystem is absent from the inspected app: Supabase auth/Postgres queue, manual paid access, browser/text AI findings; no direct billing webhook, listed alternate data/auth stack, RAG, offline service worker, realtime voice, public MCP or generated-media pipeline.",
+      "evidence": [
+        "package.json",
+        "web/package.json",
+        "worker/package.json"
+      ]
+    },
+    {
+      "id": "sentry-setup",
+      "phase": "Stack-specific",
+      "title": "Sentry Instrumentation & Error Capture Audit",
+      "status": "partial",
+      "result": "Sentry configuration inspected; strengthened URL scrubbing in web error messages and exception values. Alert delivery, release tracking in live events, tracing correlation and complete telemetry-field privacy are not certified.",
+      "evidence": [
+        "web/src/instrumentation.ts",
+        "web/src/lib/sentry-scrub.ts",
+        "web/src/lib/audit-log.ts"
+      ]
+    },
+    {
+      "id": "func",
+      "phase": "Technical depth",
+      "title": "Functionality and release gate",
+      "status": "partial",
+      "result": "Synthetic login, dashboard, projects and audit report browser flows exercised. Added non-object JSON validation and clipboard denied/unavailable feedback. Signup/recovery email delivery, OAuth expiry and live model-backed scan completion remain unverified.",
+      "evidence": [
+        "web/tests/e2e",
+        "web/src/__tests__/api/grade-validation.test.ts",
+        "web/src/components/grade-badge-embed.tsx",
+        "web/src/components/replay-theater.tsx"
+      ]
+    },
+    {
+      "id": "state",
+      "phase": "Technical depth",
+      "title": "State management and navigation audit",
+      "status": "partial",
+      "result": "Reviewed URL filter/job recovery, error boundaries and bounded polling. Clipboard errors now recover visibly. Full offline, expiry, long-idle and multitab consistency drills not exhausted.",
+      "evidence": [
+        "web/src/components/audit-form.tsx",
+        "web/src/components/persona-filter.tsx",
+        "web/src/app/error.tsx",
+        "web/src/app/global-error.tsx"
+      ]
+    },
+    {
+      "id": "errorrecovery",
+      "phase": "Technical depth",
+      "title": "Error recovery and resilience audit",
+      "status": "partial",
+      "result": "Reviewed URL filter/job recovery, error boundaries and bounded polling. Clipboard errors now recover visibly. Full offline, expiry, long-idle and multitab consistency drills not exhausted.",
+      "evidence": [
+        "web/src/components/audit-form.tsx",
+        "web/src/components/persona-filter.tsx",
+        "web/src/app/error.tsx",
+        "web/src/app/global-error.tsx"
+      ]
+    },
+    {
+      "id": "serveractions",
+      "phase": "Technical depth",
+      "title": "Server Actions security deep-check",
+      "status": "partial",
+      "result": "Reviewed authenticated/scoped server mutations and write APIs. Fixed invalid JSON crashes, fail-open limiter, scheduler spend bypass, waitlist direct inserts and atomic public-grade admission. Actual provider auth quotas and large sustained abuse load unverified.",
+      "evidence": [
+        "web/src/app/(app)/projects/actions.ts",
+        "web/src/app/(app)/settings/actions.ts",
+        "web/src/app/api",
+        "web/src/lib/rate-limit.ts",
+        "web/supabase/tests"
+      ]
+    },
+    {
+      "id": "perf",
+      "phase": "Technical depth",
+      "title": "Performance audit",
+      "status": "partial",
+      "result": "Reviewed cache/revalidation, indexes, queue locking and server/client boundaries. Aggregate production JS budget measured; concurrent grade capacity verified. No production-shaped query/load/CWV measurements, route-level first-load budget, Flight sizes or region-latency proof.",
+      "evidence": [
+        "scripts/check-bundle-budget.mjs",
+        "web/src/app/(app)/dashboard/page.tsx",
+        "web/src/lib/projects.ts",
+        "web/supabase/tests/grade-enqueue.sql"
+      ]
+    },
+    {
+      "id": "caching",
+      "phase": "Technical depth",
+      "title": "Next.js 15/16 caching strategy audit",
+      "status": "partial",
+      "result": "Reviewed cache/revalidation, indexes, queue locking and server/client boundaries. Aggregate production JS budget measured; concurrent grade capacity verified. No production-shaped query/load/CWV measurements, route-level first-load budget, Flight sizes or region-latency proof.",
+      "evidence": [
+        "scripts/check-bundle-budget.mjs",
+        "web/src/app/(app)/dashboard/page.tsx",
+        "web/src/lib/projects.ts",
+        "web/supabase/tests/grade-enqueue.sql"
+      ]
+    },
+    {
+      "id": "api",
+      "phase": "Technical depth",
+      "title": "API, data integrity, and rate limiting",
+      "status": "partial",
+      "result": "Reviewed authenticated/scoped server mutations and write APIs. Fixed invalid JSON crashes, fail-open limiter, scheduler spend bypass, waitlist direct inserts and atomic public-grade admission. Actual provider auth quotas and large sustained abuse load unverified.",
+      "evidence": [
+        "web/src/app/(app)/projects/actions.ts",
+        "web/src/app/(app)/settings/actions.ts",
+        "web/src/app/api",
+        "web/src/lib/rate-limit.ts",
+        "web/supabase/tests"
+      ]
+    },
+    {
+      "id": "ratelimit",
+      "phase": "Technical depth",
+      "title": "Rate Limiting & Bot Protection Audit",
+      "status": "partial",
+      "result": "Reviewed authenticated/scoped server mutations and write APIs. Fixed invalid JSON crashes, fail-open limiter, scheduler spend bypass, waitlist direct inserts and atomic public-grade admission. Actual provider auth quotas and large sustained abuse load unverified.",
+      "evidence": [
+        "web/src/app/(app)/projects/actions.ts",
+        "web/src/app/(app)/settings/actions.ts",
+        "web/src/app/api",
+        "web/src/lib/rate-limit.ts",
+        "web/supabase/tests"
+      ]
+    },
+    {
+      "id": "pwa",
+      "phase": "Technical depth",
+      "title": "PWA & Offline Capability Audit",
+      "status": "not_applicable",
+      "result": "Required subsystem is absent from the inspected app: Supabase auth/Postgres queue, manual paid access, browser/text AI findings; no direct billing webhook, listed alternate data/auth stack, RAG, offline service worker, realtime voice, public MCP or generated-media pipeline.",
+      "evidence": [
+        "package.json",
+        "web/package.json",
+        "worker/package.json"
+      ]
+    },
+    {
+      "id": "ai-features",
+      "phase": "Technical depth",
+      "title": "AI and LLM feature audit",
+      "status": "partial",
+      "result": "Inspected Anthropic AI SDK integration, bounded model steps/output/history, destructive-action guard and URL/egress controls. Fixed scheduled spend bypass and retry/refund accounting. No paid provider calls, promptfoo model probes, real-user evaluation set or dollar-cost/load measurement.",
+      "evidence": [
+        "src/agent/engine.ts",
+        "src/security/action-guard.ts",
+        "src/security/url-guard.ts",
+        "web/supabase/migrations/024_scheduled_scan_spend_guards.sql",
+        "worker/src/config.ts"
+      ]
+    },
+    {
+      "id": "ai-evals",
+      "phase": "Technical depth",
+      "title": "AI evaluation & quality-regression harness",
+      "status": "partial",
+      "result": "Inspected Anthropic AI SDK integration, bounded model steps/output/history, destructive-action guard and URL/egress controls. Fixed scheduled spend bypass and retry/refund accounting. No paid provider calls, promptfoo model probes, real-user evaluation set or dollar-cost/load measurement.",
+      "evidence": [
+        "src/agent/engine.ts",
+        "src/security/action-guard.ts",
+        "src/security/url-guard.ts",
+        "web/supabase/migrations/024_scheduled_scan_spend_guards.sql",
+        "worker/src/config.ts"
+      ]
+    },
+    {
+      "id": "rag-quality",
+      "phase": "Technical depth",
+      "title": "RAG retrieval quality audit",
+      "status": "not_applicable",
+      "result": "Required subsystem is absent from the inspected app: Supabase auth/Postgres queue, manual paid access, browser/text AI findings; no direct billing webhook, listed alternate data/auth stack, RAG, offline service worker, realtime voice, public MCP or generated-media pipeline.",
+      "evidence": [
+        "package.json",
+        "web/package.json",
+        "worker/package.json"
+      ]
+    },
+    {
+      "id": "email",
+      "phase": "Technical depth",
+      "title": "Email and notifications audit",
+      "status": "requires_owner_evidence",
+      "result": "Source auth redirects inspected; SMTP templates/delivery, SPF/DKIM/DMARC, DNSSEC, domain renewal and hosted redirect allowlists need allowed owner-side evidence. No production configuration claims.",
+      "evidence": [
+        "web/src/app/auth/forgot-password/page.tsx",
+        "docs/DEPLOYMENT.md"
+      ]
+    },
+    {
+      "id": "webhooks",
+      "phase": "Technical depth",
+      "title": "Webhook reliability audit",
+      "status": "not_applicable",
+      "result": "No incoming webhook or direct automated billing integration; outbound worker alert fetch has timeout.",
+      "evidence": [
+        "web/src/app/api",
+        "worker/src/index.ts"
+      ]
+    },
+    {
+      "id": "backup",
+      "phase": "Technical depth",
+      "title": "Data backup and recovery audit",
+      "status": "requires_owner_evidence",
+      "result": "Source operational docs reviewed; live deployment, alert delivery, restore drill, status service, support coverage and postlaunch metrics remain unverified. Coordinated rollout instructions added; no deploy or external messages sent.",
+      "evidence": [
+        "docs/DEPLOYMENT.md",
+        "docs/audit-2026-09-04.md",
+        "web/src/components/site-footer.tsx"
+      ]
+    },
+    {
+      "id": "abuse",
+      "phase": "Technical depth",
+      "title": "Abuse, fraud, and runaway-spend protection",
+      "status": "partial",
+      "result": "Reviewed authenticated/scoped server mutations and write APIs. Fixed invalid JSON crashes, fail-open limiter, scheduler spend bypass, waitlist direct inserts and atomic public-grade admission. Actual provider auth quotas and large sustained abuse load unverified.",
+      "evidence": [
+        "web/src/app/(app)/projects/actions.ts",
+        "web/src/app/(app)/settings/actions.ts",
+        "web/src/app/api",
+        "web/src/lib/rate-limit.ts",
+        "web/supabase/tests"
+      ]
+    },
+    {
+      "id": "lifecycle",
+      "phase": "Technical depth",
+      "title": "User lifecycle, dunning, and offboarding audit",
+      "status": "partial",
+      "result": "Profile/data cascades and support-mediated deletion reviewed, analytics fragment disclosure fixed. Cross-service export/deletion, consent/GPC and provider retention require owner/legal review; no compliance certification or legal copy changes.",
+      "evidence": [
+        "web/src/app/(app)/settings/page.tsx",
+        "web/src/app/privacy/page.tsx",
+        "web/src/components/posthog-provider.tsx"
+      ]
+    },
+    {
+      "id": "loadtest",
+      "phase": "Technical depth",
+      "title": "Load, soak, and chaos testing audit",
+      "status": "partial",
+      "result": "Reviewed cache/revalidation, indexes, queue locking and server/client boundaries. Aggregate production JS budget measured; concurrent grade capacity verified. No production-shaped query/load/CWV measurements, route-level first-load budget, Flight sizes or region-latency proof.",
+      "evidence": [
+        "scripts/check-bundle-budget.mjs",
+        "web/src/app/(app)/dashboard/page.tsx",
+        "web/src/lib/projects.ts",
+        "web/supabase/tests/grade-enqueue.sql"
+      ]
+    },
+    {
+      "id": "db-performance",
+      "phase": "Technical depth",
+      "title": "Database query performance & indexing audit",
+      "status": "partial",
+      "result": "Reviewed cache/revalidation, indexes, queue locking and server/client boundaries. Aggregate production JS budget measured; concurrent grade capacity verified. No production-shaped query/load/CWV measurements, route-level first-load budget, Flight sizes or region-latency proof.",
+      "evidence": [
+        "scripts/check-bundle-budget.mjs",
+        "web/src/app/(app)/dashboard/page.tsx",
+        "web/src/lib/projects.ts",
+        "web/supabase/tests/grade-enqueue.sql"
+      ]
+    },
+    {
+      "id": "bundle-budget",
+      "phase": "Technical depth",
+      "title": "Client bundle size budget & CI enforcement",
+      "status": "partial",
+      "result": "Reviewed cache/revalidation, indexes, queue locking and server/client boundaries. Aggregate production JS budget measured; concurrent grade capacity verified. No production-shaped query/load/CWV measurements, route-level first-load budget, Flight sizes or region-latency proof.",
+      "evidence": [
+        "scripts/check-bundle-budget.mjs",
+        "web/src/app/(app)/dashboard/page.tsx",
+        "web/src/lib/projects.ts",
+        "web/supabase/tests/grade-enqueue.sql"
+      ]
+    },
+    {
+      "id": "rsc-streaming",
+      "phase": "Technical depth",
+      "title": "RSC & streaming correctness audit",
+      "status": "partial",
+      "result": "Reviewed cache/revalidation, indexes, queue locking and server/client boundaries. Aggregate production JS budget measured; concurrent grade capacity verified. No production-shaped query/load/CWV measurements, route-level first-load budget, Flight sizes or region-latency proof.",
+      "evidence": [
+        "scripts/check-bundle-budget.mjs",
+        "web/src/app/(app)/dashboard/page.tsx",
+        "web/src/lib/projects.ts",
+        "web/supabase/tests/grade-enqueue.sql"
+      ]
+    },
+    {
+      "id": "otel-logging",
+      "phase": "Technical depth",
+      "title": "OpenTelemetry & structured logging audit",
+      "status": "partial",
+      "result": "Sentry configuration inspected; strengthened URL scrubbing in web error messages and exception values. Alert delivery, release tracking in live events, tracing correlation and complete telemetry-field privacy are not certified.",
+      "evidence": [
+        "web/src/instrumentation.ts",
+        "web/src/lib/sentry-scrub.ts",
+        "web/src/lib/audit-log.ts"
+      ]
+    },
+    {
+      "id": "edge-runtime",
+      "phase": "Technical depth",
+      "title": "Edge vs Node runtime audit",
+      "status": "partial",
+      "result": "Reviewed cache/revalidation, indexes, queue locking and server/client boundaries. Aggregate production JS budget measured; concurrent grade capacity verified. No production-shaped query/load/CWV measurements, route-level first-load budget, Flight sizes or region-latency proof.",
+      "evidence": [
+        "scripts/check-bundle-budget.mjs",
+        "web/src/app/(app)/dashboard/page.tsx",
+        "web/src/lib/projects.ts",
+        "web/supabase/tests/grade-enqueue.sql"
+      ]
+    },
+    {
+      "id": "typesafety",
+      "phase": "Technical depth",
+      "title": "End-to-end type safety audit",
+      "status": "reviewed",
+      "result": "Strict compiler checks pass for root/web/worker and tests. Runtime assertions remain in stored JSON; no claim that all external data shapes are validated.",
+      "evidence": [
+        "tsconfig.json",
+        "web/tsconfig.json",
+        "worker/tsconfig.json"
+      ]
+    },
+    {
+      "id": "agent-durability",
+      "phase": "Technical depth",
+      "title": "Long-running agent durability & resumability",
+      "status": "partial",
+      "result": "Actual implementation is Postgres polling, not Trigger.dev. Added isolated scan subprocess, Linux orphan cleanup, fatal cleanup handling, checked terminal writes, bounded retries and conservative started-job spend retention. Live worker image rollout and long-running model scan not exercised.",
+      "evidence": [
+        "worker/src/job-process.ts",
+        "worker/src/scan-supervisor.py",
+        "worker/src/job-write.ts",
+        "web/supabase/migrations/026_retain_started_job_spend.sql"
+      ]
+    },
+    {
+      "id": "sec",
+      "phase": "Security & compliance",
+      "title": "Application security audit",
+      "status": "partial",
+      "result": "Source security review, synthetic role/tenant tests and Docker credential canaries executed; URL guard/egress/destructive action tests pass. Source-only secret scanner covered allowed code, not history or actual secrets. No live intrusive scan, TLS/host or comprehensive dependency clearance.",
+      "evidence": [
+        "src/security",
+        "web/supabase/tests",
+        "scripts/test-docker-context.sh",
+        ".dockerignore"
+      ]
+    },
+    {
+      "id": "a11y",
+      "phase": "Security & compliance",
+      "title": "Accessibility audit \u2014 WCAG 2.2 AA + EAA",
+      "status": "partial",
+      "result": "Public pages reviewed at mobile/desktop; fixed keyboard scrolling on CLI examples and badge snippets, accessible clipboard errors. Chromium axe/keyboard checks do not establish full WCAG conformance or assistive-technology testing.",
+      "evidence": [
+        "web/tests/e2e/public-accessibility.spec.ts",
+        "web/src/components/grade-badge-embed.tsx",
+        "web/src/components/replay-theater.tsx"
+      ]
+    },
+    {
+      "id": "gdpr",
+      "phase": "Security & compliance",
+      "title": "GDPR, CCPA, EAA, EU AI Act, and privacy compliance",
+      "status": "partial",
+      "result": "Profile/data cascades and support-mediated deletion reviewed, analytics fragment disclosure fixed. Cross-service export/deletion, consent/GPC and provider retention require owner/legal review; no compliance certification or legal copy changes.",
+      "evidence": [
+        "web/src/app/(app)/settings/page.tsx",
+        "web/src/app/privacy/page.tsx",
+        "web/src/components/posthog-provider.tsx"
+      ]
+    },
+    {
+      "id": "multitenancy",
+      "phase": "Security & compliance",
+      "title": "Multi-tenant isolation audit",
+      "status": "partial",
+      "result": "Fixed self-service plan escalation and direct waitlist bypass; tested authenticated/anonymous roles, two-tenant ownership, service-only RPCs and clean seed grants. Live Auth/storage/provider settings and complete offboarding remain unverified.",
+      "evidence": [
+        "web/supabase/tests/profile-entitlements.sql",
+        "web/supabase/tests/tenant-isolation.sql",
+        "web/supabase/tests/waitlist-boundary.sql",
+        "web/supabase/seed.sql"
+      ]
+    },
+    {
+      "id": "legaldocs",
+      "phase": "Security & compliance",
+      "title": "Legal documents and policy completeness",
+      "status": "partial",
+      "result": "Profile/data cascades and support-mediated deletion reviewed, analytics fragment disclosure fixed. Cross-service export/deletion, consent/GPC and provider retention require owner/legal review; no compliance certification or legal copy changes.",
+      "evidence": [
+        "web/src/app/(app)/settings/page.tsx",
+        "web/src/app/privacy/page.tsx",
+        "web/src/components/posthog-provider.tsx"
+      ]
+    },
+    {
+      "id": "moderation",
+      "phase": "Security & compliance",
+      "title": "Content moderation and UGC safety",
+      "status": "partial",
+      "result": "No general public posting/community surface. Scanner destructive-action guard and URL validation reviewed; target-site consent, abuse reporting/response and provider safety need owner operational policy.",
+      "evidence": [
+        "src/security/action-guard.ts",
+        "src/security/url-guard.ts",
+        "web/src/app/terms/page.tsx"
+      ]
+    },
+    {
+      "id": "dast",
+      "phase": "Security & compliance",
+      "title": "Dynamic security scan (DAST) of the running app",
+      "status": "partial",
+      "result": "Source security review, synthetic role/tenant tests and Docker credential canaries executed; URL guard/egress/destructive action tests pass. Source-only secret scanner covered allowed code, not history or actual secrets. No live intrusive scan, TLS/host or comprehensive dependency clearance.",
+      "evidence": [
+        "src/security",
+        "web/supabase/tests",
+        "scripts/test-docker-context.sh",
+        ".dockerignore"
+      ]
+    },
+    {
+      "id": "secrets-scan",
+      "phase": "Security & compliance",
+      "title": "Secrets & credential leak scan",
+      "status": "partial",
+      "result": "Source security review, synthetic role/tenant tests and Docker credential canaries executed; URL guard/egress/destructive action tests pass. Source-only secret scanner covered allowed code, not history or actual secrets. No live intrusive scan, TLS/host or comprehensive dependency clearance.",
+      "evidence": [
+        "src/security",
+        "web/supabase/tests",
+        "scripts/test-docker-context.sh",
+        ".dockerignore"
+      ]
+    },
+    {
+      "id": "ssrf",
+      "phase": "Security & compliance",
+      "title": "SSRF & cloud metadata exposure",
+      "status": "partial",
+      "result": "Source security review, synthetic role/tenant tests and Docker credential canaries executed; URL guard/egress/destructive action tests pass. Source-only secret scanner covered allowed code, not history or actual secrets. No live intrusive scan, TLS/host or comprehensive dependency clearance.",
+      "evidence": [
+        "src/security",
+        "web/supabase/tests",
+        "scripts/test-docker-context.sh",
+        ".dockerignore"
+      ]
+    },
+    {
+      "id": "ai-redteam",
+      "phase": "Security & compliance",
+      "title": "AI/LLM red-teaming (OWASP LLM Top 10 2025)",
+      "status": "partial",
+      "result": "Inspected Anthropic AI SDK integration, bounded model steps/output/history, destructive-action guard and URL/egress controls. Fixed scheduled spend bypass and retry/refund accounting. No paid provider calls, promptfoo model probes, real-user evaluation set or dollar-cost/load measurement.",
+      "evidence": [
+        "src/agent/engine.ts",
+        "src/security/action-guard.ts",
+        "src/security/url-guard.ts",
+        "web/supabase/migrations/024_scheduled_scan_spend_guards.sql",
+        "worker/src/config.ts"
+      ]
+    },
+    {
+      "id": "mcp-security",
+      "phase": "Security & compliance",
+      "title": "MCP & agent tool security (OWASP Agentic Top 10 2026)",
+      "status": "not_applicable",
+      "result": "Required subsystem is absent from the inspected app: Supabase auth/Postgres queue, manual paid access, browser/text AI findings; no direct billing webhook, listed alternate data/auth stack, RAG, offline service worker, realtime voice, public MCP or generated-media pipeline.",
+      "evidence": [
+        "package.json",
+        "web/package.json",
+        "worker/package.json"
+      ]
+    },
+    {
+      "id": "voice-realtime",
+      "phase": "Security & compliance",
+      "title": "Voice & realtime AI agent audit",
+      "status": "not_applicable",
+      "result": "Required subsystem is absent from the inspected app: Supabase auth/Postgres queue, manual paid access, browser/text AI findings; no direct billing webhook, listed alternate data/auth stack, RAG, offline service worker, realtime voice, public MCP or generated-media pipeline.",
+      "evidence": [
+        "package.json",
+        "web/package.json",
+        "worker/package.json"
+      ]
+    },
+    {
+      "id": "csp-report",
+      "phase": "Security & compliance",
+      "title": "CSP reporting pipeline & nonce hardening",
+      "status": "partial",
+      "result": "Report-only policy has no collector or nonce. Do not enforce unchanged: legitimate Turnstile script/frame allowances need verification and monitored rollout. No production violation corpus available.",
+      "evidence": [
+        "web/next.config.ts"
+      ]
+    },
+    {
+      "id": "third-party-scripts",
+      "phase": "Security & compliance",
+      "title": "Third-party scripts, tags & consent governance",
+      "status": "partial",
+      "result": "PostHog/Sentry/Turnstile identified; PostHog disables autocapture/replay and now strips URL fragments. Consent/GPC and provider retention unresolved; no legal conclusion.",
+      "evidence": [
+        "web/src/components/posthog-provider.tsx",
+        "web/src/lib/sentry-scrub.ts",
+        "web/src/lib/turnstile.ts"
+      ]
+    },
+    {
+      "id": "gha-workflow-security",
+      "phase": "Security & compliance",
+      "title": "GitHub Actions workflow security",
+      "status": "partial",
+      "result": "Local lint/types/unit suites, SQL adversarial tests and production-build browser tests executed; worker added to root lint. CI runs database boundary and synthetic Docker-context checks. Live branch protection/CI execution not verified.",
+      "evidence": [
+        "eslint.config.mjs",
+        ".github/workflows/ci.yml",
+        ".github/workflows/e2e.yml",
+        ".github/workflows/worker-image.yml",
+        "web/playwright.config.ts"
+      ]
+    },
+    {
+      "id": "breach-response",
+      "phase": "Security & compliance",
+      "title": "Breach notification & disclosure readiness",
+      "status": "requires_owner_evidence",
+      "result": "Source operational docs reviewed; live deployment, alert delivery, restore drill, status service, support coverage and postlaunch metrics remain unverified. Coordinated rollout instructions added; no deploy or external messages sent.",
+      "evidence": [
+        "docs/DEPLOYMENT.md",
+        "docs/audit-2026-09-04.md",
+        "web/src/components/site-footer.tsx"
+      ]
+    },
+    {
+      "id": "audit-logging",
+      "phase": "Security & compliance",
+      "title": "Security audit trail & tamper-evident logging",
+      "status": "partial",
+      "result": "Queue/completion event coverage and service-only client checked. Service role retains mutable audit sink; no append-only/auth/settings deletion trail or retention proof.",
+      "evidence": [
+        "web/src/lib/audit-log.ts",
+        "web/supabase/migrations/023_audit_events.sql"
+      ]
+    },
+    {
+      "id": "ai-provenance",
+      "phase": "Security & compliance",
+      "title": "AI content provenance & watermarking (C2PA)",
+      "status": "not_applicable",
+      "result": "Required subsystem is absent from the inspected app: Supabase auth/Postgres queue, manual paid access, browser/text AI findings; no direct billing webhook, listed alternate data/auth stack, RAG, offline service worker, realtime voice, public MCP or generated-media pipeline.",
+      "evidence": [
+        "package.json",
+        "web/package.json",
+        "worker/package.json"
+      ]
+    },
+    {
+      "id": "seo",
+      "phase": "Pre-launch",
+      "title": "SEO, metadata, and AI discoverability",
+      "status": "partial",
+      "result": "Metadata, sitemap, noindex capability routes and configured headers reviewed. Consulted specification.website checklist; local browser checks only, not live CDN/header/indexing/TLS conformance.",
+      "evidence": [
+        "web/src/app/layout.tsx",
+        "web/src/app/sitemap.ts",
+        "web/src/app/grade/[token]/page.tsx",
+        "web/next.config.ts"
+      ]
+    },
+    {
+      "id": "webstandards",
+      "phase": "Pre-launch",
+      "title": "Web standards conformance (specification.website cross-check)",
+      "status": "partial",
+      "result": "Metadata, sitemap, noindex capability routes and configured headers reviewed. Consulted specification.website checklist; local browser checks only, not live CDN/header/indexing/TLS conformance.",
+      "evidence": [
+        "web/src/app/layout.tsx",
+        "web/src/app/sitemap.ts",
+        "web/src/app/grade/[token]/page.tsx",
+        "web/next.config.ts"
+      ]
+    },
+    {
+      "id": "obs",
+      "phase": "Pre-launch",
+      "title": "Analytics and observability",
+      "status": "partial",
+      "result": "Sentry configuration inspected; strengthened URL scrubbing in web error messages and exception values. Alert delivery, release tracking in live events, tracing correlation and complete telemetry-field privacy are not certified.",
+      "evidence": [
+        "web/src/instrumentation.ts",
+        "web/src/lib/sentry-scrub.ts",
+        "web/src/lib/audit-log.ts"
+      ]
+    },
+    {
+      "id": "deploy",
+      "phase": "Pre-launch",
+      "title": "Deployment and infrastructure",
+      "status": "requires_owner_evidence",
+      "result": "Source operational docs reviewed; live deployment, alert delivery, restore drill, status service, support coverage and postlaunch metrics remain unverified. Coordinated rollout instructions added; no deploy or external messages sent.",
+      "evidence": [
+        "docs/DEPLOYMENT.md",
+        "docs/audit-2026-09-04.md",
+        "web/src/components/site-footer.tsx"
+      ]
+    },
+    {
+      "id": "incident",
+      "phase": "Pre-launch",
+      "title": "Incident response and on-call readiness",
+      "status": "requires_owner_evidence",
+      "result": "Source operational docs reviewed; live deployment, alert delivery, restore drill, status service, support coverage and postlaunch metrics remain unverified. Coordinated rollout instructions added; no deploy or external messages sent.",
+      "evidence": [
+        "docs/DEPLOYMENT.md",
+        "docs/audit-2026-09-04.md",
+        "web/src/components/site-footer.tsx"
+      ]
+    },
+    {
+      "id": "statuspage",
+      "phase": "Pre-launch",
+      "title": "Status page and incident communication",
+      "status": "requires_owner_evidence",
+      "result": "Source operational docs reviewed; live deployment, alert delivery, restore drill, status service, support coverage and postlaunch metrics remain unverified. Coordinated rollout instructions added; no deploy or external messages sent.",
+      "evidence": [
+        "docs/DEPLOYMENT.md",
+        "docs/audit-2026-09-04.md",
+        "web/src/components/site-footer.tsx"
+      ]
+    },
+    {
+      "id": "dns",
+      "phase": "Pre-launch",
+      "title": "Domain, DNS, and email-domain health",
+      "status": "requires_owner_evidence",
+      "result": "Source auth redirects inspected; SMTP templates/delivery, SPF/DKIM/DMARC, DNSSEC, domain renewal and hosted redirect allowlists need allowed owner-side evidence. No production configuration claims.",
+      "evidence": [
+        "web/src/app/auth/forgot-password/page.tsx",
+        "docs/DEPLOYMENT.md"
+      ]
+    },
+    {
+      "id": "support",
+      "phase": "Pre-launch",
+      "title": "Customer support and feedback readiness",
+      "status": "requires_owner_evidence",
+      "result": "Source operational docs reviewed; live deployment, alert delivery, restore drill, status service, support coverage and postlaunch metrics remain unverified. Coordinated rollout instructions added; no deploy or external messages sent.",
+      "evidence": [
+        "docs/DEPLOYMENT.md",
+        "docs/audit-2026-09-04.md",
+        "web/src/components/site-footer.tsx"
+      ]
+    },
+    {
+      "id": "launchday",
+      "phase": "Pre-launch",
+      "title": "Launch-Day Runbook",
+      "status": "requires_owner_evidence",
+      "result": "Source operational docs reviewed; live deployment, alert delivery, restore drill, status service, support coverage and postlaunch metrics remain unverified. Coordinated rollout instructions added; no deploy or external messages sent.",
+      "evidence": [
+        "docs/DEPLOYMENT.md",
+        "docs/audit-2026-09-04.md",
+        "web/src/components/site-footer.tsx"
+      ]
+    },
+    {
+      "id": "competitive",
+      "phase": "Strategy",
+      "title": "Competitive analysis and gap audit",
+      "status": "requires_owner_evidence",
+      "result": "Market demand, customer research, financial evidence and launch strategy cannot be established from source code or synthetic tests. No market-validation or revenue-readiness claim.",
+      "evidence": [
+        "docs/pro-access.md",
+        "web/src/lib/entitlements.ts"
+      ]
+    },
+    {
+      "id": "research",
+      "phase": "Strategy",
+      "title": "Feature, API, and tooling research",
+      "status": "requires_owner_evidence",
+      "result": "Market demand, customer research, financial evidence and launch strategy cannot be established from source code or synthetic tests. No market-validation or revenue-readiness claim.",
+      "evidence": [
+        "docs/pro-access.md",
+        "web/src/lib/entitlements.ts"
+      ]
+    },
+    {
+      "id": "designsystem",
+      "phase": "Strategy",
+      "title": "Design system and token health audit",
+      "status": "deferred_to_claude",
+      "result": "User instructions route user-facing taste, copy and product/API design to Claude. Mechanical functional/accessibility defects are covered separately; no taste redesign performed.",
+      "evidence": [
+        "web/src/app/page.tsx",
+        "web/src/app/for-agencies/page.tsx",
+        "web/public/llms.txt"
+      ]
+    },
+    {
+      "id": "dx",
+      "phase": "Strategy",
+      "title": "Developer experience audit",
+      "status": "partial",
+      "result": "Setup/system context exists; recovery knowledge, operator access and clean install remain unproven. Added this audit and coordinated rollout procedure, not a README.",
+      "evidence": [
+        "CONTRIBUTING.md",
+        "docs/DEPLOYMENT.md",
+        "docs/audit-2026-09-04.md"
+      ]
+    },
+    {
+      "id": "busfactor",
+      "phase": "Strategy",
+      "title": "Bus factor and recovery readiness",
+      "status": "partial",
+      "result": "Setup/system context exists; recovery knowledge, operator access and clean install remain unproven. Added this audit and coordinated rollout procedure, not a README.",
+      "evidence": [
+        "CONTRIBUTING.md",
+        "docs/DEPLOYMENT.md",
+        "docs/audit-2026-09-04.md"
+      ]
+    },
+    {
+      "id": "costaudit",
+      "phase": "Strategy",
+      "title": "Cost efficiency and waste audit",
+      "status": "partial",
+      "result": "Inspected Anthropic AI SDK integration, bounded model steps/output/history, destructive-action guard and URL/egress controls. Fixed scheduled spend bypass and retry/refund accounting. No paid provider calls, promptfoo model probes, real-user evaluation set or dollar-cost/load measurement.",
+      "evidence": [
+        "src/agent/engine.ts",
+        "src/security/action-guard.ts",
+        "src/security/url-guard.ts",
+        "web/supabase/migrations/024_scheduled_scan_spend_guards.sql",
+        "worker/src/config.ts"
+      ]
+    },
+    {
+      "id": "supplychain",
+      "phase": "Strategy",
+      "title": "Supply chain security deep dive",
+      "status": "blocked",
+      "result": "Automatic approval review rejected transmitting private dependency names/versions to npm advisory service; specific approval remains pending. Installed Next16.3.3 follows root override despite web pin16.3.4. Offline re-resolution failed on missing cached metadata; manifests unchanged. No CVE clearance.",
+      "evidence": [
+        "package.json",
+        "pnpm-lock.yaml",
+        "web/package.json"
+      ]
+    },
+    {
+      "id": "agentready",
+      "phase": "Strategy",
+      "title": "AI agent readiness audit",
+      "status": "reviewed",
+      "result": "Bounded architecture and contributor-context review complete; no justified mass reorganization. Machine-readable credential-local wording needs Claude review.",
+      "evidence": [
+        "CONTRIBUTING.md",
+        "CONTEXT.md",
+        "web/public/llms.txt"
+      ]
+    },
+    {
+      "id": "experiments",
+      "phase": "Strategy",
+      "title": "A/B testing and experiment validity audit",
+      "status": "requires_owner_evidence",
+      "result": "Market demand, customer research, financial evidence and launch strategy cannot be established from source code or synthetic tests. No market-validation or revenue-readiness claim.",
+      "evidence": [
+        "docs/pro-access.md",
+        "web/src/lib/entitlements.ts"
+      ]
+    },
+    {
+      "id": "growth",
+      "phase": "Strategy",
+      "title": "Growth & Retention Analytics",
+      "status": "requires_owner_evidence",
+      "result": "Market demand, customer research, financial evidence and launch strategy cannot be established from source code or synthetic tests. No market-validation or revenue-readiness claim.",
+      "evidence": [
+        "docs/pro-access.md",
+        "web/src/lib/entitlements.ts"
+      ]
+    },
+    {
+      "id": "launch-marketing",
+      "phase": "Strategy",
+      "title": "Go-to-market launch plan (marketing)",
+      "status": "requires_owner_evidence",
+      "result": "Market demand, customer research, financial evidence and launch strategy cannot be established from source code or synthetic tests. No market-validation or revenue-readiness claim.",
+      "evidence": [
+        "docs/pro-access.md",
+        "web/src/lib/entitlements.ts"
+      ]
+    },
+    {
+      "id": "organic-authority",
+      "phase": "Strategy",
+      "title": "Content & AI-citation (AEO) acquisition audit",
+      "status": "requires_owner_evidence",
+      "result": "Market demand, customer research, financial evidence and launch strategy cannot be established from source code or synthetic tests. No market-validation or revenue-readiness claim.",
+      "evidence": [
+        "docs/pro-access.md",
+        "web/src/lib/entitlements.ts"
+      ]
+    },
+    {
+      "id": "pricing",
+      "phase": "Strategy",
+      "title": "Pricing & Packaging",
+      "status": "requires_owner_evidence",
+      "result": "Market demand, customer research, financial evidence and launch strategy cannot be established from source code or synthetic tests. No market-validation or revenue-readiness claim.",
+      "evidence": [
+        "docs/pro-access.md",
+        "web/src/lib/entitlements.ts"
+      ]
+    },
+    {
+      "id": "changelog",
+      "phase": "Strategy",
+      "title": "Changelog & Release Notes",
+      "status": "requires_owner_evidence",
+      "result": "Audit report records this local unreleased change. Public release notes/versioning depend on the eventual reviewed release; nothing published.",
+      "evidence": [
+        "docs/audit-2026-09-04.md"
+      ]
+    },
+    {
+      "id": "agent-commerce",
+      "phase": "Strategy",
+      "title": "Agentic commerce & AI-shopper readiness",
+      "status": "requires_owner_evidence",
+      "result": "Market demand, customer research, financial evidence and launch strategy cannot be established from source code or synthetic tests. No market-validation or revenue-readiness claim.",
+      "evidence": [
+        "docs/pro-access.md",
+        "web/src/lib/entitlements.ts"
+      ]
+    },
+    {
+      "id": "action",
+      "phase": "Output",
+      "title": "Convert findings to prioritized action plan",
+      "status": "reviewed",
+      "result": "Findings were deduplicated and independently challenged, fixes verified with targeted regressions, production browser checks run, remaining launch gates recorded. Verdict remains not certified/deployed while external evidence is missing.",
+      "evidence": [
+        "docs/audit-2026-09-04.md",
+        "web/tests/e2e",
+        "web/supabase/tests"
+      ]
+    },
+    {
+      "id": "voice",
+      "phase": "Output",
+      "title": "Brand voice document generator",
+      "status": "deferred_to_claude",
+      "result": "User instructions route user-facing taste, copy and product/API design to Claude. Mechanical functional/accessibility defects are covered separately; no taste redesign performed.",
+      "evidence": [
+        "web/src/app/page.tsx",
+        "web/src/app/for-agencies/page.tsx",
+        "web/public/llms.txt"
+      ]
+    },
+    {
+      "id": "pw",
+      "phase": "Output",
+      "title": "Playwright test generation",
+      "status": "reviewed",
+      "result": "Findings were deduplicated and independently challenged, fixes verified with targeted regressions, production browser checks run, remaining launch gates recorded. Verdict remains not certified/deployed while external evidence is missing.",
+      "evidence": [
+        "docs/audit-2026-09-04.md",
+        "web/tests/e2e",
+        "web/supabase/tests"
+      ]
+    },
+    {
+      "id": "visualreg",
+      "phase": "Output",
+      "title": "Visual regression testing setup",
+      "status": "deferred_to_claude",
+      "result": "No approved screenshot baseline or visual taste review supplied; mechanical browser/overflow/accessibility checks performed without inventing an accepted design baseline.",
+      "evidence": [
+        "web/tests/e2e/public-accessibility.spec.ts"
+      ]
+    },
+    {
+      "id": "gate",
+      "phase": "Output",
+      "title": "Master launch gate \u2014 go / no-go",
+      "status": "reviewed",
+      "result": "Findings were deduplicated and independently challenged, fixes verified with targeted regressions, production browser checks run, remaining launch gates recorded. Verdict remains not certified/deployed while external evidence is missing.",
+      "evidence": [
+        "docs/audit-2026-09-04.md",
+        "web/tests/e2e",
+        "web/supabase/tests"
+      ]
+    },
+    {
+      "id": "delta",
+      "phase": "Output",
+      "title": "Re-Audit: Delta Against Prior Findings",
+      "status": "reviewed",
+      "result": "Findings were deduplicated and independently challenged, fixes verified with targeted regressions, production browser checks run, remaining launch gates recorded. Verdict remains not certified/deployed while external evidence is missing.",
+      "evidence": [
+        "docs/audit-2026-09-04.md",
+        "web/tests/e2e",
+        "web/supabase/tests"
+      ]
+    },
+    {
+      "id": "dedup",
+      "phase": "Output",
+      "title": "Parallel Findings Deduplicator & Priority Merge",
+      "status": "reviewed",
+      "result": "Findings were deduplicated and independently challenged, fixes verified with targeted regressions, production browser checks run, remaining launch gates recorded. Verdict remains not certified/deployed while external evidence is missing.",
+      "evidence": [
+        "docs/audit-2026-09-04.md",
+        "web/tests/e2e",
+        "web/supabase/tests"
+      ]
+    },
+    {
+      "id": "rollback",
+      "phase": "Output",
+      "title": "Rollback Readiness Audit",
+      "status": "partial",
+      "result": "Clean isolated Supabase migrations and seven SQL regressions pass. Security migrations change rollout compatibility; report requires coordinated maintenance, draining old workers and matching web deployment. No live migration/restore/rollback performed.",
+      "evidence": [
+        "web/supabase/migrations/024_scheduled_scan_spend_guards.sql",
+        "web/supabase/migrations/027_waitlist_server_boundary.sql",
+        "docs/audit-2026-09-04.md"
+      ]
+    },
+    {
+      "id": "postlaunch",
+      "phase": "Post-launch",
+      "title": "Post-launch monitoring checklist",
+      "status": "requires_owner_evidence",
+      "result": "Source operational docs reviewed; live deployment, alert delivery, restore drill, status service, support coverage and postlaunch metrics remain unverified. Coordinated rollout instructions added; no deploy or external messages sent.",
+      "evidence": [
+        "docs/DEPLOYMENT.md",
+        "docs/audit-2026-09-04.md",
+        "web/src/components/site-footer.tsx"
+      ]
+    },
+    {
+      "id": "postlaunch-retro",
+      "phase": "Post-launch",
+      "title": "Post-launch retrospective & iteration loop",
+      "status": "requires_owner_evidence",
+      "result": "Source operational docs reviewed; live deployment, alert delivery, restore drill, status service, support coverage and postlaunch metrics remain unverified. Coordinated rollout instructions added; no deploy or external messages sent.",
+      "evidence": [
+        "docs/DEPLOYMENT.md",
+        "docs/audit-2026-09-04.md",
+        "web/src/components/site-footer.tsx"
+      ]
+    },
+    {
+      "id": "craft-security",
+      "phase": "Craft CMS (Rocketpark)",
+      "title": "Craft CMS security and hardening",
+      "status": "not_applicable",
+      "result": "Craft client sites are outside this personal SaaS stack and expressly outside the user data boundary; not inspected.",
+      "evidence": [
+        "package.json",
+        "web/package.json"
+      ]
+    },
+    {
+      "id": "craft-config",
+      "phase": "Craft CMS (Rocketpark)",
+      "title": "Craft config and project config workflow",
+      "status": "not_applicable",
+      "result": "Craft client sites are outside this personal SaaS stack and expressly outside the user data boundary; not inspected.",
+      "evidence": [
+        "package.json",
+        "web/package.json"
+      ]
+    },
+    {
+      "id": "craft-templates",
+      "phase": "Craft CMS (Rocketpark)",
+      "title": "Craft Twig templates and front-end quality",
+      "status": "not_applicable",
+      "result": "Craft client sites are outside this personal SaaS stack and expressly outside the user data boundary; not inspected.",
+      "evidence": [
+        "package.json",
+        "web/package.json"
+      ]
+    },
+    {
+      "id": "craft-perf",
+      "phase": "Craft CMS (Rocketpark)",
+      "title": "Craft performance and caching",
+      "status": "not_applicable",
+      "result": "Craft client sites are outside this personal SaaS stack and expressly outside the user data boundary; not inspected.",
+      "evidence": [
+        "package.json",
+        "web/package.json"
+      ]
+    },
+    {
+      "id": "craft-plugins",
+      "phase": "Craft CMS (Rocketpark)",
+      "title": "Craft plugins and Composer hygiene",
+      "status": "not_applicable",
+      "result": "Craft client sites are outside this personal SaaS stack and expressly outside the user data boundary; not inspected.",
+      "evidence": [
+        "package.json",
+        "web/package.json"
+      ]
+    },
+    {
+      "id": "craft-plugin-runtime-config",
+      "phase": "Craft CMS (Rocketpark)",
+      "title": "Craft plugin runtime configuration audit",
+      "status": "not_applicable",
+      "result": "Craft client sites are outside this personal SaaS stack and expressly outside the user data boundary; not inspected.",
+      "evidence": [
+        "package.json",
+        "web/package.json"
+      ]
+    },
+    {
+      "id": "craft-deploy",
+      "phase": "Craft CMS (Rocketpark)",
+      "title": "Craft deployment, queue, and backups",
+      "status": "not_applicable",
+      "result": "Craft client sites are outside this personal SaaS stack and expressly outside the user data boundary; not inspected.",
+      "evidence": [
+        "package.json",
+        "web/package.json"
+      ]
+    },
+    {
+      "id": "craft-launch",
+      "phase": "Craft CMS (Rocketpark)",
+      "title": "Craft content modeling, multi-site, and SEO launch",
+      "status": "not_applicable",
+      "result": "Craft client sites are outside this personal SaaS stack and expressly outside the user data boundary; not inspected.",
+      "evidence": [
+        "package.json",
+        "web/package.json"
+      ]
+    },
+    {
+      "id": "craft-handoff",
+      "phase": "Craft CMS (Rocketpark)",
+      "title": "Craft client handoff and editor experience",
+      "status": "not_applicable",
+      "result": "Craft client sites are outside this personal SaaS stack and expressly outside the user data boundary; not inspected.",
+      "evidence": [
+        "package.json",
+        "web/package.json"
+      ]
+    },
+    {
+      "id": "craft-graphql",
+      "phase": "Craft CMS (Rocketpark)",
+      "title": "Craft GraphQL / Headless API",
+      "status": "not_applicable",
+      "result": "Craft client sites are outside this personal SaaS stack and expressly outside the user data boundary; not inspected.",
+      "evidence": [
+        "package.json",
+        "web/package.json"
+      ]
+    }
+  ]
+}

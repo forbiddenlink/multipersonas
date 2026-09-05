@@ -4,17 +4,17 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    // web/ has its own eslint-config-next setup; worker/ is a separate
-    // package with its own tsconfig. Root lint only covers the published
-    // CLI + experiments/scripts, and never touches build output.
+    // web/ has its own eslint-config-next setup. Root lint covers the CLI,
+    // worker and experiments/scripts, and never touches build output.
     ignores: [
       "dist/**",
       ".vercel/**",
       "node_modules/**",
       "web/**",
-      "worker/**",
+      "worker/dist/**",
+      "worker/node_modules/**",
       // video/ is a standalone Remotion project with its own tooling and tsconfig,
-      // isolated from the workspace like worker/. Not part of the root CLI lint.
+      // isolated from the workspace. Not part of the root CLI lint.
       "video/**",
       "coverage/**",
     ],
@@ -25,7 +25,7 @@ export default tseslint.config(
   // code that has never been linted before.
   ...tseslint.configs.recommended,
   {
-    files: ["src/**/*.ts", "experiments/**/*.ts", "scripts/**/*.ts"],
+    files: ["src/**/*.ts", "worker/src/**/*.ts", "experiments/**/*.ts", "scripts/**/*.ts"],
     rules: {
       // Unused vars/args prefixed with _ are intentional (destructuring,
       // ignored catch bindings) — don't flag them.

@@ -35,6 +35,15 @@ describe("scrubEvent", () => {
     expect(e.exception?.values?.[0]?.value).toBe("duplicate key for [email]");
   });
 
+  it("removes URL credentials, query tokens and fragments from error text", () => {
+    const e = scrubEvent({
+      message: "Failed https://user:synthetic-password@example.invalid/path?token=synthetic#private",
+      exception: { values: [{ value: "Fetch https://example.invalid/path?token=synthetic failed" }] },
+    });
+    expect(e.message).toBe("Failed https://example.invalid/path");
+    expect(e.exception?.values?.[0]?.value).toBe("Fetch https://example.invalid/path failed");
+  });
+
   it("is safe on an empty event", () => {
     expect(() => scrubEvent({})).not.toThrow();
   });

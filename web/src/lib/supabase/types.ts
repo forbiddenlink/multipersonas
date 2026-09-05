@@ -651,8 +651,12 @@ export type Database = {
         }
         Returns: string
       }
+      enqueue_grade_scan: {
+        Args: { p_url: string; p_rate_key: string; p_queue_cap?: number; p_rate_max?: number; p_rate_window_seconds?: number }
+        Returns: { status: string; job_id: string | null; token: string | null }[]
+      }
       enqueue_due_project_scan_schedules: {
-        Args: { p_limit?: number }
+        Args: { p_limit?: number; p_daily_cap?: number; p_caller_cap?: number; p_calls_per_persona?: number }
         Returns: {
           job_id: string
           schedule_id: string

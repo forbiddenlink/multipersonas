@@ -3,9 +3,11 @@ import * as path from "node:path";
 import * as fs from "node:fs";
 import * as Sentry from "@sentry/node";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { runMultiPersonaTest, type TestResult } from "multipersonas/orchestrator";
-import { gradeScan } from "multipersonas/grader";
-import { personaLibrary, isBuiltinPersonaId } from "multipersonas/personas/library";
+import { type TestResult } from "multipersonas/orchestrator";
+import type { gradeScan } from "multipersonas/grader";
+import { runJobProcess, ScanCleanupError } from "./job-process.js";
+import { positiveEnvInt } from "./config.js";
+import { writeJobState } from "./job-write.js";
 import { clampFindingCategory, clampSeverity } from "multipersonas/domain/vocab";
 
 // --- config ---------------------------------------------------------------
@@ -21,19 +23,10 @@ process.env.MP_BLOCK_DESTRUCTIVE_ACTIONS = "1";
 const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-/** Empty string / NaN / ≤0 → fallback. `Number("") === 0` would otherwise
- * collapse timeouts to instant fail and poll intervals to a busy loop. */
-function positiveEnvInt(raw: string | undefined, fallback: number): number {
-  if (raw === undefined || raw.trim() === "") return fallback;
-  const n = Number(raw);
-  if (!Number.isFinite(n) || n <= 0) return fallback;
-  return Math.floor(n);
-}
-
 const POLL_MS = positiveEnvInt(process.env.WORKER_POLL_MS, 3000);
 // In-process cap on a single run. A hung Playwright navigation must not freeze the
-// whole (single-worker) queue, so the run loses a race against this timeout and the
-// job is marked failed.
+// whole (single-worker) queue. Terminate the scan process tree before marking
+// the job failed or acknowledging completion.
 const JOB_TIMEOUT_MS = positiveEnvInt(process.env.WORKER_JOB_TIMEOUT_SECONDS, 300) * 1000;
 // Backstop for a CRASHED worker (where the in-process timeout never fires): the reaper
 // only touches jobs stuck well past the in-process cap, so it never races a run the
@@ -113,18 +106,6 @@ interface AuditJob {
   attempts?: number;
 }
 
-/** Reject if `promise` doesn't settle within ms. The underlying work keeps running
- * (the orchestrator has no abort signal), so we swallow its late result to avoid an
- * unhandled rejection; the job is already marked failed by then. */
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  promise.catch(() => {});
-  let timer: NodeJS.Timeout;
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`${label} exceeded ${ms}ms`)), ms);
-  });
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer)) as Promise<T>;
-}
-
 /** Send an alert to WORKER_ALERT_WEBHOOK if configured. Best-effort and never throws —
  * an alert-path failure must not take down the worker. */
 async function notify(text: string): Promise<void> {
@@ -134,30 +115,11 @@ async function notify(text: string): Promise<void> {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ text: `[personaudit worker] ${text}` }),
+      signal: AbortSignal.timeout(5000),
     });
   } catch (e) {
     console.error("[worker] alert webhook failed:", e instanceof Error ? e.message : e);
   }
-}
-
-/** Refund a failed job's reserved model-call budget. Best-effort — a release failure
- * (e.g. migration 013 not yet applied) is logged, not thrown; the daily counter
- * self-heals at UTC midnight. */
-async function releaseReservation(job: AuditJob): Promise<void> {
-  if (!job.reserved_calls) return;
-  // Prefer the scoped refund so a failed run does not lock the caller out of
-  // their daily sub-cap until UTC midnight. Fall back to global-only for rows
-  // claimed before caller_key existed, or if the scoped RPC is not yet deployed.
-  if (job.caller_key) {
-    const { error } = await supabase.rpc("release_model_calls_scoped", {
-      p_calls: job.reserved_calls,
-      p_caller: job.caller_key,
-    });
-    if (!error) return;
-    console.error(`[worker] release_model_calls_scoped failed for ${job.id}: ${error.message}`);
-  }
-  const { error } = await supabase.rpc("release_model_calls", { p_calls: job.reserved_calls });
-  if (error) console.error(`[worker] release_model_calls failed for ${job.id}: ${error.message}`);
 }
 
 /**
@@ -397,32 +359,32 @@ async function claimAndRun(): Promise<boolean> {
   // no session, results to the public grader_scans row. Handled inline then done.
   if (claimed.kind === "grade") {
     try {
-      const { report, pagesVisited } = await withTimeout(
-        gradeScan(claimed.url, { maxPages: 10 }),
-        JOB_TIMEOUT_MS,
-        `grade ${claimed.id}`,
+      const { report, pagesVisited } = await runJobProcess<Awaited<ReturnType<typeof gradeScan>>>(
+        new URL("./scan-process.ts", import.meta.url),
+        { kind: claimed.kind, url: claimed.url, persona_ids: claimed.persona_ids }, JOB_TIMEOUT_MS,
       );
-      await supabase
+      await writeJobState(supabase
         .from("grader_scans")
         .update({ report, pages_visited: pagesVisited, error: null })
-        .eq("job_id", claimed.id);
-      await supabase
+        .eq("job_id", claimed.id).select("token").single());
+      await writeJobState(supabase
         .from("audit_jobs")
         .update({ status: "completed", completed_at: new Date().toISOString() })
-        .eq("id", claimed.id);
+        .eq("id", claimed.id).select("id").single());
       await logWorkerEvent(claimed, "audit_job.completed", { pagesVisited: pagesVisited.length });
       console.log(`[worker] graded ${claimed.id}`);
     } catch (e) {
+      if (e instanceof ScanCleanupError) throw e;
       const detail = e instanceof Error ? e.message : "Unknown error";
       const publicMsg = publicJobError(e);
-      await supabase
+      await writeJobState(supabase
         .from("grader_scans")
         .update({ error: publicMsg })
-        .eq("job_id", claimed.id);
-      await supabase
+        .eq("job_id", claimed.id).select("token").single());
+      await writeJobState(supabase
         .from("audit_jobs")
         .update({ status: "failed", error: publicMsg, completed_at: new Date().toISOString() })
-        .eq("id", claimed.id);
+        .eq("id", claimed.id).select("id").single());
       await logWorkerEvent(claimed, "audit_job.failed", { error: publicMsg });
       Sentry.captureException(e, { tags: { jobId: claimed.id, kind: "grade" } });
       console.error(`[worker] grade failed ${claimed.id}: ${detail}`);
@@ -434,27 +396,8 @@ async function claimAndRun(): Promise<boolean> {
   const tmpDir = path.join(os.tmpdir(), `mp-worker-${claimed.id}`);
 
   try {
-    const personas = claimed.persona_ids
-      .filter((id) => isBuiltinPersonaId(id))
-      .map((id) => personaLibrary[id])
-      .filter((p) => Boolean(p));
-
-    if (personas.length === 0) {
-      throw new Error(
-        `No valid personas for job ${claimed.id} (requested: ${claimed.persona_ids.join(", ") || "none"})`,
-      );
-    }
-
-    const result = await withTimeout(
-      runMultiPersonaTest({
-        url: claimed.url,
-        personas,
-        outputDir: tmpDir,
-        parallel: true,
-        runAxe: true,
-      }),
-      JOB_TIMEOUT_MS,
-      `job ${claimed.id}`,
+    const result = await runJobProcess<TestResult>(
+      new URL("./scan-process.ts", import.meta.url), { kind: claimed.kind, url: claimed.url, persona_ids: claimed.persona_ids, outputDir: tmpDir }, JOB_TIMEOUT_MS,
     );
     const response = toResponse(result);
 
@@ -465,26 +408,26 @@ async function claimAndRun(): Promise<boolean> {
       if (runId) await persistJourney(runId, result);
     }
 
-    await supabase
+    await writeJobState(supabase
       .from("audit_jobs")
       .update({ status: "completed", result: response, completed_at: new Date().toISOString() })
-      .eq("id", claimed.id);
+      .eq("id", claimed.id).select("id").single());
     await logWorkerEvent(claimed, "audit_job.completed", {
-      personas: personas.length,
+      personas: result.personas.length,
       findings:
         response.axeFindings.length + response.personas.reduce((n, p) => n + p.findings.length, 0),
     });
     console.log(`[worker] completed ${claimed.id}`);
   } catch (e) {
+    if (e instanceof ScanCleanupError) throw e;
     const detail = e instanceof Error ? e.message : "Unknown error";
     const publicMsg = publicJobError(e);
-    await supabase
+    await writeJobState(supabase
       .from("audit_jobs")
       .update({ status: "failed", error: publicMsg, completed_at: new Date().toISOString() })
-      .eq("id", claimed.id);
-    // Refund the budget this failed run reserved (P0 #3) so a run of failures can't
-    // fill the daily cap and refuse legitimate audits.
-    await releaseReservation(claimed);
+      .eq("id", claimed.id).select("id").single());
+    // Claimed work may already have consumed model calls. Keep its reservation:
+    // refunding failures would let retries evade the daily spend limit.
     await logWorkerEvent(claimed, "audit_job.failed", { error: publicMsg });
     Sentry.captureException(e, { tags: { jobId: claimed.id } });
     console.error(`[worker] failed ${claimed.id}: ${detail}`);
@@ -529,6 +472,10 @@ async function loop(): Promise<void> {
     try {
       ranSomething = await claimAndRun();
     } catch (e) {
+      if (e instanceof ScanCleanupError) {
+        onFatal("scan cleanup")(e);
+        await new Promise<never>(() => {}); // Exit before claiming more work.
+      }
       const msg = e instanceof Error ? e.message : String(e);
       Sentry.captureException(e);
       console.error("[worker] loop error:", msg);

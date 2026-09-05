@@ -291,7 +291,7 @@ export default function ForAgenciesPage() {
           </p>
         </Reveal>
         <Reveal delay={60}>
-          <pre className="mt-10 overflow-x-auto rounded-md border border-border bg-card p-5 font-mono text-xs leading-relaxed text-foreground">
+          <pre tabIndex={0} role="region" aria-label="Command-line scanning example" className="mt-10 overflow-x-auto rounded-md border border-border bg-card p-5 font-mono text-xs leading-relaxed text-foreground">
 {`# snapshot today's defects (commit the baseline)
 mpersonas scan https://client.app --session ./session.json \\
   --baseline mpersonas-baseline.json --update-baseline

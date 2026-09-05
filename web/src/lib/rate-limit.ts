@@ -5,15 +5,15 @@ import { RATE_LIMITS, type RateLimitType } from "@/lib/limits";
 export interface RateLimitResult {
   allowed: boolean;
   retryAfterSeconds: number;
+  unavailable?: boolean;
 }
 
 /**
  * Durable, shared rate limit backed by the Postgres RPC consume_rate_limit. Replaces the
  * old in-process Map (per-instance, resettable, X-Forwarded-For-spoofable).
  *
- * Degrades on missing service key (dev) or transient RPC error by ALLOWING — a rate limit
- * is availability protection, not the money guard, so a DB blip should not take the app
- * down. The spend cap (reserveSpend) is the money guard and fails closed instead.
+ * Fail closed when enforcement is unavailable. A missing RPC or permission drift
+ * must not silently remove abuse protection from public write endpoints.
  */
 export async function consumeRateLimit(
   key: string,
@@ -24,9 +24,9 @@ export async function consumeRateLimit(
 
   if (!admin) {
     console.warn(
-      "[rate-limit] SUPABASE_SERVICE_ROLE_KEY not set — durable rate limiting disabled (allowing). Required before public deploy.",
+      "[rate-limit] SUPABASE_SERVICE_ROLE_KEY not set — durable rate limiting unavailable (refusing).",
     );
-    return { allowed: true, retryAfterSeconds: 0 };
+    return { allowed: false, retryAfterSeconds: 60, unavailable: true };
   }
 
   const { data, error } = await admin.rpc("consume_rate_limit", {
@@ -36,8 +36,8 @@ export async function consumeRateLimit(
   });
 
   if (error) {
-    console.error("[rate-limit] RPC failed, allowing:", error.message);
-    return { allowed: true, retryAfterSeconds: 0 };
+    console.error("[rate-limit] RPC failed, refusing:", error.message);
+    return { allowed: false, retryAfterSeconds: 60, unavailable: true };
   }
 
   return { allowed: data === true, retryAfterSeconds: data ? 0 : windowSeconds };
