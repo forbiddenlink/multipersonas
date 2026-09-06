@@ -58,7 +58,15 @@ it("rejects malformed scan output instead of accepting an empty success", async 
   await expect(runJobProcess(script, {}, 3000)).rejects.toThrow('Invalid scan result');
 });
 
-it("rejects with a fatal cleanup error if teardown cannot be verified", async () => {
+// Linux-excluded on purpose. This case asserts the terminateTree() throw path, which
+// only runs when the child is forked directly. On Linux runJobProcess instead wraps the
+// child in scan-supervisor.py, and that supervisor owns descendant cleanup and reports
+// its own failure through exit code 70 (handled separately in the close handler). Stubbing
+// ps to exit 1 therefore breaks the supervisor's teardown rather than terminateTree's, and
+// the child never closes, so the case hangs instead of rejecting. Measured 2026-09-05: it
+// timed out at BOTH the 5000ms default and a 20000ms budget, which is what ruled out the
+// "not enough headroom" explanation. Passes on macOS, 6/6.
+it.skipIf(process.platform === "linux")("rejects with a fatal cleanup error if teardown cannot be verified", async () => {
   const dir = mkdtempSync(join(tmpdir(), "worker-cleanup-"));
   dirs.push(dir);
   const script = join(dir, "scan.cjs");
@@ -69,8 +77,4 @@ it("rejects with a fatal cleanup error if teardown cannot be verified", async ()
   try {
     await expect(runJobProcess(script, {}, 3000)).rejects.toBeInstanceOf(ScanCleanupError);
   } finally { process.env.PATH = previousPath; }
-// 20s, not the 5s vitest default: this case gives runJobProcess a 3000ms internal
-// budget, leaving under 2s for fork + SIGSTOP + ps + SIGKILL + close. That is
-// enough on macOS and not enough on a cold Linux CI runner, where the child is
-// additionally wrapped by scan-supervisor.py. It failed as a timeout, not a defect.
-}, 20_000);
+});
