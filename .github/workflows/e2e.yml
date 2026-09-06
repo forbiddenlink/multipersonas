@@ -28,6 +28,9 @@ permissions:
 
 jobs:
   e2e:
+    # A dependency bump does not need this job. @claude in a comment still
+    # runs it on demand where a bump genuinely warrants a look.
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
