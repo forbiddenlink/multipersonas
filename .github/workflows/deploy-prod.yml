@@ -27,6 +27,7 @@ jobs:
   deploy:
     if: ${{ github.event.inputs.confirm == 'deploy' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment: production
     env:
       # Vercel CLI reads these from the environment — never pass --token on argv (it leaks
