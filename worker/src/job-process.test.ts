@@ -69,4 +69,8 @@ it("rejects with a fatal cleanup error if teardown cannot be verified", async ()
   try {
     await expect(runJobProcess(script, {}, 3000)).rejects.toBeInstanceOf(ScanCleanupError);
   } finally { process.env.PATH = previousPath; }
-});
+// 20s, not the 5s vitest default: this case gives runJobProcess a 3000ms internal
+// budget, leaving under 2s for fork + SIGSTOP + ps + SIGKILL + close. That is
+// enough on macOS and not enough on a cold Linux CI runner, where the child is
+// additionally wrapped by scan-supervisor.py. It failed as a timeout, not a defect.
+}, 20_000);
