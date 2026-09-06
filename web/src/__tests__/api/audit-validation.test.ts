@@ -50,6 +50,14 @@ describe("POST /api/audit — validation", () => {
     expect(data.error).toBe("Invalid JSON body");
   });
 
+  it("rejects a null JSON body without throwing", async () => {
+    const res = await POST(new Request("http://localhost/api/audit", {
+      method: "POST",
+      body: "null",
+    }));
+    expect(res.status).toBe(400);
+  });
+
   it("rejects missing URL", async () => {
     const req = new Request("http://localhost/api/audit", {
       method: "POST",

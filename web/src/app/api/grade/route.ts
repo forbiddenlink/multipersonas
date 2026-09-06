@@ -2,11 +2,9 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { assertUrlAllowed, BlockedUrlError } from "@engine/security/url-guard";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { killSwitchEnabled, positiveEnvInt } from "@/lib/limits";
-import { consumeRateLimit } from "@/lib/rate-limit";
+import { killSwitchEnabled, positiveEnvInt, RATE_LIMITS } from "@/lib/limits";
 import { getClientIP } from "@/lib/client-ip";
 import { verifyTurnstile } from "@/lib/turnstile";
-import { enqueueAuditJob } from "@/lib/audit-jobs";
 import { logAuditEvent } from "@/lib/audit-log";
 
 // Public accessibility grader: anonymous, axe-only, no model spend. Enqueues a
@@ -25,7 +23,11 @@ export async function POST(request: Request) {
 
   let body: { url?: string; turnstileToken?: string };
   try {
-    body = await request.json();
+    const parsed: unknown = await request.json();
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+    body = parsed;
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
@@ -64,61 +66,40 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Grading is not configured." }, { status: 503 });
   }
 
-  // Backpressure before rate-limit: a full queue or missing config must not burn
-  // the free-grade quota (same honesty class as validate-before-limit).
-  const { count } = await admin
-    .from("audit_jobs")
-    .select("id", { count: "exact", head: true })
-    .eq("kind", "grade")
-    .eq("status", "queued");
-  if ((count ?? 0) >= MAX_QUEUED_GRADES) {
+  // Capacity, caller allowance and job/token creation share one transaction.
+  const { data, error: enqueueError } = await admin.rpc("enqueue_grade_scan", {
+    p_url: entryUrl,
+    p_queue_cap: MAX_QUEUED_GRADES,
+    p_rate_key: `grade:${ip}`,
+    p_rate_max: RATE_LIMITS.grade.max,
+    p_rate_window_seconds: RATE_LIMITS.grade.windowSeconds,
+  });
+  if (enqueueError) {
+    Sentry.captureException(enqueueError, { tags: { route: "grade", stage: "enqueue" } });
+    return NextResponse.json({ error: "Could not queue the grade." }, { status: 500 });
+  }
+  const scan = data?.[0];
+  if (scan?.status === "busy") {
     return NextResponse.json(
       { error: "The grader is busy. Please try again shortly." },
       { status: 429, headers: { "Retry-After": "60" } },
     );
   }
 
-  const rate = await consumeRateLimit(`grade:${ip}`, "grade");
-  if (!rate.allowed) {
+  if (scan?.status === "rate_limited") {
     return NextResponse.json(
       { error: "Free grade limit reached. Please wait and try again." },
-      { status: 429, headers: { "Retry-After": String(rate.retryAfterSeconds) } },
+      { status: 429, headers: { "Retry-After": String(RATE_LIMITS.grade.windowSeconds) } },
     );
   }
-
-  const { id: jobId, error: jobErr } = await enqueueAuditJob(admin, {
-    url: entryUrl,
-    kind: "grade",
-    userId: null,
-  });
-  if (jobErr || !jobId) {
-    console.error("[grade] job insert failed:", jobErr?.message);
-    Sentry.captureException(jobErr ?? new Error("audit_jobs (grade) insert returned no id"), {
-      tags: { route: "grade", stage: "enqueue-job" },
-    });
-    return NextResponse.json({ error: "Could not queue the grade." }, { status: 500 });
-  }
-
-  const { data: scan, error: scanErr } = await admin
-    .from("grader_scans")
-    .insert({ job_id: jobId, entry_url: entryUrl })
-    .select("token")
-    .single();
-  if (scanErr || !scan) {
-    console.error("[grade] scan insert failed:", scanErr?.message);
-    Sentry.captureException(scanErr ?? new Error("grader_scans insert returned no row"), {
-      tags: { route: "grade", stage: "enqueue-scan" },
-    });
-    // Don't leave an orphaned grade job on the queue — the worker would run a
-    // scan with no public token for the user.
-    await admin.from("audit_jobs").delete().eq("id", jobId);
+  if (scan?.status !== "queued" || !scan.job_id || !scan.token) {
     return NextResponse.json({ error: "Could not queue the grade." }, { status: 500 });
   }
 
   await logAuditEvent(admin, {
     action: "grade.job_queued",
     resourceType: "audit_job",
-    resourceId: jobId,
+    resourceId: scan.job_id,
     metadata: { kind: "grade", token: scan.token },
   });
 

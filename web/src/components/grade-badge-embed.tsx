@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 
 export function GradeBadgeEmbed({ token, host }: { token: string; host: string }) {
+  const [copyError, setCopyError] = useState<string | null>(null);
   const [copiedFormat, setCopiedFormat] = useState<"md" | "html" | null>(null);
 
   const origin =
@@ -16,11 +17,17 @@ export function GradeBadgeEmbed({ token, host }: { token: string; host: string }
   const mdSnippet = `[![Accessibility Grade for ${host}](${badgeUrl})](${resultUrl})`;
   const htmlSnippet = `<a href="${resultUrl}"><img src="${badgeUrl}" alt="Accessibility Grade for ${host}" /></a>`;
 
-  const copy = useCallback((text: string, format: "md" | "html") => {
-    void navigator.clipboard?.writeText(text).then(() => {
+  const copy = useCallback(async (text: string, format: "md" | "html") => {
+    setCopyError(null);
+    setCopiedFormat(null);
+    try {
+      if (!navigator.clipboard) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(text);
       setCopiedFormat(format);
       setTimeout(() => setCopiedFormat(null), 1800);
-    });
+    } catch {
+      setCopyError("Could not copy. Select the snippet and copy it manually.");
+    }
   }, []);
 
   return (
@@ -49,6 +56,8 @@ export function GradeBadgeEmbed({ token, host }: { token: string; host: string }
         />
       </div>
 
+      {copyError && <p role="alert" className="text-sm text-destructive">{copyError}</p>}
+
       {/* Code Snippets & Copy Buttons */}
       <div className="space-y-3">
         <div>
@@ -62,7 +71,7 @@ export function GradeBadgeEmbed({ token, host }: { token: string; host: string }
               {copiedFormat === "md" ? "✓ Copied" : "Copy Markdown"}
             </button>
           </div>
-          <pre className="overflow-x-auto rounded-sm border border-border bg-background p-2.5 font-mono text-xs text-muted-foreground select-all">
+          <pre tabIndex={0} role="region" aria-label="Markdown badge snippet" className="overflow-x-auto rounded-sm border border-border bg-background p-2.5 font-mono text-xs text-muted-foreground select-all">
             {mdSnippet}
           </pre>
         </div>
@@ -78,7 +87,7 @@ export function GradeBadgeEmbed({ token, host }: { token: string; host: string }
               {copiedFormat === "html" ? "✓ Copied" : "Copy HTML"}
             </button>
           </div>
-          <pre className="overflow-x-auto rounded-sm border border-border bg-background p-2.5 font-mono text-xs text-muted-foreground select-all">
+          <pre tabIndex={0} role="region" aria-label="HTML badge snippet" className="overflow-x-auto rounded-sm border border-border bg-background p-2.5 font-mono text-xs text-muted-foreground select-all">
             {htmlSnippet}
           </pre>
         </div>

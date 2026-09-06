@@ -60,9 +60,22 @@ jobs:
         working-directory: web
         run: supabase start
 
+      - name: Test database security boundaries
+        working-directory: web
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 54322
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: postgres
+        run: |
+          for test_file in supabase/tests/*.sql; do
+            psql -v ON_ERROR_STOP=1 -f "$test_file"
+          done
+
       # run.sh: pulls the local stack's URL + keys from `supabase status`, seeds
       # the test user + owned data, then runs Playwright. The config's webServer
-      # boots `next dev` inheriting that env.
+      # builds and starts the production server inheriting that env.
       - name: Run gated-app E2E
         working-directory: web
         run: pnpm test:e2e

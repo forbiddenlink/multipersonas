@@ -14,6 +14,8 @@ RUN go install github.com/stripe/smokescreen@v0.0.5-0.20260819101244-f03c477dc9f
 FROM mcr.microsoft.com/playwright:v1.62.1-jammy
 
 WORKDIR /app
+# Process containment needs Linux subreaper support and process-tree inspection.
+RUN apt-get update && apt-get install -y --no-install-recommends python3 procps && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
 
 # Install deps against the lockfile first for layer caching.

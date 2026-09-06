@@ -1,7 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock Supabase server client. `insert` is reassigned per-test via `mockInsert`.
+// Mock the service-only write boundary. `insert` is reassigned per-test via `mockInsert`.
 const mockInsert = vi.fn().mockResolvedValue({ error: null });
+
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: vi.fn().mockReturnValue({
+    from: vi.fn(() => ({ insert: mockInsert })),
+  }),
+}));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn().mockResolvedValue({
@@ -59,6 +65,8 @@ describe("POST /api/waitlist", () => {
     const data = await res.json();
     expect(data).toEqual({ ok: true });
     expect(mockVerifyTurnstile).toHaveBeenCalledWith(undefined, "unknown");
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    expect(createAdminClient).toHaveBeenCalled();
     expect(mockInsert).toHaveBeenCalledWith({
       email: "foo@example.com",
       sites_count: "6-20",

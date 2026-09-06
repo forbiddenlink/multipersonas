@@ -5,6 +5,13 @@
 **/.turbo
 **/*.log
 .git
-.env*
-web/.env*
+**/.env*
+**/*.session.json
+**/.mpersonas-session.json
+**/.vercel
+**/.playwright-mcp
+**/supabase/.temp
+**/supabase/.branches
+**/.claude
+**/.auth
 video

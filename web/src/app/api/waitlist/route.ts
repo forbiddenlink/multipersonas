@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { getClientIP } from "@/lib/client-ip";
 import { verifyTurnstile } from "@/lib/turnstile";
 
-// Demand-test capture for the /for-agencies landing page. Insert-only — see
-// supabase/migrations/008_waitlist.sql for the RLS policy (no select/update/delete,
-// so this route can never read a row back, only add one).
+// Demand-test capture for the /for-agencies landing page. Writes go through this
+// checked endpoint; direct client inserts cannot bypass its bot and rate gates.
 
 const waitlistSchema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.string().email()),
@@ -43,7 +42,18 @@ export async function POST(request: Request) {
     );
   }
 
+  const supabase = createAdminClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "Waitlist is not configured." }, { status: 503 });
+  }
+
   const rate = await consumeRateLimit(`waitlist:${ip}`, "waitlist");
+  if (rate.unavailable) {
+    return NextResponse.json(
+      { error: "This service is temporarily unavailable. Please try again shortly." },
+      { status: 503, headers: { "Retry-After": String(rate.retryAfterSeconds) } },
+    );
+  }
   if (!rate.allowed) {
     return NextResponse.json(
       { error: "Too many signups from this network. Please try again shortly." },
@@ -53,7 +63,6 @@ export async function POST(request: Request) {
 
   const { email, sitesCount, note } = parsed.data;
 
-  const supabase = await createClient();
   const { error } = await supabase.from("waitlist").insert({
     email,
     sites_count: sitesCount ?? null,

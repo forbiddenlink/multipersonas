@@ -16,6 +16,7 @@ describe("positiveEnvInt", () => {
     expect(positiveEnvInt("0", 42)).toBe(42);
     expect(positiveEnvInt("-3", 42)).toBe(42);
     expect(positiveEnvInt("nope", 42)).toBe(42);
+    expect(positiveEnvInt("0.5", 42)).toBe(42);
   });
   it("parses positive integers", () => {
     expect(positiveEnvInt("7", 42)).toBe(7);

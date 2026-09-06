@@ -18,6 +18,23 @@ export function redactEmails(text: string): string {
   return text.replace(EMAIL_RE, "[email]");
 }
 
+/** Error strings can embed a target URL, including credentials or bearer tokens. */
+function scrubText(text: string): string {
+  const withoutUrlSecrets = text.replace(/https?:\/\/[^\s<>"']+/gi, (raw) => {
+    try {
+      const url = new URL(raw);
+      url.username = "";
+      url.password = "";
+      url.search = "";
+      url.hash = "";
+      return url.toString();
+    } catch {
+      return "[url]";
+    }
+  });
+  return redactEmails(withoutUrlSecrets);
+}
+
 type ScrubbableEvent = {
   request?: { url?: string; query_string?: unknown; data?: unknown };
   message?: string;
@@ -39,11 +56,11 @@ export function scrubEvent<T extends ScrubbableEvent>(event: T): T {
     if (event.request.data !== undefined) delete event.request.data;
   }
   if (typeof event.message === "string") {
-    event.message = redactEmails(event.message);
+    event.message = scrubText(event.message);
   }
   for (const value of event.exception?.values ?? []) {
     if (typeof value.value === "string") {
-      value.value = redactEmails(value.value);
+      value.value = scrubText(value.value);
     }
   }
   return event;

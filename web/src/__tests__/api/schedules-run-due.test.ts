@@ -27,6 +27,7 @@ describe("POST /api/schedules/run-due", () => {
 
   afterEach(() => {
     process.env.CRON_SECRET = originalSecret;
+    vi.unstubAllEnvs();
   });
 
   function request(secret = "test-cron-secret", method = "POST") {
@@ -42,6 +43,13 @@ describe("POST /api/schedules/run-due", () => {
     expect(mockRpc).not.toHaveBeenCalled();
   });
 
+  it("honors the emergency kill switch before queueing scans", async () => {
+    vi.stubEnv("AUDIT_KILL_SWITCH", "1");
+    const res = await POST(request());
+    expect(res.status).toBe(503);
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
   it("enqueues due schedules through the service-only RPC", async () => {
     const res = await POST(request());
     expect(res.status).toBe(200);
@@ -51,6 +59,9 @@ describe("POST /api/schedules/run-due", () => {
     });
     expect(mockRpc).toHaveBeenCalledWith("enqueue_due_project_scan_schedules", {
       p_limit: 25,
+      p_daily_cap: 5000,
+      p_caller_cap: 250,
+      p_calls_per_persona: 25,
     });
   });
 
@@ -59,6 +70,9 @@ describe("POST /api/schedules/run-due", () => {
     expect(res.status).toBe(200);
     expect(mockRpc).toHaveBeenCalledWith("enqueue_due_project_scan_schedules", {
       p_limit: 25,
+      p_daily_cap: 5000,
+      p_caller_cap: 250,
+      p_calls_per_persona: 25,
     });
   });
 });

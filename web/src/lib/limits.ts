@@ -28,7 +28,7 @@ export function positiveEnvInt(
 ): number {
   if (raw === undefined || raw.trim() === "") return fallback;
   const n = Number(raw);
-  if (!Number.isFinite(n) || n <= 0) return fallback;
+  if (!Number.isFinite(n) || n < 1) return fallback;
   return Math.floor(n);
 }
 

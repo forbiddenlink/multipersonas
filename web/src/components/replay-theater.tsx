@@ -145,13 +145,20 @@ export function ReplayTheater({
   const meta = personaMeta[journey.personaId] ?? { name: journey.personaId, role: "" };
 
   const [copied, setCopied] = useState(false);
-  const copyMoment = useCallback(() => {
+  const [copyError, setCopyError] = useState<string | null>(null);
+  const copyMoment = useCallback(async () => {
     // The URL already carries ?persona&step (kept in sync above), so this deep-links to the
     // exact frame. The link still requires the owner's auth to open — no private data leaks.
-    void navigator.clipboard?.writeText(window.location.href).then(() => {
+    setCopyError(null);
+    setCopied(false);
+    try {
+      if (!navigator.clipboard) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
-    });
+    } catch {
+      setCopyError("Could not copy. Copy the link from your browser's address bar.");
+    }
   }, []);
 
   const baseId = useId();
@@ -236,6 +243,8 @@ export function ReplayTheater({
           </span>
         </span>
       </div>
+
+      {copyError && <p role="alert" className="px-4 py-2 text-sm text-destructive">{copyError}</p>}
 
       <div id={panelId} role="tabpanel" className="grid grid-cols-1 gap-0 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         {/* Frame viewport */}
