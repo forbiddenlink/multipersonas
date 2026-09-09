@@ -8,7 +8,7 @@
 # compiled binary crosses into the runtime image (no Go toolchain in the final layer).
 # See docs/ssrf-egress-hardening.md for why this exists (closes the DNS-rebinding
 # SSRF TOCTOU that app-level url-guard.ts cannot close in-process).
-FROM golang:1.23-bookworm AS smokescreen
+FROM golang:1.27-bookworm@sha256:648f440f42a0958804efb24df176f806f9d353b41f1c0627f666428e40310f6b AS smokescreen
 RUN go install github.com/stripe/smokescreen@v0.0.5-0.20260819101244-f03c477dc9f4
 
 FROM mcr.microsoft.com/playwright:v1.62.1-jammy
