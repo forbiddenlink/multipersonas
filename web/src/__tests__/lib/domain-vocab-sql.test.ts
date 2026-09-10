@@ -26,11 +26,11 @@ describe("SQL check constraints stay aligned with domain vocabularies", () => {
   });
 
   it("keeps audit job and finding workflow statuses aligned", () => {
-    expect(valuesFor(migration("005_audit_jobs_queue.sql"), "status")).toEqual([
+    expect(valuesFor(migration("20260727014243_audit_jobs_queue.sql"), "status")).toEqual([
       ...AUDIT_JOB_STATUSES,
     ]);
-    expect(valuesFor(migration("021_finding_workflow_and_scan_schedules.sql"), "status")).toEqual([
-      ...FINDING_STATUSES,
-    ]);
+    expect(
+      valuesFor(migration("20260910120600_finding_workflow_and_scan_schedules.sql"), "status"),
+    ).toEqual([...FINDING_STATUSES]);
   });
 });
