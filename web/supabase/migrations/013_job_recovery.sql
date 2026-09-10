@@ -44,9 +44,14 @@ $$;
 --   - attempts <  max  -> back to 'queued' for another attempt (keep the reservation;
 --                         the retry will use it)
 -- Returns the number of jobs acted on. Call it periodically from the worker.
+-- Defaults match what migration 022 (already live in prod) later set on this same
+-- signature. Postgres's CREATE OR REPLACE FUNCTION refuses to remove an existing
+-- default ("cannot remove parameter defaults from existing function"), and since this
+-- chain replays against prod's *current* state — not a blank database — this file must
+-- not define the signature without them, or the push fails outright on this statement.
 create or replace function public.reap_stale_audit_jobs(
-  p_timeout_seconds int,
-  p_max_attempts int
+  p_timeout_seconds int default 900,
+  p_max_attempts int default 2
 )
 returns int
 language plpgsql
