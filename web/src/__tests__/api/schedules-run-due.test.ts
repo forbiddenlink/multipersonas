@@ -80,7 +80,7 @@ describe("POST /api/schedules/run-due", () => {
 describe("scheduled scan SQL", () => {
   it("routes scheduled jobs through the shared audit enqueue RPC", async () => {
     const sql = fs.readFileSync(
-      path.join(process.cwd(), "supabase/migrations/20260821153936_audit_job_enqueue_boundary.sql"),
+      path.join(process.cwd(), "supabase/migrations/022_audit_job_enqueue_boundary.sql"),
       "utf8",
     );
     expect(sql).toMatch(/create or replace function public\.enqueue_audit_job/);
