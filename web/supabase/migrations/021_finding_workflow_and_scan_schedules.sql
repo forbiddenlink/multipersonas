@@ -46,10 +46,16 @@ create index if not exists idx_project_scan_schedules_user
 
 alter table public.project_scan_schedules enable row level security;
 
+-- Guarded drop-then-create (matching 015's grader_scans_public_read convention) so this
+-- migration stays replayable across a repeated `supabase db reset`, not just a first run.
+drop policy if exists "Users can view own project scan schedules"
+  on public.project_scan_schedules;
 create policy "Users can view own project scan schedules"
   on public.project_scan_schedules for select
   using ((select auth.uid()) = user_id);
 
+drop policy if exists "Users can create own project scan schedules"
+  on public.project_scan_schedules;
 create policy "Users can create own project scan schedules"
   on public.project_scan_schedules for insert
   with check (
@@ -61,6 +67,8 @@ create policy "Users can create own project scan schedules"
     )
   );
 
+drop policy if exists "Users can update own project scan schedules"
+  on public.project_scan_schedules;
 create policy "Users can update own project scan schedules"
   on public.project_scan_schedules for update
   using ((select auth.uid()) = user_id)
@@ -73,6 +81,8 @@ create policy "Users can update own project scan schedules"
     )
   );
 
+drop policy if exists "Users can delete own project scan schedules"
+  on public.project_scan_schedules;
 create policy "Users can delete own project scan schedules"
   on public.project_scan_schedules for delete
   using ((select auth.uid()) = user_id);

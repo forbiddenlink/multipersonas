@@ -1,6 +1,6 @@
 -- Scheduled scans must reserve the same global and caller budgets as manual scans.
 -- Enqueue + reservation + schedule advancement commit or roll back together.
-drop function public.enqueue_due_project_scan_schedules(int);
+drop function if exists public.enqueue_due_project_scan_schedules(int);
 
 create function public.enqueue_due_project_scan_schedules(
   p_limit int default 10,

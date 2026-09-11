@@ -14,9 +14,12 @@
 alter table public.audit_jobs
   add column if not exists caller_key text;
 
+-- Same defaults-preserving note as 013: prod already has DEFAULT 900 / DEFAULT 2 on
+-- this signature (from migration 022), and CREATE OR REPLACE cannot strip an existing
+-- default, so this redefinition must keep restating it.
 create or replace function public.reap_stale_audit_jobs(
-  p_timeout_seconds int,
-  p_max_attempts int
+  p_timeout_seconds int default 900,
+  p_max_attempts int default 2
 )
 returns int
 language plpgsql

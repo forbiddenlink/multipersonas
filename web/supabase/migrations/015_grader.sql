@@ -29,11 +29,13 @@ create index if not exists idx_grader_scans_job on public.grader_scans (job_id);
 
 alter table public.grader_scans enable row level security;
 
--- Public read: results are shared by unguessable token; anyone with the link sees it.
-drop policy if exists grader_scans_public_read on public.grader_scans;
-create policy grader_scans_public_read
-  on public.grader_scans for select
-  using (true);
-
--- No insert/update/delete policy: only the service role (worker + enqueue route)
--- writes, and service role bypasses RLS. anon/authenticated cannot write.
+-- No SELECT/insert/update/delete policy: only the service role (worker + enqueue route,
+-- scoped to the exact token — web/src/lib/grade.ts) reads or writes, and service role
+-- bypasses RLS entirely. anon/authenticated get nothing at the RLS layer.
+--
+-- This migration originally created a public `using (true)` read policy here (shared by
+-- unguessable token). Migration 016 (already applied to prod) dropped it after finding it
+-- let ANY holder of the anon key enumerate every scan via the Data API, token or not — the
+-- token was a convention, not a boundary. 016 never re-runs once this file is applied, so
+-- this file must not recreate what 016 removed, or a pending apply reopens the hole 016
+-- already closed. Do not add a public/anon SELECT policy on this table.
