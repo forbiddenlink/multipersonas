@@ -4,6 +4,7 @@ import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import Link from "next/link";
 import { useId, useRef, useState } from "react";
 import { trackProductEvent } from "@/lib/analytics";
+import { composeWaitlistNote } from "@/lib/waitlist-note";
 
 type Status = "idle" | "submitting" | "success" | "already" | "error";
 
@@ -17,9 +18,26 @@ const SITE_BANDS = [
   { value: "20+", label: "20+ sites" },
 ] as const;
 
+const AUTH_NEED_BANDS = [
+  { value: "", label: "How many sit behind a login?" },
+  { value: "none", label: "None — public sites only" },
+  { value: "some", label: "Some of them" },
+  { value: "most", label: "Most of them" },
+  { value: "all", label: "All of them" },
+] as const;
+
+const SCAN_PREF_BANDS = [
+  { value: "", label: "Where should those scans run?" },
+  { value: "local", label: "Locally — password never leaves my machine" },
+  { value: "hosted", label: "Hosted — I'd hand over a short-lived session" },
+  { value: "unsure", label: "Not sure yet" },
+] as const;
+
 export function WaitlistForm() {
   const emailId = useId();
   const sitesId = useId();
+  const authNeedId = useId();
+  const scanPrefId = useId();
   const noteId = useId();
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -40,10 +58,16 @@ export function WaitlistForm() {
 
     const form = e.currentTarget;
     const data = new FormData(form);
+    const authNeed = String(data.get("authNeed") || "") || undefined;
+    const scanPref = String(data.get("scanPref") || "") || undefined;
     const payload = {
       email: String(data.get("email") || "").trim(),
       sitesCount: String(data.get("sitesCount") || "") || undefined,
-      note: String(data.get("note") || "").trim() || undefined,
+      note: composeWaitlistNote({
+        authNeed,
+        scanPref,
+        note: String(data.get("note") || ""),
+      }),
       turnstileToken: turnstileToken ?? undefined,
     };
 
@@ -66,6 +90,8 @@ export function WaitlistForm() {
     setStatus("submitting");
     trackProductEvent("waitlist_submit_started", {
       sites_count: payload.sitesCount,
+      auth_need: authNeed,
+      scan_pref: scanPref,
       note_provided: Boolean(payload.note),
       turnstile_configured: Boolean(TURNSTILE_SITE_KEY),
     });
@@ -90,6 +116,8 @@ export function WaitlistForm() {
       setStatus(json.already ? "already" : "success");
       trackProductEvent(json.already ? "waitlist_already_joined" : "waitlist_joined", {
         sites_count: payload.sitesCount,
+        auth_need: authNeed,
+        scan_pref: scanPref,
         note_provided: Boolean(payload.note),
       });
     } catch {
@@ -117,10 +145,10 @@ export function WaitlistForm() {
         </p>
         <p className="mt-5 text-sm">
           <Link
-            href="/"
+            href="/#scan"
             className="rounded-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
           >
-            Try the free scan while you wait &rarr;
+            Grade a public URL while you wait &rarr;
           </Link>
         </p>
       </div>
@@ -175,27 +203,64 @@ export function WaitlistForm() {
 
       <div>
         <label
+          htmlFor={authNeedId}
+          className="block font-mono text-xs uppercase tracking-wide text-muted-foreground"
+        >
+          Sites behind a login{" "}
+          <span className="normal-case font-sans text-muted-foreground">
+            (optional — a no is as useful as a yes)
+          </span>
+        </label>
+        <select
+          id={authNeedId}
+          name="authNeed"
+          defaultValue=""
+          className="mt-2 w-full rounded-sm border border-input bg-background px-4 py-3 text-base md:text-sm outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+        >
+          {AUTH_NEED_BANDS.map((b) => (
+            <option key={b.value} value={b.value} disabled={b.value === ""}>
+              {b.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label
+          htmlFor={scanPrefId}
+          className="block font-mono text-xs uppercase tracking-wide text-muted-foreground"
+        >
+          Scan preference{" "}
+          <span className="normal-case font-sans text-muted-foreground">(optional)</span>
+        </label>
+        <select
+          id={scanPrefId}
+          name="scanPref"
+          defaultValue=""
+          className="mt-2 w-full rounded-sm border border-input bg-background px-4 py-3 text-base md:text-sm outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+        >
+          {SCAN_PREF_BANDS.map((b) => (
+            <option key={b.value} value={b.value} disabled={b.value === ""}>
+              {b.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label
           htmlFor={noteId}
           className="block font-mono text-xs uppercase tracking-wide text-muted-foreground"
         >
-          How many client sites sit behind a login?{" "}
+          Anything else{" "}
           <span className="normal-case font-sans text-muted-foreground">(optional)</span>
         </label>
-        {/* This field carries the two answers the demand test exists to get (ADR 0002):
-            "Auth need" (how much of their work is authenticated at all) and the
-            local-vs-hosted preference that decides whether ADR 0001's hosted pipeline is
-            worth building. Asked as free text on the existing `note` column on purpose:
-            no migration, no schema change, same signal. */}
-        <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-          And would you rather run those scans locally, where a client password never leaves
-          your machine, or hand us a short-lived session and let us run them?
-        </p>
         <textarea
           id={noteId}
           name="note"
-          rows={3}
-          maxLength={500}
-          placeholder="e.g. 6 of 12 sites, mostly checkout and account dashboards. Local only, our clients would never let us upload their session."
+          rows={2}
+          maxLength={400}
+          placeholder="e.g. mostly checkout and account dashboards"
           className="mt-2 w-full resize-y rounded-sm border border-input bg-background px-4 py-3 text-base md:text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         />
       </div>

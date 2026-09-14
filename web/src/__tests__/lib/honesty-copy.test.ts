@@ -35,4 +35,18 @@ describe("marketing copy stays honest about hosted vs CLI", () => {
     expect(read("src/components/pro-audit-upsell.tsx")).not.toMatch(/["']\/waitlist["']/);
     expect(read("src/app/(app)/settings/page.tsx")).not.toMatch(/["']\/waitlist["']/);
   });
+
+  it("does not sell hosted behind-login on the grade result conversion cluster", () => {
+    const src = read("src/components/grade-next-steps.tsx");
+    expect(src).toMatch(/CLI/);
+    expect(src).not.toMatch(/hosted behind-login is (ready|live|available)/i);
+    expect(src).toMatch(/Save this grade/);
+  });
+
+  it("does not name $199 on the agency page unless checkout can actually take payment", () => {
+    const src = read("src/app/for-agencies/page.tsx");
+    expect(src).toMatch(/FOUNDING_CHECKOUT_URL/);
+    expect(src).toMatch(/the price is named when checkout is live/);
+    expect(src).not.toMatch(/What do I get at \$199/);
+  });
 });

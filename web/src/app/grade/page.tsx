@@ -42,7 +42,7 @@ export default function GradePage() {
               href="/for-agencies"
               className="rounded-sm text-foreground underline underline-offset-4 hover:text-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
-              CLI session crawl and the agency waitlist
+              CLI session crawl and agency founding access
             </Link>
             .
           </p>
