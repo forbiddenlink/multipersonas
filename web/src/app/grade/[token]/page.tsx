@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { GradeOfferLink } from "@/components/grade-offer-link";
+import { GradeNextSteps } from "@/components/grade-next-steps";
+import { ClaimGrades } from "@/components/claim-grades";
+import { SiteFooter } from "@/components/site-footer";
 import { notFound } from "next/navigation";
 import { getGraderScan } from "@/lib/grade";
 import { buttonVariants } from "@/components/ui/button";
@@ -11,6 +13,7 @@ import { Meter } from "@/components/forensic/meter";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { BoxDivider } from "@/components/forensic/divider";
 import { SEVERITY_ORDER } from "@/components/forensic/severity";
+import { createClient } from "@/lib/supabase/server";
 import type { GradeReport } from "@engine/grader/score";
 
 // Dynamic per-scan metadata so a shared grade link previews the real domain + grade in
@@ -74,9 +77,14 @@ export default async function GradeResultPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const scan = await getGraderScan(token);
+  const supabase = await createClient();
+  const [scan, { data: auth }] = await Promise.all([
+    getGraderScan(token),
+    supabase.auth.getUser(),
+  ]);
 
   if (!scan) notFound();
+  const signedIn = Boolean(auth.user);
 
   const host = (() => {
     try {
@@ -121,11 +129,14 @@ export default async function GradeResultPage({
             <GradeReportView
               token={token}
               host={host}
+              signedIn={signedIn}
               report={scan.report as unknown as GradeReport}
             />
           )}
         </div>
       </main>
+      <SiteFooter />
+      {signedIn ? <ClaimGrades /> : null}
     </div>
   );
 }
@@ -133,10 +144,12 @@ export default async function GradeResultPage({
 function GradeReportView({
   token,
   host,
+  signedIn,
   report,
 }: {
   token: string;
   host: string;
+  signedIn: boolean;
   report: GradeReport;
 }) {
   return (
@@ -251,31 +264,8 @@ function GradeReportView({
 
       <BoxDivider />
 
-      {/* Honesty wall — verbatim, mandatory on every result. Never a compliance claim. */}
-      <div className="space-y-4 rounded-md border border-border bg-card px-5 py-5">
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          Scanned {report.pagesScanned} public page{report.pagesScanned === 1 ? "" : "s"} only.
-          It does not see behind login, PDFs, or real user flows.
-        </p>
-        <div>
-          <h2 className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
-            What to check next
-          </h2>
-          <ul className="mt-3 space-y-2 text-sm leading-relaxed text-muted-foreground">
-            <li>› Keyboard-only navigation through the highest-value path.</li>
-            <li>› Screen reader pass on forms, dialogs, menus, and checkout states.</li>
-            <li>› Logged-in pages, PDFs, and multi-step flows the public scan cannot reach.</li>
-          </ul>
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <Link href="/guides/screen-reader-testing" className={buttonVariants({ variant: "outline", size: "sm" })}>
-            Manual testing guide
-          </Link>
-          <GradeOfferLink className={buttonVariants({ variant: "outline", size: "sm" })}>
-            Scan behind the login
-          </GradeOfferLink>
-        </div>
-      </div>
+      {/* Honesty wall + the actual conversion ask. Never a compliance claim. */}
+      <GradeNextSteps signedIn={signedIn} pagesScanned={report.pagesScanned} />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminEmail } from "@/lib/admin-access";
 import { BoxDivider } from "@/components/forensic/divider";
 import { EmptyPrompt } from "@/components/forensic/empty-prompt";
+import { parseWaitlistSignals } from "@/lib/waitlist-note";
 
 export const metadata: Metadata = {
   title: "Waitlist",
@@ -41,9 +42,18 @@ export default async function WaitlistPage() {
 
   const signups = rows ?? [];
   const bands: Record<string, number> = {};
+  const authNeedBands: Record<string, number> = {};
+  const scanPrefBands: Record<string, number> = {};
   for (const r of signups) {
     const k = r.sites_count ?? "—";
     bands[k] = (bands[k] ?? 0) + 1;
+    const signals = parseWaitlistSignals(r.note);
+    if (signals.authNeed) {
+      authNeedBands[signals.authNeed] = (authNeedBands[signals.authNeed] ?? 0) + 1;
+    }
+    if (signals.scanPref) {
+      scanPrefBands[signals.scanPref] = (scanPrefBands[signals.scanPref] ?? 0) + 1;
+    }
   }
 
   return (
@@ -81,6 +91,29 @@ export default async function WaitlistPage() {
                   className="rounded-sm border border-border bg-card px-2.5 py-1 font-mono text-xs text-muted-foreground"
                 >
                   {band === "—" ? "no scale given" : `${band} sites`}:{" "}
+                  <span className="font-medium text-foreground tabular-nums">{n}</span>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {Object.keys(authNeedBands).length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {Object.entries(authNeedBands).map(([band, n]) => (
+                <span
+                  key={band}
+                  className="rounded-sm border border-border bg-card px-2.5 py-1 font-mono text-xs text-muted-foreground"
+                >
+                  auth: {band}:{" "}
+                  <span className="font-medium text-foreground tabular-nums">{n}</span>
+                </span>
+              ))}
+              {Object.entries(scanPrefBands).map(([band, n]) => (
+                <span
+                  key={`pref-${band}`}
+                  className="rounded-sm border border-border bg-card px-2.5 py-1 font-mono text-xs text-muted-foreground"
+                >
+                  prefer: {band}:{" "}
                   <span className="font-medium text-foreground tabular-nums">{n}</span>
                 </span>
               ))}

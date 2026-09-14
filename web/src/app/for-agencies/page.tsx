@@ -9,6 +9,7 @@ import { AuditTerminal } from "@/components/audit-terminal";
 import { ConsolePreview } from "@/components/forensic/console-preview";
 import { ReportPaper } from "@/components/forensic/report-paper";
 import { StatCount } from "@/components/forensic/stat-count";
+import { JsonLd, faqSchema } from "@/components/json-ld";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/for-agencies" },
@@ -51,9 +52,39 @@ const FIRST_WEEK: { when: string; title: string; body: string }[] = [
 
 const FOUNDING_CHECKOUT_URL = process.env.NEXT_PUBLIC_FOUNDING_CHECKOUT_URL;
 
+const AGENCY_FAQS = [
+  {
+    question: "Is this an overlay widget?",
+    answer:
+      "No. Overlays inject a script onto the page and claim that makes the site compliant. Personaudit audits the real DOM with axe-core and hands you the evidence. We don't sell a fix; we sell the truth.",
+  },
+  {
+    question: "Do you store my client's password?",
+    answer:
+      "No. Behind-login scanning runs in the CLI on your machine. A client password never leaves your laptop and never touches our servers. Hosted behind-login is not built yet — that is what founding access funds.",
+  },
+  {
+    question: "What does founding access include?",
+    answer: FOUNDING_CHECKOUT_URL
+      ? "$199/month for the hosted agency workspace that exists today: multi-site projects, scheduled re-scans, a CI gate, and a verdicts-only compliance report you can white-label. Behind-login stays in the CLI until the hosted pipeline ships. If we never build that, you get your money back."
+      : "The hosted agency workspace that exists today: multi-site projects, scheduled re-scans, a CI gate, and a verdicts-only compliance report you can white-label. Behind-login stays in the CLI until the hosted pipeline ships. Founding access is a paid pre-order of that workspace; the price is named when checkout is live.",
+  },
+  {
+    question: "How is this different from free axe, WAVE, or Pa11y?",
+    answer:
+      "Those tools scan a URL you already have open. Personaudit crawls every reachable state — including a saved session behind login — runs axe-core at each one, and can tell you whether a real-shaped user finished the flow. The CI gate fails the build only on new defects, not the existing backlog.",
+  },
+  {
+    question: "Does this replace testing with disabled people?",
+    answer:
+      "No. Nothing automated does. We don't simulate disabled users. For that, use Fable, who pay disabled testers. Personaudit covers the deterministic axe-core layer and labeled task-success — then you still test with people.",
+  },
+] as const;
+
 export default function ForAgenciesPage() {
   return (
     <div className="flex min-h-dvh flex-col overflow-x-hidden">
+      <JsonLd data={faqSchema(AGENCY_FAQS)} />
       <SiteHeader intent="waitlist" />
 
       <main id="main">
@@ -377,6 +408,28 @@ mpersonas scan https://client.app --session ./session.json \\
             </li>
           ))}
         </ol>
+      </section>
+
+      {/* ── Objections, answered in the open ───────────────────────────── */}
+      <section className="border-y border-border bg-card">
+        <div className="mx-auto w-full max-w-3xl px-6 py-20 sm:py-28">
+          <Reveal>
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              Before you pay
+            </p>
+            <h2 className="mt-4 font-heading text-[clamp(1.8rem,3.6vw,2.75rem)] leading-tight text-balance">
+              The questions a serious buyer actually asks.
+            </h2>
+          </Reveal>
+          <dl className="mt-12 divide-y divide-border overflow-hidden rounded-md border border-border bg-background">
+            {AGENCY_FAQS.map((faq) => (
+              <div key={faq.question} className="px-5 py-5">
+                <dt className="font-heading text-lg leading-snug">{faq.question}</dt>
+                <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">{faq.answer}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
       </section>
 
       {/* ── Early access / waitlist ────────────────────────────────────── */}

@@ -61,13 +61,16 @@ export default function Home() {
               >
                 Run a free grade
               </Link>
-              <a
-                href="#example"
+              <Link
+                href="/for-agencies"
                 className="rounded-sm border border-border px-5 py-2.5 text-center text-sm font-medium text-muted-foreground transition-colors hover:border-foreground/25 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
               >
-                See a sample report
-              </a>
+                For agencies
+              </Link>
             </div>
+            <p className="fade-up mt-4 max-w-xl font-mono text-xs leading-relaxed text-muted-foreground" style={{ animationDelay: "0.32s" }}>
+              The free grade covers public pages, no signup. Behind-login scanning stays on your machine.
+            </p>
           </div>
 
           <div className="fade-up lg:pl-2" style={{ animationDelay: "0.34s" }}>
@@ -319,7 +322,7 @@ mpersonas scan https://app.example.com --session ./session.json \\
           <p className="max-w-md font-serif text-muted-foreground leading-relaxed">
             Sign up after a free grade and that scan lands on your dashboard — axe violations
             by page, a shareable score, ready to show a client. Persona task-success is the
-            Pro layer.
+            Pro layer. Behind-login crawls stay in the keyless CLI.
           </p>
           <div className="mt-2 flex flex-col gap-3 sm:flex-row">
             <Link
@@ -328,12 +331,12 @@ mpersonas scan https://app.example.com --session ./session.json \\
             >
               Create an account
             </Link>
-            <a
-              href="#example"
+            <Link
+              href="/for-agencies"
               className="rounded-sm px-5 py-2.5 text-sm font-medium text-muted-foreground underline-offset-4 transition-colors duration-150 hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
-              See the instrument
-            </a>
+              Agency founding access
+            </Link>
           </div>
         </div>
       </section>
