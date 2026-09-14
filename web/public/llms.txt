@@ -1,8 +1,8 @@
 # Personaudit
 
-> An authenticated accessibility scanner. Point it at a URL — including one behind a
-> login — and it crawls the site and runs axe-core at every state it reaches, reporting
-> deterministic, citable rule violations. Credentials never leave the operator's machine.
+> Point it at a public URL in the hosted app, or at a URL behind a login via the CLI.
+> Hosted scans never see a password. CLI scans keep the saved session on your machine
+> and run axe-core at every state reached.
 
 ## What it does
 
@@ -11,7 +11,8 @@ Personaudit has two modes, and the split reflects what the evidence actually sup
 - **Scan (the core).** Crawls the site with a saved session — behind the login wall — and
   runs **axe-core** at every state reached, reporting deterministic, citable WCAG rule
   violations. This is the part nothing free replaces: the `axe` CLI does not crawl and
-  does not hold a session. Gate-able in CI on newly-introduced defects.
+  does not hold a session. Gate-able in CI on newly-introduced defects. The hosted grader
+  is the public-pages-only version of this scan.
 - **Run (UX personas).** Adds LLM personas (a first-time visitor, a mobile user on slow
   3G) that browse toward a goal. Their unique output is **task success** — did a
   real-shaped user actually complete the flow? — which a crawler cannot produce. Their

@@ -206,6 +206,7 @@ export type Database = {
           report: Json | null
           status: string
           token: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -216,6 +217,7 @@ export type Database = {
           report?: Json | null
           status?: string
           token?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -226,6 +228,7 @@ export type Database = {
           report?: Json | null
           status?: string
           token?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -233,6 +236,13 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "audit_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grader_scans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

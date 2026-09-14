@@ -1,63 +1,8 @@
-"use client";
+import { useRef } from "react";
 
-import { useEffect, useRef, useState } from "react";
-
-interface CountUpOptions {
-  duration?: number;
-}
-
-export function useCountUp(target: number, { duration = 1500 }: CountUpOptions = {}) {
-  const [value, setValue] = useState(0);
-  const [started, setStarted] = useState(false);
+export function useCountUp(target: number) {
+  // Show the real number on first paint. Counting up from 0 left lawsuit stats at
+  // $0 whenever IntersectionObserver never fired (below-fold, high threshold).
   const ref = useRef<HTMLElement>(null);
-  const frameRef = useRef<number>(0);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    if (
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
-      const id = requestAnimationFrame(() => setValue(target));
-      return () => cancelAnimationFrame(id);
-    }
-
-    if (typeof IntersectionObserver === "undefined") {
-      const id = requestAnimationFrame(() => setValue(target));
-      return () => cancelAnimationFrame(id);
-    }
-
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setStarted(true);
-          io.disconnect();
-        }
-      },
-      { threshold: 0.4 },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [target]);
-
-  useEffect(() => {
-    if (!started) return;
-    const startTime = performance.now();
-
-    const tick = (now: number) => {
-      const elapsed = Math.min((now - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - elapsed, 3); // ease-out cubic
-      setValue(Math.round(eased * target));
-      if (elapsed < 1) {
-        frameRef.current = requestAnimationFrame(tick);
-      }
-    };
-
-    frameRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frameRef.current);
-  }, [started, target, duration]);
-
-  return { value, ref };
+  return { value: target, ref };
 }

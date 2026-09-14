@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { BoxDivider } from "@/components/forensic/divider";
 import { updateAgencyNameAction } from "./actions";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { proAccessHref } from "@/lib/pro-access";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -71,11 +72,7 @@ export default async function SettingsPage({
           Pro is invite-only during early access. It unlocks persona task-success runs (the
           free plan gets the deterministic accessibility scan).{" "}
           <a
-            href={
-              process.env.NEXT_PUBLIC_SUPPORT_EMAIL
-                ? `mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}?subject=Pro%20access`
-                : "/waitlist"
-            }
+            href={proAccessHref()}
             className="text-foreground underline underline-offset-4"
           >
             Request Pro access

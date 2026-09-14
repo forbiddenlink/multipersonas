@@ -13,7 +13,7 @@ export function StatCount({
   suffix?: string;
   className?: string;
 }) {
-  const { value: displayed, ref } = useCountUp(value, { duration: 1800 });
+  const { value: displayed, ref } = useCountUp(value);
   return (
     <span
       ref={ref as React.Ref<HTMLSpanElement>}

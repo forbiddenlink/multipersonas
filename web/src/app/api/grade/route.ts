@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { assertUrlAllowed, BlockedUrlError } from "@engine/security/url-guard";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { killSwitchEnabled, positiveEnvInt, RATE_LIMITS } from "@/lib/limits";
 import { getClientIP } from "@/lib/client-ip";
 import { verifyTurnstile } from "@/lib/turnstile";
@@ -102,6 +103,22 @@ export async function POST(request: Request) {
     resourceId: scan.job_id,
     metadata: { kind: "grade", token: scan.token },
   });
+
+  // Signed-in grades skip the localStorage claim hop and land on the dashboard immediately.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    const { error: claimError } = await admin
+      .from("grader_scans")
+      .update({ user_id: user.id })
+      .eq("token", scan.token)
+      .is("user_id", null);
+    if (claimError) {
+      Sentry.captureException(claimError, { tags: { route: "grade", stage: "claim" } });
+    }
+  }
 
   return NextResponse.json({ token: scan.token }, { status: 202 });
 }

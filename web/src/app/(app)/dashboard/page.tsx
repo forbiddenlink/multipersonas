@@ -6,7 +6,9 @@ import { SeverityChip } from "@/components/forensic/severity-chip";
 import { createClient } from "@/lib/supabase/server";
 import { listAudits } from "@/lib/audits";
 import { getSessionPlan, planAllowsPersonas } from "@/lib/entitlements";
+import { listGraderScansForUser } from "@/lib/grade";
 import { ProAuditUpsell } from "@/components/pro-audit-upsell";
+import { GradeHistory } from "@/components/grade-history";
 import { SEVERITY_ORDER, type Severity } from "@/components/forensic/severity";
 
 export const metadata: Metadata = {
@@ -15,11 +17,15 @@ export const metadata: Metadata = {
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const audits = await listAudits(supabase, 20);
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const canRunPersonas = planAllowsPersonas(await getSessionPlan(supabase, user?.id ?? null));
+  const [audits, plan, grades] = await Promise.all([
+    listAudits(supabase, 20),
+    getSessionPlan(supabase, user?.id ?? null),
+    user ? listGraderScansForUser(user.id) : Promise.resolve([]),
+  ]);
+  const canRunPersonas = planAllowsPersonas(plan);
 
   // Severity roll-up across recent runs — axe verdicts only (never persona opinion).
   const runIds = audits.map((a) => a.id);
@@ -85,6 +91,9 @@ export default async function DashboardPage() {
       ) : (
         <ProAuditUpsell />
       )}
+
+      <BoxDivider label="saved grades" className="my-5" />
+      <GradeHistory grades={grades} />
 
       <BoxDivider label="recent runs" className="my-5" />
 

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { GradeForm } from "@/components/grade-form";
+import { GRADE_TOKEN_STORAGE_KEY } from "@/lib/grade-tokens";
 
 const push = vi.fn();
 
@@ -16,6 +17,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   push.mockClear();
+  localStorage.clear();
 });
 
 describe("GradeForm", () => {
@@ -40,7 +42,8 @@ describe("GradeForm", () => {
   });
 
   it("queues normalized http/https URLs and navigates to the grade page", async () => {
-    const fetchMock = vi.fn(async () => jsonResponse({ token: "grade-token-1" }));
+    const token = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const fetchMock = vi.fn(async () => jsonResponse({ token }));
     vi.stubGlobal("fetch", fetchMock);
 
     render(<GradeForm />);
@@ -57,6 +60,7 @@ describe("GradeForm", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url: "https://example.com/" }),
     });
-    expect(push).toHaveBeenCalledWith("/grade/grade-token-1");
+    expect(push).toHaveBeenCalledWith(`/grade/${token}`);
+    expect(JSON.parse(localStorage.getItem(GRADE_TOKEN_STORAGE_KEY) ?? "[]")).toEqual([token]);
   });
 });

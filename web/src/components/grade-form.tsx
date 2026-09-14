@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import { safeAnalyticsHost, trackProductEvent } from "@/lib/analytics";
+import { rememberGradeToken } from "@/lib/grade-tokens";
 
 // Public site key is safe to expose (that's its purpose). When unset (local/preview),
 // the widget is skipped and the server-side gate is a no-op, so the form behaves as before.
@@ -99,6 +100,7 @@ export function GradeForm() {
         target_host: safeAnalyticsHost(parsedUrl.toString()),
         turnstile_configured: Boolean(TURNSTILE_SITE_KEY),
       });
+      rememberGradeToken(token);
       router.push(`/grade/${token}`);
     } catch (err) {
       resetTurnstile();

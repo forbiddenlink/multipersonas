@@ -1,4 +1,19 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Json } from "@/lib/supabase/types";
+
+export type ClaimedGrade = {
+  token: string;
+  entry_url: string;
+  status: string;
+  letter: string | null;
+  created_at: string;
+};
+
+export function gradeLetterFromReport(report: Json | null): string | null {
+  if (!report || typeof report !== "object" || Array.isArray(report)) return null;
+  const letter = (report as { grade?: unknown }).grade;
+  return typeof letter === "string" ? letter : null;
+}
 
 export function gradeStatusFromJob({
   scanStatus,
@@ -42,4 +57,22 @@ export async function getGraderScan(token: string) {
     status: gradeStatusFromJob({ scanStatus: data.status, jobStatus }),
     error: data.error ?? jobError,
   };
+}
+
+export async function listGraderScansForUser(userId: string): Promise<ClaimedGrade[]> {
+  const admin = createAdminClient();
+  if (!admin) return [];
+  const { data } = await admin
+    .from("grader_scans")
+    .select("token, entry_url, status, report, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  return (data ?? []).map((row) => ({
+    token: row.token,
+    entry_url: row.entry_url,
+    status: row.status,
+    letter: gradeLetterFromReport(row.report),
+    created_at: row.created_at,
+  }));
 }

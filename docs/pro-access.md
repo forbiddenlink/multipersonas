@@ -29,8 +29,8 @@ update public.profiles set plan = 'pro' where id = '<user-uuid>';
 ## Contact routing
 
 The "Request Pro access" link (audit-form paywall + settings) uses
-`NEXT_PUBLIC_SUPPORT_EMAIL` when set (a `mailto:`), otherwise it falls back to the
-`/waitlist` page.
+`NEXT_PUBLIC_SUPPORT_EMAIL` when set (a `mailto:`), otherwise it falls back to
+`/for-agencies`. `/waitlist` is the owner-only inbox and 404s for everyone else.
 
 ## When Stripe lands
 

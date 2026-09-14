@@ -1,10 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/grade/route";
 
-const { rpc, countQuery, consumeRateLimit } = vi.hoisted(() => ({
-  rpc: vi.fn(),
-  countQuery: vi.fn(),
-  consumeRateLimit: vi.fn().mockResolvedValue({ allowed: true }),
+const { rpc, countQuery, consumeRateLimit, getUser, update, updateEq, updateIs } = vi.hoisted(() => {
+  const updateIs = vi.fn(async () => ({ error: null }));
+  const updateEq = vi.fn(() => ({ is: updateIs }));
+  const update = vi.fn(() => ({ eq: updateEq }));
+  return {
+    rpc: vi.fn(),
+    countQuery: vi.fn(),
+    consumeRateLimit: vi.fn().mockResolvedValue({ allowed: true }),
+    getUser: vi.fn(async (): Promise<{ data: { user: { id: string } | null } }> => ({
+      data: { user: null },
+    })),
+    update,
+    updateEq,
+    updateIs,
+  };
+});
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: vi.fn(async () => ({
+    auth: { getUser },
+  })),
 }));
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({
@@ -12,6 +28,7 @@ vi.mock("@/lib/supabase/admin", () => ({
     from: () => ({
       select: () => ({ eq: () => ({ eq: countQuery }) }),
       insert: () => ({ select: () => ({ single: async () => ({ data: { token: "non-atomic-token" }, error: null }) }) }),
+      update,
     }),
   }),
 }));
@@ -38,8 +55,10 @@ describe("POST /api/grade — validation", () => {
 describe("POST /api/grade — atomic queue admission", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    getUser.mockResolvedValue({ data: { user: null } });
     countQuery.mockResolvedValue({ count: 0, error: null });
     rpc.mockResolvedValue({ data: [{ job_id: "job-1", token: "scan-1", status: "queued" }], error: null });
+    updateIs.mockResolvedValue({ error: null });
   });
 
   it("returns the token created by the atomic enqueue transaction", async () => {
@@ -53,6 +72,18 @@ describe("POST /api/grade — atomic queue admission", () => {
       p_url: "https://example.invalid/", p_queue_cap: 25,
       p_rate_key: "grade:unknown", p_rate_max: 5, p_rate_window_seconds: 600,
     });
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("attaches the scan to a signed-in account without waiting for claim", async () => {
+    getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+    const response = await POST(new Request("http://localhost/api/grade", {
+      method: "POST", body: JSON.stringify({ url: "https://example.invalid" }),
+    }));
+    expect(response.status).toBe(202);
+    expect(update).toHaveBeenCalledWith({ user_id: "user-1" });
+    expect(updateEq).toHaveBeenCalledWith("token", "scan-1");
+    expect(updateIs).toHaveBeenCalledWith("user_id", null);
   });
 });
 

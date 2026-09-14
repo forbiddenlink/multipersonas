@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { proAccessHref } from "@/lib/pro-access";
 
 /**
  * Shown to free/anon-tier authed users where a Pro-only hosted persona audit would
@@ -14,9 +15,7 @@ import Link from "next/link";
  * the surface someone reads while deciding to pay.
  */
 export function ProAuditUpsell() {
-  const supportHref = process.env.NEXT_PUBLIC_SUPPORT_EMAIL
-    ? `mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}?subject=Pro%20access`
-    : "/waitlist";
+  const supportHref = proAccessHref();
 
   return (
     <div className="rounded-md border border-border bg-card p-5">

@@ -237,7 +237,7 @@ export default function ForAgenciesPage() {
             <p className="mt-4 text-lg text-muted-foreground">
               Every client site becomes a project — run audits, see new vs cleared defects
               vs the last run, open history, and export a compliance report per client.
-              Scheduled re-scans are next; today you drive when each site gets checked.
+              Scheduled re-scans run on the cadence you set.
             </p>
           </div>
 

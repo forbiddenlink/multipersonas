@@ -92,14 +92,15 @@ that read that page choose where to go next. Public + anonymous is a hostile env
       `/api/grade` uses Turnstile when configured, `GRADE_QUEUE_CAP`, and
       `consume_rate_limit`; `/api/audit` uses durable rate limiting plus the model-call
       spend cap.
-- [ ] **CAPTCHA on the public grader — code-complete, pending keys.** Provision a
-      Cloudflare Turnstile widget and set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (all envs) and
-      `TURNSTILE_SECRET_KEY` (secret, prod) on the Vercel app. Unset = the gate is a no-op,
-      so shipping the code changes nothing until the keys land. See "Bot protection" below.
-- [ ] **Supabase "Confirm email" ON** (Authentication → Providers → Email). Nothing else
-      gates free-tier signup abuse on unverified emails.
-- [ ] **Supabase Leaked Password Protection ON** (Authentication → Policies → Password).
-      This is still a project-level dashboard setting.
+- [x] **CAPTCHA on the public grader.** Turnstile widget `Personaudit production` covers
+      personaudit.com, www, localhost, and vercel.app. Site key + secret are set on Vercel
+      (secret on Production and Preview). Redeploy after the env change so the widget
+      appears; a tokenless `POST /api/grade` must return 403.
+- [x] **Supabase "Confirm email" ON.** Verified 2026-09-13 via `supabase config pull --dry-run`:
+      remote `auth.email.enable_confirmations` is `true`. Local `web/supabase/config.toml`
+      matches so a later config push cannot turn it off.
+- [ ] **Supabase Leaked Password Protection ON** (Authentication → Providers → Email).
+      Not exposed in `config.toml`; this is still a project-level dashboard toggle (Pro plan).
 - [ ] **Supabase backup restore proof.** Confirm Point-in-Time Recovery / backups in the
       Supabase dashboard, then perform a restore into a temporary branch/project and run
       the production smoke checks against it. Do not restore over production as a drill.
@@ -110,12 +111,21 @@ that read that page choose where to go next. Public + anonymous is a hostile env
 
 ## Founding tier payment link (ADR 0002 demand test)
 
-The demand test cannot run until this exists. Verified 2026-09-04: the live Stripe account
-has **zero payment links and no Personaudit product**, and
-`NEXT_PUBLIC_FOUNDING_CHECKOUT_URL` is unset in Vercel production, so `/for-agencies`
-renders the waitlist fallback instead of the $199 offer. Terms of Service now carries the
-billing, cancellation and refund section that ADR 0002 requires; do not create the link
-before that is deployed.
+The demand test cannot run until this exists. Live as of 2026-09-13:
+
+- Product: **Personaudit Founding Access** (`prod_VFuvMN1kxPirW3`), $199 USD / month
+  (`price_1UFP60A1qZnsNmFKpSx6X3An`).
+- Payment Link: `https://buy.stripe.com/fZucN48XW7JcblE5Fu0Ny00` (collects auth-need and
+  local-vs-hosted session preference).
+- Customer portal: default config already allows subscription cancellation at period end.
+- Vercel: `NEXT_PUBLIC_FOUNDING_CHECKOUT_URL` is set on Production and Preview. A new
+  production build is required before `/for-agencies` shows the $199 CTA (the value is
+  read at module scope).
+
+Still owner: add `https://personaudit.com/terms` under Stripe Dashboard → Settings →
+Public details, then we can require a TOS checkbox on the Payment Link. Without that URL
+Stripe refuses `consent_collection.terms_of_service=required`. Terms of Service on the
+site already carries the billing, cancellation and refund section that ADR 0002 requires.
 
 1. **Stripe → Product catalogue → Add product.** Name it for the buyer, not the repo (the
    name appears on the checkout page and the card statement). Add a recurring price:

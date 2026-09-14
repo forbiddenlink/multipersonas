@@ -106,20 +106,21 @@ export default function Home() {
           </p>
           <GradeForm />
           <p className="mt-5 font-mono text-xs leading-relaxed text-muted-foreground">
-            Behind-login crawls and persona task-success are the{" "}
-            <span className="text-foreground">Pro</span> layer.{" "}
-            <Link
-              href="/for-agencies"
-              className="text-foreground underline underline-offset-4 hover:text-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-            >
-              Get early access
-            </Link>
-            , or run the full crawl free from the{" "}
+            Persona task-success on public flows is the{" "}
+            <span className="text-foreground">Pro</span> layer. Behind-login crawls run
+            free from the{" "}
             <Link
               href="/guides/ci-accessibility-gate"
               className="text-foreground underline underline-offset-4 hover:text-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               keyless CLI
+            </Link>
+            , where the password never leaves your machine.{" "}
+            <Link
+              href="/for-agencies"
+              className="text-foreground underline underline-offset-4 hover:text-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+            >
+              Get early access
             </Link>
             .
           </p>
@@ -316,8 +317,9 @@ mpersonas scan https://app.example.com --session ./session.json \\
         <div className="mx-auto flex max-w-3xl flex-col items-start gap-4">
           <h2 className="text-2xl font-semibold tracking-tight">Build the audit trail.</h2>
           <p className="max-w-md font-serif text-muted-foreground leading-relaxed">
-            Sign up and every grade you run becomes a record — axe violations by state, persona
-            task-success, and what cleared between runs. Evidence that accumulates.
+            Sign up after a free grade and that scan lands on your dashboard — axe violations
+            by page, a shareable score, ready to show a client. Persona task-success is the
+            Pro layer.
           </p>
           <div className="mt-2 flex flex-col gap-3 sm:flex-row">
             <Link
