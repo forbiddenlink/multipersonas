@@ -7,13 +7,23 @@ import { withSentryConfig } from "@sentry/nextjs";
 // them to nonce-backed scripts before removing 'unsafe-inline'.
 const isDev = process.env.NODE_ENV === "development";
 
+// The browser signs in against NEXT_PUBLIC_SUPABASE_URL directly. Allow that exact origin so
+// a local stack (http://127.0.0.1:54321) or a custom domain is not blocked by connect-src.
+const supabaseOrigin = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").origin;
+  } catch {
+    return "https://*.supabase.co";
+  }
+})();
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self'",
-  "connect-src 'self' https://*.supabase.co https://*.sentry.io https://*.ingest.sentry.io https://us.i.posthog.com https://eu.i.posthog.com https://challenges.cloudflare.com",
+  `connect-src 'self' ${supabaseOrigin} https://*.supabase.co https://*.sentry.io https://*.ingest.sentry.io https://us.i.posthog.com https://eu.i.posthog.com https://challenges.cloudflare.com`,
   "frame-src 'self' https://challenges.cloudflare.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
