@@ -94,7 +94,7 @@ describe("Turnstile-backed forms", () => {
       target: { value: "liz@example.com" },
     });
     fireEvent.click(screen.getByRole("button", { name: /solve verification/i }));
-    fireEvent.click(screen.getByRole("button", { name: /get early access/i }));
+    fireEvent.click(screen.getByRole("button", { name: /request founding access/i }));
 
     await waitFor(() => expect(resetTurnstile).toHaveBeenCalledTimes(1));
     expect(fetchMock).toHaveBeenCalledWith("/api/waitlist", {
@@ -104,6 +104,7 @@ describe("Turnstile-backed forms", () => {
         email: "liz@example.com",
         sitesCount: undefined,
         note: undefined,
+        attribution: {},
         turnstileToken: "turnstile-token",
       }),
     });

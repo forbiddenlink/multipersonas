@@ -14,10 +14,12 @@ import { trackProductEvent } from "@/lib/analytics";
  */
 export function FoundingCheckoutLink({
   href,
+  funnelLocation = "unknown",
   className,
   children,
 }: {
   href: string;
+  funnelLocation?: string;
   className?: string;
   children: ReactNode;
 }) {
@@ -25,7 +27,7 @@ export function FoundingCheckoutLink({
     <a
       href={href}
       className={className}
-      onClick={() => trackProductEvent("founding_checkout_clicked", { price_usd: 199 })}
+      onClick={() => trackProductEvent("founding_checkout_clicked", { price_usd: 199, funnel_location: funnelLocation })}
     >
       {children}
     </a>

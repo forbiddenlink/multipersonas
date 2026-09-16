@@ -82,6 +82,8 @@ export default function CommonIssuesPage() {
           description:
             "The accessibility issues found most often on real websites. Each with examples, impact on users, and how to fix.",
           path: "/guides/common-accessibility-issues",
+          datePublished: "2026-05-04",
+          dateModified: "2026-08-15",
         })}
       />
       <p className="font-mono text-xs text-muted-foreground">

@@ -59,7 +59,12 @@ describe("POST /api/waitlist", () => {
 
   it("inserts a lowercased, trimmed email and returns ok on a valid payload", async () => {
     const res = await POST(
-      makeRequest({ email: "  Foo@Example.COM  ", sitesCount: "6-20", note: "hi" }),
+      makeRequest({
+        email: "  Foo@Example.COM  ",
+        sitesCount: "6-20",
+        note: "hi",
+        attribution: { source: "google", campaign: "fall-launch" },
+      }),
     );
     expect(res.status).toBe(200);
     const data = await res.json();
@@ -69,6 +74,7 @@ describe("POST /api/waitlist", () => {
     expect(createAdminClient).toHaveBeenCalled();
     expect(mockInsert).toHaveBeenCalledWith({
       email: "foo@example.com",
+      source: "for-agencies:google",
       sites_count: "6-20",
       note: "hi",
     });
@@ -103,6 +109,15 @@ describe("POST /api/waitlist", () => {
     const res = await POST(makeRequest({ email: "a@example.com", note: "x".repeat(501) }));
     expect(res.status).toBe(400);
     expect(mockInsert).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed attribution without burning rate-limit quota", async () => {
+    const res = await POST(
+      makeRequest({ email: "a@example.com", attribution: { source: "not allowed!" } }),
+    );
+    expect(res.status).toBe(400);
+    expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockConsumeRateLimit).not.toHaveBeenCalled();
   });
 
   it("returns 500 on an unexpected DB error without leaking details", async () => {

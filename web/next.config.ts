@@ -2,20 +2,19 @@ import type { NextConfig } from "next";
 import path from "path";
 import { withSentryConfig } from "@sentry/nextjs";
 
-// Content-Security-Policy in REPORT-ONLY mode: it never blocks a request, it only
-// reports violations, so it is safe to ship to the live site without risking the inline
-// no-FOUC theme script (layout.tsx) or Next's inline runtime. Observe reports first, then
-// tighten (drop 'unsafe-inline' via a nonce) and switch the header to the enforcing
-// `Content-Security-Policy`. Wire a report-to/report-uri collector to capture violations.
+// Enforce the narrowest policy that supports the application's configured integrations.
+// Inline scripts remain necessary for the pre-paint theme choice and Next's runtime; move
+// them to nonce-backed scripts before removing 'unsafe-inline'.
 const isDev = process.env.NODE_ENV === "development";
 
-const cspReportOnly = [
+const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self'",
-  "connect-src 'self' https://*.supabase.co https://*.sentry.io https://*.ingest.sentry.io https://us.i.posthog.com https://eu.i.posthog.com",
+  "connect-src 'self' https://*.supabase.co https://*.sentry.io https://*.ingest.sentry.io https://us.i.posthog.com https://eu.i.posthog.com https://challenges.cloudflare.com",
+  "frame-src 'self' https://challenges.cloudflare.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -31,7 +30,7 @@ const securityHeaders = [
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
   },
-  { key: "Content-Security-Policy-Report-Only", value: cspReportOnly },
+  { key: "Content-Security-Policy", value: contentSecurityPolicy },
 ];
 
 const nextConfig: NextConfig = {

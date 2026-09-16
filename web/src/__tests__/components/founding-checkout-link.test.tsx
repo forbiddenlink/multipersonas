@@ -38,6 +38,7 @@ describe("FoundingCheckoutLink", () => {
 
     expect(trackProductEvent).toHaveBeenCalledWith("founding_checkout_clicked", {
       price_usd: 199,
+      funnel_location: "unknown",
     });
   });
 });

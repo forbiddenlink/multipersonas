@@ -20,6 +20,8 @@ export default function CiGateGuidePage() {
           description:
             "Fail the build only on new axe-core defects. Baseline today's backlog, then gate PRs on regressions — deterministic, keyless, works behind a saved session.",
           path: "/guides/ci-accessibility-gate",
+          datePublished: "2026-08-03",
+          dateModified: "2026-08-18",
         })}
       />
       <p className="font-mono text-xs text-muted-foreground">

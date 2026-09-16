@@ -16,11 +16,14 @@ import { trackProductEvent } from "@/lib/analytics";
 export function GradeNextSteps({
   signedIn,
   pagesScanned,
+  entryUrl,
 }: {
   signedIn: boolean;
   pagesScanned: number;
+  entryUrl: string;
 }) {
   const pageLabel = `${pagesScanned} public page${pagesScanned === 1 ? "" : "s"}`;
+  const projectPath = `/projects?url=${encodeURIComponent(entryUrl)}`;
 
   return (
     <div className="space-y-4 rounded-md border border-border bg-card px-5 py-5">
@@ -49,7 +52,7 @@ export function GradeNextSteps({
           </Link>
         ) : (
           <Link
-            href="/auth/signup?returnTo=/dashboard"
+            href={`/auth/signup?returnTo=${encodeURIComponent(projectPath)}`}
             className={buttonVariants({ variant: "default", size: "sm" })}
             onClick={() => trackProductEvent("grade_save_clicked", { signed_in: false })}
           >
