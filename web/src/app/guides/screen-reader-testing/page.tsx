@@ -54,6 +54,8 @@ export default function ScreenReaderTestingPage() {
           description:
             "How to test your website with screen readers. Covers VoiceOver, NVDA, and JAWS with common issues and automated alternatives.",
           path: "/guides/screen-reader-testing",
+          datePublished: "2026-05-04",
+          dateModified: "2026-08-15",
         })}
       />
       <p className="font-mono text-xs text-muted-foreground">

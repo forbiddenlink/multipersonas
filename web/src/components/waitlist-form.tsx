@@ -4,7 +4,7 @@ import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import Link from "next/link";
 import { useId, useRef, useState } from "react";
 import { trackProductEvent } from "@/lib/analytics";
-import { composeWaitlistNote } from "@/lib/waitlist-note";
+import { composeWaitlistNote, readLeadAttribution } from "@/lib/waitlist-note";
 
 type Status = "idle" | "submitting" | "success" | "already" | "error";
 
@@ -60,14 +60,20 @@ export function WaitlistForm() {
     const data = new FormData(form);
     const authNeed = String(data.get("authNeed") || "") || undefined;
     const scanPref = String(data.get("scanPref") || "") || undefined;
+    const attribution = readLeadAttribution(
+      new URLSearchParams(window.location.search),
+      document.referrer,
+    );
     const payload = {
       email: String(data.get("email") || "").trim(),
       sitesCount: String(data.get("sitesCount") || "") || undefined,
       note: composeWaitlistNote({
         authNeed,
         scanPref,
+        attribution,
         note: String(data.get("note") || ""),
       }),
+      attribution,
       turnstileToken: turnstileToken ?? undefined,
     };
 
@@ -92,6 +98,8 @@ export function WaitlistForm() {
       sites_count: payload.sitesCount,
       auth_need: authNeed,
       scan_pref: scanPref,
+      acquisition_source: attribution.source,
+      campaign: attribution.campaign,
       note_provided: Boolean(payload.note),
       turnstile_configured: Boolean(TURNSTILE_SITE_KEY),
     });
@@ -118,6 +126,8 @@ export function WaitlistForm() {
         sites_count: payload.sitesCount,
         auth_need: authNeed,
         scan_pref: scanPref,
+        acquisition_source: attribution.source,
+        campaign: attribution.campaign,
         note_provided: Boolean(payload.note),
       });
     } catch {
@@ -201,69 +211,35 @@ export function WaitlistForm() {
         </select>
       </div>
 
-      <div>
-        <label
-          htmlFor={authNeedId}
-          className="block font-mono text-xs uppercase tracking-wide text-muted-foreground"
-        >
-          Sites behind a login{" "}
-          <span className="normal-case font-sans text-muted-foreground">
-            (optional — a no is as useful as a yes)
-          </span>
-        </label>
-        <select
-          id={authNeedId}
-          name="authNeed"
-          defaultValue=""
-          className="mt-2 w-full rounded-sm border border-input bg-background px-4 py-3 text-base md:text-sm outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-        >
-          {AUTH_NEED_BANDS.map((b) => (
-            <option key={b.value} value={b.value} disabled={b.value === ""}>
-              {b.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label
-          htmlFor={scanPrefId}
-          className="block font-mono text-xs uppercase tracking-wide text-muted-foreground"
-        >
-          Scan preference{" "}
-          <span className="normal-case font-sans text-muted-foreground">(optional)</span>
-        </label>
-        <select
-          id={scanPrefId}
-          name="scanPref"
-          defaultValue=""
-          className="mt-2 w-full rounded-sm border border-input bg-background px-4 py-3 text-base md:text-sm outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-        >
-          {SCAN_PREF_BANDS.map((b) => (
-            <option key={b.value} value={b.value} disabled={b.value === ""}>
-              {b.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label
-          htmlFor={noteId}
-          className="block font-mono text-xs uppercase tracking-wide text-muted-foreground"
-        >
-          Anything else{" "}
-          <span className="normal-case font-sans text-muted-foreground">(optional)</span>
-        </label>
-        <textarea
-          id={noteId}
-          name="note"
-          rows={2}
-          maxLength={400}
-          placeholder="e.g. mostly checkout and account dashboards"
-          className="mt-2 w-full resize-y rounded-sm border border-input bg-background px-4 py-3 text-base md:text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-        />
-      </div>
+      <details className="group border-y border-border py-3">
+        <summary className="cursor-pointer text-sm font-medium text-muted-foreground marker:text-[var(--primary)] hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
+          Help us tailor the workspace <span className="font-normal">(optional)</span>
+        </summary>
+        <div className="mt-5 space-y-5">
+          <div>
+            <label htmlFor={authNeedId} className="block font-mono text-xs uppercase tracking-wide text-muted-foreground">
+              Sites behind a login <span className="normal-case font-sans">(a no is as useful as a yes)</span>
+            </label>
+            <select id={authNeedId} name="authNeed" defaultValue="" className="mt-2 w-full rounded-sm border border-input bg-background px-4 py-3 text-base md:text-sm outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
+              {AUTH_NEED_BANDS.map((b) => <option key={b.value} value={b.value} disabled={b.value === ""}>{b.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor={scanPrefId} className="block font-mono text-xs uppercase tracking-wide text-muted-foreground">
+              Scan preference <span className="normal-case font-sans">(optional)</span>
+            </label>
+            <select id={scanPrefId} name="scanPref" defaultValue="" className="mt-2 w-full rounded-sm border border-input bg-background px-4 py-3 text-base md:text-sm outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
+              {SCAN_PREF_BANDS.map((b) => <option key={b.value} value={b.value} disabled={b.value === ""}>{b.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor={noteId} className="block font-mono text-xs uppercase tracking-wide text-muted-foreground">
+              Anything else <span className="normal-case font-sans">(optional)</span>
+            </label>
+            <textarea id={noteId} name="note" rows={2} maxLength={400} placeholder="e.g. mostly checkout and account dashboards" className="mt-2 w-full resize-y rounded-sm border border-input bg-background px-4 py-3 text-base md:text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]" />
+          </div>
+        </div>
+      </details>
 
       {TURNSTILE_SITE_KEY && (
         <Turnstile
@@ -287,11 +263,11 @@ export function WaitlistForm() {
         disabled={status === "submitting" || !turnstileReady}
         className="inline-flex w-full items-center justify-center rounded-sm bg-foreground px-6 py-3.5 text-sm font-semibold text-background transition-[background-color,transform] hover:bg-foreground/90 active:translate-y-px disabled:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] sm:w-auto"
       >
-        {status === "submitting" ? "Joining…" : "Get early access"}
+        {status === "submitting" ? "Sending…" : "Request founding access"}
       </button>
 
       <p className="text-xs text-muted-foreground">
-        No spam, no overlay sales pitch. One email when the agency workspace opens.
+        No spam, no overlay sales pitch. One email when founding access opens.
       </p>
     </form>
   );

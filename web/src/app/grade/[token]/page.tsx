@@ -130,6 +130,7 @@ export default async function GradeResultPage({
               token={token}
               host={host}
               signedIn={signedIn}
+              entryUrl={scan.entry_url}
               report={scan.report as unknown as GradeReport}
             />
           )}
@@ -145,11 +146,13 @@ function GradeReportView({
   token,
   host,
   signedIn,
+  entryUrl,
   report,
 }: {
   token: string;
   host: string;
   signedIn: boolean;
+  entryUrl: string;
   report: GradeReport;
 }) {
   return (
@@ -265,7 +268,11 @@ function GradeReportView({
       <BoxDivider />
 
       {/* Honesty wall + the actual conversion ask. Never a compliance claim. */}
-      <GradeNextSteps signedIn={signedIn} pagesScanned={report.pagesScanned} />
+      <GradeNextSteps
+        signedIn={signedIn}
+        pagesScanned={report.pagesScanned}
+        entryUrl={entryUrl}
+      />
     </div>
   );
 }

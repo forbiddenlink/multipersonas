@@ -3,7 +3,7 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { WaitlistForm } from "@/components/waitlist-form";
-import { FoundingCheckoutLink } from "@/components/founding-checkout-link";
+import { UnlockFoundingAccessButton } from "@/components/unlock-founding-access-button";
 import { Reveal } from "@/components/reveal";
 import { AuditTerminal } from "@/components/audit-terminal";
 import { ConsolePreview } from "@/components/forensic/console-preview";
@@ -486,12 +486,9 @@ mpersonas scan https://client.app --session ./session.json \\
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   $199 per month, cancel any time. Takes about a minute.
                 </p>
-                <FoundingCheckoutLink
-                  href={FOUNDING_CHECKOUT_URL}
+                <UnlockFoundingAccessButton
                   className="mt-5 inline-flex w-full items-center justify-center rounded-sm bg-foreground px-6 py-3 text-sm font-semibold text-background transition-[background-color] hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-                >
-                  Get founding access — $199/mo
-                </FoundingCheckoutLink>
+                />
                 <p className="mt-6 border-t border-border pt-5 text-sm text-muted-foreground">
                   Not ready to commit? Tell us what would change that. A no is as useful to us
                   as a yes, and more honest than silence.

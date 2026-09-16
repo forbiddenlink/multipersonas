@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   composeWaitlistNote,
+  isFollowUpStatus,
   parseWaitlistSignals,
   WAITLIST_NOTE_MAX,
 } from "@/lib/waitlist-note";
@@ -23,6 +24,15 @@ describe("composeWaitlistNote", () => {
         note: "checkout and account dashboards",
       }),
     ).toBe("Auth need: most behind login. Prefer: local CLI. checkout and account dashboards");
+  });
+
+  it("keeps campaign context structured and bounded without accepting arbitrary source text", () => {
+    expect(
+      composeWaitlistNote({
+        attribution: { campaign: "fall-launch", referrerHost: "example.org" },
+      }),
+    ).toBe("Campaign: fall-launch. Referred by: example.org");
+    expect(composeWaitlistNote({ attribution: { campaign: "x".repeat(65) } })).toBeUndefined();
   });
 
   it("stays inside the waitlist note cap", () => {
@@ -48,8 +58,26 @@ describe("parseWaitlistSignals", () => {
     });
   });
 
+  it("reads attribution labels back for demand analysis", () => {
+    const note = composeWaitlistNote({
+      attribution: { campaign: "fall-launch", referrerHost: "example.org" },
+    });
+    expect(parseWaitlistSignals(note)).toEqual({
+      campaign: "fall-launch",
+      referrerHost: "example.org",
+    });
+  });
+
   it("returns empty on free-text-only notes", () => {
     expect(parseWaitlistSignals("just email me")).toEqual({});
     expect(parseWaitlistSignals(null)).toEqual({});
+  });
+});
+
+describe("isFollowUpStatus", () => {
+  it("accepts only the owner workflow states", () => {
+    expect(isFollowUpStatus("qualified")).toBe(true);
+    expect(isFollowUpStatus("converted")).toBe(true);
+    expect(isFollowUpStatus("contacted twice")).toBe(false);
   });
 });

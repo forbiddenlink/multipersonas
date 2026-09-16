@@ -20,6 +20,12 @@ Until it is set, the page shows the waitlist form alone and no one can pay.
 Fulfilment: manual, `docs/pro-access.md` (`update public.profiles set plan = 'pro'`).
 Owner signal: `/waitlist` (set `ADMIN_EMAILS` on Vercel to your login email).
 
+Campaign links — use these exactly so source and campaign appear with each lead:
+
+- LinkedIn: `https://personaudit.com/for-agencies?utm_source=linkedin&utm_campaign=agency-founding`
+- Direct email: `https://personaudit.com/for-agencies?utm_source=email&utm_campaign=agency-founding`
+- Communities: `https://personaudit.com/for-agencies?utm_source=community&utm_campaign=agency-founding`
+
 ---
 
 ## Who to contact
@@ -41,7 +47,7 @@ clients if you already ship sites for them.
 > compliance report, and tracks projects per client. Behind-login scans run in the CLI, so
 > a client password never leaves your machine. Not an overlay.
 >
-> Founding access is $199/mo: https://personaudit.com/for-agencies
+> Founding access is $199/mo: https://personaudit.com/for-agencies?utm_source=linkedin&utm_campaign=agency-founding
 >
 > Even if it's a no, one thing would help me: how many of your client sites sit behind a
 > login, and would you rather scan those locally or hand a session to a hosted tool?
@@ -63,7 +69,7 @@ clients if you already ship sites for them.
 >
 > If you ship multiple client sites and need something between free DIY and a $25k
 > enterprise monitor, founding access is $199/mo:
-> https://personaudit.com/for-agencies
+> https://personaudit.com/for-agencies?utm_source=email&utm_campaign=agency-founding
 >
 > Straight about where it stands: hosted behind-login isn't built. That runs in the CLI
 > today, which is also why your client's password never touches my servers. Founding
@@ -89,20 +95,20 @@ opener; keep the link + task-success mechanism. One hook per archetype.
 > axe at every state a persona actually reaches (behind-login via CLI, creds
 > never leave your machine) and exports a verdicts-only VPAT-lite report per
 > client. Curious if that'd save you the manual-flow-walk on repeat clients.
-> https://personaudit.com/for-agencies
+> https://personaudit.com/for-agencies?utm_source=linkedin&utm_campaign=agency-founding
 
 ### B. Small agency owner (5–30 people, WP / Next / Shopify)
 > Hi {Name} — when a client asks "are we ADA-safe?", how long does it take your
 > team to prove it across every logged-in flow? Personaudit gives you a per-client
 > project, tracks defects cleared vs last run, and prints a compliance report you
 > can hand the client. Between free DIY scanners and a $25k enterprise monitor.
-> Free public scans to try: https://personaudit.com/for-agencies
+> Free public scans to try: https://personaudit.com/for-agencies?utm_source=linkedin&utm_campaign=agency-founding
 
 ### C. EAA-facing EU agency (deadline is the wedge)
 > Hi {Name} — with the EAA in force, your clients' authenticated flows (not just
 > the homepage) are in scope. Personaudit crawls behind-login states with axe-core
 > and checks a real-shaped user can finish the task, per client, with a print-ready
-> report. Happy to scan one staging site free. https://personaudit.com/for-agencies
+> report. Happy to scan one staging site free. https://personaudit.com/for-agencies?utm_source=linkedin&utm_campaign=agency-founding
 
 ---
 
@@ -128,6 +134,14 @@ Do NOT buy a list. Find people already talking about the problem:
 | 5+ "take my money" | Prioritize Stripe Starter/Agency |
 
 Do **not** build billing until the middle row or better.
+
+## Follow-up protocol
+
+1. Check the owner-only `/waitlist` queue once each business day for seven days.
+2. Mark a new lead `contacted` after sending one personal reply. Reply within one business day; do not add them to a bulk sequence.
+3. Mark `qualified` only after confirming they ship multiple client sites and have a real accessibility-flow need. Use the submitted note to capture the login/session preference; retain any later conversation notes in your CRM or inbox.
+4. Mark `not now` for a clear no, and `converted` only after the Stripe payment and manual Pro fulfilment are complete.
+5. At day seven, compare qualified leads and checkout clicks by source before changing the pitch or product roadmap.
 
 ---
 

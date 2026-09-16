@@ -60,6 +60,8 @@ export default function WcagChecklistPage() {
           description:
             "A practical checklist for WCAG 2.2 AA compliance. Covers perceivable, operable, understandable, and robust criteria with examples.",
           path: "/guides/wcag-checklist",
+          datePublished: "2026-05-04",
+          dateModified: "2026-08-15",
         })}
       />
       <p className="font-mono text-xs text-muted-foreground">

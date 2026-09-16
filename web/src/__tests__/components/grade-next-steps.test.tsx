@@ -15,10 +15,19 @@ afterEach(() => {
 
 describe("GradeNextSteps", () => {
   it("asks a signed-out visitor to save the grade, then offers the behind-login path", () => {
-    render(<GradeNextSteps signedIn={false} pagesScanned={4} />);
+    render(
+      <GradeNextSteps
+        signedIn={false}
+        pagesScanned={4}
+        entryUrl="https://example.com/pricing"
+      />,
+    );
 
     const save = screen.getByRole("link", { name: "Save this grade" });
-    expect(save).toHaveAttribute("href", "/auth/signup?returnTo=/dashboard");
+    expect(save).toHaveAttribute(
+      "href",
+      "/auth/signup?returnTo=%2Fprojects%3Furl%3Dhttps%253A%252F%252Fexample.com%252Fpricing",
+    );
     expect(screen.getByRole("link", { name: "Scan behind the login" })).toHaveAttribute(
       "href",
       "/for-agencies",
@@ -30,7 +39,9 @@ describe("GradeNextSteps", () => {
   });
 
   it("sends a signed-in visitor to the dashboard instead of a second signup", () => {
-    render(<GradeNextSteps signedIn pagesScanned={1} />);
+    render(
+      <GradeNextSteps signedIn pagesScanned={1} entryUrl="https://example.com" />,
+    );
 
     expect(screen.getByRole("link", { name: "Open dashboard" })).toHaveAttribute(
       "href",

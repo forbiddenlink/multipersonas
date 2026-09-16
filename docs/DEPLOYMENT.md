@@ -127,6 +127,17 @@ Public details, then we can require a TOS checkbox on the Payment Link. Without 
 Stripe refuses `consent_collection.terms_of_service=required`. Terms of Service on the
 site already carries the billing, cancellation and refund section that ADR 0002 requires.
 
+### Subscription entitlement webhook
+
+The founding CTA now uses an authenticated Checkout Session so a completed subscription
+can unlock the buyer's existing Personaudit account. In Vercel, add sensitive server-only
+variables `STRIPE_SECRET_KEY` (prefer a restricted `rk_` key with Checkout Session write
+access), `STRIPE_FOUNDING_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET`. Then add the Stripe
+webhook endpoint `https://personaudit.com/api/stripe/webhook` and subscribe it to
+`checkout.session.completed`, `customer.subscription.updated`, and
+`customer.subscription.deleted`. The webhook verifies Stripe's signature before changing
+an entitlement; a browser redirect alone never unlocks Pro.
+
 1. **Stripe → Product catalogue → Add product.** Name it for the buyer, not the repo (the
    name appears on the checkout page and the card statement). Add a recurring price:
    **$199.00 USD, monthly**. One tier only, per ADR 0002.

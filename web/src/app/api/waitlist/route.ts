@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { getClientIP } from "@/lib/client-ip";
 import { verifyTurnstile } from "@/lib/turnstile";
+import { isAttributionValue } from "@/lib/waitlist-note";
 
 // Demand-test capture for the /for-agencies landing page. Writes go through this
 // checked endpoint; direct client inserts cannot bypass its bot and rate gates.
@@ -12,6 +13,13 @@ const waitlistSchema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.string().email()),
   sitesCount: z.enum(["1", "2-5", "6-20", "20+"]).optional(),
   note: z.string().max(500).optional(),
+  attribution: z
+    .object({
+      source: z.string().refine(isAttributionValue).optional(),
+      campaign: z.string().refine(isAttributionValue).optional(),
+      referrerHost: z.string().refine(isAttributionValue).optional(),
+    })
+    .optional(),
   turnstileToken: z.string().optional(),
 });
 
@@ -61,10 +69,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const { email, sitesCount, note } = parsed.data;
+  const { email, sitesCount, note, attribution } = parsed.data;
 
   const { error } = await supabase.from("waitlist").insert({
     email,
+    source: `for-agencies:${attribution?.source ?? "direct"}`,
     sites_count: sitesCount ?? null,
     note: note ?? null,
   });

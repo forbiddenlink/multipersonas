@@ -8,6 +8,7 @@ import { BoxDivider } from "@/components/forensic/divider";
 import { EmptyPrompt } from "@/components/forensic/empty-prompt";
 import { createProjectAction } from "./actions";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { projectPrefill } from "@/lib/project-prefill";
 
 export const metadata: Metadata = {
   title: "Projects",
@@ -26,7 +27,8 @@ export default async function ProjectsPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const { error } = await searchParams;
+  const { error, url } = await searchParams;
+  const prefill = projectPrefill(typeof url === "string" ? url : null);
   // Whitelist known server-action messages — prevents arbitrary text injection
   // via crafted URLs even though React escapes XSS.
   const KNOWN_PROJECT_ERRORS = new Set([
@@ -55,13 +57,27 @@ export default async function ProjectsPage({
             <Label htmlFor="name" className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
               Name
             </Label>
-            <Input id="name" name="name" placeholder="Acme Marketing Site" required maxLength={200} />
+            <Input
+              id="name"
+              name="name"
+              placeholder="Acme Marketing Site"
+              defaultValue={prefill?.name}
+              required
+              maxLength={200}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="url" className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
               URL
             </Label>
-            <Input id="url" name="url" type="url" placeholder="https://example.com" required />
+            <Input
+              id="url"
+              name="url"
+              type="url"
+              placeholder="https://example.com"
+              defaultValue={prefill?.url}
+              required
+            />
           </div>
         </div>
         <div className="space-y-1.5">

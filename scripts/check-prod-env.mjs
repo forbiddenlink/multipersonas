@@ -117,6 +117,11 @@ if (!hasPostHogKey && prod) {
   warnings.push("PostHog is not configured; product analytics are disabled");
 }
 
+if (present("NEXT_PUBLIC_FOUNDING_CHECKOUT_URL")) {
+  requireHttpsUrl("NEXT_PUBLIC_FOUNDING_CHECKOUT_URL");
+  hostAllowed("NEXT_PUBLIC_FOUNDING_CHECKOUT_URL", ["buy.stripe.com"]);
+}
+
 if (failures.length > 0) {
   console.error("Production env check failed:");
   for (const failure of failures) console.error(`- ${failure}`);

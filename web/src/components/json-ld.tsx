@@ -23,15 +23,25 @@ export function articleSchema(input: {
   headline: string;
   description: string;
   path: string;
+  datePublished: string;
+  dateModified: string;
 }): Record<string, unknown> {
+  const siteUrl = "https://personaudit.com";
   return {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: input.headline,
     description: input.description,
     author: { "@type": "Organization", name: "Personaudit" },
-    publisher: { "@type": "Organization", name: "Personaudit" },
-    mainEntityOfPage: input.path,
+    publisher: {
+      "@type": "Organization",
+      name: "Personaudit",
+      logo: { "@type": "ImageObject", url: `${siteUrl}/icon.svg` },
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": `${siteUrl}${input.path}` },
+    image: `${siteUrl}/opengraph-image`,
+    datePublished: input.datePublished,
+    dateModified: input.dateModified,
   };
 }
 

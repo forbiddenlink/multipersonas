@@ -5,7 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminEmail } from "@/lib/admin-access";
 import { BoxDivider } from "@/components/forensic/divider";
 import { EmptyPrompt } from "@/components/forensic/empty-prompt";
-import { parseWaitlistSignals } from "@/lib/waitlist-note";
+import { FOLLOW_UP_STATUSES, parseWaitlistSignals } from "@/lib/waitlist-note";
+import { setWaitlistLeadStatusAction } from "./actions";
 
 export const metadata: Metadata = {
   title: "Waitlist",
@@ -37,17 +38,25 @@ export default async function WaitlistPage() {
 
   const { data: rows, error } = await admin
     .from("waitlist")
-    .select("email, source, sites_count, note, created_at")
+    .select("email, source, sites_count, note, created_at, follow_up_status")
     .order("created_at", { ascending: false });
 
   const signups = rows ?? [];
   const bands: Record<string, number> = {};
   const authNeedBands: Record<string, number> = {};
   const scanPrefBands: Record<string, number> = {};
+  const sourceBands: Record<string, number> = {};
+  const campaignBands: Record<string, number> = {};
+  const followUpBands: Record<string, number> = {};
   for (const r of signups) {
     const k = r.sites_count ?? "—";
     bands[k] = (bands[k] ?? 0) + 1;
     const signals = parseWaitlistSignals(r.note);
+    sourceBands[r.source] = (sourceBands[r.source] ?? 0) + 1;
+    followUpBands[r.follow_up_status] = (followUpBands[r.follow_up_status] ?? 0) + 1;
+    if (signals.campaign) {
+      campaignBands[signals.campaign] = (campaignBands[signals.campaign] ?? 0) + 1;
+    }
     if (signals.authNeed) {
       authNeedBands[signals.authNeed] = (authNeedBands[signals.authNeed] ?? 0) + 1;
     }
@@ -120,12 +129,49 @@ export default async function WaitlistPage() {
             </div>
           )}
 
+          {Object.keys(sourceBands).length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {Object.entries(sourceBands).map(([source, n]) => (
+                <span key={source} className="rounded-sm border border-border bg-card px-2.5 py-1 font-mono text-xs text-muted-foreground">
+                  source: {source}: <span className="font-medium text-foreground tabular-nums">{n}</span>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {Object.keys(campaignBands).length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {Object.entries(campaignBands).map(([campaign, n]) => (
+                <span
+                  key={campaign}
+                  className="rounded-sm border border-border bg-card px-2.5 py-1 font-mono text-xs text-muted-foreground"
+                >
+                  campaign: {campaign}: <span className="font-medium text-foreground tabular-nums">{n}</span>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {Object.keys(followUpBands).length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {Object.entries(followUpBands).map(([status, n]) => (
+                <span
+                  key={status}
+                  className="rounded-sm border border-border bg-card px-2.5 py-1 font-mono text-xs text-muted-foreground"
+                >
+                  {status}: <span className="font-medium text-foreground tabular-nums">{n}</span>
+                </span>
+              ))}
+            </div>
+          )}
+
           <div className="mt-6 overflow-x-auto rounded-md border border-border">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-border bg-card font-mono text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2 font-medium">Email</th>
                   <th className="px-4 py-2 font-medium">Scale</th>
+                  <th className="px-4 py-2 font-medium">Follow-up</th>
                   <th className="px-4 py-2 font-medium">Note</th>
                   <th className="px-4 py-2 font-medium whitespace-nowrap">When</th>
                 </tr>
@@ -136,6 +182,29 @@ export default async function WaitlistPage() {
                     <td className="px-4 py-2.5 font-mono font-medium text-foreground">{r.email}</td>
                     <td className="px-4 py-2.5 whitespace-nowrap text-muted-foreground">
                       {r.sites_count ?? "—"}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <form action={setWaitlistLeadStatusAction} className="flex items-center gap-2">
+                        <input type="hidden" name="email" value={r.email} />
+                        <select
+                          name="status"
+                          defaultValue={r.follow_up_status}
+                          aria-label={`Follow-up status for ${r.email}`}
+                          className="rounded-sm border border-input bg-background px-2 py-1 text-xs text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                        >
+                          {FOLLOW_UP_STATUSES.map((status) => (
+                            <option key={status} value={status}>
+                              {status.replace("_", " ")}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="submit"
+                          className="rounded-sm px-2 py-1 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                        >
+                          Save
+                        </button>
+                      </form>
                     </td>
                     <td className="max-w-sm px-4 py-2.5 text-muted-foreground">{r.note || "—"}</td>
                     <td className="px-4 py-2.5 whitespace-nowrap text-muted-foreground tabular-nums">
