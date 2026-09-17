@@ -77,7 +77,7 @@ export default function Home() {
             <AuditTerminal />
             <p className="mt-3 flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
               <span className="inline-block size-1.5 rounded-full bg-[var(--primary)] motion-safe:animate-pulse" aria-hidden="true" />
-              a persona walking a checkout behind login in the CLI. the actual instrument, not a mockup
+              illustrative CLI transcript. See the same evidence structure in every completed report.
             </p>
           </div>
         </div>
@@ -105,7 +105,7 @@ export default function Home() {
       <section id="scan" className="border-y border-border bg-card px-6 py-16">
         <div className="mx-auto max-w-3xl">
           <p className="mb-6 font-mono text-xs text-muted-foreground">
-            <span className="select-none text-[var(--primary)]">›&nbsp;</span>free grade — point it at any public URL, no signup
+            <span className="select-none text-[var(--primary)]">›&nbsp;</span>free grade — up to 10 public pages, no signup
           </p>
           <GradeForm />
           <p className="mt-5 font-mono text-xs leading-relaxed text-muted-foreground">

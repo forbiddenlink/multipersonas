@@ -151,8 +151,16 @@ export function GradeForm() {
           </Button>
         </div>
         <p id={hintId} className="font-mono text-xs leading-relaxed text-muted-foreground">
-          Public pages only. Use the CLI for logged-in flows.
+          Up to 10 same-site public pages. Use the CLI for logged-in flows.
         </p>
+        <div
+          aria-label="What your free grade includes"
+          className="grid gap-x-5 gap-y-2 border-l border-border pl-3 font-mono text-xs leading-relaxed text-muted-foreground sm:grid-cols-3"
+        >
+          <p><span className="text-foreground">01</span> letter grade</p>
+          <p><span className="text-foreground">02</span> pages reached</p>
+          <p><span className="text-foreground">03</span> named axe rules</p>
+        </div>
         {TURNSTILE_SITE_KEY && (
           <Turnstile
             ref={turnstileRef}

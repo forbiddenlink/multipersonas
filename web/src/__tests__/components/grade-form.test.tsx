@@ -21,6 +21,16 @@ afterEach(() => {
 });
 
 describe("GradeForm", () => {
+  it("sets an honest free-grade scope and names the result before submission", () => {
+    render(<GradeForm />);
+
+    expect(screen.getByText("Up to 10 same-site public pages. Use the CLI for logged-in flows.")).toBeInTheDocument();
+    const summary = screen.getByLabelText("What your free grade includes");
+    expect(summary).toHaveTextContent("letter grade");
+    expect(summary).toHaveTextContent("pages reached");
+    expect(summary).toHaveTextContent("named axe rules");
+  });
+
   it("shows an in-page error for incomplete URLs instead of relying on browser validation", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);

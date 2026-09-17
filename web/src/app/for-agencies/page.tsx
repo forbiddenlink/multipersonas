@@ -484,7 +484,7 @@ mpersonas scan https://client.app --session ./session.json \\
               <div className="rounded-sm border border-border bg-background p-6">
                 <p className="font-heading text-2xl tracking-tight">Start founding access</p>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  $199 per month, cancel any time. Takes about a minute.
+                  $199 per month, cancel any time. Sign in or create an account first, then checkout takes about a minute.
                 </p>
                 <UnlockFoundingAccessButton
                   className="mt-5 inline-flex w-full items-center justify-center rounded-sm bg-foreground px-6 py-3 text-sm font-semibold text-background transition-[background-color] hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"

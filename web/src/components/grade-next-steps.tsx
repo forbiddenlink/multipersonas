@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
-import { GradeOfferLink } from "@/components/grade-offer-link";
 import { trackProductEvent } from "@/lib/analytics";
 
 /**
@@ -59,9 +58,20 @@ export function GradeNextSteps({
             Save this grade
           </Link>
         )}
-        <GradeOfferLink className={buttonVariants({ variant: "outline", size: "sm" })}>
-          Scan behind the login
-        </GradeOfferLink>
+        <Link
+          href="/guides/ci-accessibility-gate"
+          className={buttonVariants({ variant: "outline", size: "sm" })}
+          onClick={() => trackProductEvent("grade_cli_guide_clicked", { from: "grade_result" })}
+        >
+          Scan a logged-in flow with the CLI
+        </Link>
+        <Link
+          href="/for-agencies#early-access"
+          className={buttonVariants({ variant: "ghost", size: "sm" })}
+          onClick={() => trackProductEvent("grade_offer_clicked", { from: "grade_result" })}
+        >
+          See founding access
+        </Link>
         <Link
           href="/guides/screen-reader-testing"
           className={buttonVariants({ variant: "ghost", size: "sm" })}
@@ -71,8 +81,8 @@ export function GradeNextSteps({
       </div>
       {!signedIn ? (
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Create an account and this grade lands on your dashboard. Behind-login
-          scanning stays in the CLI, where a client password never leaves your machine.
+          Create an account and this grade lands on your dashboard. The CLI scans
+          behind login today, where a client password never leaves your machine.
         </p>
       ) : null}
     </div>

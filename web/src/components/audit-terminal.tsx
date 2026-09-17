@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-// The signature hero piece: the product, visibly working. A persona "walks" a demo
-// checkout behind the login; axe-core verdicts land in severity colour; the persona is
+// The signature hero piece: an illustrative transcript shaped like the product output.
+// A persona "walks" a demo checkout behind the login; axe-core verdicts land in severity colour; the persona is
 // blocked and task-success reads 0/1. Types itself out, loops, pauses off-screen, and
 // degrades to a complete static frame for reduced-motion / no-JS. On completion the card
 // transforms — a summary chip row appears (violations · task-success · export).
@@ -175,7 +175,7 @@ export function AuditTerminal() {
         </span>
         <span className="text-white/65">personaudit</span>
         <span className="text-white/55" aria-hidden="true">
-          ~/audit
+          ~/illustrative-audit
         </span>
         <span className="ml-auto flex items-center gap-1.5 text-white/60">
           <span

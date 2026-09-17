@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { BoxDivider } from "@/components/forensic/divider";
 import { updateAgencyNameAction } from "./actions";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { proAccessHref } from "@/lib/pro-access";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -31,6 +30,7 @@ export default async function SettingsPage({
     .select("plan,agency_name")
     .eq("id", user.id)
     .single();
+  const foundingAccessOpen = Boolean(process.env.NEXT_PUBLIC_FOUNDING_CHECKOUT_URL);
 
   return (
     <div className="max-w-2xl">
@@ -69,14 +69,15 @@ export default async function SettingsPage({
 
       {(profile?.plan ?? "free") === "free" && (
         <p className="mt-3 text-sm text-muted-foreground">
-          Pro is invite-only during early access. It unlocks persona task-success runs (the
-          free plan gets the deterministic accessibility scan).{" "}
-          <a
-            href={proAccessHref()}
+          {foundingAccessOpen
+            ? "Founding access unlocks persona task-success runs. The free plan keeps the deterministic accessibility scan."
+            : "Founding access is opening soon. The free plan keeps the deterministic accessibility scan; founding access adds persona task-success runs."}{" "}
+          <Link
+            href="/for-agencies#early-access"
             className="text-foreground underline underline-offset-4"
           >
-            Request Pro access
-          </a>
+            See founding access
+          </Link>
           .
         </p>
       )}

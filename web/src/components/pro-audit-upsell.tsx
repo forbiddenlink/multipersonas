@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { proAccessHref } from "@/lib/pro-access";
 
 /**
  * Shown to free/anon-tier authed users where a Pro-only hosted persona audit would
@@ -15,8 +14,6 @@ import { proAccessHref } from "@/lib/pro-access";
  * the surface someone reads while deciding to pay.
  */
 export function ProAuditUpsell() {
-  const supportHref = proAccessHref();
-
   return (
     <div className="rounded-md border border-border bg-card p-5">
       <p className="font-mono text-xs uppercase tracking-wide text-[var(--primary)]">Pro</p>
@@ -40,12 +37,12 @@ export function ProAuditUpsell() {
         >
           Run a free grade
         </Link>
-        <a
-          href={supportHref}
+        <Link
+          href="/for-agencies#early-access"
           className="inline-flex items-center justify-center rounded-sm border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors duration-150 hover:border-foreground/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
-          Request Pro access
-        </a>
+          See founding access
+        </Link>
       </div>
     </div>
   );

@@ -14,7 +14,7 @@ afterEach(() => {
 });
 
 describe("GradeNextSteps", () => {
-  it("asks a signed-out visitor to save the grade, then offers the behind-login path", () => {
+  it("asks a signed-out visitor to save the grade, then leads with the working CLI path", () => {
     render(
       <GradeNextSteps
         signedIn={false}
@@ -28,14 +28,21 @@ describe("GradeNextSteps", () => {
       "href",
       "/auth/signup?returnTo=%2Fprojects%3Furl%3Dhttps%253A%252F%252Fexample.com%252Fpricing",
     );
-    expect(screen.getByRole("link", { name: "Scan behind the login" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Scan a logged-in flow with the CLI" })).toHaveAttribute(
       "href",
-      "/for-agencies",
+      "/guides/ci-accessibility-gate",
+    );
+    expect(screen.getByRole("link", { name: "See founding access" })).toHaveAttribute(
+      "href",
+      "/for-agencies#early-access",
     );
     expect(screen.getByText(/4 public pages only/)).toBeInTheDocument();
 
     fireEvent.click(save);
     expect(trackProductEvent).toHaveBeenCalledWith("grade_save_clicked", { signed_in: false });
+
+    fireEvent.click(screen.getByRole("link", { name: "Scan a logged-in flow with the CLI" }));
+    expect(trackProductEvent).toHaveBeenCalledWith("grade_cli_guide_clicked", { from: "grade_result" });
   });
 
   it("sends a signed-in visitor to the dashboard instead of a second signup", () => {
