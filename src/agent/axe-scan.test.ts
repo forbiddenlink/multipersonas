@@ -1,5 +1,15 @@
-import { describe, it, expect } from "vitest";
-import { mergeAxeFindings } from "./axe-scan.js";
+import { describe, it, expect, vi } from "vitest";
+
+const { analyze } = vi.hoisted(() => ({ analyze: vi.fn() }));
+
+vi.mock("@axe-core/playwright", () => ({
+  AxeBuilder: class {
+    withTags(): this { return this; }
+    analyze = analyze;
+  },
+}));
+
+import { mergeAxeFindings, runAxeScan } from "./axe-scan.js";
 import type { Finding } from "./engine.js";
 
 const f = (over: Partial<Finding>): Finding => ({
@@ -71,5 +81,18 @@ describe("mergeAxeFindings", () => {
 
   it("handles an empty list", () => {
     expect(mergeAxeFindings([])).toEqual([]);
+  });
+});
+
+describe("runAxeScan", () => {
+  it("returns an empty list for a completed scan with no violations", async () => {
+    analyze.mockResolvedValueOnce({ violations: [] });
+    await expect(runAxeScan({ url: () => "https://example.test" } as never)).resolves.toEqual([]);
+  });
+
+  it("fails the run when axe cannot produce evidence", async () => {
+    analyze.mockRejectedValueOnce(new Error("analysis unavailable"));
+    await expect(runAxeScan({ url: () => "https://example.test" } as never))
+      .rejects.toThrow("Accessibility scan failed for https://example.test: analysis unavailable");
   });
 });

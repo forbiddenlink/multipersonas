@@ -1,4 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+const { launchAuditBrowser } = vi.hoisted(() => ({ launchAuditBrowser: vi.fn() }));
+
+vi.mock("../security/browser.js", () => ({ launchAuditBrowser }));
+
 import { crawl } from "./crawl.js";
 import { BlockedUrlError } from "../security/url-guard.js";
 
@@ -22,5 +27,24 @@ describe("crawl — SSRF guard", () => {
 
   it("refuses a non-URL", async () => {
     await expect(crawl("not a url")).rejects.toBeInstanceOf(BlockedUrlError);
+  });
+});
+
+describe("crawl — evidence honesty", () => {
+  it("rejects an unreachable entry URL rather than returning a clean scan", async () => {
+    const close = vi.fn();
+    launchAuditBrowser.mockResolvedValueOnce({
+      close,
+      newContext: vi.fn().mockResolvedValue({
+        route: vi.fn(),
+        newPage: vi.fn().mockResolvedValue({
+          goto: vi.fn().mockRejectedValue(new Error("connection refused")),
+        }),
+      }),
+    });
+
+    await expect(crawl("http://localhost:3010", { allowPrivate: true }))
+      .rejects.toThrow("Could not load entry URL http://localhost:3010/: connection refused");
+    expect(close).toHaveBeenCalledOnce();
   });
 });

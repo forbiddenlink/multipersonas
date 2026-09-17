@@ -7,3 +7,7 @@ export function positiveEnvInt(raw: string | undefined, fallback: number): numbe
   return Math.floor(n);
 }
 
+/** Run maintenance immediately at startup, then only after its configured interval. */
+export function isIntervalDue(nowMs: number, lastRunMs: number | null, intervalMs: number): boolean {
+  return lastRunMs === null || nowMs - lastRunMs >= intervalMs;
+}

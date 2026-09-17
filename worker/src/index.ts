@@ -6,7 +6,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { type TestResult } from "multipersonas/orchestrator";
 import type { gradeScan } from "multipersonas/grader";
 import { runJobProcess, ScanCleanupError } from "./job-process.js";
-import { positiveEnvInt } from "./config.js";
+import { isIntervalDue, positiveEnvInt } from "./config.js";
 import { writeJobState } from "./job-write.js";
 import { clampFindingCategory, clampSeverity } from "multipersonas/domain/vocab";
 
@@ -33,6 +33,9 @@ const JOB_TIMEOUT_MS = positiveEnvInt(process.env.WORKER_JOB_TIMEOUT_SECONDS, 30
 // worker is itself about to time out.
 const REAP_AFTER_SECONDS = positiveEnvInt(process.env.WORKER_REAP_AFTER_SECONDS, 600);
 const MAX_ATTEMPTS = positiveEnvInt(process.env.WORKER_MAX_ATTEMPTS, 3);
+// Reap independently of queue idleness: a continuously busy worker must still
+// recover jobs a crashed sibling left behind.
+const REAP_INTERVAL_MS = positiveEnvInt(process.env.WORKER_REAP_INTERVAL_SECONDS, 60) * 1000;
 // Optional alert sink (Slack-compatible incoming webhook) — a lightweight paging path
 // alongside Sentry. No-op when unset.
 const ALERT_WEBHOOK = process.env.WORKER_ALERT_WEBHOOK;
@@ -216,14 +219,15 @@ function toResponse(result: TestResult) {
 type AuditResponse = ReturnType<typeof toResponse>;
 
 /** Persist history for a signed-in user's job: one test_run + its findings, with the
- * axe-vs-persona source split. Best-effort — never fail the job on a history write.
+ * axe-vs-persona source split. A run is only completed after every finding is durable;
+ * otherwise a missing write could be mistaken for a clean audit.
  * `projectId` links the run to a project when the audit was queued from one — see
  * app/api/audit/route.ts, which verifies ownership before it ever reaches a job row. */
 async function persistHistory(
   userId: string,
   audit: AuditResponse,
   projectId?: string | null,
-): Promise<string | null> {
+): Promise<string> {
   const now = new Date().toISOString();
   const { data: run, error } = await supabase
     .from("test_runs")
@@ -231,19 +235,18 @@ async function persistHistory(
       user_id: userId,
       project_id: projectId ?? null,
       url: audit.url,
-      status: "completed",
+      status: "running",
       task_success_achieved: audit.taskSuccess.achieved,
       task_success_total: audit.taskSuccess.total,
       persona_ids: audit.personas.map((p) => p.id),
       started_at: now,
-      completed_at: now,
+      completed_at: null,
     })
     .select("id")
     .single();
 
   if (error || !run) {
-    console.error("[worker] history: test_run insert failed:", error?.message);
-    return null;
+    throw new Error(`History run persistence failed: ${error?.message ?? "no row returned"}`);
   }
 
   // `location` already carries the specific page each finding was seen on (see
@@ -280,8 +283,19 @@ async function persistHistory(
   ];
   if (rows.length > 0) {
     const { error: fErr } = await supabase.from("findings").insert(rows);
-    if (fErr) console.error("[worker] history: findings insert failed:", fErr.message);
+    if (fErr) throw new Error(`History findings persistence failed: ${fErr.message}`);
   }
+
+  const { data: completedRun, error: completionErr } = await supabase
+    .from("test_runs")
+    .update({ status: "completed", completed_at: new Date().toISOString() })
+    .eq("id", run.id)
+    .select("id")
+    .single();
+  if (completionErr || !completedRun) {
+    throw new Error(`History completion persistence failed: ${completionErr?.message ?? "no row updated"}`);
+  }
+
   return run.id;
 }
 
@@ -405,7 +419,7 @@ async function claimAndRun(): Promise<boolean> {
       const runId = await persistHistory(claimed.user_id, response, claimed.project_id);
       // Replay Theater: persist the walk while the screenshots are still on disk (the
       // finally block wipes tmpDir). Best-effort; `result` carries the per-step records.
-      if (runId) await persistJourney(runId, result);
+      await persistJourney(runId, result);
     }
 
     await writeJobState(supabase
@@ -465,11 +479,16 @@ async function reapStaleJobs(): Promise<void> {
 
 async function loop(): Promise<void> {
   console.log(`[worker] started; polling every ${POLL_MS}ms`);
-  // Run continuously. If a job ran, poll again immediately (drain the queue);
-  // otherwise reap stranded jobs and wait POLL_MS before checking again.
+  let lastReapAt: number | null = null;
+  // Run continuously. Jobs drain back-to-back when busy, while maintenance remains
+  // time-based so an active queue cannot starve stale-job recovery.
   while (!shuttingDown) {
     let ranSomething = false;
     try {
+      if (isIntervalDue(Date.now(), lastReapAt, REAP_INTERVAL_MS)) {
+        lastReapAt = Date.now();
+        await reapStaleJobs();
+      }
       ranSomething = await claimAndRun();
     } catch (e) {
       if (e instanceof ScanCleanupError) {
@@ -482,7 +501,6 @@ async function loop(): Promise<void> {
       await notify(`loop error: ${msg}`);
     }
     if (!ranSomething) {
-      await reapStaleJobs();
       if (shuttingDown) break;
       await new Promise((r) => setTimeout(r, POLL_MS));
     }

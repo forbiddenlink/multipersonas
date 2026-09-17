@@ -65,11 +65,11 @@ export async function runAxeScan(page: Page): Promise<Finding[]> {
       })),
     );
   } catch (error) {
-    console.error(
-      "axe-core scan failed:",
-      error instanceof Error ? error.message : error
-    );
-    return [];
+    // An unavailable analyser is not evidence that a page has no defects. Let
+    // callers fail the run rather than publishing a falsely clean report or
+    // advancing a CI baseline.
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`Accessibility scan failed for ${page.url()}: ${detail}`, { cause: error });
   }
 }
 

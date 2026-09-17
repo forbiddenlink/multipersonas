@@ -34,6 +34,9 @@ export async function listAudits(
   let query = supabase
     .from("test_runs")
     .select("id,url,created_at,task_success_achieved,task_success_total,persona_ids,project_id")
+    // A worker marks the run completed only after its findings are durable.
+    // In-progress/failed history is not audit evidence and must not affect roll-ups.
+    .eq("status", "completed")
     .order("created_at", { ascending: false })
     .limit(limit ?? 20);
 

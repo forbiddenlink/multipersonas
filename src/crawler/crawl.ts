@@ -74,7 +74,14 @@ export async function crawl(entryUrl: string, options: CrawlOptions = {}): Promi
         await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
         // SPA routes render after load; scanning too early would undercount.
         await page.waitForTimeout(1500);
-      } catch {
+      } catch (error) {
+        // A crawl that never reached a page has no evidence for a clean result.
+        // Later links can fail independently, but failing to load the entry point
+        // must fail the command instead of passing a gate with zero findings.
+        if (visited.length === 0) {
+          const detail = error instanceof Error ? error.message : String(error);
+          throw new Error(`Could not load entry URL ${url}: ${detail}`, { cause: error });
+        }
         continue;
       }
 

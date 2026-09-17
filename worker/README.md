@@ -21,6 +21,8 @@ web /api/audit/[jobId] ──polls──> Postgres
 - `ANTHROPIC_API_KEY` — persona runs are model calls.
 - `WORKER_POLL_MS` — optional, default 3000. Idle poll interval; the queue drains
   back-to-back when busy.
+- `WORKER_REAP_INTERVAL_SECONDS` — optional, default 60. Minimum time between stale-job
+  checks; they run between jobs even while the queue is busy.
 
 ## Run locally
 

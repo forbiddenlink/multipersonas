@@ -81,6 +81,7 @@ export default async function AuditDetailPage({
     .from("test_runs")
     .select("id,url,created_at,task_success_achieved,task_success_total,persona_ids,project_id")
     .eq("id", id)
+    .eq("status", "completed")
     .single();
 
   if (!run) notFound();

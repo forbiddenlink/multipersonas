@@ -69,11 +69,14 @@ export function rowToFinding(row: AxeFindingRow): Finding {
 }
 
 async function loadAxeFindings(supabase: SB, runId: string): Promise<AxeFindingRow[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("findings")
     .select("id,title,severity,rule_id,target,page_url,description")
     .eq("test_run_id", runId)
     .eq("source", "axe");
+  // An unavailable history query is not proof that every prior defect cleared.
+  // Surface the error to the page boundary instead of rendering a false comparison.
+  if (error) throw new Error(`Could not load findings for run ${runId}: ${error.message}`);
   return (data ?? []) as AxeFindingRow[];
 }
 

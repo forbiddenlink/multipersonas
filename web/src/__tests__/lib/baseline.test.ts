@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { defectKey } from "@engine/agent/defect-key";
 import {
   baselineFromFindings,
   evaluateGate,
 } from "@engine/crawler/gate";
-import { rowToFinding, type AxeFindingRow } from "@/lib/baseline";
+import { compareProjectRuns, rowToFinding, type AxeFindingRow } from "@/lib/baseline";
 
 function row(partial: Partial<AxeFindingRow> & Pick<AxeFindingRow, "title">): AxeFindingRow {
   return {
@@ -49,5 +49,26 @@ describe("rowToFinding + gate (web baseline)", () => {
     const gate = evaluateGate(current, { failOn: "minor", baseline: null });
     expect(gate.newDefects).toHaveLength(1);
     expect(gate.fixed).toHaveLength(0);
+  });
+
+  it("does not turn a failed findings query into a clean comparison", async () => {
+    const query = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      then: (resolve: (value: unknown) => unknown) =>
+        Promise.resolve({ data: null, error: { message: "database unavailable" } }).then(resolve),
+    };
+    query.select.mockReturnValue(query);
+    query.eq.mockReturnValue(query);
+    const supabase = { from: vi.fn(() => query) };
+
+    await expect(compareProjectRuns(supabase as never, [{
+      id: "run-1",
+      url: "https://example.test",
+      created_at: "2026-09-17T00:00:00.000Z",
+      task_success_achieved: 1,
+      task_success_total: 1,
+      persona_ids: [],
+    }])).rejects.toThrow("Could not load findings for run run-1: database unavailable");
   });
 });

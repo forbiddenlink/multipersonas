@@ -365,6 +365,7 @@ export async function buildReport(supabase: SB, id: string): Promise<ReportData 
         .from("test_runs")
         .select("id,url,created_at,persona_ids,project_id")
         .eq("id", id)
+        .eq("status", "completed")
         .single();
       if (!run) return null;
 
