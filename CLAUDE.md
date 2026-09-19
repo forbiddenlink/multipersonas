@@ -8,7 +8,7 @@ This is a pnpm workspace monorepo: the CLI/engine at the repo root, plus `web/` 
 
 ## Stack
 
-- Node >=20 (root `engines`); Vercel deploys `web/` on Node 24.x
+- Node >=20 (root `engines`)
 - TypeScript 6.0.3
 - CLI/engine deps: `playwright` ^1.62.1, `@axe-core/playwright` ^4.13.0, `ai` ^7.0.84 + `@ai-sdk/anthropic` ^4.0.45, `commander` ^15.0.0, `zod` ^4.4.3, `vitest` 4.1.11
 - `web/`: Next.js 16.3.4, React 19.2.8, Tailwind CSS 4.3.3, `@base-ui/react` ^1.7.0, `@supabase/ssr` + `@supabase/supabase-js`, Stripe 22.4.0, `@sentry/nextjs` ^10.71.0, PostHog (`posthog-js`), `shadcn` 4.19.0, Playwright for e2e
@@ -58,14 +58,13 @@ cd web && pnpm lint && pnpm exec tsc --noEmit && pnpm test && pnpm build
 
 ## Layout
 
-- `src/` - the `mpersonas` CLI/engine (TypeScript), published as npm package `multipersonas`. Subdirs: `agent/`, `auth/`, `crawler/`, `domain/`, `grader/`, `personas/`, `report/`, `security/`, `tasks/`.
+- `src/` - the `mpersonas` CLI/engine (TypeScript), published as npm package `multipersonas`. Subdirs: `agent/`, `auth/`, `crawler/`, `domain/`, `grader/`, `personas/`, `report/`, `security/`.
 - `web/` - Next.js app, its own workspace with its own `package.json`, `AGENTS.md`, and `CLAUDE.md` (do not edit those from here; they govern `web/` specifically).
 - `worker/` - persistent background job runner (claims `audit_jobs`, runs the browser + engine, writes results back). Depends on the root package as `multipersonas`.
 - `experiments/` - evidence behind the product's positioning claims. Kept on purpose; do not delete.
 - `docs/` - includes `DEPLOYMENT.md`, `TESTING.md`, `ssrf-egress-hardening.md`, ADRs (`docs/adr/`), plans, audits.
 - `examples/github-actions/` - a ready-to-use CI accessibility gate action.
 - `scripts/` - `axe-dogfood.mjs`, `check-bundle-budget.mjs`, `check-prod-env.mjs`, `fixture-session.ts`, `prod-smoke.mjs`, `shot.mjs`, `test-docker-context.sh`.
-- `thoughts/` - `ledgers/` and `shared/` (continuity ledgers).
 - `AI/diagrams/` - architecture diagrams.
 - Root `railway.toml` builds `worker/Dockerfile` for the Railway worker service (no HTTP port; background process).
 - Vercel project `multipersonas` is linked at the repo root with `rootDirectory: web`.
