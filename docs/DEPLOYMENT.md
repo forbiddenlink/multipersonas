@@ -10,7 +10,7 @@ See `docs/PLAN-2026-07-26-phase2-deploy-infra.md`.
 ## Deploy model: a push to `main` is live
 
 Vercel's git integration deploys `main` to production automatically (reconnected
-2026-08-02, `docs/audit-2026-08-02.md`). **There is no human gate between a merge and
+2026-08-02). **There is no human gate between a merge and
 production.** Treat every merge to `main` as a production release.
 
 Two consequences worth holding onto:

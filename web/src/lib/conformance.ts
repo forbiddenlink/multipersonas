@@ -2,7 +2,8 @@ import type { Criterion } from "./wcag";
 
 /**
  * The conformance engine. Turns axe verdicts into an honest, automated ACR/VPAT-lite
- * conformance table. See docs/plans/2026-07-30-honest-acr-design.md.
+ * conformance table (design doc removed in the docs cleanup; see git log for
+ * docs/plans/2026-07-30-honest-acr-design.md).
  *
  * The one rule that makes this credible (and legally defensible) rather than the
  * accessiBe failure mode: automation ALONE never emits a bare "Supports". A criterion

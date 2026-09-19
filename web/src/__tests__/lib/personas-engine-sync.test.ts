@@ -11,7 +11,8 @@ import { PERSONA_DATA, PERSONA_IDS } from "@/lib/personas";
  * offer an id the engine no longer recognizes (which api/audit/route.ts would
  * then silently drop, since it filters `id in personaLibrary`). This is exactly
  * the "engine<->web display-meta sync" gap flagged as the reason new roster
- * personas were deferred in docs/plans/2026-08-01-persona-realism-design.md.
+ * personas were deferred (design doc removed in the docs cleanup; see git log for
+ * docs/plans/2026-08-01-persona-realism-design.md).
  */
 describe("persona display metadata stays in sync with the engine library", () => {
   it("every engine persona id has web display metadata", () => {

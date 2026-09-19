@@ -223,8 +223,7 @@ These are product requirements, not tone:
     her own apps' URLs + test credentials, or independent third-party targets with
     real functionality behind auth.
 - **Phase C — axe at every state.** Still on hold. Gate is Phase B run 2.
-- **Phase D — worker split** (Railway Docker per
-  `thoughts/shared/plans/2026-04-19-multipersonas-plan.md:934`), durable rate
+- **Phase D — worker split** (Railway Docker; shipped, see `worker/README.md`), durable rate
   limiting, spend cap. Prerequisite for any public deploy.
 
 Price anchor if this ships: one manual audit is $2K-7K; a11y freelance median

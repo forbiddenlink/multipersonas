@@ -5,7 +5,7 @@ frames cross-fading, the persona's inner monologue captioned, axe evidence surfa
 the state it was found, and a frustration ribbon rising to the outcome. Slack-able. Every
 share is an ad.
 
-This is Phase P4 of `docs/plans/2026-07-30-replay-theater-design.md`.
+This is Phase P4 of the Persona Replay Theater design (shipped; design doc removed in the docs cleanup, see git log for docs/plans/2026-07-30-replay-theater-design.md).
 
 ## Why it lives outside the workspace
 

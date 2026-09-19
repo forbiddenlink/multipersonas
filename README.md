@@ -1,6 +1,6 @@
 # multipersonas
 
-Point it at a URL — including one behind a login. It crawls the site and checks
+Point it at a URL, including one behind a login. It crawls the site and checks
 every state it reaches for accessibility defects.
 
 Two commands, and the split reflects what the evidence actually supports:
@@ -10,29 +10,29 @@ Two commands, and the split reflects what the evidence actually supports:
   violations. This is the part nothing free replaces: the `axe` CLI does not crawl and
   does not hold a session.
 - **`run`** adds LLM **UX personas** (a first-time visitor, a mobile user on slow 3G)
-  that browse toward a goal. Its unique output is **task success** — did a real-shaped
-  user actually complete the flow? — which a crawler cannot produce at all. Its finding
+  that browse toward a goal. Its unique output is **task success** (did a real-shaped
+  user actually complete the flow?), which a crawler cannot produce at all. Its finding
   output is *opinion*: jargon, buried pricing, tap targets. Useful, never compliance.
 
 **Honest status of the persona layer:** we tested whether personas find accessibility
-defects a scripted crawler misses. They do not — a head-to-head on a real app
+defects a scripted crawler misses. They do not: a head-to-head on a real app
 (`experiments/personas-vs-crawler/`) found the crawler reached 4x more states for zero
 model cost. So personas are **not** pitched as an accessibility tool. Their surviving,
-distinct value is task-success — a crawler cannot tell you whether a real-shaped user
-completed a flow — and it is **validated**: on a labelled probe set
+distinct value is task-success: a crawler cannot tell you whether a real-shaped user
+completed a flow. It is **validated**: on a labelled probe set
 (`experiments/task-success-validity/`) the verdict never once claimed success on a
 genuinely impossible task (0% false-success, 90% agreement, holding across both runs).
-n=2 targets so far (Metabase, then SauceDemo — an interaction-heavy checkout), each goal
+n=2 targets so far (Metabase, then SauceDemo, an interaction-heavy checkout), each goal
 run once, so the next step is more targets and repeated runs per goal, not a launch.
 
-- **Accessibility violations** come from **axe-core** — deterministic, citable, and
+- **Accessibility violations** come from **axe-core**: deterministic, citable, and
   the only thing here that touches compliance.
 - **Usability friction and task success** come from **UX personas**. Opinion and
   outcome, never compliance.
 
 **We do not simulate disabled users.** There is no "blind user" persona and there
 will not be one. An LLM roleplaying a disability is inaccurate (LLM accessibility
-judgments measure ~71% precision) and it is harmful — see
+judgments measure ~71% precision) and it is harmful; see
 [Ashlee Boyer](https://ashleemboyer.com/blog/how-to-dehumanize-accessibility-with-ai/)
 on why synthetic disabled characters don't represent anyone. What we keep is the
 *procedure*: the `keyboard-traversal` profile drives the site keyboard-only to reach
@@ -44,7 +44,7 @@ you need that, use [Fable](https://makeitfable.com/), who pay disabled testers.
 
 **Status: prototype. The core bet is measured; the product shape changed because of
 it.** Deep states behind auth *do* hold violations a front-page scan misses (78% of
-them on the test app — `experiments/net-new-violations/`), and `scan` is built around
+them on the test app, `experiments/net-new-violations/`), and `scan` is built around
 that. Personas do *not* beat a crawler at finding them
 (`experiments/personas-vs-crawler/`), so the pitch shifted from "AI personas find what
 crawlers can't" to "authenticated accessibility scanning, plus a persona task-success
@@ -61,7 +61,7 @@ pnpm exec playwright install chromium
 
 ## Use
 
-### Scan (the core — deterministic, free, no AI)
+### Scan (the core: deterministic, free, no AI)
 
 ```bash
 # Crawl a public site and check every page for accessibility defects
@@ -93,7 +93,7 @@ The baseline keys defects by a render-stable id, so framework-generated element 
 [`examples/github-actions/`](examples/github-actions/accessibility-gate.yml). Exit codes:
 `0` pass, `2` gate failed, `1` usage/runtime error.
 
-### Run (personas — task success + usability opinion)
+### Run (personas: task success + usability opinion)
 
 ```bash
 # Personas tailored to the site browse toward a goal
@@ -131,7 +131,7 @@ run:   URL ──> url-guard ──> Chromium (+session) ──> persona agent (
 
 Both merge axe findings by a stable defect key (`src/agent/defect-key.ts`) that
 collapses framework-generated element ids, so one broken component is one defect across
-every state it appears in — not one per page.
+every state it appears in, not one per page.
 
 Each profile gets a system prompt built from its `kind`, goals, viewport, and input
 modality (`src/personas/types.ts`). `kind: "ux"` produces a person with goals whose
@@ -139,7 +139,7 @@ output is opinion; `kind: "traversal"` produces a harness that is explicitly tol
 is not a person and must not judge accessibility. The agent loop
 (`src/agent/engine.ts`) hands the model an accessibility-tree snapshot each step and
 lets it call `click`, `type`, `scroll`, `navigate`, `report_finding`, or `finish`
-(with an explicit `achieved`/`blocked` outcome — the report never infers success from the
+(with an explicit `achieved`/`blocked` outcome; the report never infers success from the
 fact that the agent stopped).
 
 `src/personas/framing.test.ts` enforces the above: no profile may claim a disability,
@@ -151,14 +151,14 @@ This product's core action is hostile by construction: it points a browser at a 
 stranger supplied, and lets an LLM that has read that stranger's page decide where to
 navigate next. Both inputs are attacker-influenced.
 
-`src/security/url-guard.ts` is the chokepoint. Every navigation — the initial URL, the
-agent's `navigate` tool, the axe scan, and persona generation — resolves the hostname
+`src/security/url-guard.ts` is the chokepoint. Every navigation (the initial URL, the
+agent's `navigate` tool, the axe scan, and persona generation) resolves the hostname
 and validates the **resolved addresses**, rejecting loopback, RFC1918, link-local
 (including cloud metadata at `169.254.169.254`), CGNAT, and the IPv6 equivalents plus
 IPv4-mapped/NAT64/6to4 wrappers. The engine additionally vets every document request,
 so a 3xx redirect can't bounce a clean host to a private one.
 
-Known limit: DNS rebinding is not fully closed in-process — we resolve, then Chromium
+Known limit: DNS rebinding is not fully closed in-process: we resolve, then Chromium
 resolves again on connect. Closing it needs an egress firewall on the browser host; the
 hosted worker ships one (a `smokescreen` sidecar, `worker/entrypoint.sh`), live on the
 Railway worker service per [docs/ssrf-egress-hardening.md](docs/ssrf-egress-hardening.md).

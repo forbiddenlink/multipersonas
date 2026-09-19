@@ -3,6 +3,11 @@
 Written 2026-07-30. Snapshot of the ambitious direction, grounded in market + capability
 research. This is the destination, not the next sprint. No em dashes (house style).
 
+**STALE (2026-09-19):** the Sequencing section's first pick, Persona Replay Theater,
+shipped (`c753ff4`) and was later removed (see
+`docs/plans/2026-07-30-replay-p5-perf-persona-and-magica.md`). Kept for the vision and
+research citations; reality now lives in the code and git log, not this doc.
+
 ## The core insight
 
 The whole accessibility-tooling category is boring. Every competitor outputs the same

@@ -4,6 +4,11 @@ Snapshot as of 2026-08-01. Written against `188ebe4` (main). This is a destinati
 doc: freeze it, let reality live in the code + issues. Re-validate file:line refs if
 HEAD has moved.
 
+**STALE (2026-09-19):** every priority below has shipped: the public grader + egress
+hardening (`web/src/app/grade`, `api/grade`, `worker/entrypoint.sh` smokescreen) and
+the sharper persona (axe findings fed to the agent, `src/agent/engine.ts`). Kept for
+the rejection rationale and research citations, not as a live roadmap.
+
 Source: 8 parallel research threads (4 landscape: competitive / demand / OSS / tools;
 4 deep: a11y-tree nav / grader+VPAT / egress / live code-map). Full agent reports in
 `.claude/cache/agents/research-agent/`.

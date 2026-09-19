@@ -1,5 +1,6 @@
 -- 010: carry the axe rule id + WCAG tags onto persisted findings, so the Report export
--- (docs/superpowers/specs/2026-07-28-report-export-design.md) can cite WCAG success
+-- (design doc removed in the docs cleanup; see git log for
+-- docs/superpowers/specs/2026-07-28-report-export-design.md) can cite WCAG success
 -- criteria honestly instead of fabricating them.
 --
 -- Both columns are nullable: existing rows and every persona finding (source='persona')

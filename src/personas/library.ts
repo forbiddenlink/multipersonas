@@ -199,8 +199,8 @@ export const anxiousFirstTimer: Persona = buildPersona({
  * Where an existing real primitive applies (reducedMotion/forcedColors/
  * colorScheme via `conditions`, `inputModality: "keyboard"`) these use it; none
  * invent a browser condition the engine doesn't actually enforce (no fabricated
- * zoom/throttle claims — see docs/plans/2026-08-01-persona-realism-design.md's
- * "Delivered vs deferred").
+ * zoom/throttle claims (see the "Delivered vs deferred" section of the persona-realism
+ * design doc, removed in the docs cleanup; git log has docs/plans/2026-08-01-persona-realism-design.md).
  */
 export const keyboardOfficeWorker: Persona = buildPersona({
   id: "keyboard-office-worker",

@@ -1,7 +1,7 @@
 # Replay Theater P5 — perf persona (lighthouse) + magica decision
 
-Written 2026-07-30. Scoping note for the two enrichment ideas in
-`docs/plans/2026-07-30-replay-theater-design.md` §P5. No em dashes.
+Written 2026-07-30. Scoping note for the two enrichment ideas in §P5 of the (now-shipped
+and removed) Persona Replay Theater design doc. No em dashes.
 
 ## 1. Lighthouse "slow-3G mobile" performance lens — BUILD (own slice, not this session)
 
