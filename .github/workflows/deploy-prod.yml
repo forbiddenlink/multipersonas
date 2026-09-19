@@ -1,7 +1,8 @@
 name: Deploy production (manual)
 
 # ⚠️ THIS IS NOT A GATE. A push to `main` IS live: Vercel's git integration deploys it
-# automatically (reconnected 2026-08-02, see docs/audit-2026-08-02.md). An earlier version of
+# automatically (reconnected 2026-08-02; detail in git history for the now-removed
+# docs/audit-2026-08-02.md). An earlier version of
 # this comment claimed "a push to main is not live until someone deploys" — that was true
 # before the reconnect and is false now. Do not read this workflow as protecting production.
 #
