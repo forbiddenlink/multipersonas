@@ -6,6 +6,11 @@ import posthog from "posthog-js";
 import type { PostHogConfig } from "posthog-js";
 import { PostHogProvider as Provider } from "posthog-js/react";
 
+// Identifies this app in the shared PostHog project (325061), which several apps
+// report into. Registered as a super property so every event carries it and per-app
+// funnels stay filterable.
+const APP_NAME = "personaudit";
+
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com";
 
@@ -48,6 +53,8 @@ const posthogOptions = {
   person_profiles: "identified_only",
   respect_dnt: true,
   loaded: (client) => {
+    // Register before the first capture so the opening pageview carries the app too.
+    client.register({ app: APP_NAME });
     captureCurrentPageview(client);
   },
   before_send: (event) => {

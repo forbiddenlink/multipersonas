@@ -22,3 +22,18 @@ it("removes URL fragments and queries before analytics events leave the browser"
   expect(options.before_send({ properties: { $referrer: "/relative#private-fragment" } }).properties.$referrer)
     .toBe("/relative");
 });
+
+it("tags every event with the app so the shared posthog project stays filterable", async () => {
+  vi.stubEnv("NEXT_PUBLIC_POSTHOG_KEY", "synthetic-test-key");
+  await import("@/components/posthog-provider");
+  const options = init.mock.calls[0]![1];
+  const client = { register: vi.fn(), capture: vi.fn() };
+
+  options.loaded(client);
+
+  expect(client.register).toHaveBeenCalledWith({ app: "personaudit" });
+  // Registered before the opening pageview, so that event carries it too.
+  expect(client.register.mock.invocationCallOrder[0]).toBeLessThan(
+    client.capture.mock.invocationCallOrder[0]
+  );
+});
