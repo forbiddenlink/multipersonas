@@ -27,13 +27,15 @@ it("tags every event with the app so the shared posthog project stays filterable
   vi.stubEnv("NEXT_PUBLIC_POSTHOG_KEY", "synthetic-test-key");
   await import("@/components/posthog-provider");
   const options = init.mock.calls[0]![1];
-  const client = { register: vi.fn(), capture: vi.fn() };
+  const order: string[] = [];
+  const client = {
+    register: vi.fn(() => { order.push("register"); }),
+    capture: vi.fn(() => { order.push("capture"); }),
+  };
 
   options.loaded(client);
 
   expect(client.register).toHaveBeenCalledWith({ app: "personaudit" });
   // Registered before the opening pageview, so that event carries it too.
-  expect(client.register.mock.invocationCallOrder[0]).toBeLessThan(
-    client.capture.mock.invocationCallOrder[0]
-  );
+  expect(order).toEqual(["register", "capture"]);
 });
