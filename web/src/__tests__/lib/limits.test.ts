@@ -7,6 +7,7 @@ import {
   CALLS_PER_PERSONA,
   positiveEnvInt,
 } from "@/lib/limits";
+import { personaLibrary } from "@engine/personas/library";
 
 describe("positiveEnvInt", () => {
   it("returns the fallback for missing, empty, or non-positive values", () => {
@@ -39,6 +40,12 @@ describe("killSwitchEnabled", () => {
 });
 
 describe("estimatedCallsFor", () => {
+  it("reserves each selected persona's maximum possible agent-loop calls", () => {
+    expect(CALLS_PER_PERSONA).toBe(
+      Math.max(...Object.values(personaLibrary).map((persona) => persona.maxSteps)),
+    );
+  });
+
   it("scales with persona count", () => {
     expect(estimatedCallsFor(0)).toBe(0);
     expect(estimatedCallsFor(3)).toBe(3 * CALLS_PER_PERSONA);

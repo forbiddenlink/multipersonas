@@ -31,7 +31,7 @@ export async function GET(
 
   const { data, error } = await admin
     .from("audit_jobs")
-    .select("status, result, error, user_id")
+    .select("status, result, error, user_id, kind")
     .eq("id", jobId)
     .single();
 
@@ -51,7 +51,9 @@ export async function GET(
 
   return NextResponse.json({
     status: data.status,
-    result: data.result,
+    // Grader engine output is retained for internal scope review. Its public
+    // representation is served by the separate grade-token endpoint.
+    result: data.kind === "grade" ? null : data.result,
     error: data.error,
   });
 }

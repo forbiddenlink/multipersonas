@@ -4,7 +4,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const base = process.env.NEXT_PUBLIC_SITE_URL || "https://personaudit.com";
 
   return [
-    { url: base, lastModified: new Date(), changeFrequency: "weekly", priority: 1 },
+    { url: base, changeFrequency: "weekly", priority: 1 },
     { url: `${base}/for-agencies`, changeFrequency: "monthly", priority: 0.9 },
     { url: `${base}/grade`, changeFrequency: "monthly", priority: 0.7 },
     // /auth/* is Disallow'd in robots.txt — keep it out of the sitemap too.

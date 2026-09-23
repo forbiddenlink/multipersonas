@@ -1,0 +1,319 @@
+{
+  "evaluation": "saved-task-expanded-20260919",
+  "workerDeployment": "f9674556-1af3-474f-a24e-91ac988c7e37",
+  "profile": "first-time-visitor",
+  "model": "Deployed worker configuration; model ID and token usage are not persisted in job results.",
+  "reservedCalls": 225,
+  "actualCost": null,
+  "sourceFixture": "saved-task-fixture.ts",
+  "cases": [
+    {
+      "caseId": "multi-step",
+      "expected": "observed",
+      "runs": 3,
+      "matching": 3,
+      "durationSeconds": [
+        13,
+        13,
+        12
+      ],
+      "steps": [
+        4,
+        4,
+        4
+      ]
+    },
+    {
+      "caseId": "native-select",
+      "expected": "observed",
+      "runs": 3,
+      "matching": 3,
+      "durationSeconds": [
+        12,
+        10,
+        9
+      ],
+      "steps": [
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "caseId": "misleading-text",
+      "expected": "not-observed",
+      "runs": 3,
+      "matching": 3,
+      "durationSeconds": [
+        16,
+        16,
+        15
+      ],
+      "steps": [
+        2,
+        3,
+        3
+      ]
+    }
+  ],
+  "limitations": [
+    "Three synthetic task families, one profile, three attempts per family.",
+    "Anonymous jobs exercise the deployed model and verifier; authenticated app/history flow was tested separately.",
+    "No production customer records, real transactions, or human participant results.",
+    "No claim of general accuracy or human task success."
+  ],
+  "runs": [
+    {
+      "id": "2ce300a2-0c87-4fd0-ab60-1797ff646503",
+      "case_id": "multi-step",
+      "status": "completed",
+      "error": null,
+      "task_definition": {
+        "goal": "Find the small-business service, open its details, and reach the quote request page. Do not submit any personal information.",
+        "version": 1,
+        "successText": "Small business quote request"
+      },
+      "persona_ids": [
+        "first-time-visitor"
+      ],
+      "task_outcomes": [
+        {
+          "evidence": {
+            "status": "observed",
+            "pageUrl": "https://facilities-given-naturally-clarity.trycloudflare.com/multi-step/quote",
+            "stepIndex": 3
+          },
+          "personaId": "first-time-visitor"
+        }
+      ],
+      "steps": "4",
+      "started_at": "2026-09-19 01:12:17.105582+00",
+      "completed_at": "2026-09-19 01:12:30.544+00",
+      "duration_seconds": "13"
+    },
+    {
+      "id": "f2b4773e-b05e-4a50-a416-3f1eae0eaf98",
+      "case_id": "multi-step",
+      "status": "completed",
+      "error": null,
+      "task_definition": {
+        "goal": "Find the small-business service, open its details, and reach the quote request page. Do not submit any personal information.",
+        "version": 1,
+        "successText": "Small business quote request"
+      },
+      "persona_ids": [
+        "first-time-visitor"
+      ],
+      "task_outcomes": [
+        {
+          "evidence": {
+            "status": "observed",
+            "pageUrl": "https://facilities-given-naturally-clarity.trycloudflare.com/multi-step/quote",
+            "stepIndex": 3
+          },
+          "personaId": "first-time-visitor"
+        }
+      ],
+      "steps": "4",
+      "started_at": "2026-09-19 01:12:31.023137+00",
+      "completed_at": "2026-09-19 01:12:43.796+00",
+      "duration_seconds": "13"
+    },
+    {
+      "id": "2c6b8b81-3045-4395-a6d9-57ef5c76171b",
+      "case_id": "native-select",
+      "status": "completed",
+      "error": null,
+      "task_definition": {
+        "goal": "Choose the Annual billing option in the billing period dropdown and read the resulting plan summary.",
+        "version": 1,
+        "successText": "Annual plan selected"
+      },
+      "persona_ids": [
+        "first-time-visitor"
+      ],
+      "task_outcomes": [
+        {
+          "evidence": {
+            "status": "observed",
+            "pageUrl": "https://facilities-given-naturally-clarity.trycloudflare.com/native-select",
+            "stepIndex": 2
+          },
+          "personaId": "first-time-visitor"
+        }
+      ],
+      "steps": "3",
+      "started_at": "2026-09-19 01:12:44.274529+00",
+      "completed_at": "2026-09-19 01:12:55.835+00",
+      "duration_seconds": "12"
+    },
+    {
+      "id": "9734c9b9-160e-48a8-abec-eee5ae35c298",
+      "case_id": "misleading-text",
+      "status": "completed",
+      "error": null,
+      "task_definition": {
+        "goal": "Find the confirmed reservation page. Stop if it is unavailable. Do not type, edit, or manufacture the expected confirmation text.",
+        "version": 1,
+        "successText": "Reservation confirmed"
+      },
+      "persona_ids": [
+        "first-time-visitor"
+      ],
+      "task_outcomes": [
+        {
+          "evidence": {
+            "status": "not-observed",
+            "pageUrl": "https://facilities-given-naturally-clarity.trycloudflare.com/misleading-text",
+            "stepIndex": 1
+          },
+          "personaId": "first-time-visitor"
+        }
+      ],
+      "steps": "2",
+      "started_at": "2026-09-19 01:12:56.100708+00",
+      "completed_at": "2026-09-19 01:13:12.26+00",
+      "duration_seconds": "16"
+    },
+    {
+      "id": "ac698d0b-99db-4769-b108-a00f3bd8918d",
+      "case_id": "native-select",
+      "status": "completed",
+      "error": null,
+      "task_definition": {
+        "goal": "Choose the Annual billing option in the billing period dropdown and read the resulting plan summary.",
+        "version": 1,
+        "successText": "Annual plan selected"
+      },
+      "persona_ids": [
+        "first-time-visitor"
+      ],
+      "task_outcomes": [
+        {
+          "evidence": {
+            "status": "observed",
+            "pageUrl": "https://facilities-given-naturally-clarity.trycloudflare.com/native-select",
+            "stepIndex": 2
+          },
+          "personaId": "first-time-visitor"
+        }
+      ],
+      "steps": "3",
+      "started_at": "2026-09-19 01:13:12.888378+00",
+      "completed_at": "2026-09-19 01:13:23.35+00",
+      "duration_seconds": "10"
+    },
+    {
+      "id": "b84f8efc-e906-4ebe-93c5-a10f93ba6d8a",
+      "case_id": "misleading-text",
+      "status": "completed",
+      "error": null,
+      "task_definition": {
+        "goal": "Find the confirmed reservation page. Stop if it is unavailable. Do not type, edit, or manufacture the expected confirmation text.",
+        "version": 1,
+        "successText": "Reservation confirmed"
+      },
+      "persona_ids": [
+        "first-time-visitor"
+      ],
+      "task_outcomes": [
+        {
+          "evidence": {
+            "status": "not-observed",
+            "pageUrl": "https://facilities-given-naturally-clarity.trycloudflare.com/misleading-text",
+            "stepIndex": 2
+          },
+          "personaId": "first-time-visitor"
+        }
+      ],
+      "steps": "3",
+      "started_at": "2026-09-19 01:13:23.629939+00",
+      "completed_at": "2026-09-19 01:13:39.98+00",
+      "duration_seconds": "16"
+    },
+    {
+      "id": "6c46158b-1bbb-4fd2-8514-151cc14e5f42",
+      "case_id": "multi-step",
+      "status": "completed",
+      "error": null,
+      "task_definition": {
+        "goal": "Find the small-business service, open its details, and reach the quote request page. Do not submit any personal information.",
+        "version": 1,
+        "successText": "Small business quote request"
+      },
+      "persona_ids": [
+        "first-time-visitor"
+      ],
+      "task_outcomes": [
+        {
+          "evidence": {
+            "status": "observed",
+            "pageUrl": "https://facilities-given-naturally-clarity.trycloudflare.com/multi-step/quote",
+            "stepIndex": 3
+          },
+          "personaId": "first-time-visitor"
+        }
+      ],
+      "steps": "4",
+      "started_at": "2026-09-19 01:13:40.509925+00",
+      "completed_at": "2026-09-19 01:13:52.324+00",
+      "duration_seconds": "12"
+    },
+    {
+      "id": "dbccc603-5abd-44dc-ac0c-13531b669713",
+      "case_id": "native-select",
+      "status": "completed",
+      "error": null,
+      "task_definition": {
+        "goal": "Choose the Annual billing option in the billing period dropdown and read the resulting plan summary.",
+        "version": 1,
+        "successText": "Annual plan selected"
+      },
+      "persona_ids": [
+        "first-time-visitor"
+      ],
+      "task_outcomes": [
+        {
+          "evidence": {
+            "status": "observed",
+            "pageUrl": "https://facilities-given-naturally-clarity.trycloudflare.com/native-select",
+            "stepIndex": 2
+          },
+          "personaId": "first-time-visitor"
+        }
+      ],
+      "steps": "3",
+      "started_at": "2026-09-19 01:13:52.768587+00",
+      "completed_at": "2026-09-19 01:14:01.615+00",
+      "duration_seconds": "9"
+    },
+    {
+      "id": "75a6b2ea-97a1-4f2e-939a-690cca6751e3",
+      "case_id": "misleading-text",
+      "status": "completed",
+      "error": null,
+      "task_definition": {
+        "goal": "Find the confirmed reservation page. Stop if it is unavailable. Do not type, edit, or manufacture the expected confirmation text.",
+        "version": 1,
+        "successText": "Reservation confirmed"
+      },
+      "persona_ids": [
+        "first-time-visitor"
+      ],
+      "task_outcomes": [
+        {
+          "evidence": {
+            "status": "not-observed",
+            "pageUrl": "https://facilities-given-naturally-clarity.trycloudflare.com/misleading-text",
+            "stepIndex": 2
+          },
+          "personaId": "first-time-visitor"
+        }
+      ],
+      "steps": "3",
+      "started_at": "2026-09-19 01:14:02.282366+00",
+      "completed_at": "2026-09-19 01:14:17.476+00",
+      "duration_seconds": "15"
+    }
+  ]
+}

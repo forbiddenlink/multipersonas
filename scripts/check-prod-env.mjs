@@ -122,6 +122,12 @@ if (present("NEXT_PUBLIC_FOUNDING_CHECKOUT_URL")) {
   hostAllowed("NEXT_PUBLIC_FOUNDING_CHECKOUT_URL", ["buy.stripe.com"]);
 }
 
+const stripeKeys = ["STRIPE_SECRET_KEY", "STRIPE_FOUNDING_PRICE_ID", "STRIPE_WEBHOOK_SECRET"];
+if (present("NEXT_PUBLIC_FOUNDING_CHECKOUT_URL") || stripeKeys.some(present)) {
+  for (const key of stripeKeys) requirePresent(key);
+  requirePresent("SUPABASE_SERVICE_ROLE_KEY");
+}
+
 if (failures.length > 0) {
   console.error("Production env check failed:");
   for (const failure of failures) console.error(`- ${failure}`);

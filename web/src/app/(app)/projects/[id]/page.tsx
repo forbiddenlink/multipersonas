@@ -1,3 +1,6 @@
+import { parseTaskDefinition } from "@engine/tasks/definition";
+import { TaskEvidencePanel } from "@/components/task-evidence";
+import { taskComparison, TASK_INPUT_ERROR, TASK_ORIGIN_ERROR } from "@/lib/tasks";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -11,7 +14,7 @@ import { RunDiff } from "@/components/run-diff";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BoxDivider } from "@/components/forensic/divider";
-import { updateProjectAction, deleteProjectAction, upsertProjectScheduleAction } from "../actions";
+import { saveProjectTaskAction, updateProjectAction, deleteProjectAction, upsertProjectScheduleAction } from "../actions";
 import { getSessionPlan, planAllowsPersonas } from "@/lib/entitlements";
 import { getProjectSchedule, SCAN_INTERVALS } from "@/lib/schedules";
 import { FINDING_STATUS_LABELS, FINDING_STATUSES } from "@/lib/finding-workflow";
@@ -33,6 +36,9 @@ export default async function ProjectDetailPage({
   const { id } = await params;
   const { error } = await searchParams;
   const KNOWN_PROJECT_DETAIL_ERRORS = new Set([
+    TASK_INPUT_ERROR,
+    TASK_ORIGIN_ERROR,
+    "Could not save the task.",
     "Give the project a name.",
     "Could not update the project.",
     "Could not delete the project.",
@@ -48,6 +54,8 @@ export default async function ProjectDetailPage({
   const project = await getProject(supabase, id);
   if (!project) notFound();
 
+  const savedTask = parseTaskDefinition(project.task_definition);
+  const saveTask = saveProjectTaskAction.bind(null, project.id);
   const audits = await listAudits(supabase, { projectId: project.id });
   const regression = await compareProjectRuns(supabase, audits);
   const auditIds = audits.map((audit) => audit.id);
@@ -118,13 +126,62 @@ export default async function ProjectDetailPage({
         <DeleteProjectForm action={deleteWithId} projectName={project.name} />
       </div>
 
+      {errorMessage && (
+          <p className="text-sm text-destructive" role="alert">
+            {errorMessage}
+          </p>
+        )}
+
+      <BoxDivider label="task to test" className="my-5" />
+      <form action={saveTask} className="space-y-3 rounded-md border border-border p-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="task-goal">What should a visitor accomplish?</Label>
+          <textarea id="task-goal" name="goal" defaultValue={savedTask?.goal ?? ""} minLength={10} maxLength={1000}
+            placeholder="Find the service that fits a small business and reach the quote request form."
+            className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="task-success-text">Exact visible text expected on the final page</Label>
+          <Input id="task-success-text" name="successText" defaultValue={savedTask?.successText ?? ""} minLength={3} maxLength={240}
+            placeholder="Request a quote" aria-describedby="task-help" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="task-expected-url">Expected final URL (optional)</Label>
+          <Input id="task-expected-url" name="expectedUrl" type="url" maxLength={2048}
+            defaultValue={savedTask?.version === 2 ? savedTask.expectedUrl ?? "" : ""}
+            placeholder="https://example.com/contact" aria-describedby="task-url-help" />
+          <p id="task-url-help" className="text-xs text-muted-foreground">
+            Use the same protocol, hostname, and port as the project URL. Require this exact destination, including its path, query, and fragment. Leave blank to check text on any reached page.
+          </p>
+        </div>
+        <label className="flex items-start gap-2 text-sm">
+          <input type="checkbox" name="requireNewText" className="mt-1"
+            defaultChecked={savedTask?.version === 2 && savedTask.requireNewText} />
+          <span>Require the expected text to be absent at the start and visible at the end</span>
+        </label>
+        <p id="task-help" className="text-xs text-muted-foreground">
+          Choose distinctive confirmation text. Use the additional checks to reject an old confirmation or the wrong destination. These observations do not prove that a transaction completed. Save before running.
+          Existing safeguards still prevent purchases and destructive actions. Do not include passwords or personal data.
+          Clear the text and URL fields and uncheck the additional check to return to the built-in goals. Past results keep the task they tested.
+        </p>
+        <SubmitButton variant="outline" size="sm">Save task</SubmitButton>
+      </form>
+
       <BoxDivider label="new scan for this project" className="my-5" />
 
       {canRunPersonas ? (
-        <AuditForm projectId={project.id} defaultUrl={project.url} submitLabel="Run audit" />
+        <AuditForm key={JSON.stringify(savedTask)} projectId={project.id} defaultUrl={project.url} submitLabel={savedTask ? "Test saved task" : "Run audit"} />
       ) : (
         <ProAuditUpsell />
       )}
+
+      {latestRun?.task_definition ? (
+        <div className="mt-5 space-y-3">
+          <TaskEvidencePanel task={latestRun.task_definition} outcomes={latestRun.task_outcomes} runId={latestRun.id} />
+          <p className="text-sm text-muted-foreground">{taskComparison(latestRun, audits[1])}</p>
+          <Link href={`/audits/${latestRun.id}`} className="text-sm underline underline-offset-4">Open latest task run</Link>
+        </div>
+      ) : null}
 
       <BoxDivider label="issue work" className="my-5" />
 
@@ -151,7 +208,7 @@ export default async function ProjectDetailPage({
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {latestPersonaTotal > 0
-                ? `${latestPersonaBlocked} blocked on latest run`
+                ? latestRun?.task_definition ? `${latestPersonaBlocked} without verified text on latest run` : `${latestPersonaBlocked} blocked on latest run`
                 : "Run a persona audit to create the client story."}
             </p>
           </div>
@@ -271,11 +328,7 @@ export default async function ProjectDetailPage({
             maxLength={500}
           />
         </div>
-        {errorMessage && (
-          <p className="text-sm text-destructive" role="alert">
-            {errorMessage}
-          </p>
-        )}
+
         <SubmitButton variant="outline" size="sm">Save changes</SubmitButton>
       </form>
     </div>

@@ -203,3 +203,28 @@ describe("AuditForm — dead auth-signup branch removed", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe("AuditForm — saved project task retests", () => {
+  it("does not restore another project's completed result or active job", async () => {
+    sessionStorage.setItem(RESULTS_KEY, JSON.stringify(auditResponse));
+    sessionStorage.setItem(ACTIVE_JOB_KEY, JSON.stringify({ jobId: "another-project", personaIds: ["first-time-visitor"] }));
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    render(<AuditForm projectId="project-1" defaultUrl="https://example.com/task" submitLabel="Test saved task" />);
+    await act(async () => {});
+    expect(screen.getByLabelText("Website URL to audit")).toHaveValue("https://example.com/task");
+    expect(screen.getByRole("button", { name: /Test saved task/i })).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("retains the project's URL when starting another test", async () => {
+    vi.useFakeTimers();
+    sessionStorage.setItem(`${ACTIVE_JOB_KEY}:project-1`, JSON.stringify({ jobId: "project-task", personaIds: ["first-time-visitor"] }));
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ status: "completed", result: auditResponse })));
+    render(<AuditForm projectId="project-1" defaultUrl="https://example.com/task" submitLabel="Test saved task" />);
+    await advance(2500);
+    fireEvent.click(screen.getByRole("button", { name: /run another audit/i }));
+    expect(screen.getByLabelText("Website URL to audit")).toHaveValue("https://example.com/task");
+    expect(sessionStorage.getItem(`${ACTIVE_JOB_KEY}:project-1`)).toBeNull();
+  });
+});

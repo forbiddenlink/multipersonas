@@ -21,9 +21,10 @@ export function ProAuditUpsell() {
         The hosted persona audit is a Pro feature.
       </p>
       <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-muted-foreground">
-        Task-success personas walk a real-shaped user through your public flows and report
-        whether they actually finished the job. A crawler can&apos;t measure that. Free
-        accounts get the deterministic axe-core grade on any public URL.
+        Save a task for an AI browser agent to attempt on your public site. Check for
+        expected final-page text, inspect recorded evidence, and compare retests after
+        changes. These checks do not predict human success. Free accounts get the
+        deterministic axe-core grade on public URLs.
       </p>
       <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
         Scanning behind a login runs in the CLI today, where your client&apos;s credentials

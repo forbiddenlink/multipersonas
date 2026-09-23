@@ -1,3 +1,4 @@
+import { GradeCoverage } from "@/components/grade-coverage";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { GradeNextSteps } from "@/components/grade-next-steps";
@@ -177,6 +178,8 @@ function GradeReportView({
           />
         </div>
       </div>
+
+      <GradeCoverage report={report} />
 
       {/* Per-impact breakdown — the traceable table behind the composite. */}
       <div className="space-y-3">

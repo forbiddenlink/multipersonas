@@ -1,3 +1,4 @@
+import { TaskEvidencePanel } from "@/components/task-evidence";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -50,6 +51,7 @@ export default async function AuditDetailPage({
   searchParams: Promise<{
     persona?: string;
     step?: string;
+    evidence?: string;
     error?: string;
     status?: string;
     owner?: string;
@@ -59,6 +61,7 @@ export default async function AuditDetailPage({
   const {
     persona: personaParam,
     step: stepParam,
+    evidence,
     error,
     status: statusParam,
     owner: ownerParam,
@@ -79,7 +82,7 @@ export default async function AuditDetailPage({
   // fall through to notFound() rather than leaking existence of other users' runs.
   const { data: run } = await supabase
     .from("test_runs")
-    .select("id,url,created_at,task_success_achieved,task_success_total,persona_ids,project_id")
+    .select("id,url,created_at,task_success_achieved,task_success_total,persona_ids,project_id,task_definition,task_outcomes")
     .eq("id", id)
     .eq("status", "completed")
     .single();
@@ -176,7 +179,7 @@ export default async function AuditDetailPage({
       for (const row of journeyRows) {
         if (!row.pageUrl || row.pageUrl !== f.page_url) continue;
         impacted.add(row.personaId);
-        if (!row.goalCompleted) blocked.add(row.personaId);
+        if (!run.task_definition && !row.goalCompleted) blocked.add(row.personaId);
       }
       const base = f.severity === "critical" ? 80 : f.severity === "serious" ? 60 : f.severity === "moderate" ? 35 : 15;
       return {
@@ -193,10 +196,18 @@ export default async function AuditDetailPage({
     .sort((a, b) => b.priorityScore - a.priorityScore)
     .slice(0, 3);
 
-  const initialStep = Number.isFinite(Number(stepParam)) ? Number(stepParam) : 0;
+  const evidenceJourney = journeys.find((journey) => journey.personaId === personaParam);
+  const verificationIndex = evidenceJourney?.steps.findIndex((step) => step.action === "verify_task") ?? -1;
+  const initialStep = evidence === "task" && verificationIndex >= 0
+    ? verificationIndex
+    : Number.isFinite(Number(stepParam)) ? Number(stepParam) : 0;
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-10">
+      <TaskEvidencePanel task={run.task_definition} outcomes={run.task_outcomes} runId={run.id} />
+      {evidence === "task" && verificationIndex < 0 ? (
+        <p role="status" className="text-sm text-muted-foreground">The verification frame is unavailable. The saved text-check result is shown above.</p>
+      ) : null}
       {/* Header */}
       <div className="space-y-4">
         <nav aria-label="Breadcrumb" className="font-mono text-xs text-muted-foreground">
@@ -257,8 +268,8 @@ export default async function AuditDetailPage({
           className="w-full max-w-xs"
           value={achieved}
           total={total}
-          label="task success"
-          unit="personas reached their goal"
+          label={run.task_definition ? "expected text observed" : "task success"}
+          unit={run.task_definition ? "profiles matched the check" : "personas reached their goal"}
           tone={successTone(achieved, total)}
         />
         {errorMessage && (
@@ -283,6 +294,7 @@ export default async function AuditDetailPage({
             findingsByUrl={findingsByUrl}
             initialPersona={personaParam}
             initialStep={initialStep}
+            taskCheck={Boolean(run.task_definition)}
           />
         </div>
       )}
@@ -317,7 +329,7 @@ export default async function AuditDetailPage({
           <div className="flex items-baseline justify-between gap-3">
             <h2 className="text-lg font-semibold tracking-tight">Persona impact</h2>
             <p className="font-mono text-xs text-muted-foreground">
-              who got through, who got blocked, and where proof appeared
+              {run.task_definition ? "which profiles matched the text check and where evidence was captured" : "who got through, who got blocked, and where proof appeared"}
             </p>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
@@ -333,7 +345,7 @@ export default async function AuditDetailPage({
                     <p className="text-xs text-muted-foreground">{persona.role}</p>
                   </div>
                   <span className={`rounded-sm border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide ${persona.goalCompleted ? "border-[var(--severity-minor)] text-[var(--severity-minor)]" : "border-[var(--severity-critical)] text-[var(--severity-critical)]"}`}>
-                    {persona.goalCompleted ? "reached" : "blocked"}
+                    {run.task_definition ? (persona.goalCompleted ? "text observed" : "not verified") : (persona.goalCompleted ? "reached" : "blocked")}
                   </span>
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-2 font-mono text-xs text-muted-foreground">

@@ -38,6 +38,72 @@ describe("UnlockFoundingAccessButton", () => {
       price_usd: 199,
       funnel_location: "agency_founding_section",
     });
+    expect(trackProductEvent).toHaveBeenCalledWith("founding_checkout_auth_required", { resuming: false });
+  });
+
+  it("records checkout start after a session is created and before navigating away", async () => {
+    const assign = vi.fn();
+    const testWindow = Object.create(window) as Window;
+    Object.defineProperty(testWindow, "location", {
+      value: {
+        assign,
+        hash: window.location.hash,
+        pathname: window.location.pathname,
+        search: window.location.search,
+      },
+    });
+    vi.stubGlobal("window", testWindow);
+    vi.stubGlobal("fetch", vi.fn(async () => ({
+      status: 200,
+      ok: true,
+      json: async () => ({ url: "https://checkout.stripe.com/session" }),
+    })));
+
+    render(<UnlockFoundingAccessButton />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /unlock founding access/i }));
+    });
+
+    expect(trackProductEvent).toHaveBeenCalledWith("founding_checkout_started", { resuming: false });
+    expect(assign).toHaveBeenCalledWith("https://checkout.stripe.com/session");
+  });
+
+  it("records a provider failure without sending checkout response details to analytics", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({
+      status: 503,
+      ok: false,
+      json: async () => ({ error: "Provider request req_123 failed" }),
+    })));
+
+    render(<UnlockFoundingAccessButton />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /unlock founding access/i }));
+    });
+
+    expect(trackProductEvent).toHaveBeenCalledWith("founding_checkout_failed", {
+      reason: "provider_error",
+      status_code: 503,
+      resuming: false,
+    });
+  });
+
+  it("records a network failure with a coarse reason", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      throw new Error("Connection to billing provider failed");
+    }));
+
+    render(<UnlockFoundingAccessButton />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /unlock founding access/i }));
+    });
+
+    expect(trackProductEvent).toHaveBeenCalledWith("founding_checkout_failed", {
+      reason: "network_error",
+      resuming: false,
+    });
   });
 
   it("resumes an explicit checkout attempt after the user signs in", async () => {
@@ -56,7 +122,8 @@ describe("UnlockFoundingAccessButton", () => {
       expect(screen.getByRole("link", { name: /sign in or create an account/i })).toBeInTheDocument();
     });
 
-    expect(trackProductEvent).not.toHaveBeenCalled();
+    expect(trackProductEvent).not.toHaveBeenCalledWith("founding_checkout_clicked", expect.anything());
+    expect(trackProductEvent).toHaveBeenCalledWith("founding_checkout_auth_required", { resuming: true });
     expect(window.location.search).not.toContain("checkout=ready");
   });
 });

@@ -1,3 +1,4 @@
+import { taskDefinitionSchema, personaForTask, type TaskDefinition } from "../tasks/definition.js";
 import * as fs from "fs";
 import * as path from "path";
 import type { Persona } from "../personas/types.js";
@@ -10,6 +11,7 @@ import { resolveBlockDestructiveActions } from "../security/action-guard.js";
 // --- Types ---
 
 export interface TestOptions {
+  task?: TaskDefinition;
   url: string;
   personas: Persona[];
   outputDir: string;
@@ -39,6 +41,7 @@ export interface ProgressEvent {
 }
 
 export interface TestResult {
+  task?: TaskDefinition;
   url: string;
   date: string;
   /** How many personas achieved their goal. The headline number. */
@@ -154,7 +157,7 @@ function detectConflicts(personaResults: PersonaTestResult[]): PersonaConflict[]
 export async function runMultiPersonaTest(options: TestOptions): Promise<TestResult> {
   const {
     url,
-    personas,
+    personas: inputPersonas,
     outputDir,
     parallel = true,
     onProgress,
@@ -163,6 +166,8 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
     sessionFile,
     blockDestructiveActions = false,
   } = options;
+  const task = options.task === undefined ? undefined : taskDefinitionSchema.parse(options.task);
+  const personas = task ? inputPersonas.map((persona) => personaForTask(persona, task)) : inputPersonas;
 
   // Fail-safe override for the hosted service: the worker forces the action guard
   // on via MP_BLOCK_DESTRUCTIVE_ACTIONS=1 (stranger-supplied targets), while the CLI
@@ -174,7 +179,10 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
   // The per-persona and axe paths below both swallow errors into a scored
   // "failed" result, so validating only in there would report a blocked URL as
   // a passing audit instead of refusing it.
-  await assertUrlAllowed(url, { allowPrivate });
+  const entry = await assertUrlAllowed(url, { allowPrivate });
+  if (task?.version === 2 && task.expectedUrl && new URL(task.expectedUrl).origin !== entry.origin) {
+    throw new Error("The expected final URL must use the same origin as the audit starting URL.");
+  }
 
   fs.mkdirSync(outputDir, { recursive: true });
 
@@ -191,9 +199,11 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
     fs.mkdirSync(personaOutputDir, { recursive: true });
 
     try {
-      const agentResult = await runPersonaAgent(url, persona, personaOutputDir, { allowPrivate, sessionFile, runAxe, blockDestructiveActions: effectiveBlockDestructive });
+      const agentResult = await runPersonaAgent(url, persona, personaOutputDir, { allowPrivate, sessionFile, runAxe, blockDestructiveActions: effectiveBlockDestructive, task });
 
-      const status = agentResult.goalCompleted ? "goal achieved" : "blocked";
+      const status = task
+        ? `${task.version === 2 ? "configured checks" : "expected text"} ${agentResult.taskEvidence?.status ?? "inconclusive"}`
+        : agentResult.goalCompleted ? "goal achieved" : "blocked";
       onProgress?.({
         type: "persona_complete",
         persona: persona.id,
@@ -209,6 +219,7 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
         pagesVisited: [url],
         goalCompleted: false,
         totalSteps: 0,
+        ...(task ? { taskEvidence: { status: "inconclusive" as const, pageUrl: url, stepIndex: null } } : {}),
       };
 
       onProgress?.({
@@ -269,7 +280,7 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
   const resultsPath = path.join(outputDir, "results.json");
   fs.writeFileSync(
     resultsPath,
-    JSON.stringify({ url, taskSuccess, personas: personaResults, axeFindings, conflicts }, null, 2),
+    JSON.stringify({ url, ...(task ? { task } : {}), taskSuccess, personas: personaResults, axeFindings, conflicts }, null, 2),
   );
 
   const reportPath = path.join(outputDir, "report.md");
@@ -289,6 +300,7 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
 
   return {
     url,
+    ...(task ? { task } : {}),
     date: new Date().toISOString().slice(0, 10),
     taskSuccess,
     personas: personaResults,

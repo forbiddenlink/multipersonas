@@ -1,5 +1,7 @@
 "use server";
 
+import { TASK_INPUT_ERROR, TASK_ORIGIN_ERROR } from "@/lib/tasks";
+import { parseTaskDefinition } from "@engine/tasks/definition";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
@@ -144,6 +146,38 @@ export async function upsertProjectScheduleAction(
     redirect(`/projects/${projectId}?error=${encodeURIComponent("Could not save the scan schedule.")}`);
   }
 
+  revalidatePath(`/projects/${projectId}`);
+  redirect(`/projects/${projectId}`);
+}
+
+export async function saveProjectTaskAction(projectId: string, formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/auth/login?next=/projects");
+  const goal = String(formData.get("goal") ?? "").trim();
+  const successText = String(formData.get("successText") ?? "").trim();
+  const expectedUrl = String(formData.get("expectedUrl") ?? "").trim();
+  const requireNewText = formData.get("requireNewText") === "on";
+  const task = parseTaskDefinition(expectedUrl || requireNewText
+    ? { version: 2, goal, successText, requireNewText, ...(expectedUrl ? { expectedUrl } : {}) }
+    : { version: 1, goal, successText });
+  if ((goal || successText || expectedUrl || requireNewText) && !task) {
+    redirect(`/projects/${projectId}?error=${encodeURIComponent(TASK_INPUT_ERROR)}`);
+  }
+  if (task?.version === 2 && task.expectedUrl) {
+    const project = await getProject(supabase, projectId);
+    if (!project) redirect(`/projects/${projectId}?error=${encodeURIComponent("Project not found.")}`);
+    if (new URL(task.expectedUrl).origin !== new URL(project.url).origin) {
+      redirect(`/projects/${projectId}?error=${encodeURIComponent(TASK_ORIGIN_ERROR)}`);
+    }
+  }
+  let updated;
+  try {
+    updated = await updateProject(supabase, projectId, { task_definition: task });
+  } catch {
+    redirect(`/projects/${projectId}?error=${encodeURIComponent("Could not save the task.")}`);
+  }
+  if (!updated) redirect(`/projects/${projectId}?error=${encodeURIComponent("Project not found.")}`);
   revalidatePath(`/projects/${projectId}`);
   redirect(`/projects/${projectId}`);
 }

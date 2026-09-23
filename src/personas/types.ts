@@ -21,9 +21,9 @@ export type ProfileKind = "ux" | "traversal";
 /**
  * A mechanical input restriction — not a simulated disability.
  *
- * "keyboard" means the agent may only use Tab / Shift+Tab / Enter / Space /
- * arrows. That is a WCAG 2.1.1 operability test and standard practice; it makes
- * no claim about who is driving.
+ * "keyboard" uses real key events for bounded Tab navigation, activation,
+ * scrolling, and text entry. It does not establish WCAG conformance or exhaust
+ * every possible keyboard path, and makes no claim about who is driving.
  */
 export type InputModality = "pointer" | "keyboard";
 
@@ -73,9 +73,12 @@ export interface Persona {
 }
 
 const KEYBOARD_CONSTRAINT = `Input constraint: KEYBOARD ONLY.
-You may use Tab, Shift+Tab, Enter, Space, and the arrow keys. You must not click
-with a pointer. If a control cannot be reached or operated with the keyboard, that
-is itself an observation worth reporting — record it and move on.`;
+The action tools enforce real keyboard input. A click request searches forward
+with Tab, then sends Enter or Space. Typing and native option selection use key
+events. Scrolling sends an arrow key. Direct navigation after the starting URL
+is unavailable; follow reachable links instead. You must not click with a pointer.
+Report the exact action result. A bounded Tab search failure does not prove that
+every keyboard path is blocked; do not generalize it into a compliance verdict.`;
 
 function uxPrompt(persona: Omit<Persona, "systemPrompt">): string {
   const proficiencyLabel = ["", "very low", "low", "moderate", "high", "expert"][

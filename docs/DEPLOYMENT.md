@@ -109,60 +109,51 @@ that read that page choose where to go next. Public + anonymous is a hostile env
       so review/apply the generated `.railway/railway.ts` before that date instead of
       accepting the migration blindly.
 
-## Founding tier payment link (ADR 0002 demand test)
+## Founding checkout (ADR 0002 demand test)
 
-The demand test cannot run until this exists. Live as of 2026-09-13:
+Source-verified 2026-09-23; live Stripe/Vercel settings were not inspected in this review.
+The founding offer uses an authenticated Checkout Session at $199 USD/month. The legacy
+`NEXT_PUBLIC_FOUNDING_CHECKOUT_URL` remains the explicit launch switch; the button
+calls `/api/checkout/founding`, not that Payment Link. The agency page, Settings, and
+checkout endpoint share a server-only gate requiring this switch plus nonblank Stripe
+secret, price, webhook secret, and Supabase service-role configuration. Removing the
+switch closes checkout even when credentials remain configured. Presence does not
+prove that credentials work or that the webhook can grant access.
 
-- Product: **Personaudit Founding Access** (`prod_VFuvMN1kxPirW3`), $199 USD / month
-  (`price_1UFP60A1qZnsNmFKpSx6X3An`).
-- Payment Link: `https://buy.stripe.com/fZucN48XW7JcblE5Fu0Ny00` (collects auth-need and
-  local-vs-hosted session preference).
-- Customer portal: default config already allows subscription cancellation at period end.
-- Vercel: `NEXT_PUBLIC_FOUNDING_CHECKOUT_URL` is set on Production and Preview. A new
-  production build is required before `/for-agencies` shows the $199 CTA (the value is
-  read at module scope).
+1. Reuse the existing founding product/monthly price after verifying it in Stripe; do not
+   create another product just because older setup instructions said to do so.
+2. Configure `STRIPE_SECRET_KEY` (prefer a restricted key with Checkout Session write
+   and subscription-list read permissions), `STRIPE_FOUNDING_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET` as server-only
+   configuration. Store keys as sensitive values; never paste them into Codex. The
+   webhook also needs the existing Supabase service-role configuration.
+3. Configure `https://personaudit.com/api/stripe/webhook` for
+   `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+   `customer.subscription.updated`, and `customer.subscription.deleted`. Verify its
+   signature and event delivery with synthetic sandbox data first.
+4. Set the existing `NEXT_PUBLIC_FOUNDING_CHECKOUT_URL` visibility flag and rebuild.
+   The production environment checker now rejects missing Stripe/fulfillment variables
+   when that flag or any Stripe variable is present. It checks presence, not key validity,
+   key permissions, actual price, webhook delivery, or live entitlement behavior.
+5. Before outreach, verify payment → saved Pro access and cancellation → Free access,
+   including retries, delayed payments, and the outstanding event-ordering cases in
+   [the continuation review](plans/2026-09-18-continuation-review.md).
 
-Still owner: add `https://personaudit.com/terms` under Stripe Dashboard → Settings →
-Public details, then we can require a TOS checkbox on the Payment Link. Without that URL
-Stripe refuses `consent_collection.terms_of_service=required`. Terms of Service on the
-site already carries the billing, cancellation and refund section that ADR 0002 requires.
+The webhook now returns HTTP 500 when its profile update fails or matches no profile,
+so Stripe can retry. Checkout grants require subscription mode and a completed payment
+status. Subscription access is reconciled against the customer's current active/trialing
+founding subscriptions, reducing stale sequential-event failures. Duplicate subscriptions,
+concurrent-event races, and a complete sandbox buying flow still need verification.
 
-### Subscription entitlement webhook
+The authenticated Checkout request currently has no Auth need custom field or terms
+consent collection. Record Auth need/local-vs-hosted answers separately from buyers and
+decliners, as ADR 0002 requires. Verify the cancellation/refund support path and access to
+Stripe's customer portal before inviting payment; a configured portal alone does not
+prove customers can reach it. Review recurring-payment tax setup and registrations with
+the owner before enabling automatic tax.
 
-The founding CTA now uses an authenticated Checkout Session so a completed subscription
-can unlock the buyer's existing Personaudit account. In Vercel, add sensitive server-only
-variables `STRIPE_SECRET_KEY` (prefer a restricted `rk_` key with Checkout Session write
-access), `STRIPE_FOUNDING_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET`. Then add the Stripe
-webhook endpoint `https://personaudit.com/api/stripe/webhook` and subscribe it to
-`checkout.session.completed`, `customer.subscription.updated`, and
-`customer.subscription.deleted`. The webhook verifies Stripe's signature before changing
-an entitlement; a browser redirect alone never unlocks Pro.
-
-1. **Stripe → Product catalogue → Add product.** Name it for the buyer, not the repo (the
-   name appears on the checkout page and the card statement). Add a recurring price:
-   **$199.00 USD, monthly**. One tier only, per ADR 0002.
-2. **Stripe → Payment links → Create.** Select that price. Then:
-   - Quantity adjustment **off**. One subscription per agency.
-   - Add a **custom field** capturing *Auth need*: how many client sites need scanning
-     behind a login. ADR 0002 requires this from buyers, because "we don't audit behind
-     logins anyway" and "$199 is too much" are opposite findings that a bare yes/no cannot
-     separate. Ask decliners the same question by hand.
-   - Set the **terms of service URL** to `https://personaudit.com/terms` so the refund
-     commitment is attached to the purchase rather than living only in marketing copy.
-3. **Enable the Stripe customer portal** (Settings → Billing → Customer portal, allow
-   subscription cancellation). `/for-agencies` promises "cancel any time"; without the
-   portal that promise resolves to emailing a human, which is not the same thing.
-4. **Copy the `https://buy.stripe.com/...` URL** into Vercel as
-   `NEXT_PUBLIC_FOUNDING_CHECKOUT_URL` (production, and preview if you want to click it on
-   a preview deploy first).
-5. **Redeploy.** ⚠️ This is read at module scope in a server component
-   (`web/src/app/for-agencies/page.tsx`), so saving the variable in Vercel changes nothing
-   until a new build runs. Use the `Deploy production (manual)` workflow, which also runs
-   the prod env check and smoke test.
-6. **Verify:** `/for-agencies` shows "$199 a month. One price, no sales call." and the
-   "Get founding access" button, and a click fires `founding_checkout_clicked` in PostHog.
-   That event is the denominator the demand test reads against, so confirm it lands before
-   sending any of the 15 messages.
+`founding_checkout_clicked` measures an attempted checkout click, not a completed payment
+or the number of agencies asked. Keep those denominators separate when reading the demand
+test. No outreach is sent by this setup procedure.
 
 ## Bot protection on the public grader (Cloudflare Turnstile)
 
@@ -233,8 +224,9 @@ Expected production env names (presence only; never print values):
   `WORKER_ALERT_WEBHOOK`, `WORKER_POLL_MS`, `WORKER_JOB_TIMEOUT_SECONDS`,
   `WORKER_REAP_AFTER_SECONDS`, `WORKER_MAX_ATTEMPTS`.
 
-As of the 2026-08-26 Vercel env check, the PostHog, Supabase, Sentry, site URL, and admin
-variables are present in production. The Turnstile variables are not present yet.
+The September 19, 2026 UTC Vercel check confirmed PostHog, Supabase, Sentry, site URL,
+admin, and both Turnstile variable names in production. Presence does not prove correct
+values or delivery; see the continuation review for current verification evidence.
 
 ## Local development
 
@@ -246,6 +238,37 @@ pnpm dev -- <url>             # CLI
 ```
 
 For the web app, copy `.env.example` to `web/.env.local` and `cd web && pnpm dev`.
+
+## Saved project tasks rollout
+
+The saved-task workflow requires migration `20260919003858_saved_project_tasks.sql`
+and matching engine, worker, and web releases. It adds task snapshots to queued jobs
+and historical runs; old workers do not honor those snapshots.
+
+1. Use a maintenance window to prevent new manual and scheduled scans, and drain
+   existing jobs. `AUDIT_KILL_SWITCH=1` blocks manual and scheduled enqueue in the
+   web release where it is configured; environment changes require redeployment.
+   For a first rollout with no saved tasks, the additive migration can precede the
+   worker update while the old web controls remain live. Expose saved-task controls
+   only after the matching worker is healthy.
+2. Apply the migration through the normal Supabase migration workflow. Build the root
+   engine package and deploy the matching worker before exposing the new web controls.
+3. Deploy the matching web release. On an owned synthetic project, save a reachable
+   task and expected text, run it, inspect its verification frame, edit the site, and
+   retest with the same task, URL, and profiles. Check the comparison and scheduled-run
+   task snapshot before restoring traffic and scheduling.
+
+Do not roll back only the worker while saved-task jobs remain queued. Keep admission
+paused until a worker that understands those snapshots is running. Historical task
+columns are additive and should be retained.
+
+Version 1 checks only exact visible text on the final page. Version 2 optionally adds
+an exact same-origin destination and/or text absent at the start but visible at the
+end. Neither proves a transaction or human success. Save before running; clear the
+text and URL fields and uncheck the extra condition to restore the general audit. This migration and the matching
+worker/web releases were deployed on September 18, 2026 (September 19 UTC), followed
+by a two-run synthetic worker trial. Deployment identifiers and validation limits are
+recorded in `docs/plans/2026-09-18-continuation-review.md`.
 
 ## Deploying the worker to Railway
 
@@ -284,3 +307,24 @@ the next step. The DNS-rebinding TOCTOU is now closed at the network layer (smok
 re-resolves and validates at connect time); `AUDIT_REQUIRE_EGRESS_PROXY=1` makes the
 worker refuse to launch the browser at all if the proxy is ever unreachable, rather than
 silently falling back to a direct connection.
+
+
+## September 23, 2026 release
+
+Production migration `20260923134027_task_assertion_checks.sql` extends the project
+constraint to optional version 2 checks while retaining version 1 snapshots. The
+local timestamp matches the migration service's recorded production version.
+Deploy the corresponding worker before promoting web controls. Keep this newer
+worker available if any version 2 jobs have been queued; an older worker cannot
+process them.
+
+Use the explicit Vercel project/team from `.vercel/project.json`; do not rely on the
+CLI's global default account. `.vercelignore` excludes local session credentials,
+environment files, tooling caches, and generated test evidence. Before uploading,
+`vercel deploy --dry --json` must retain the root pnpm lockfile/workspace manifest,
+root engine sources, and web sources while excluding those local artifacts.
+
+A production-target deployment with `--skip-domain` allows protected verification
+before promotion. `vercel curl` uses the CLI's authentication to check that deployment
+without exposing a protection-bypass credential. Keep actual payment-fulfillment
+validation distinct from checking that signed-out checkout requests return 401.

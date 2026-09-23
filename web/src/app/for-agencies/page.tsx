@@ -10,6 +10,7 @@ import { ConsolePreview } from "@/components/forensic/console-preview";
 import { ReportPaper } from "@/components/forensic/report-paper";
 import { StatCount } from "@/components/forensic/stat-count";
 import { JsonLd, faqSchema } from "@/components/json-ld";
+import { isFoundingCheckoutOpen } from "@/lib/founding-checkout";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/for-agencies" },
@@ -50,7 +51,7 @@ const FIRST_WEEK: { when: string; title: string; body: string }[] = [
   },
 ];
 
-const FOUNDING_CHECKOUT_URL = process.env.NEXT_PUBLIC_FOUNDING_CHECKOUT_URL;
+const FOUNDING_CHECKOUT_OPEN = isFoundingCheckoutOpen();
 
 const AGENCY_FAQS = [
   {
@@ -65,14 +66,14 @@ const AGENCY_FAQS = [
   },
   {
     question: "What does founding access include?",
-    answer: FOUNDING_CHECKOUT_URL
+    answer: FOUNDING_CHECKOUT_OPEN
       ? "$199/month for the hosted agency workspace that exists today: multi-site projects, scheduled re-scans, a CI gate, and a verdicts-only compliance report you can white-label. Behind-login stays in the CLI until the hosted pipeline ships. If we never build that, you get your money back."
       : "The hosted agency workspace that exists today: multi-site projects, scheduled re-scans, a CI gate, and a verdicts-only compliance report you can white-label. Behind-login stays in the CLI until the hosted pipeline ships. Founding access is a paid pre-order of that workspace; the price is named when checkout is live.",
   },
   {
     question: "How is this different from free axe, WAVE, or Pa11y?",
     answer:
-      "Those tools scan a URL you already have open. Personaudit crawls every reachable state — including a saved session behind login — runs axe-core at each one, and can tell you whether a real-shaped user finished the flow. The CI gate fails the build only on new defects, not the existing backlog.",
+      "Personaudit combines axe-core findings with saved tasks, recorded browser evidence, and comparable retests. An AI agent attempts the task; a separate check looks for exact visible text on the final page. This does not establish human success or completed transactions. Behind-login scanning is available separately through the CLI.",
   },
   {
     question: "Does this replace testing with disabled people?",
@@ -206,8 +207,10 @@ export default function ForAgenciesPage() {
                 Task success <span className="align-middle text-xs font-normal text-muted-foreground">— the persona layer · Pro</span>
               </h3>
               <p className="mt-1.5 text-muted-foreground">
-                A real-shaped user browses toward a goal. Did a first-time visitor actually
-                finish checkout? A crawler can&apos;t tell you that. Personaudit can.
+                Save a task and the exact text expected on its destination page. An AI browser
+                agent attempts it, records evidence, and checks for that text. Retest after
+                a change to compare the same task and profiles. This does not prove a
+                transaction completed or predict a real person&apos;s success.
               </p>
             </div>
             <div className="border-l-2 border-border pl-5">
@@ -215,9 +218,9 @@ export default function ForAgenciesPage() {
                 Opinion <span className="align-middle text-xs font-normal text-muted-foreground">— labeled AI, never a verdict</span>
               </h3>
               <p className="mt-1.5 text-muted-foreground">
-                Where a real person got confused — jargon, buried pricing, a tap target too
-                small. Useful signal, clearly marked as AI opinion. It never enters the
-                compliance report and never carries a severity.
+                Friction reported by an AI browser agent, such as jargon or a hard-to-find
+                control. These are observations to investigate, not evidence from a human
+                participant or a WCAG verdict.
               </p>
             </div>
           </Reveal>
@@ -442,15 +445,14 @@ mpersonas scan https://client.app --session ./session.json \\
             {/* Never advertise a price with no way to pay. Until the Payment Link is set
                 on Vercel, this reads as early access and the waitlist form is the only ask. */}
             <h2 className="mt-4 font-heading text-[clamp(1.9rem,4vw,3rem)] leading-tight text-balance">
-              {FOUNDING_CHECKOUT_URL
+              {FOUNDING_CHECKOUT_OPEN
                 ? "$199 a month. One price, no sales call."
                 : "Help shape the agency workspace."}
             </h2>
             <p className="mt-5 text-lg text-muted-foreground">
-              Every client site you ship, one workspace. Multi-site projects with new and
-              cleared findings against the last run, scheduled re-scans, a CI gate your devs
-              can&apos;t merge past, and a verdicts-only compliance report you white-label
-              with your agency name and hand to the client.
+              Keep projects, saved public-site tasks, and browser evidence in one workspace.
+              Compare retests after changes, review new and cleared findings, schedule
+              re-scans, and export accessibility reports with your agency name.
             </p>
 
             {/* Honest pre-order boundary (ADR 0002). Hosted behind-login does NOT exist:
@@ -474,13 +476,13 @@ mpersonas scan https://client.app --session ./session.json \\
             </div>
 
             <p className="mt-6 text-muted-foreground">
-              {FOUNDING_CHECKOUT_URL
+              {FOUNDING_CHECKOUT_OPEN
                 ? "Founding price is locked for as long as you stay. It goes up for everyone after."
                 : "Founding access opens shortly. Leave your email and I'll send you the link first."}
             </p>
           </Reveal>
           <Reveal delay={80}>
-            {FOUNDING_CHECKOUT_URL ? (
+            {FOUNDING_CHECKOUT_OPEN ? (
               <div className="rounded-sm border border-border bg-background p-6">
                 <p className="font-heading text-2xl tracking-tight">Start founding access</p>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">

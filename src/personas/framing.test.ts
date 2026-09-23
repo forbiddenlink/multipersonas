@@ -145,7 +145,8 @@ describe("generateSystemPrompt", () => {
   it("applies the keyboard constraint mechanically, without invoking a disability", () => {
     const prompt = generateSystemPrompt({ ...base, kind: "traversal", inputModality: "keyboard" });
     expect(prompt).toMatch(/KEYBOARD ONLY/);
-    expect(prompt).toMatch(/Tab, Shift\+Tab/);
+    expect(prompt).toMatch(/with Tab, then sends Enter or Space/);
+    expect(prompt).toMatch(/bounded Tab search failure does not prove/);
     for (const pattern of SIMULATION_PATTERNS) {
       expect(prompt).not.toMatch(pattern);
     }

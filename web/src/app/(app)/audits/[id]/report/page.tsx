@@ -1,3 +1,4 @@
+import { taskEvidenceLabel, taskCheckDetails } from "@engine/tasks/definition";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -192,9 +193,25 @@ export default async function ReportPage({
           )}
         </section>
 
-        {report.personaImpact.length > 0 && (
+        {report.task && (
           <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Persona task-success impact</h2>
+            <h2 className={styles.sectionTitle}>Task tested</h2>
+            <p>{report.task.goal}</p>
+            <p>Expected visible text: <q>{report.task.successText}</q></p>
+            {report.task.version === 2 && report.task.expectedUrl && <p>Expected final URL: {report.task.expectedUrl}</p>}
+            {report.task.version === 2 && report.task.requireNewText && <p>Text must be absent at the start and visible at the end.</p>}
+            {report.taskOutcomes.length ? <ul>{report.taskOutcomes.map(({ personaId, evidence }) => (
+              <li key={personaId}>
+                {PERSONA_DATA[personaId as keyof typeof PERSONA_DATA]?.name ?? personaId}: {taskEvidenceLabel(report.task!, evidence)}
+                {evidence.checks && <p>{taskCheckDetails(evidence)}</p>}
+              </li>
+            ))}</ul> : <p>No task evidence was saved for this run.</p>}
+            <p>These are browser observations. They do not prove a transaction completed or predict human success.</p>
+          </section>
+        )}
+        {!report.task && report.personaImpact.length > 0 && (
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>{report.task ? "Task text-check results" : "Persona task-success impact"}</h2>
             <p className={styles.disclaimer}>
               Personas are user-outcome evidence, not compliance verdicts. They show which
               real-shaped flows reached the states where deterministic axe verdicts were captured.
@@ -206,7 +223,7 @@ export default async function ReportPage({
                 return (
                   <div key={persona.personaId} className={styles.count}>
                     <div className={styles.countNum} style={{ color: persona.goalCompleted ? "#137333" : "#b3261e" }}>
-                      {persona.goalCompleted ? "Reached" : "Blocked"}
+                      {report.task ? (persona.goalCompleted ? "Text observed" : "Not verified") : (persona.goalCompleted ? "Reached" : "Blocked")}
                     </div>
                     <div className={styles.countLabel}>
                       {name} · {role} · {persona.steps} steps · {persona.verdictStates} verdict states

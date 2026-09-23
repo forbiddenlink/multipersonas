@@ -51,7 +51,7 @@ export function AuditHistory({ audits }: { audits: AuditListItem[] }) {
                 href={`/audits/${a.id}`}
                 aria-label={`View details for the audit of ${hostname(a.url)} on ${new Date(
                   a.created_at,
-                ).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}, ${a.task_success_achieved ?? 0} of ${a.task_success_total ?? 0} personas reached their goal`}
+                ).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}, ${a.task_success_achieved ?? 0} of ${a.task_success_total ?? 0} ${a.task_definition ? "profiles matched the text check" : "personas reached their goal"}`}
                 className="flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
               >
                 <div className="min-w-0">
@@ -77,7 +77,7 @@ export function AuditHistory({ audits }: { audits: AuditListItem[] }) {
                     {a.task_success_achieved ?? 0}
                     <span className="text-muted-foreground">/{a.task_success_total ?? 0}</span>
                   </span>
-                  <p className="text-xs text-muted-foreground">reached goal</p>
+                  <p className="text-xs text-muted-foreground">{a.task_definition ? "text observed" : "reached goal"}</p>
                 </div>
               </Link>
             </li>

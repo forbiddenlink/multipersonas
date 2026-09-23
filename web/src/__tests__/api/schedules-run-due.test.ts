@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
+import { CALLS_PER_PERSONA } from "@/lib/limits";
 
 const mockRpc = vi.fn();
 
@@ -61,7 +62,7 @@ describe("POST /api/schedules/run-due", () => {
       p_limit: 25,
       p_daily_cap: 5000,
       p_caller_cap: 250,
-      p_calls_per_persona: 25,
+      p_calls_per_persona: CALLS_PER_PERSONA,
     });
   });
 
@@ -72,7 +73,7 @@ describe("POST /api/schedules/run-due", () => {
       p_limit: 25,
       p_daily_cap: 5000,
       p_caller_cap: 250,
-      p_calls_per_persona: 25,
+      p_calls_per_persona: CALLS_PER_PERSONA,
     });
   });
 });

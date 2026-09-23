@@ -2,12 +2,13 @@ import * as os from "node:os";
 import * as path from "node:path";
 import * as fs from "node:fs";
 import * as Sentry from "@sentry/node";
+import { scrubEvent } from "multipersonas/security/sentry-scrub";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { type TestResult } from "multipersonas/orchestrator";
 import type { gradeScan } from "multipersonas/grader";
 import { runJobProcess, ScanCleanupError } from "./job-process.js";
 import { isIntervalDue, positiveEnvInt } from "./config.js";
-import { writeJobState } from "./job-write.js";
+import { persistGradeResult, writeJobState } from "./job-write.js";
 import { clampFindingCategory, clampSeverity } from "multipersonas/domain/vocab";
 
 // --- config ---------------------------------------------------------------
@@ -41,27 +42,14 @@ const REAP_INTERVAL_MS = positiveEnvInt(process.env.WORKER_REAP_INTERVAL_SECONDS
 const ALERT_WEBHOOK = process.env.WORKER_ALERT_WEBHOOK;
 
 // Error tracking. No-op until SENTRY_DSN is set on the host, so this ships safely disabled.
-// beforeSend redacts app PII (audited target URLs can carry query-string tokens; emails
-// may surface in error text) before events leave the process — parallels web/src/lib/
-// sentry-scrub.ts (kept inline here since the worker is a separate @sentry/node package).
+// Use the same error-event scrubber as the web app.
 if (process.env.SENTRY_DSN) {
-  const EMAIL_RE = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.RAILWAY_ENVIRONMENT_NAME ?? process.env.NODE_ENV ?? "production",
     release: process.env.RAILWAY_GIT_COMMIT_SHA,
     tracesSampleRate: 0.1,
-    beforeSend(event) {
-      for (const v of event.exception?.values ?? []) {
-        if (typeof v.value === "string") {
-          v.value = v.value.replace(EMAIL_RE, "[email]").replace(/\?[^\s]*/g, "?[redacted]");
-        }
-      }
-      if (typeof event.message === "string") {
-        event.message = event.message.replace(EMAIL_RE, "[email]");
-      }
-      return event;
-    },
+    beforeSend: (event) => scrubEvent(event),
   });
 }
 
@@ -97,6 +85,7 @@ async function logWorkerEvent(
 
 // --- types (local; the job row + the client-facing response shape) ---------
 interface AuditJob {
+  task_definition?: unknown;
   id: string;
   user_id: string | null;
   url: string;
@@ -177,6 +166,11 @@ process.on("unhandledRejection", onFatal("unhandledRejection"));
 function toResponse(result: TestResult) {
   return {
     url: result.url,
+    task: result.task ?? null,
+    taskOutcomes: result.task ? result.personas.map((pr) => ({
+      personaId: pr.persona.id,
+      evidence: pr.agentResult.taskEvidence ?? { status: "inconclusive" as const, pageUrl: result.url, stepIndex: null },
+    })) : [],
     taskSuccess: result.taskSuccess,
     personas: result.personas.map((pr) => ({
       id: pr.persona.id,
@@ -235,6 +229,8 @@ async function persistHistory(
       user_id: userId,
       project_id: projectId ?? null,
       url: audit.url,
+      task_definition: audit.task,
+      task_outcomes: audit.taskOutcomes,
       status: "running",
       task_success_achieved: audit.taskSuccess.achieved,
       task_success_total: audit.taskSuccess.total,
@@ -373,19 +369,12 @@ async function claimAndRun(): Promise<boolean> {
   // no session, results to the public grader_scans row. Handled inline then done.
   if (claimed.kind === "grade") {
     try {
-      const { report, pagesVisited } = await runJobProcess<Awaited<ReturnType<typeof gradeScan>>>(
+      const result = await runJobProcess<Awaited<ReturnType<typeof gradeScan>>>(
         new URL("./scan-process.ts", import.meta.url),
         { kind: claimed.kind, url: claimed.url, persona_ids: claimed.persona_ids }, JOB_TIMEOUT_MS,
       );
-      await writeJobState(supabase
-        .from("grader_scans")
-        .update({ report, pages_visited: pagesVisited, error: null })
-        .eq("job_id", claimed.id).select("token").single());
-      await writeJobState(supabase
-        .from("audit_jobs")
-        .update({ status: "completed", completed_at: new Date().toISOString() })
-        .eq("id", claimed.id).select("id").single());
-      await logWorkerEvent(claimed, "audit_job.completed", { pagesVisited: pagesVisited.length });
+      await persistGradeResult(supabase, claimed.id, result);
+      await logWorkerEvent(claimed, "audit_job.completed", { pagesVisited: result.pagesVisited.length });
       console.log(`[worker] graded ${claimed.id}`);
     } catch (e) {
       if (e instanceof ScanCleanupError) throw e;
@@ -393,7 +382,7 @@ async function claimAndRun(): Promise<boolean> {
       const publicMsg = publicJobError(e);
       await writeJobState(supabase
         .from("grader_scans")
-        .update({ error: publicMsg })
+        .update({ status: "failed", error: publicMsg })
         .eq("job_id", claimed.id).select("token").single());
       await writeJobState(supabase
         .from("audit_jobs")
@@ -411,7 +400,7 @@ async function claimAndRun(): Promise<boolean> {
 
   try {
     const result = await runJobProcess<TestResult>(
-      new URL("./scan-process.ts", import.meta.url), { kind: claimed.kind, url: claimed.url, persona_ids: claimed.persona_ids, outputDir: tmpDir }, JOB_TIMEOUT_MS,
+      new URL("./scan-process.ts", import.meta.url), { kind: claimed.kind, url: claimed.url, persona_ids: claimed.persona_ids, task_definition: claimed.task_definition, outputDir: tmpDir }, JOB_TIMEOUT_MS,
     );
     const response = toResponse(result);
 

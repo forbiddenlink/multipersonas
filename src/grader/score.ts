@@ -45,6 +45,8 @@ export interface GradeReport {
   grade: "A" | "B" | "C" | "D" | "F";
   score: number; // 0-100, rounded
   pagesScanned: number;
+  /** Absent on older reports; counts discovered URLs outside the evaluated scope. */
+  coverage?: { pageLimit: number; skippedPages: number };
   totalViolations: number;
   byImpact: Record<Impact, number>;
   wcagAAViolations: number;

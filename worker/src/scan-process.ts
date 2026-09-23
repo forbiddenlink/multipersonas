@@ -1,19 +1,21 @@
+import { taskDefinitionSchema } from "multipersonas/tasks";
 import { runMultiPersonaTest } from "multipersonas/orchestrator";
 import { gradeScan } from "multipersonas/grader";
 import { personaLibrary, isBuiltinPersonaId } from "multipersonas/personas/library";
 
 process.env.MP_BLOCK_DESTRUCTIVE_ACTIONS = "1";
 
-process.once("message", async (input: { kind: string; url: string; persona_ids: string[]; outputDir: string }) => {
+process.once("message", async (input: { kind: string; url: string; persona_ids: string[]; task_definition?: unknown; outputDir: string }) => {
   try {
     let result: unknown;
     if (input.kind === "grade") {
       result = await gradeScan(input.url, { maxPages: 10 });
     } else {
+      const task = input.task_definition == null ? undefined : taskDefinitionSchema.parse(input.task_definition);
       const personas = input.persona_ids.filter(isBuiltinPersonaId).map((id) => personaLibrary[id]);
       if (!personas.length) throw new Error("No valid personas were configured for this audit");
       result = await runMultiPersonaTest({
-        url: input.url, personas, outputDir: input.outputDir, parallel: true, runAxe: true,
+        url: input.url, personas, task, outputDir: input.outputDir, parallel: true, runAxe: true,
       });
     }
     process.send?.({ result });

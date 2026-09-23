@@ -12,6 +12,8 @@
     "./personas/generator": { "types": "./dist/personas/generator.d.ts", "default": "./dist/personas/generator.js" },
     "./personas/prebuilt": { "types": "./dist/personas/prebuilt.d.ts", "default": "./dist/personas/prebuilt.js" },
     "./domain/vocab": { "types": "./dist/domain/vocab.d.ts", "default": "./dist/domain/vocab.js" },
+    "./security/sentry-scrub": { "types": "./dist/security/sentry-scrub.d.ts", "default": "./dist/security/sentry-scrub.js" },
+    "./tasks": { "types": "./dist/tasks/definition.d.ts", "default": "./dist/tasks/definition.js" },
     "./grader": { "types": "./dist/grader/scan.d.ts", "default": "./dist/grader/scan.js" }
   },
   "bin": {
@@ -31,6 +33,7 @@
     "check:bundle": "node scripts/check-bundle-budget.mjs web",
     "smoke:prod": "node scripts/prod-smoke.mjs",
     "test": "vitest run",
+    "test:browser": "MP_BROWSER_TESTS=1 vitest run src/agent/browser-conditions.browser.test.ts",
     "test:watch": "vitest",
     "typecheck:test": "tsc --noEmit -p tsconfig.test.json",
     "prepublishOnly": "tsc"

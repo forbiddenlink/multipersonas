@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import { AppNav } from "@/components/app-nav";
 import { ClaimGrades } from "@/components/claim-grades";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminEmail } from "@/lib/admin-access";
 import { redirect } from "next/navigation";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function AppLayout({
   children,

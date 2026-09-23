@@ -1,5 +1,7 @@
 "use client";
 
+import { TaskEvidencePanel } from "@/components/task-evidence";
+import type { TaskDefinition, TaskOutcome } from "@engine/tasks/definition";
 import { Button } from "@/components/ui/button";
 import { PERSONA_DATA } from "@/lib/personas";
 import { formatLocation } from "@/lib/format-location";
@@ -8,6 +10,8 @@ import { SeverityChip } from "@/components/forensic/severity-chip";
 import { Meter } from "@/components/forensic/meter";
 
 export interface AuditResponse {
+  task?: TaskDefinition | null;
+  taskOutcomes?: TaskOutcome[];
   url: string;
   /**
    * How many personas got what they came for. This replaced a 0-100 composite
@@ -67,6 +71,7 @@ export function AuditResults({
 
   return (
     <div className={shell}>
+      <TaskEvidencePanel task={results.task} outcomes={results.taskOutcomes} />
       <div className={compact ? "space-y-3" : "flex flex-col items-center gap-4 text-center"}>
         <p className="text-sm text-muted-foreground">
           Results for{" "}
@@ -76,8 +81,8 @@ export function AuditResults({
           className={compact ? "w-full max-w-sm" : "w-full max-w-xs"}
           value={results.taskSuccess.achieved}
           total={results.taskSuccess.total}
-          label="task success"
-          unit="personas reached their goal"
+          label={results.task ? "expected text observed" : "task success"}
+          unit={results.task ? "profiles matched the check" : "personas reached their goal"}
           tone={successTone(results.taskSuccess.achieved, results.taskSuccess.total)}
         />
         {results.axeFindings.length > 0 ? (
@@ -114,7 +119,7 @@ export function AuditResults({
                   borderColor: `color-mix(in oklch, ${persona.goalCompleted ? "var(--severity-minor)" : "var(--severity-critical)"} 55%, transparent)`,
                 }}
               >
-                {persona.goalCompleted ? "Goal achieved" : "Blocked"}
+                {results.task ? (persona.goalCompleted ? (results.task.version === 2 ? "Checks observed" : "Text observed") : "Not verified") : (persona.goalCompleted ? "Goal achieved" : "Blocked")}
               </span>
               <span className="font-mono text-xs tabular-nums text-muted-foreground">
                 {persona.totalSteps} step{persona.totalSteps === 1 ? "" : "s"} ·{" "}
@@ -153,7 +158,7 @@ export function AuditResults({
               <p className="text-xs text-muted-foreground">
                 {persona.goalCompleted
                   ? "No UX observations"
-                  : "Blocked with no AI observations recorded"}
+                  : results.task ? "No matching text verified; no AI observations recorded" : "Blocked with no AI observations recorded"}
               </p>
             )}
           </div>

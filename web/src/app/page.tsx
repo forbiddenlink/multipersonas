@@ -25,7 +25,7 @@ const RUN_LOG: { src: string; text: string }[] = [
   { src: "input", text: "point it at a URL — public here, or behind a login via a saved CLI session" },
   { src: "crawl", text: "walk every reachable state: authed pages, checkout, multi-step flows" },
   { src: "axe-core", text: "render the deterministic verdict at each state — citable to WCAG" },
-  { src: "persona", text: "check whether a real-shaped user actually completes the flow" },
+  { src: "persona", text: "attempt a saved task and check for expected final-page text" },
 ];
 
 export default function Home() {
@@ -180,8 +180,9 @@ export default function Home() {
               </span>
             </p>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              From UX personas — did a real-shaped user complete the flow? Opinion and outcome,
-              clearly labeled. Never a compliance verdict.
+              AI browser agents attempt your task. A separate check looks for expected text on
+              the final page. Inspect the evidence and compare retests; this is not a
+              human-success measure or a compliance verdict.
             </p>
           </div>
         </div>

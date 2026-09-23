@@ -20,3 +20,10 @@ it.each(["denied", "unavailable"])("reports clipboard %s with manual link copy g
   fireEvent.click(screen.getByRole("button", { name: "Copy a link to this moment" }));
   expect(await screen.findByRole("alert")).toHaveTextContent("Could not copy. Copy the link from your browser's address bar.");
 });
+
+it("shows a task observation without a fabricated frustration score", () => {
+  render(<ReplayTheater journeys={journeys} personaMeta={{}} findingsByUrl={{}} taskCheck />);
+  expect(screen.getByText("text observed")).toBeInTheDocument();
+  expect(screen.queryByText("inferred frustration")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Jump to step 1, finish" })).toBeInTheDocument();
+});

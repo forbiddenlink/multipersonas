@@ -1,0 +1,26 @@
+# Deploy source only; local credentials, browser sessions, and generated evidence stay local.
+**/.env*
+**/*session.json
+**/.auth/**
+**/.claude/**
+**/.codex/**
+**/.agents/**
+**/.serena/**
+**/.playwright-mcp/**
+**/supabase/.temp/**
+**/supabase/.branches/**
+**/node_modules/**
+**/.next/**
+**/dist/**
+**/coverage/**
+**/*.tsbuildinfo
+**/*.log
+.git/**
+**/.vercel/**
+experiments/**
+thoughts/**
+mpersonas-report/**
+video/**
+web/test-results/**
+web/playwright-report/**
+.audit-report.md

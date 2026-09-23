@@ -45,7 +45,7 @@ describe("marketing copy stays honest about hosted vs CLI", () => {
 
   it("does not name $199 on the agency page unless checkout can actually take payment", () => {
     const src = read("src/app/for-agencies/page.tsx");
-    expect(src).toMatch(/FOUNDING_CHECKOUT_URL/);
+    expect(src).toMatch(/FOUNDING_CHECKOUT_OPEN = isFoundingCheckoutOpen\(\)/);
     expect(src).toMatch(/the price is named when checkout is live/);
     expect(src).not.toMatch(/What do I get at \$199/);
   });

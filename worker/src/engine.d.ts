@@ -3,6 +3,7 @@
 // here rather than widen the root package's build surface.
 declare module "multipersonas/orchestrator" {
   export interface TestOptions {
+    task?: import("multipersonas/tasks").TaskDefinition;
     url: string;
     personas: unknown[];
     outputDir: string;
@@ -34,6 +35,7 @@ declare module "multipersonas/orchestrator" {
   export interface EnginePersonaResult {
     persona: { id: string; name: string; description: string };
     agentResult: {
+      taskEvidence?: import("multipersonas/tasks").TaskEvidence;
       goalCompleted: boolean;
       totalSteps: number;
       pagesVisited: unknown[];
@@ -43,6 +45,7 @@ declare module "multipersonas/orchestrator" {
     };
   }
   export interface TestResult {
+    task?: import("multipersonas/tasks").TaskDefinition;
     url: string;
     taskSuccess: { achieved: number; total: number };
     personas: EnginePersonaResult[];

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { isFoundingCheckoutOpen } from "@/lib/founding-checkout";
 import { SignOutButton } from "@/components/sign-out-button";
 import { Badge } from "@/components/ui/badge";
 import { BoxDivider } from "@/components/forensic/divider";
@@ -15,9 +16,9 @@ export const metadata: Metadata = {
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; saved?: string }>;
+  searchParams: Promise<{ error?: string; saved?: string; checkout?: string }>;
 }) {
-  const { error, saved } = await searchParams;
+  const { error, saved, checkout } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -30,7 +31,7 @@ export default async function SettingsPage({
     .select("plan,agency_name")
     .eq("id", user.id)
     .single();
-  const foundingAccessOpen = Boolean(process.env.NEXT_PUBLIC_FOUNDING_CHECKOUT_URL);
+  const foundingAccessOpen = isFoundingCheckoutOpen();
 
   return (
     <div className="max-w-2xl">
@@ -66,6 +67,25 @@ export default async function SettingsPage({
           </dd>
         </div>
       </dl>
+
+      {checkout === "success" ? (
+        <p role="status" className="mt-3 text-sm text-muted-foreground">
+          {profile?.plan === "pro" || profile?.plan === "team"
+            ? "Your account has paid access."
+            : "Your plan has not been updated yet. Refresh this page shortly. If you completed payment and access is still missing, contact billing support below before trying another checkout."}
+        </p>
+      ) : null}
+
+      <p className="mt-3 text-sm text-muted-foreground">
+        For cancellation, invoices, payment issues, or refund requests,{" "}
+        <a
+          href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "hello@personaudit.com"}?subject=Personaudit%20billing%20support`}
+          className="text-foreground underline underline-offset-4"
+        >
+          contact billing support
+        </a>
+        . This opens an email request; it does not automatically cancel your subscription.
+      </p>
 
       {(profile?.plan ?? "free") === "free" && (
         <p className="mt-3 text-sm text-muted-foreground">

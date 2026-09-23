@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database, TablesInsert, TablesUpdate } from "@/lib/supabase/types";
+import type { Database, Json, TablesInsert, TablesUpdate } from "@/lib/supabase/types";
 
 type SB = SupabaseClient<Database>;
 
@@ -14,11 +14,12 @@ export interface ProjectListItem {
 }
 
 export interface Project extends ProjectListItem {
+  task_definition: Json | null;
   user_id: string;
 }
 
 const LIST_COLUMNS = "id,name,url,description,created_at,updated_at";
-const DETAIL_COLUMNS = `${LIST_COLUMNS},user_id`;
+const DETAIL_COLUMNS = `${LIST_COLUMNS},user_id,task_definition`;
 
 /**
  * List the caller's projects, newest first. RLS scopes rows to the caller, so no
@@ -70,6 +71,7 @@ export async function createProject(
 }
 
 export interface UpdateProjectInput {
+  task_definition?: Json | null;
   name?: string;
   url?: string;
   description?: string | null;

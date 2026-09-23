@@ -17,15 +17,37 @@ export function UnlockFoundingAccessButton({ className }: { className?: string }
     }
     try {
       const response = await fetch("/api/checkout/founding", { method: "POST" });
-      const body = (await response.json()) as { url?: string; error?: string };
+      const body = (await response.json().catch(() => ({}))) as { url?: string; error?: string };
       if (response.status === 401) {
+        trackProductEvent("founding_checkout_auth_required", { resuming });
         setSignInRequired(true);
         setLoading(false);
         return;
       }
-      if (!response.ok || !body.url) throw new Error(body.error || "Could not start checkout.");
+      if (!response.ok) {
+        trackProductEvent("founding_checkout_failed", {
+          reason: "provider_error",
+          status_code: response.status,
+          resuming,
+        });
+        setError(body.error || "Could not start checkout.");
+        setLoading(false);
+        return;
+      }
+      if (!body.url) {
+        trackProductEvent("founding_checkout_failed", {
+          reason: "missing_checkout_url",
+          status_code: response.status,
+          resuming,
+        });
+        setError("Could not start checkout.");
+        setLoading(false);
+        return;
+      }
+      trackProductEvent("founding_checkout_started", { resuming });
       window.location.assign(body.url);
     } catch (cause) {
+      trackProductEvent("founding_checkout_failed", { reason: "network_error", resuming });
       setError(cause instanceof Error ? cause.message : "Could not start checkout.");
       setLoading(false);
     }

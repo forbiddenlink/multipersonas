@@ -63,6 +63,12 @@ jobs:
       - name: Test (CLI)
         run: pnpm test
 
+      - name: Install Chromium for browser-condition regression tests
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Test enforced browser conditions
+        run: pnpm test:browser
+
       - name: Test (web)
         working-directory: web
         run: pnpm test

@@ -1,4 +1,5 @@
 import "server-only";
+import { parseTaskDefinition, parseTaskOutcomes, type TaskOutcome, type TaskDefinition } from "@engine/tasks/definition";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { wcagTagsToCriteria, AXE_TESTABLE_CODES, type Criterion } from "./wcag";
@@ -26,6 +27,8 @@ export interface FindingRow {
 }
 
 interface RunRow {
+  task_definition?: unknown;
+  task_outcomes?: unknown;
   id: string;
   url: string;
   created_at: string;
@@ -65,6 +68,8 @@ export interface FixCluster {
 }
 
 export interface ReportData {
+  task?: TaskDefinition | null;
+  taskOutcomes: TaskOutcome[];
   runId: string;
   url: string;
   auditDate: string;
@@ -266,6 +271,7 @@ function priorityForVerdict(
   severity: string,
   locations: string[],
   journeyRows: JourneyRow[],
+  taskCheck = false,
 ): { score: number; reason: string } {
   const locationSet = new Set(locations);
   const personasAtState = new Set<string>();
@@ -274,7 +280,7 @@ function priorityForVerdict(
   for (const row of journeyRows) {
     if (!row.page_url || !locationSet.has(row.page_url)) continue;
     personasAtState.add(row.persona_id);
-    if (!row.goal_completed) blockedAtState.add(row.persona_id);
+    if (!taskCheck && !row.goal_completed) blockedAtState.add(row.persona_id);
   }
 
   const score = Math.min(
@@ -307,12 +313,13 @@ export function assembleReport(
   const resolvedBranding = Array.isArray(journeyRowsOrBranding)
     ? branding
     : journeyRowsOrBranding;
+  const task = parseTaskDefinition(run.task_definition);
   const personaImpact = buildPersonaImpact(journeyRows, rows);
   const verdicts: ReportVerdict[] = rows
     .filter((f) => f.source === "axe")
     .map((f) => {
       const locations = splitLocations(f.page_url);
-      const priority = priorityForVerdict(f.severity, locations, journeyRows);
+      const priority = priorityForVerdict(f.severity, locations, journeyRows, Boolean(run.task_definition));
       return {
         id: f.id,
         title: f.title,
@@ -337,6 +344,8 @@ export function assembleReport(
   );
 
   return {
+    task,
+    taskOutcomes: task ? parseTaskOutcomes(task, run.task_outcomes) : [],
     runId: run.id,
     url: run.url,
     auditDate: run.created_at,
@@ -351,6 +360,29 @@ export function assembleReport(
   };
 }
 
+// Reports must not turn a failed or truncated read into apparent absence of defects.
+// Completed runs are read in stable ID order; a changed count invalidates assembly.
+async function loadReportRows<T>(
+  fetchPage: (from: number, to: number) => PromiseLike<{
+    data: T[] | null; error: unknown; count: number | null;
+  }>,
+): Promise<T[]> {
+  const rows: T[] = [];
+  let expectedCount: number | undefined;
+  do {
+    const { data, error, count } = await fetchPage(rows.length, rows.length + 999);
+    if (error || !data || count === null || !Number.isSafeInteger(count) || count < 0 ||
+      (expectedCount !== undefined && count !== expectedCount) ||
+      rows.length + data.length > count || (data.length === 0 && rows.length < count)) {
+      // Do not propagate provider details, which can contain stored customer data.
+      throw new Error("Could not load complete report evidence.");
+    }
+    expectedCount = count;
+    rows.push(...data);
+  } while (rows.length < expectedCount);
+  return rows;
+}
+
 /**
  * Fetch a run and its axe verdicts, scoped to the caller by RLS. Returns null when the run
  * does not exist or is not the caller's — the route turns that into a 404.
@@ -361,28 +393,34 @@ export async function buildReport(supabase: SB, id: string): Promise<ReportData 
   // other — run concurrently instead of four sequential round-trips.
   const [runAndFindings, agencyName] = await Promise.all([
     (async () => {
-      const { data: run } = await supabase
+      const { data: run, error: runError } = await supabase
         .from("test_runs")
-        .select("id,url,created_at,persona_ids,project_id")
+        .select("id,url,created_at,persona_ids,project_id,task_definition,task_outcomes")
         .eq("id", id)
         .eq("status", "completed")
-        .single();
+        .maybeSingle();
+      if (runError) throw new Error("Could not load report.");
       if (!run) return null;
 
-      const { data: findingRows } = await supabase
+      const findingRows = await loadReportRows((from, to) => supabase
         .from("findings")
         .select(
           "id,source,severity,title,description,recommendation,rule_id,wcag_tags,page_url",
+          { count: "exact" },
         )
         .eq("test_run_id", run.id)
-        .eq("source", "axe");
+        .eq("source", "axe")
+        .order("id", { ascending: true })
+        .range(from, to));
 
-      const { data: journeyRows } = await supabase
+      const journeyRows = await loadReportRows((from, to) => supabase
         .from("journey_steps")
-        .select("persona_id,goal_completed,page_url,step")
-        .eq("test_run_id", run.id);
+        .select("persona_id,goal_completed,page_url,step", { count: "exact" })
+        .eq("test_run_id", run.id)
+        .order("id", { ascending: true })
+        .range(from, to));
 
-      return { run, findingRows: findingRows ?? [], journeyRows: journeyRows ?? [] };
+      return { run, findingRows, journeyRows };
     })(),
     (async () => {
       const {

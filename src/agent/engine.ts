@@ -1,3 +1,5 @@
+import type { TaskDefinition, TaskEvidence } from "../tasks/definition.js";
+import { verifyTaskText } from "../tasks/verify.js";
 import { generateText, tool, type ModelMessage } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { type Browser, type Page } from "playwright";
@@ -5,7 +7,9 @@ import { launchAuditBrowser } from "../security/browser.js";
 import { z } from "zod";
 import * as fs from "fs";
 import * as path from "path";
-import type { Persona } from "../personas/types.js";
+import type { Persona, InputModality } from "../personas/types.js";
+import { activateByKeyboard, keyboardReachFailure, reachByKeyboard, selectByKeyboard, typeByKeyboard } from "./keyboard.js";
+import { applyNetworkConditions } from "./network-conditions.js";
 import {
   deriveTraits,
   giveUpThreshold,
@@ -47,6 +51,9 @@ import {
  * - `scopeOrigin` answers "is this the site we were hired to audit?" (a correctness one)
  */
 export interface GuardOptions {
+  /** Set from the profile by the engine; enforced by the action executor. */
+  inputModality?: InputModality;
+  task?: TaskDefinition;
   /** Forwarded to the URL guard. The hosted service must never set this. */
   allowPrivate?: boolean;
   /**
@@ -133,6 +140,7 @@ export interface StepRecord {
 }
 
 export interface AgentResult {
+  taskEvidence?: TaskEvidence;
   findings: Finding[];
   /**
    * axe violations from every state this persona reached — the deterministic
@@ -426,6 +434,9 @@ const agentTools = {
   }),
 };
 
+const { navigate: _navigate, ...keyboardTools } = agentTools;
+const TASK_TEXT_REFUSAL = "Refused to type the expected confirmation text. Task evidence must come from the site, not text entered to satisfy the check.";
+
 // --- Action executor ---
 
 // Exported for the wiring test in engine.test.ts, which verifies the
@@ -497,10 +508,27 @@ export async function executeAction(
         return jargonMisreadMessage(accessible || name);
       }
 
+      if (guard.inputModality === "keyboard") {
+        const tabs = await reachByKeyboard(page, el);
+        if (tabs === null) return keyboardReachFailure(selector);
+        const focusedName = await readAccessibleName(el);
+        if (guard.blockDestructiveActions && isDestructiveAction(focusedName)) {
+          return destructiveActionRefusal(focusedName);
+        }
+        const key = await activateByKeyboard(page, el);
+        return `Pressed ${key} on "${selector}" after ${tabs} Tab presses`;
+      }
       await el.click({ timeout: ACTION_TIMEOUT });
       return `Clicked "${selector}"`;
     }
     case "type": {
+      if (guard.task) {
+        const expected = guard.task.successText.replace(/\s+/g, " ").trim();
+        const entered = String(input.text ?? "").replace(/\s+/g, " ").trim();
+        if (entered.includes(expected)) {
+          return TASK_TEXT_REFUSAL;
+        }
+      }
       const selector = input.selector as string;
       const el = await resolveElement(page, selector);
       const accessible = await readAccessibleName(el);
@@ -513,10 +541,21 @@ export async function executeAction(
       if (shouldMisreadJargon(guard.techLiteracy ?? 0.5, accessible || selector)) {
         return jargonMisreadMessage(accessible || selector);
       }
+      if (guard.inputModality === "keyboard") {
+        const tabs = await reachByKeyboard(page, el);
+        if (tabs === null) return keyboardReachFailure(selector);
+        await typeByKeyboard(page, el, input.text as string);
+        return `Typed into "${selector}" using the keyboard after ${tabs} Tab presses`;
+      }
       await el.fill(input.text as string, { timeout: ACTION_TIMEOUT });
       return `Typed "${input.text}" into "${selector}"`;
     }
     case "scroll": {
+      if (guard.inputModality === "keyboard") {
+        const key = input.direction === "down" ? "ArrowDown" : "ArrowUp";
+        await page.keyboard.press(key);
+        return `Pressed ${key}; scrolling depends on the currently focused control`;
+      }
       const distance = input.direction === "down" ? 600 : -600;
       await page.evaluate((d: number) => window.scrollBy(0, d), distance);
       return `Scrolled ${input.direction as string}`;
@@ -542,10 +581,21 @@ export async function executeAction(
       if (shouldMisreadJargon(guard.techLiteracy ?? 0.5, accessible || selector)) {
         return jargonMisreadMessage(accessible || selector);
       }
+      if (guard.inputModality === "keyboard") {
+        const tabs = await reachByKeyboard(page, el);
+        if (tabs === null) return keyboardReachFailure(selector);
+        const selected = await selectByKeyboard(page, el, option);
+        return selected
+          ? `Selected "${option}" in "${selector}" using the keyboard after ${tabs} Tab presses`
+          : `Could not select "${option}" in "${selector}" using the keyboard`;
+      }
       await el.selectOption({ label: option }, { timeout: ACTION_TIMEOUT });
       return `Selected "${option}" in "${selector}"`;
     }
     case "navigate": {
+      if (guard.inputModality === "keyboard") {
+        return "Direct navigation is disabled for keyboard traversal after the starting page. Activate a reachable link instead; do not bypass the site's keyboard path.";
+      }
       // The model chose this URL after reading attacker-controlled page content,
       // so it is untrusted input and must clear the same bar as the initial URL.
       const target = input.url as string;
@@ -659,6 +709,8 @@ export async function runPersonaAgent(
   const steps: StepRecord[] = [];
   const pagesVisited = new Set<string>();
   let goalCompleted = false;
+  let taskEvidence: TaskEvidence | undefined;
+  let initialTaskTextStatus: TaskEvidence["status"] | undefined;
 
   // Traits -> code-enforced give-up boundaries (see personas/traits.ts). Computed
   // once: an impatient/low-persistence persona notices it is stuck sooner AND
@@ -677,6 +729,7 @@ export async function runPersonaAgent(
     const safeUrl = await assertUrlAllowed(url, guard);
     const scope: GuardOptions = {
       ...guard,
+      inputModality: persona.inputModality,
       scopeOrigin: guard.scopeOrigin ?? safeUrl.origin,
       riskAversion: traits.riskAversion,
       techLiteracy: traits.techLiteracy,
@@ -710,6 +763,7 @@ export async function runPersonaAgent(
     });
 
     const page = await context.newPage();
+    await applyNetworkConditions(context, page, persona.connectionSpeed);
 
     // Navigate to target
     await page.goto(safeUrl.href, { waitUntil: "domcontentloaded", timeout: 30_000 });
@@ -720,6 +774,12 @@ export async function runPersonaAgent(
     // Take initial screenshot
     const initialScreenshot = path.join(screenshotDir, "step-000.png");
     await page.screenshot({ path: initialScreenshot, fullPage: false });
+
+    if (guard.task?.version === 2 && guard.task.requireNewText) {
+      initialTaskTextStatus = (await verifyTaskText(page, {
+        version: 1, goal: guard.task.goal, successText: guard.task.successText,
+      }, null)).status;
+    }
 
     // Build conversation messages
     const messages: ModelMessage[] = [];
@@ -804,7 +864,7 @@ export async function runPersonaAgent(
         model: anthropic(process.env.MULTIPERSONAS_MODEL || DEFAULT_MODEL),
         system: persona.systemPrompt,
         messages: windowed,
-        tools: agentTools,
+        tools: persona.inputModality === "keyboard" ? keyboardTools : agentTools,
         maxOutputTokens: 1024,
         toolChoice: "required",
       });
@@ -942,6 +1002,7 @@ export async function runPersonaAgent(
       try {
         actionResult = await executeAction(page, toolName, input, scope);
         const skipped =
+          actionResult === TASK_TEXT_REFUSAL ||
           isConfirmPause(actionResult) ||
           isUnlabeledRefusal(actionResult) ||
           isMisreadRecorded(actionResult) ||
@@ -972,6 +1033,7 @@ export async function runPersonaAgent(
       // scan it. Deduped by (rule, element) at the end.
       if (
         guard.runAxe !== false &&
+        actionResult !== TASK_TEXT_REFUSAL &&
         toolName !== "report_finding" &&
         !isConfirmPause(actionResult) &&
         !isUnlabeledRefusal(actionResult) &&
@@ -1009,7 +1071,7 @@ export async function runPersonaAgent(
       steps.push({
         step,
         action: paused ? "confirm" : toolName,
-        detail,
+        detail: scope.inputModality === "keyboard" || actionResult === TASK_TEXT_REFUSAL ? actionResult : detail,
         pageUrl: page.url(),
         screenshotPath,
         timestamp: Date.now(),
@@ -1029,6 +1091,25 @@ export async function runPersonaAgent(
         ],
       });
     }
+    if (guard.task) {
+      taskEvidence = await verifyTaskText(page, guard.task, null, initialTaskTextStatus);
+      goalCompleted = taskEvidence.status === "observed";
+      const screenshotPath = path.join(screenshotDir, "task-verification.png");
+      try {
+        await page.screenshot({ path: screenshotPath, fullPage: false });
+        taskEvidence.stepIndex = steps.length;
+        steps.push({
+          step: (steps.at(-1)?.step ?? 0) + 1,
+          action: "verify_task",
+          detail: `${taskEvidence.status}: expected visible text ${JSON.stringify(guard.task.successText)}${taskEvidence.checks ? `; checks ${JSON.stringify(taskEvidence.checks)}` : ""}`,
+          pageUrl: taskEvidence.pageUrl,
+          screenshotPath,
+          timestamp: Date.now(),
+        });
+      } catch {
+        // Keep the observation, but never link it to an unrelated earlier frame.
+      }
+    }
   } finally {
     if (browser) {
       await browser.close();
@@ -1041,6 +1122,7 @@ export async function runPersonaAgent(
     steps,
     pagesVisited: [...pagesVisited],
     goalCompleted,
+    ...(taskEvidence ? { taskEvidence } : {}),
     totalSteps: steps.length,
   };
 }

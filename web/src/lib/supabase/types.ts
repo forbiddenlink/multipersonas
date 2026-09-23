@@ -49,6 +49,7 @@ export type Database = {
       }
       audit_jobs: {
         Row: {
+          task_definition: Json | null
           attempts: number
           completed_at: string | null
           created_at: string
@@ -66,6 +67,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          task_definition?: Json | null
           attempts?: number
           completed_at?: string | null
           created_at?: string
@@ -83,6 +85,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          task_definition?: Json | null
           attempts?: number
           completed_at?: string | null
           created_at?: string
@@ -376,6 +379,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          task_definition: Json | null
           created_at: string
           description: string | null
           id: string
@@ -385,6 +389,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          task_definition?: Json | null
           created_at?: string
           description?: string | null
           id?: string
@@ -394,6 +399,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          task_definition?: Json | null
           created_at?: string
           description?: string | null
           id?: string
@@ -496,6 +502,8 @@ export type Database = {
       }
       test_runs: {
         Row: {
+          task_outcomes: Json
+          task_definition: Json | null
           completed_at: string | null
           created_at: string
           id: string
@@ -509,6 +517,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          task_outcomes?: Json
+          task_definition?: Json | null
           completed_at?: string | null
           created_at?: string
           id?: string
@@ -522,6 +532,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          task_outcomes?: Json
+          task_definition?: Json | null
           completed_at?: string | null
           created_at?: string
           id?: string

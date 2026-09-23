@@ -57,3 +57,12 @@ describe("generateMarkdownReport survives malformed step data", () => {
     expect(out).toMatch(/x{50}\.\.\./);
   });
 });
+
+it("labels task text evidence without inventing a completed transaction", () => {
+  const out = render({ ...result([]), goalCompleted: false,
+    taskEvidence: { status: "inconclusive", pageUrl: "https://example.com", stepIndex: null },
+  });
+  expect(out).toContain("Expected text observed");
+  expect(out).toContain("**Expected visible text:** inconclusive");
+  expect(out).not.toContain("No persona finished what they came to do");
+});

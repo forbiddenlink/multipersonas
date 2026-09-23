@@ -48,3 +48,18 @@ describe("scrubEvent", () => {
     expect(() => scrubEvent({})).not.toThrow();
   });
 });
+
+it("removes credentials and private result tokens from requests and breadcrumbs", () => {
+  const event = scrubEvent({
+    request: { url: "https://synthetic:password@example.com/grade/private?key=secret#fragment", headers: { authorization: "synthetic" }, cookies: "synthetic" },
+    user: { email: "synthetic@example.com" },
+    breadcrumbs: [{ message: "Failed https://example.com/path?key=secret", data: { url: "https://example.com/path?key=secret", to: "/grade/private#fragment", status_code: 500, arguments: ["synthetic secret"], body: "synthetic secret" } }],
+  });
+  expect(event.request).toEqual({ url: "https://example.com/grade/[token]" });
+  expect(event.user).toBeUndefined();
+  expect(event.breadcrumbs).toEqual([{ message: "Failed https://example.com/path", data: { url: "https://example.com/path", to: "/grade/[token]", status_code: 500 } }]);
+});
+
+it("does not return malformed absolute URLs containing credentials", () => {
+  expect(stripQuery("https://synthetic:password@[invalid")).toBe("[url]");
+});

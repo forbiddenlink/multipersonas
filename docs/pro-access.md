@@ -35,5 +35,14 @@ user is never sent to the owner-only `/waitlist` inbox.
 
 ## Stripe lifecycle
 
-A Stripe webhook will flip `profiles.plan` on subscription create/cancel. The gate
-(`planAllowsPersonas`) does not change — only the source of the plan value does.
+The signed webhook handles `checkout.session.completed` and
+`checkout.session.async_payment_succeeded` for founding subscription checkouts whose
+payment status is `paid` or `no_payment_required`. An unpaid checkout does not grant Pro.
+Subscription updates/deletions retain the existing policy: `active` grants Pro; other
+statuses set Free. The gate (`planAllowsPersonas`) does not change.
+
+A profile update must return its saved row before the handler acknowledges success.
+Database errors, missing profiles, or unavailable admin configuration return HTTP 500
+so Stripe can retry. Repeated assignments are safe, but event ordering and overlapping
+subscriptions are **not** reconciled yet; do not treat these tests as full billing proof.
+See [the continuation review](plans/2026-09-18-continuation-review.md) for release gates.

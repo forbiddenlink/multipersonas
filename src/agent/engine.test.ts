@@ -384,3 +384,22 @@ describe("engine source guards (axe-feed + AI snapshot refs)", () => {
     expect(src).toMatch(/jargonMisreadMessage/);
   });
 });
+
+describe("saved-task confirmation cannot be typed into existence", () => {
+  const task = { version: 1 as const, goal: "Complete the synthetic request", successText: "Request received" };
+  it.each(["Request received", "Request\n received", "Note: Request received"])("blocks manufactured confirmation before touching the page: %s", async (text) => {
+    const { page, state } = fakePage();
+    expect(await executeAction(page, "type", { selector: "Note", text }, { task })).toMatch(/Refused to type/);
+    expect(state.touched).toBe(false);
+  });
+  it("allows ordinary task input", async () => {
+    const { page, state } = fakePage({ innerText: "Note" });
+    await executeAction(page, "type", { selector: "Note", text: "A synthetic question" }, { task });
+    expect(state.filled).toBe(true);
+  });
+  it("does not restrict runs without a saved-task assertion", async () => {
+    const { page, state } = fakePage({ innerText: "Note" });
+    await executeAction(page, "type", { selector: "Note", text: "Request received" });
+    expect(state.filled).toBe(true);
+  });
+});

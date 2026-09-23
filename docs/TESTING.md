@@ -1,4 +1,35 @@
-# Testing against a real, login-gated app
+# Testing browser conditions and authenticated flows
+
+## Browser-condition regression tests
+
+Run `pnpm exec playwright install chromium`, then `pnpm test:browser`. CI installs
+Chromium with its system dependencies and runs this suite explicitly. These tests
+use disposable pages and a local HTTP fixture; they make no model calls and need
+no accounts. The default unit suite skips this opt-in browser file.
+
+Keyboard profiles use real Tab navigation, Enter/Space activation, text-entry
+keys, native-select type-ahead, and arrow-key scrolling. Tests cover pointer-free
+activation, controls outside the tab order, a focus trap, typing, checkboxes,
+native selections, direct-navigation rejection, and the irreversible-action
+guard. A search stops after 60 Tab presses or approximately five seconds. Failure
+means this bounded search did not reach the control, not that all keyboard paths
+are impossible. Complex composite widgets and alternative key paths are not
+exhaustively explored; this is not a conformance test.
+
+Network profiles use Chromium CDP before the first navigation. `3g` applies
+100 ms latency, 750 kbit/s download, and 250 kbit/s upload; `slow-3g` applies
+400 ms latency and 400 kbit/s in both directions. `fast` adds no throttling.
+Throttled runs bypass service workers and disable cache. These are reproducible
+synthetic conditions, not a claim to reproduce a particular carrier or device.
+The browser fixture verifies actual transfer delay across two navigations while
+request interception is active. Unit tests verify configuration ordering and
+that installation failure aborts the run. Production's separate SSRF and egress
+guards remain required.
+
+Implementation references: [Playwright keyboard events](https://playwright.dev/docs/api/class-keyboard),
+[Chromium network emulation](https://chromedevtools.github.io/devtools-protocol/tot/Network/#method-emulateNetworkConditionsByRule).
+
+## Testing against a real, login-gated app
 
 The product's whole claim is that personas reach states behind a login wall. You
 cannot check that against a marketing page, so there is a disposable fixture: a

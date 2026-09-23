@@ -1,6 +1,8 @@
 // Pure limit configuration + decision helpers. No I/O here so it stays unit-testable;
 // the Supabase-backed enforcement lives in rate-limit.ts and spend.ts.
 
+import { personaLibrary } from "@engine/personas/library";
+
 /** Per-caller request rate limits, enforced durably in Postgres (see rate-limit.ts). */
 export const RATE_LIMITS = {
   authenticated: { max: 5, windowSeconds: 10 * 60 },
@@ -14,9 +16,14 @@ export const RATE_LIMITS = {
 
 export type RateLimitType = keyof typeof RATE_LIMITS;
 
-/** Rough model-call budget per persona (persona step budgets, ~20-30 calls). Used to
- * reserve spend before a run so a burst can't blow past the daily cap. */
-export const CALLS_PER_PERSONA = 25;
+/**
+ * One agent-loop iteration makes at most one generateText call. Hosted audits accept
+ * only built-in personas, so reserve the largest built-in step budget for every
+ * selected persona rather than an average that can under-reserve a valid selection.
+ */
+export const CALLS_PER_PERSONA = Math.max(
+  ...Object.values(personaLibrary).map((persona) => persona.maxSteps),
+);
 
 /**
  * Parse a positive integer env var. Empty string / NaN / ≤0 fall back — `Number("")`
@@ -39,7 +46,7 @@ export const DAILY_MODEL_CALL_CAP = positiveEnvInt(process.env.AUDIT_DAILY_CALL_
  * Per-caller daily model-call ceiling, beneath the global cap. Stops one caller (a user
  * id, or an anon IP) from consuming the whole daily budget and denying everyone else.
  *
- * Defaults to ~5% of the global cap (250 calls ≈ 10 audits/caller/day at 25 calls each).
+ * Defaults to ~5% of the global cap (250 calls covers eight maximum-budget personas).
  * The point of a per-caller sub-cap is that draining the WHOLE daily budget must require
  * many distinct identities, not a handful: at 25% (the previous 1250) only 4 accounts/IPs
  * drained the entire day and 429'd every real user until UTC midnight — and with no CAPTCHA

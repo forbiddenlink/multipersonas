@@ -19,6 +19,7 @@ export interface ReplayTheaterProps {
   findingsByUrl: Record<string, ReplayFinding[]>;
   initialPersona?: string;
   initialStep?: number;
+  taskCheck?: boolean;
 }
 
 const PLAY_INTERVAL_MS = 1600;
@@ -70,6 +71,7 @@ export function ReplayTheater({
   findingsByUrl,
   initialPersona,
   initialStep = 0,
+  taskCheck = false,
 }: ReplayTheaterProps) {
   const initialPersonaIndex = Math.max(
     0,
@@ -239,7 +241,7 @@ export function ReplayTheater({
                 : "var(--severity-critical)",
             }}
           >
-            {journey.goalCompleted ? "goal reached" : "blocked"}
+            {taskCheck ? (journey.goalCompleted ? "text observed" : "not verified") : (journey.goalCompleted ? "goal reached" : "blocked")}
           </span>
         </span>
       </div>
@@ -305,7 +307,7 @@ export function ReplayTheater({
             )}
           </div>
 
-          <div>
+          {!taskCheck && <div>
             <p className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
               inferred frustration
             </p>
@@ -317,7 +319,7 @@ export function ReplayTheater({
                 {band.label}
               </span>
             </div>
-          </div>
+          </div>}
 
           {findingsHere.length > 0 && (
             <div>
@@ -359,8 +361,8 @@ export function ReplayTheater({
                   setPlaying(false);
                   setSIdx(i);
                 }}
-                title={`step ${i + 1} — ${b.label} (${s.frustration})`}
-                aria-label={`Jump to step ${i + 1}, ${b.label}`}
+                title={taskCheck ? `step ${i + 1} — ${s.action}` : `step ${i + 1} — ${b.label} (${s.frustration})`}
+                aria-label={taskCheck ? `Jump to step ${i + 1}, ${s.action}` : `Jump to step ${i + 1}, ${b.label}`}
                 aria-current={active}
                 className="group relative flex-1 overflow-hidden rounded-[2px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
                 style={{ backgroundColor: "var(--border)" }}
@@ -368,7 +370,7 @@ export function ReplayTheater({
                 {/* Fill height encodes the score; color encodes the band. */}
                 <span
                   className="absolute inset-x-0 bottom-0"
-                  style={{ height: `${Math.max(s.frustration, 6)}%`, backgroundColor: b.token }}
+                  style={{ height: taskCheck ? "100%" : `${Math.max(s.frustration, 6)}%`, backgroundColor: taskCheck ? "var(--muted-foreground)" : b.token }}
                 />
                 {active && (
                   <span

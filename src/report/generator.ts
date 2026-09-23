@@ -180,7 +180,9 @@ function renderPersonaSection(report: PersonaReport): string {
   const lines: string[] = [];
   lines.push(`### ${persona.name} — ${persona.description}`);
   lines.push("");
-  lines.push(`**Goal:** ${agentResult.goalCompleted ? "achieved ✅" : "not achieved ❌"}`);
+  lines.push(agentResult.taskEvidence
+    ? `**${agentResult.taskEvidence.checks ? "Configured task checks" : "Expected visible text"}:** ${agentResult.taskEvidence.status}${agentResult.taskEvidence.checks ? ` (${JSON.stringify(agentResult.taskEvidence.checks)})` : ""}. This is a browser observation, not a human success rate.`
+    : `**Goal:** ${agentResult.goalCompleted ? "achieved ✅" : "not achieved ❌"}`);
   lines.push("");
   lines.push(`| Steps | States reached | UX observations |`);
   lines.push(`|-------|----------------|-----------------|`);
@@ -232,6 +234,7 @@ export function generateMarkdownReport(
   reports: PersonaReport[],
   axeFindings: Finding[] = [],
 ): string {
+  const hasTaskEvidence = reports.some((report) => report.agentResult.taskEvidence);
   const achieved = reports.filter((r) => r.agentResult.goalCompleted).length;
   const uxFindings = reports.flatMap((r) => deduplicateFindings(r.agentResult.findings));
   const axeGroups = groupAxeByRule(axeFindings);
@@ -250,7 +253,7 @@ export function generateMarkdownReport(
 
   lines.push("## Summary");
   lines.push("");
-  lines.push(`| Task success | States reached | Accessibility defects | UX observations |`);
+  lines.push(`| ${hasTaskEvidence ? (reports.some((report) => report.agentResult.taskEvidence?.checks) ? "Configured checks observed" : "Expected text observed") : "Task success"} | States reached | Accessibility defects | UX observations |`);
   lines.push(`|:---:|:---:|:---:|:---:|`);
   lines.push(
     `| **${achieved}/${reports.length} personas** | ${states.size} | ${axeGroups.length} | ${uxFindings.length} |`,
@@ -261,11 +264,13 @@ export function generateMarkdownReport(
   lines.push("");
 
   if (reports.length > 0 && achieved === 0) {
-    lines.push(`> **No persona finished what they came to do.** Their goals and what stopped them are below.`);
+    lines.push(hasTaskEvidence
+      ? "> **The saved task checks were not verified in any profile.** This does not prove the site is broken."
+      : `> **No persona finished what they came to do.** Their goals and what stopped them are below.`);
     lines.push("");
   }
 
-  lines.push("| Persona | Goal | Steps | States | UX observations |");
+  lines.push(`| Persona | ${hasTaskEvidence ? "Text check" : "Goal"} | Steps | States | UX observations |`);
   lines.push("|---------|:---:|:---:|:---:|:---:|");
   for (const r of reports) {
     const n = deduplicateFindings(r.agentResult.findings).length;

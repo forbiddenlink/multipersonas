@@ -5,9 +5,9 @@
 // forced colors / high-contrast, dark scheme) and measure whether the task can
 // still be completed under it. "Could checkout be finished with forced-colors
 // on?" is a fact, not a simulation of disability. These map to Playwright's
-// native newContext options, so they change what the page actually renders —
-// unlike the legacy `inputModality`/`connectionSpeed` fields, which today only
-// appear in the prompt and are never enforced.
+// native newContext options, so they change what the page actually renders.
+// Input modality and network throttling are enforced separately by the agent's
+// keyboard and network-conditions helpers.
 //
 // Pure + back-compat: a persona with no `conditions` yields {} (no overrides),
 // so every existing persona renders exactly as before.

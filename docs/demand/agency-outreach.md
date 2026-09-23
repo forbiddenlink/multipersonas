@@ -1,12 +1,12 @@
 # Agency demand campaign — Personaudit
 
-Updated 2026-08-29 to match **ADR 0002**. The ask is now a **paid pre-order**, not a
+Updated 2026-09-18 for authenticated Checkout; demand criteria remain **ADR 0002**. The ask is now a **paid pre-order**, not a
 waitlist signup. A free email cannot fail, so it was not a gate.
 
 Goal: find out whether the agency wedge is real before building the hosted
 session-artifact pipeline (ADR 0001).
 
-- **Ask:** $199/mo founding tier, via a Stripe **Payment Link**. No checkout build.
+- **Ask:** $199/mo founding tier, via authenticated **Stripe Checkout**.
 - **Target:** ~15 agencies.
 - **Pass:** 2 or more pay. **Fail:** zero pay, and the answer is the product, not the funnel.
 - **Also capture, from buyers AND decliners:** how many of their client sites sit behind a
@@ -15,9 +15,13 @@ session-artifact pipeline (ADR 0001).
   it on a no. A "we would never upload a client session" is a finding, not a rejection.
 
 Landing: https://personaudit.com/for-agencies
-Checkout: set `NEXT_PUBLIC_FOUNDING_CHECKOUT_URL` on Vercel to the Stripe Payment Link.
-Until it is set, the page shows the waitlist form alone and no one can pay.
-Fulfilment: manual, `docs/pro-access.md` (`update public.profiles set plan = 'pro'`).
+Checkout: `NEXT_PUBLIC_FOUNDING_CHECKOUT_URL` still controls offer visibility, but the
+button now calls `/api/checkout/founding` after sign-in. Configure the server Stripe
+variables and webhook described in `docs/DEPLOYMENT.md` before enabling the offer.
+Fulfilment: signed webhook updates the buyer's profile; manual support grants remain in
+`docs/pro-access.md`. Auth need and local-vs-hosted preference are not collected by the
+current authenticated Checkout route; record those answers separately, outside Codex.
+Complete the billing gates in `docs/plans/2026-09-18-continuation-review.md` before outreach.
 Owner signal: `/waitlist` (set `ADMIN_EMAILS` on Vercel to your login email).
 
 Campaign links — use these exactly so source and campaign appear with each lead:
@@ -166,3 +170,66 @@ Do **not** build billing until the middle row or better.
 - Templates: LinkedIn DM + email above
 
 **You** still own the 10 outreaches — agents cannot send personal DMs.
+
+## Saved-task pilot: test use before expanding the product
+
+Protocol added September 18, 2026, before participant results. This is a behavioral
+pilot for the deployed saved-task workflow; it does not replace ADR 0002's paid-demand
+gate or establish that hosted authenticated scanning is wanted.
+
+**Decision:** Does saving a concrete task and comparing a retest help a consultant or
+agency make a release decision enough that they return to use it?
+
+Start with five willing freelance web/accessibility consultants or small agency owners
+who have personally checked a website after a change within the last month. Recruit
+from one segment for this first pilot so the result is interpretable. Existing paying
+customers and personal acquaintances should be identified as separate cohorts by the
+research owner; do not mix their responses into a claim about cold demand.
+
+Run a 20-minute session on Liz-owned synthetic/demo sites. Do not use confidential
+client sites, client sessions, actual purchases, or production customer records. Keep
+participant identities, contact information, and raw notes outside Codex. Only aggregate
+counts and non-identifying issue descriptions belong in this repository.
+
+1. Establish the participant's recent workflow: the last release they checked, what they
+   did to check it, time spent, and what triggered a second check. Collect past behavior
+   before demonstrating the product.
+2. Give them the synthetic site and an outcome to check. Ask them to create a project,
+   define a task and distinctive expected text, save it, and start a run. Do not supply
+   the exact text or guide clicks unless they get stuck; record assistance separately.
+3. Ask what the result establishes and what it does not. They must distinguish an
+   observed page condition from human success, a completed transaction, and compliance.
+   Record whether they can locate the evidence and choose an actionable next step.
+4. Introduce the prepared site change. Observe whether they can retest under the same
+   conditions and explain the comparison without help.
+5. Leave access available. Within seven days, count a voluntary second session or a
+   concrete scheduled evaluation of a Liz-owned/demo site. A prompted same-session
+   retest does not count as return usage. Do not infer willingness to pay from praise.
+
+Predeclared continuation criteria (small-sample product decisions, not statistical
+proof):
+
+| Measure | Continue threshold | If missed |
+| --- | --- | --- |
+| Define/save/start a useful task without guidance | At least 4 of 5 | Fix the observed setup obstacle before adding features. |
+| Explain the text check's limits and locate evidence | At least 4 of 5 | Correct the misunderstanding before promoting stronger claims. |
+| Complete and interpret a comparable retest unaided | At least 4 of 5 | Fix the specific comparison/retest obstacle. |
+| Voluntarily return within seven days | At least 3 of 5 | Revisit frequency and value of the job; interviews alone do not justify expansion. |
+
+Track aggregate invited, eligible, attended, setup-unaided, evidence-understood,
+retest-unaided, returned-in-seven-days, and paid counts. Record denominators and the
+observation window. No-shows are recruitment outcomes; they must not disappear from
+invited/attended counts. Missing follow-up is not a return. Payment conversion remains
+**at least two actual payments from about 15 appropriate asks**, with one inconclusive
+and zero a failed gate, after the documented billing prerequisites pass.
+
+Current participant status: **not recruited or tested by this session**. No invitations
+have been sent. Liz must select the participant route and authorize specific recipients
+and sending before outbound recruitment. Research sessions require actual participants;
+AI-generated feedback and synthetic browser results cannot substitute for them.
+
+Method references: [Maze's task-result analysis](https://maze.co/guides/maze-101-guide/analyze-results/)
+separates observed task outcomes from qualitative feedback; [User Interviews' interview
+guide](https://www.userinterviews.com/ux-research-field-guide-chapter/user-interviews)
+explains combining interviews with observed behavior. The five-person pilot, thresholds,
+and seven-day return window above are our hypotheses, not benchmarks from those sources.

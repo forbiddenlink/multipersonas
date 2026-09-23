@@ -1,0 +1,184 @@
+{
+  "generatedAt": "2026-09-23T13:15:36.186Z",
+  "commit": "85dbcd1c05577ce9de51eae50d37b54cc51ea94c",
+  "workingTreeDirty": true,
+  "browserVersion": "151.0.7922.34",
+  "evaluator": "frozen-pre-hardening-reference",
+  "verifierSha256": "f792edcf9ceea1d7a4fa042ef03cddccbb70b4da8c1f1275707fb0fca0ac2cf2",
+  "harnessSha256": "d45cd019f542ae0698186c095858c7cd4abcca70a4972fa0923b2d02180c2526",
+  "scope": "Deterministic task-text assertion only. No model calls, customer pages, or competitor accounts. Actions are scripted; this does not measure agent navigation or business conversion.",
+  "cases": 8,
+  "repeats": 3,
+  "incompleteRuns": 21,
+  "falseSuccessIfUsedAsCompletion": 9,
+  "rows": [
+    {
+      "case": "working-action",
+      "repeat": 1,
+      "complete": true,
+      "observation": "observed",
+      "falseSuccessIfUsedAsCompletion": false
+    },
+    {
+      "case": "working-action",
+      "repeat": 2,
+      "complete": true,
+      "observation": "observed",
+      "falseSuccessIfUsedAsCompletion": false
+    },
+    {
+      "case": "working-action",
+      "repeat": 3,
+      "complete": true,
+      "observation": "observed",
+      "falseSuccessIfUsedAsCompletion": false
+    },
+    {
+      "case": "broken-action",
+      "repeat": 1,
+      "complete": false,
+      "observation": "not-observed",
+      "falseSuccessIfUsedAsCompletion": false
+    },
+    {
+      "case": "broken-action",
+      "repeat": 2,
+      "complete": false,
+      "observation": "not-observed",
+      "falseSuccessIfUsedAsCompletion": false
+    },
+    {
+      "case": "broken-action",
+      "repeat": 3,
+      "complete": false,
+      "observation": "not-observed",
+      "falseSuccessIfUsedAsCompletion": false
+    },
+    {
+      "case": "hidden-confirmation",
+      "repeat": 1,
+      "complete": false,
+      "observation": "not-observed",
+      "falseSuccessIfUsedAsCompletion": false
+    },
+    {
+      "case": "hidden-confirmation",
+      "repeat": 2,
+      "complete": false,
+      "observation": "not-observed",
+      "falseSuccessIfUsedAsCompletion": false
+    },
+    {
+      "case": "hidden-confirmation",
+      "repeat": 3,
+      "complete": false,
+      "observation": "not-observed",
+      "falseSuccessIfUsedAsCompletion": false
+    },
+    {
+      "case": "substring-example",
+      "repeat": 1,
+      "complete": false,
+      "observation": "not-observed",
+      "falseSuccessIfUsedAsCompletion": false
+    },
+    {
+      "case": "substring-example",
+      "repeat": 2,
+      "complete": false,
+      "observation": "not-observed",
+      "falseSuccessIfUsedAsCompletion": false
+    },
+    {
+      "case": "substring-example",
+      "repeat": 3,
+      "complete": false,
+      "observation": "not-observed",
+      "falseSuccessIfUsedAsCompletion": false
+    },
+    {
+      "case": "stale-confirmation",
+      "repeat": 1,
+      "complete": false,
+      "observation": "observed",
+      "falseSuccessIfUsedAsCompletion": true
+    },
+    {
+      "case": "stale-confirmation",
+      "repeat": 2,
+      "complete": false,
+      "observation": "observed",
+      "falseSuccessIfUsedAsCompletion": true
+    },
+    {
+      "case": "stale-confirmation",
+      "repeat": 3,
+      "complete": false,
+      "observation": "observed",
+      "falseSuccessIfUsedAsCompletion": true
+    },
+    {
+      "case": "editable-echo",
+      "repeat": 1,
+      "complete": false,
+      "observation": "observed",
+      "falseSuccessIfUsedAsCompletion": true
+    },
+    {
+      "case": "editable-echo",
+      "repeat": 2,
+      "complete": false,
+      "observation": "observed",
+      "falseSuccessIfUsedAsCompletion": true
+    },
+    {
+      "case": "editable-echo",
+      "repeat": 3,
+      "complete": false,
+      "observation": "observed",
+      "falseSuccessIfUsedAsCompletion": true
+    },
+    {
+      "case": "readonly-input-example",
+      "repeat": 1,
+      "complete": false,
+      "observation": "not-observed",
+      "falseSuccessIfUsedAsCompletion": false
+    },
+    {
+      "case": "readonly-input-example",
+      "repeat": 2,
+      "complete": false,
+      "observation": "not-observed",
+      "falseSuccessIfUsedAsCompletion": false
+    },
+    {
+      "case": "readonly-input-example",
+      "repeat": 3,
+      "complete": false,
+      "observation": "not-observed",
+      "falseSuccessIfUsedAsCompletion": false
+    },
+    {
+      "case": "wrong-context-confirmation",
+      "repeat": 1,
+      "complete": false,
+      "observation": "observed",
+      "falseSuccessIfUsedAsCompletion": true
+    },
+    {
+      "case": "wrong-context-confirmation",
+      "repeat": 2,
+      "complete": false,
+      "observation": "observed",
+      "falseSuccessIfUsedAsCompletion": true
+    },
+    {
+      "case": "wrong-context-confirmation",
+      "repeat": 3,
+      "complete": false,
+      "observation": "observed",
+      "falseSuccessIfUsedAsCompletion": true
+    }
+  ]
+}

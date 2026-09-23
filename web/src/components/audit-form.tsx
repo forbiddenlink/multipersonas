@@ -36,10 +36,10 @@ function readStoredResults(): AuditResponse | null {
 
 /** Read an in-flight job's id, preferring sessionStorage (survives a refresh) and
  * falling back to the ?job= URL param (survives a copy/pasted or shared link). */
-function readActiveJob(): ActiveJob | null {
+function readActiveJob(storageKey = ACTIVE_JOB_KEY): ActiveJob | null {
   if (typeof window === "undefined") return null;
   try {
-    const saved = sessionStorage.getItem(ACTIVE_JOB_KEY);
+    const saved = sessionStorage.getItem(storageKey);
     if (saved) return JSON.parse(saved) as ActiveJob;
   } catch {
     // ignore malformed storage
@@ -55,13 +55,13 @@ function readActiveJob(): ActiveJob | null {
 
 /** Persist (or clear) the active job so neither a refresh nor the ~3-min client
  * poll deadline can strand an anon scan the 1/hour quota won't let you resubmit. */
-function persistActiveJob(job: ActiveJob | null) {
+function persistActiveJob(job: ActiveJob | null, storageKey = ACTIVE_JOB_KEY) {
   if (typeof window === "undefined") return;
   try {
     if (job) {
-      sessionStorage.setItem(ACTIVE_JOB_KEY, JSON.stringify(job));
+      sessionStorage.setItem(storageKey, JSON.stringify(job));
     } else {
-      sessionStorage.removeItem(ACTIVE_JOB_KEY);
+      sessionStorage.removeItem(storageKey);
     }
   } catch {
     // Storage full or unavailable — resume-on-refresh just won't work this session
@@ -138,6 +138,7 @@ export function AuditForm({
   submitLabel?: string;
 } = {}) {
   const router = useRouter();
+  const activeJobStorageKey = projectId ? `${ACTIVE_JOB_KEY}:${projectId}` : ACTIVE_JOB_KEY;
   const abortRef = useRef<AbortController | null>(null);
   const [url, setUrl] = useState(defaultUrl ?? "");
   const [loading, setLoading] = useState(false);
@@ -149,8 +150,10 @@ export function AuditForm({
   // react-hooks/set-state-in-effect cascading-render warnings. An active job is only
   // relevant when there isn't already a completed result to show.
   const [init] = useState(() => {
-    const storedResults = readStoredResults();
-    const activeJob = storedResults ? null : readActiveJob();
+    // Project results already live in history. Start a fresh task check instead of
+    // restoring a completed audit from another project or an older task definition.
+    const storedResults = projectId ? null : readStoredResults();
+    const activeJob = storedResults ? null : readActiveJob(activeJobStorageKey);
     return { storedResults, activeJob };
   });
   const [selected, setSelected] = useState<Set<string>>(() => {
@@ -243,7 +246,7 @@ export function AuditForm({
     // Terminal state (completed or failed): nothing left to resume.
     setLoading(false);
     setPendingJobId(null);
-    persistActiveJob(null);
+    persistActiveJob(null, activeJobStorageKey);
 
     if (outcome.status === "failed") {
       setError(outcome.error);
@@ -260,7 +263,7 @@ export function AuditForm({
 
     // Persist to sessionStorage so results survive refresh
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(outcome.result));
+      if (!projectId) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(outcome.result));
     } catch {
       // Storage full or unavailable — results still shown, just won't survive refresh
     }
@@ -343,7 +346,7 @@ export function AuditForm({
 
       const jobId = data.jobId as string;
       setPendingJobId(jobId);
-      persistActiveJob({ jobId, personaIds });
+      persistActiveJob({ jobId, personaIds }, activeJobStorageKey);
 
       // The audit runs in a worker; poll until it finishes.
       await watchJob(jobId, personaIds);
@@ -358,15 +361,15 @@ export function AuditForm({
   }
 
   function handleReset() {
-    setUrl("");
+    setUrl(defaultUrl ?? "");
     setResults(null);
     setError(null);
     setPersonaStatuses({});
     setPendingJobId(null);
     setTimedOut(false);
-    persistActiveJob(null);
+    persistActiveJob(null, activeJobStorageKey);
     try {
-      sessionStorage.removeItem(STORAGE_KEY);
+      if (!projectId) sessionStorage.removeItem(STORAGE_KEY);
     } catch {
       // ignore
     }

@@ -22,6 +22,7 @@ export interface GradeScanResult {
   entryUrl: string;
   report: GradeReport;
   pagesVisited: string[];
+  /** Discovered URLs not evaluated, including failed/blocked loads and the page cap. */
   skipped: string[];
 }
 
@@ -55,6 +56,7 @@ export async function gradeScan(
   const browser = await launchAuditBrowser({ headless: true });
   const pages: PageAxe[] = [];
   const visited: string[] = [];
+  const skipped: string[] = [];
   const seen = new Set<string>([entry.href]);
   const queue: string[] = [entry.href];
 
@@ -74,23 +76,45 @@ export async function gradeScan(
     });
 
     const page = await context.newPage();
+    let loadedDocument: string | null = null;
 
     while (queue.length > 0 && visited.length < maxPages) {
       const url = queue.shift()!;
 
       // Re-validate every hop: a same-origin link can redirect to a private
       // address, and this runs on stranger-supplied URLs.
-      if (!(await isUrlAllowed(url))) continue;
+      if (!(await isUrlAllowed(url))) {
+        skipped.push(url);
+        continue;
+      }
 
       try {
-        await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
+        const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
+        const documentUrl = new URL(page.url());
+        documentUrl.hash = "";
+        // Playwright resolves goto for HTTP errors. An error document is not
+        // evidence about the page the visitor asked us to evaluate.
+        // Hash-route navigation can return null while retaining a known-good
+        // document; preserve those SPA states without trusting an initial null.
+        if (response ? !response.ok() : loadedDocument !== documentUrl.href) {
+          loadedDocument = null;
+          skipped.push(url);
+          continue;
+        }
+        loadedDocument = documentUrl.href;
         // SPA routes render after load; scanning too early undercounts.
         await page.waitForTimeout(1500);
       } catch {
+        loadedDocument = null;
+        skipped.push(url);
         continue;
       }
 
       const results = await new AxeBuilder({ page }).analyze();
+      if (results.passes.length === 0 && results.violations.length === 0) {
+        skipped.push(url);
+        continue;
+      }
       const byImpact = emptyImpacts();
       let aa = 0;
       const rules: GradeRuleHit[] = [];
@@ -139,10 +163,14 @@ export async function gradeScan(
     await browser.close();
   }
 
+  if (pages.length === 0) {
+    throw new Error("No public pages could be evaluated. Please try again.");
+  }
+
   return {
     entryUrl: entry.href,
-    report: computeGrade(pages),
+    report: { ...computeGrade(pages), coverage: { pageLimit: maxPages, skippedPages: skipped.length + queue.length } },
     pagesVisited: visited,
-    skipped: queue,
+    skipped: [...skipped, ...queue],
   };
 }

@@ -33,21 +33,23 @@ export function gradeStatusFromJob({
 export async function getGraderScan(token: string) {
   const admin = createAdminClient();
   if (!admin) return null;
-  const { data } = await admin
+  const { data, error } = await admin
     .from("grader_scans")
     .select("token, entry_url, status, report, pages_visited, error, created_at, job_id")
     .eq("token", token)
-    .single();
+    .maybeSingle();
+  if (error) throw new Error("Could not load scan result.");
   if (!data) return null;
 
   let jobStatus: string | null = null;
   let jobError: string | null = null;
   if (data.job_id) {
-    const { data: job } = await admin
+    const { data: job, error: jobReadError } = await admin
       .from("audit_jobs")
       .select("status,error")
       .eq("id", data.job_id)
-      .single();
+      .maybeSingle();
+    if (jobReadError) throw new Error("Could not load scan status.");
     jobStatus = job?.status ?? null;
     jobError = job?.error ?? null;
   }
