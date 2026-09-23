@@ -96,9 +96,24 @@ test("save a task, record a keyboard barrier, fix it, and compare the retest", a
     await expect(page.getByText("inferred frustration", { exact: false })).toHaveCount(0);
     await page.goto(`/audits/${runIds[1]}/report`);
     await expect(page.getByText(task.goal, { exact: true })).toBeVisible();
-    await expect(page.getByText("Task text-check results", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Task tested", exact: true })).toBeVisible();
+    await expect(page.getByText(/Expected text observed/)).toBeVisible();
 
     await page.goto(`/projects/${projectId}`);
+    await page.getByLabel("Expected final URL (optional)").fill("https://example.com/quote");
+    await page.getByLabel("Require the expected text to be absent at the start and visible at the end").check();
+    await page.getByRole("button", { name: "Save task", exact: true }).click();
+    await page.reload();
+    await expect(page.getByLabel("Expected final URL (optional)")).toHaveValue("https://example.com/quote");
+    const contextual = await admin.from("projects").select("task_definition").eq("id", projectId).single();
+    expect(contextual.data?.task_definition).toEqual({ ...task, version: 2, requireNewText: true, expectedUrl: "https://example.com/quote" });
+    await page.getByLabel("Expected final URL (optional)").fill("https://other.example/quote");
+    await page.getByRole("button", { name: "Save task", exact: true }).click();
+    await expect(page.getByRole("alert")).toContainText("same protocol, hostname, and port");
+    await expect(page.getByLabel("Expected final URL (optional)")).toHaveValue("https://example.com/quote");
+
+    await page.getByLabel("Expected final URL (optional)").fill("");
+    await page.getByLabel("Require the expected text to be absent at the start and visible at the end").uncheck();
     await page.getByLabel("What should a visitor accomplish?").fill("");
     await page.getByLabel("Exact visible text expected on the final page").fill("");
     await page.getByRole("button", { name: "Save task", exact: true }).click();
