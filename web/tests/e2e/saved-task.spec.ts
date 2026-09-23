@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { test, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { verifyTaskText } from "../../../src/tasks/verify";
@@ -14,9 +15,11 @@ test("save a task, record a keyboard barrier, fix it, and compare the retest", a
   const admin = createClient(url, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const users = await admin.auth.admin.listUsers();
-  const userId = users.data.users.find((user) => user.email === TEST_USER.email)?.id;
-  if (users.error || !userId) throw new Error("Synthetic user is missing");
+  // Each device/retry gets its own caller allowance; never reset shared rate limits.
+  const email = `saved-task-${randomUUID()}@personaudit.test`;
+  const account = await admin.auth.admin.createUser({ email, password: TEST_USER.password, email_confirm: true });
+  if (account.error || !account.data.user) throw new Error("Could not create the isolated synthetic user");
+  const userId = account.data.user.id;
   const promoted = await admin.from("profiles").update({ plan: "pro" }).eq("id", userId);
   if (promoted.error) throw promoted.error;
   const created = await admin.from("projects").insert({
@@ -37,11 +40,22 @@ test("save a task, record a keyboard barrier, fix it, and compare the retest", a
   const uploads: string[] = [];
   const runIds: string[] = [];
   const jobIds: string[] = [];
+  async function saveTask(): Promise<void> {
+    const response = page.waitForResponse((res) => res.request().method() === "POST" && new URL(res.url()).pathname === `/projects/${projectId}`);
+    await page.getByRole("button", { name: "Save task", exact: true }).click();
+    await (await response).finished();
+  }
   try {
+    await context.clearCookies();
+    await page.goto("/auth/login");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password", { exact: true }).fill(TEST_USER.password);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
     await page.goto(`/projects/${projectId}`);
     await page.getByLabel("What should a visitor accomplish?").fill(task.goal);
     await page.getByLabel("Exact visible text expected on the final page").fill(task.successText);
-    await page.getByRole("button", { name: "Save task", exact: true }).click();
+    await saveTask();
     await expect(page.getByRole("button", { name: "Test saved task", exact: true })).toBeVisible();
     await page.reload();
     await expect(page.getByLabel("What should a visitor accomplish?")).toHaveValue(task.goal);
@@ -102,21 +116,21 @@ test("save a task, record a keyboard barrier, fix it, and compare the retest", a
     await page.goto(`/projects/${projectId}`);
     await page.getByLabel("Expected final URL (optional)").fill("https://example.com/quote");
     await page.getByLabel("Require the expected text to be absent at the start and visible at the end").check();
-    await page.getByRole("button", { name: "Save task", exact: true }).click();
+    await saveTask();
     await page.reload();
     await expect(page.getByLabel("Expected final URL (optional)")).toHaveValue("https://example.com/quote");
     const contextual = await admin.from("projects").select("task_definition").eq("id", projectId).single();
     expect(contextual.data?.task_definition).toEqual({ ...task, version: 2, requireNewText: true, expectedUrl: "https://example.com/quote" });
     await page.getByLabel("Expected final URL (optional)").fill("https://other.example/quote");
-    await page.getByRole("button", { name: "Save task", exact: true }).click();
-    await expect(page.getByRole("alert")).toContainText("same protocol, hostname, and port");
+    await saveTask();
+    await expect(page.getByRole("alert").filter({ hasText: "same protocol, hostname, and port" })).toBeVisible();
     await expect(page.getByLabel("Expected final URL (optional)")).toHaveValue("https://example.com/quote");
 
     await page.getByLabel("Expected final URL (optional)").fill("");
     await page.getByLabel("Require the expected text to be absent at the start and visible at the end").uncheck();
     await page.getByLabel("What should a visitor accomplish?").fill("");
     await page.getByLabel("Exact visible text expected on the final page").fill("");
-    await page.getByRole("button", { name: "Save task", exact: true }).click();
+    await saveTask();
     await expect(page.getByRole("button", { name: "Run audit", exact: true })).toBeVisible();
     const oldRun = await admin.from("test_runs").select("task_definition").eq("id", runIds[0]).single();
     expect(oldRun.data?.task_definition).toEqual(task);
@@ -126,5 +140,7 @@ test("save a task, record a keyboard barrier, fix it, and compare the retest", a
     if (jobIds.length) await admin.from("audit_jobs").delete().in("id", jobIds);
     if (runIds.length) await admin.from("test_runs").delete().in("id", runIds);
     await admin.from("projects").delete().eq("id", projectId);
+    await admin.from("rate_limits").delete().eq("key", userId);
+    await admin.auth.admin.deleteUser(userId);
   }
 });
