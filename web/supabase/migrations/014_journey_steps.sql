@@ -4,7 +4,7 @@
 -- the persona's inner-monologue reasoning per step — the engine captures it, the worker
 -- has always thrown it away with the tmp dir. This migration gives that walk a home so the
 -- audit detail page can replay it: a scrubbable timeline of what a real user saw, thought,
--- and hit at each moment (Persona Replay Theater, docs/plans/2026-07-30-replay-theater-design.md).
+-- and hit at each moment (Persona Replay Theater; design doc removed in the docs cleanup, see git log for docs/plans/2026-07-30-replay-theater-design.md).
 --
 -- Ownership + writes:
 --   - Rows are scoped to a run's owner through test_runs.user_id (same shape as `findings`),
