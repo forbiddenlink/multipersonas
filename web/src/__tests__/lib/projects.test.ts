@@ -161,15 +161,53 @@ describe("updateProject", () => {
 });
 
 describe("deleteProject", () => {
-  it("deletes the row by id", async () => {
-    const supabase = makeSupabase({ data: null, error: null });
+  it("removes replay files before deleting the project row", async () => {
+    const deleted: string[] = [];
+    const supabase = {
+      from(table: string) {
+        const builder = {
+          select: () => builder,
+          eq: () => builder,
+          in: () => builder,
+          not: () => builder,
+          order: () => builder,
+          range: () => builder,
+          delete() {
+            deleted.push(table);
+            return builder;
+          },
+          then(onFulfilled: (value: unknown) => unknown) {
+            if (table === "projects") return Promise.resolve({ error: null }).then(onFulfilled);
+            return Promise.resolve({ data: [], error: null, count: 0 }).then(onFulfilled);
+          },
+        };
+        return builder;
+      },
+      storage: { from: () => ({ remove: vi.fn(), createSignedUrls: vi.fn() }) },
+    };
     await deleteProject(supabase as never, "p1");
-    expect(supabase.query.calls.delete).toEqual([]);
-    expect(supabase.query.calls.eq).toEqual(["id", "p1"]);
+    expect(deleted).toEqual(["projects"]);
   });
 
-  it("throws when RLS blocks the delete", async () => {
-    const supabase = makeSupabase({ data: null, error: { message: "denied" } });
-    await expect(deleteProject(supabase as never, "p1")).rejects.toThrow("denied");
+  it("keeps the project when replay removal cannot list its runs", async () => {
+    const supabase = {
+      from: () => {
+        const builder = {
+          select: () => builder,
+          eq: () => builder,
+          order: () => builder,
+          range: () => builder,
+          delete: () => builder,
+          then(onFulfilled: (value: unknown) => unknown) {
+            return Promise.resolve({ data: null, error: { message: "storage down" }, count: null }).then(onFulfilled);
+          },
+        };
+        return builder;
+      },
+      storage: { from: () => ({}) },
+    };
+    await expect(deleteProject(supabase as never, "p1")).rejects.toThrow(
+      "Could not delete stored replay screenshots.",
+    );
   });
 });

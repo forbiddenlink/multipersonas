@@ -4,10 +4,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
 
-/** Wraps the delete Server Action with an inline two-step confirm — cascade-deletes every
- * saved run (and its findings) for the project via the FK, so this needs an explicit
- * warning before the POST fires. No native window.confirm — styled to match the forensic
- * UI instead. */
+/** Wraps the delete Server Action with an inline two-step confirm. Deletion removes
+ * stored replay screenshots, then cascade-deletes every saved run and its findings.
+ * No native window.confirm — styled to match the forensic UI instead. */
 export function DeleteProjectForm({
   action,
   projectName,
@@ -21,10 +20,10 @@ export function DeleteProjectForm({
     return (
       <form
         action={action}
-        className="flex items-center gap-2 rounded-sm border border-destructive/30 bg-destructive/10 px-3 py-2"
+        className="flex flex-wrap items-center gap-2 rounded-sm border border-destructive/30 bg-destructive/10 px-3 py-2"
       >
         <p className="font-mono text-xs text-destructive">
-          Delete &ldquo;{projectName}&rdquo; permanently?
+          Delete &ldquo;{projectName}&rdquo; and its saved runs and replay screenshots?
         </p>
         <SubmitButton variant="destructive" size="sm">
           Confirm

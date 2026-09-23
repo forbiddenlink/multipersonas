@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json, TablesInsert, TablesUpdate } from "@/lib/supabase/types";
+import { removeProjectReplayFiles } from "@/lib/replay-files";
 
 type SB = SupabaseClient<Database>;
 
@@ -95,11 +96,13 @@ export async function updateProject(
 }
 
 /**
- * Delete a project. RLS restricts this to rows owned by the caller. The
- * `test_runs.project_id -> on delete cascade` FK means this also deletes every
- * saved run (and its findings) for the project — callers must warn before calling.
+ * Delete a project. RLS restricts this to rows owned by the caller. Replay
+ * screenshots are removed first, while the runs they belong to still exist.
+ * The `test_runs.project_id -> on delete cascade` FK then deletes every saved
+ * run and its findings. The project row is kept when screenshot removal fails.
  */
 export async function deleteProject(supabase: SB, id: string): Promise<void> {
+  await removeProjectReplayFiles(supabase, id);
   const { error } = await supabase.from("projects").delete().eq("id", id);
   if (error) throw new Error(error.message);
 }

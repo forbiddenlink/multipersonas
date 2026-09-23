@@ -72,8 +72,13 @@ export default function PrivacyPage() {
             be viewed by anyone with the result link, so treat that link as shareable.
           </p>
           <p>
-            To request deletion of account data, audit records, or stored replay files, contact
-            us below. Do not assume that deleting a project also deletes every stored replay file.
+            Deleting a project removes that project&apos;s saved runs and the replay screenshots
+            already stored for those runs. The project is kept if those screenshots cannot be
+            removed. A screenshot uploaded while deletion is in progress can remain in private
+            storage. Deleting a project does not delete your account or billing records.
+          </p>
+          <p>
+            To request deletion of your account or other stored data, contact us below.
           </p>
         </Section>
 
