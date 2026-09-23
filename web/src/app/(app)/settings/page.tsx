@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { BoxDivider } from "@/components/forensic/divider";
 import { updateAgencyNameAction } from "./actions";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { ManageBillingButton } from "@/components/manage-billing-button";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -28,10 +29,11 @@ export default async function SettingsPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("plan,agency_name")
+    .select("plan,agency_name,stripe_customer_id")
     .eq("id", user.id)
     .single();
   const foundingAccessOpen = isFoundingCheckoutOpen();
+  const hasBillingCustomer = Boolean(profile?.stripe_customer_id?.trim());
 
   return (
     <div className="max-w-2xl">
@@ -77,15 +79,19 @@ export default async function SettingsPage({
       ) : null}
 
       <p className="mt-3 text-sm text-muted-foreground">
-        For cancellation, invoices, payment issues, or refund requests,{" "}
+        For a refund request,{" "}
         <a
           href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "hello@personaudit.com"}?subject=Personaudit%20billing%20support`}
           className="text-foreground underline underline-offset-4"
         >
           contact billing support
         </a>
-        . This opens an email request; it does not automatically cancel your subscription.
+        . A refund request does not by itself cancel a subscription.
+        {hasBillingCustomer
+          ? " Payment changes, invoices, and cancellation open in Stripe."
+          : " Cancellation currently starts with that email."}
       </p>
+      {hasBillingCustomer ? <ManageBillingButton /> : null}
 
       {(profile?.plan ?? "free") === "free" && (
         <p className="mt-3 text-sm text-muted-foreground">
