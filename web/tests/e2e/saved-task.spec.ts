@@ -137,10 +137,20 @@ test("save a task, record a keyboard barrier, fix it, and compare the retest", a
   } finally {
     await target.close();
     if (uploads.length) await admin.storage.from("journeys").remove(uploads);
-    if (jobIds.length) await admin.from("audit_jobs").delete().in("id", jobIds);
+    if (jobIds.length) {
+      const reservations = await admin.from("audit_jobs").select("reserved_calls, caller_key").in("id", jobIds);
+      if (reservations.error) throw reservations.error;
+      // No worker runs in this fixture; refund only these unconsumed reservations.
+      for (const job of reservations.data) {
+        const refund = await admin.rpc("release_model_calls_scoped", { p_calls: job.reserved_calls, p_caller: job.caller_key });
+        if (refund.error) throw refund.error;
+      }
+      await admin.from("audit_jobs").delete().in("id", jobIds);
+    }
     if (runIds.length) await admin.from("test_runs").delete().in("id", runIds);
     await admin.from("projects").delete().eq("id", projectId);
     await admin.from("rate_limits").delete().eq("key", userId);
+    await admin.from("usage_counters_by_caller").delete().eq("caller", userId);
     await admin.auth.admin.deleteUser(userId);
   }
 });
