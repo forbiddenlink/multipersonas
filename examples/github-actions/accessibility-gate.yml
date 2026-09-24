@@ -6,10 +6,10 @@
 #
 # Setup:
 #   1. Commit a baseline once, against your deployed app or a preview:
-#        npx multipersonas scan "$URL" --session session.json --baseline mpersonas-baseline.json --update-baseline
+#        npx personaudit scan "$URL" --session session.json --baseline mpersonas-baseline.json --update-baseline
 #      Commit mpersonas-baseline.json.
 #   2. Provide a session for behind-login scanning. Capture it locally with
-#        npx multipersonas auth "$URL" --save session.json
+#        npx personaudit auth "$URL" --save session.json
 #      then store its CONTENTS as the MPERSONAS_SESSION secret. It holds live
 #      cookies — treat it like a password, and rotate it when it expires.
 #
@@ -26,7 +26,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install -g multipersonas
+      - run: npm install -g personaudit
       - run: npx playwright install --with-deps chromium
 
       # Session is optional — omit for a public site.
@@ -38,7 +38,7 @@ jobs:
 
       - name: Scan and gate on new critical/serious defects
         run: |
-          mpersonas scan "${{ vars.MPERSONAS_TARGET_URL }}" \
+          personaudit scan "${{ vars.MPERSONAS_TARGET_URL }}" \
             ${{ secrets.MPERSONAS_SESSION != '' && '--session session.json' || '' }} \
             --baseline mpersonas-baseline.json \
             --fail-on serious

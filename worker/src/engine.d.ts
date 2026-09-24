@@ -1,9 +1,9 @@
 // Ambient types for the engine's published entry points. The root package exports
 // runtime JS without .d.ts; the worker only needs these narrow shapes, so declare them
 // here rather than widen the root package's build surface.
-declare module "multipersonas/orchestrator" {
+declare module "personaudit/orchestrator" {
   export interface TestOptions {
-    task?: import("multipersonas/tasks").TaskDefinition;
+    task?: import("personaudit/tasks").TaskDefinition;
     url: string;
     personas: unknown[];
     outputDir: string;
@@ -35,7 +35,7 @@ declare module "multipersonas/orchestrator" {
   export interface EnginePersonaResult {
     persona: { id: string; name: string; description: string };
     agentResult: {
-      taskEvidence?: import("multipersonas/tasks").TaskEvidence;
+      taskEvidence?: import("personaudit/tasks").TaskEvidence;
       goalCompleted: boolean;
       totalSteps: number;
       pagesVisited: unknown[];
@@ -45,7 +45,7 @@ declare module "multipersonas/orchestrator" {
     };
   }
   export interface TestResult {
-    task?: import("multipersonas/tasks").TaskDefinition;
+    task?: import("personaudit/tasks").TaskDefinition;
     url: string;
     taskSuccess: { achieved: number; total: number };
     personas: EnginePersonaResult[];
@@ -68,12 +68,12 @@ declare module "multipersonas/orchestrator" {
   export function runMultiPersonaTest(options: TestOptions): Promise<TestResult>;
 }
 
-declare module "multipersonas/personas/library" {
+declare module "personaudit/personas/library" {
   export const personaLibrary: Record<string, unknown>;
   export function isBuiltinPersonaId(id: string): boolean;
 }
 
-declare module "multipersonas/domain/vocab" {
+declare module "personaudit/domain/vocab" {
   export function clampSeverity(value: string): "critical" | "serious" | "moderate" | "minor";
   export function clampFindingCategory(value: string): "accessibility" | "usability" | "performance" | "content";
 }

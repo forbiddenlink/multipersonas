@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { GradeScanResult } from "multipersonas/grader";
+import type { GradeScanResult } from "personaudit/grader";
 
 /** Persist a queue transition before reporting success or releasing budget. */
 export async function writeJobState(write: PromiseLike<{ error: { message: string } | null }>): Promise<void> {

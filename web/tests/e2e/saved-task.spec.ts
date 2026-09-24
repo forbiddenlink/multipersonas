@@ -41,9 +41,14 @@ test("save a task, record a keyboard barrier, fix it, and compare the retest", a
   const runIds: string[] = [];
   const jobIds: string[] = [];
   async function saveTask(): Promise<void> {
+    // Wait for the server action's POST to arrive, but NOT for its body to finish.
+    // A Next server action replies with a streamed RSC payload, and `.finished()`
+    // on it does not resolve here -- it hangs until the test's own 90s budget runs
+    // out, with the save itself already applied. Callers assert the resulting UI,
+    // which is the real signal that the action completed.
     const response = page.waitForResponse((res) => res.request().method() === "POST" && new URL(res.url()).pathname === `/projects/${projectId}`);
     await page.getByRole("button", { name: "Save task", exact: true }).click();
-    await (await response).finished();
+    await response;
   }
   try {
     await context.clearCookies();

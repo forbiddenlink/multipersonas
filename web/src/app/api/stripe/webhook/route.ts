@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { GRANT_RANK, PLANS, isPlanKey } from "@/lib/plans";
 
 export const runtime = "nodejs";
 
@@ -8,7 +9,7 @@ function stripeClient(): Stripe | null {
   return key ? new Stripe(key) : null;
 }
 
-async function setPlan(userId: string, plan: "free" | "pro", customerId?: string): Promise<void> {
+async function setPlan(userId: string, plan: "free" | "pro" | "team", customerId?: string): Promise<void> {
   const admin = createAdminClient();
   if (!admin) throw new Error("Admin client is not configured");
   const update = customerId ? { plan, stripe_customer_id: customerId } : { plan };
@@ -16,15 +17,19 @@ async function setPlan(userId: string, plan: "free" | "pro", customerId?: string
   if (error || !data) throw new Error("Could not persist subscription access");
 }
 
-async function syncFoundingPlan(stripe: Stripe, userId: string, customerId: string): Promise<void> {
+async function syncPaidPlan(stripe: Stripe, userId: string, customerId: string): Promise<void> {
   // Webhooks can be retried or delivered out of order. Read current subscriptions
   // so an old cancellation cannot revoke a replacement subscription's access.
-  let plan: "free" | "pro" = "free";
+  // Keep the STRONGEST entitled grant rather than the first one seen: a customer who
+  // upgrades solo -> founding briefly holds both, and stopping at the first match
+  // could downgrade them to the tier they just left.
+  let plan: "free" | "pro" | "team" = "free";
   for await (const subscription of stripe.subscriptions.list({ customer: customerId, status: "all", limit: 100 })) {
     const entitled = subscription.status === "active" || subscription.status === "trialing";
-    if (entitled && subscription.metadata.personaudit_plan === "founding" && subscription.metadata.supabase_user_id === userId) {
-      plan = "pro";
-      break;
+    const key = subscription.metadata.personaudit_plan;
+    if (entitled && isPlanKey(key) && subscription.metadata.supabase_user_id === userId) {
+      const grant = PLANS[key].grants;
+      if (GRANT_RANK[grant] > GRANT_RANK[plan]) plan = grant;
     }
   }
   await setPlan(userId, plan, customerId);
@@ -48,17 +53,17 @@ export async function POST(request: Request): Promise<Response> {
       const session = event.data.object as Stripe.Checkout.Session;
       const userId = session.metadata?.supabase_user_id;
       const paymentComplete = session.payment_status === "paid" || session.payment_status === "no_payment_required";
-      if (session.mode === "subscription" && paymentComplete && session.metadata?.personaudit_plan === "founding" && userId && typeof session.customer === "string") {
-        await syncFoundingPlan(stripe, userId, session.customer);
+      if (session.mode === "subscription" && paymentComplete && isPlanKey(session.metadata?.personaudit_plan) && userId && typeof session.customer === "string") {
+        await syncPaidPlan(stripe, userId, session.customer);
       }
     }
 
     if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
       const subscription = event.data.object as Stripe.Subscription;
       const userId = subscription.metadata.supabase_user_id;
-      if (subscription.metadata.personaudit_plan === "founding" && userId) {
+      if (isPlanKey(subscription.metadata.personaudit_plan) && userId) {
         const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
-        await syncFoundingPlan(stripe, userId, customerId);
+        await syncPaidPlan(stripe, userId, customerId);
       }
     }
   } catch {

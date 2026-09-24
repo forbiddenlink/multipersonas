@@ -18,6 +18,18 @@ insert into storage.objects(bucket_id, name) values
   ('journeys', 'not-a-run/keyboard-traversal/step-000.png'),
   ('replay-delete-other', '30000000-0000-4000-8000-0000000000a1/keyboard-traversal/step-000.png');
 
+-- storage-api v1.54.0 ships `protect_objects_delete`, a BEFORE DELETE trigger on
+-- storage.objects declared FOR EACH STATEMENT (migration 0055-prevent-direct-deletes).
+-- A statement-level trigger fires even when RLS would match zero rows, so it aborted
+-- this test before a single policy was evaluated.
+--
+-- storage.allow_delete_query is that migration's own escape hatch: protect_delete()
+-- returns without raising when it reads 'true'. Set it here, as the superuser and
+-- before dropping to `authenticated`, because `set local` holds for the rest of the
+-- transaction and the rollback discards it. RLS is untouched and still does the work
+-- every assertion below depends on.
+set local storage.allow_delete_query = 'true';
+
 set local role authenticated;
 set local request.jwt.claim.sub = '10000000-0000-4000-8000-0000000000a1';
 do $$ declare affected int; begin

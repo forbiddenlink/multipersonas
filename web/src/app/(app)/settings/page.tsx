@@ -7,6 +7,7 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { Badge } from "@/components/ui/badge";
 import { BoxDivider } from "@/components/forensic/divider";
 import { updateAgencyNameAction } from "./actions";
+import { planAllowsReportBranding } from "@/lib/entitlements";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ManageBillingButton } from "@/components/manage-billing-button";
 
@@ -33,6 +34,7 @@ export default async function SettingsPage({
     .eq("id", user.id)
     .single();
   const foundingAccessOpen = isFoundingCheckoutOpen();
+  const reportBrandingAllowed = planAllowsReportBranding(profile?.plan);
   const hasBillingCustomer = Boolean(profile?.stripe_customer_id?.trim());
 
   return (
@@ -51,6 +53,12 @@ export default async function SettingsPage({
       {error === "agency" ? (
         <p role="alert" className="mt-4 rounded-sm border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           Couldn&apos;t save the agency name. Try again.
+        </p>
+      ) : null}
+      {error === "agency-plan" ? (
+        <p role="alert" className="mt-4 rounded-sm border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          White-label report headers need agency access. Your report still exports with the
+          Personaudit header.
         </p>
       ) : null}
 
@@ -114,6 +122,18 @@ export default async function SettingsPage({
           Shown as &ldquo;Prepared by&rdquo; on exported accessibility reports. Leave blank to
           keep the default Personaudit header.
         </p>
+        {!reportBrandingAllowed ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            White-label report headers are part of agency access.{" "}
+            <Link
+              href="/pricing"
+              className="rounded-sm text-foreground underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+            >
+              See pricing
+            </Link>
+            .
+          </p>
+        ) : (
         <form
           action={updateAgencyNameAction}
           className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end"
@@ -139,6 +159,7 @@ export default async function SettingsPage({
             Save
           </SubmitButton>
         </form>
+        )}
       </div>
 
       <BoxDivider label="security" className="mt-8 mb-4" />

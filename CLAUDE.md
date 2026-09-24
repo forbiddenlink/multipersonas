@@ -2,7 +2,7 @@
 
 ## Project overview
 
-Personaudit (npm package `multipersonas`, CLI binary `mpersonas`) is an accessibility and UX testing tool. `scan` crawls a site (including behind a saved login session) and runs axe-core at every reached state for deterministic, citable accessibility violations. `run` adds LLM-driven UX personas that browse toward a goal and report task success plus usability opinion; personas are validated for task success but do not out-find a plain crawler on accessibility defects, so they are not pitched as an accessibility tool. Status: prototype. Live site: https://personaudit.com/.
+Personaudit (npm package `personaudit`, CLI binaries `personaudit` and the legacy alias `mpersonas`) is an accessibility and UX testing tool. `scan` crawls a site (including behind a saved login session) and runs axe-core at every reached state for deterministic, citable accessibility violations. `run` adds LLM-driven UX personas that browse toward a goal and report task success plus usability opinion; personas are validated for task success but do not out-find a plain crawler on accessibility defects, so they are not pitched as an accessibility tool. Status: prototype. Live site: https://personaudit.com/.
 
 This is a pnpm workspace monorepo: the CLI/engine at the repo root, plus `web/` (Next.js app) and `worker/` (background audit job runner) as workspace packages.
 
@@ -12,7 +12,7 @@ This is a pnpm workspace monorepo: the CLI/engine at the repo root, plus `web/` 
 - TypeScript 6.0.3
 - CLI/engine deps: `playwright` ^1.62.1, `@axe-core/playwright` ^4.13.0, `ai` ^7.0.84 + `@ai-sdk/anthropic` ^4.0.45, `commander` ^15.0.0, `zod` ^4.4.3, `vitest` 4.1.11
 - `web/`: Next.js 16.3.4, React 19.2.8, Tailwind CSS 4.3.3, `@base-ui/react` ^1.7.0, `@supabase/ssr` + `@supabase/supabase-js`, Stripe 22.4.0, `@sentry/nextjs` ^10.71.0, PostHog (`posthog-js`), `shadcn` 4.19.0, Playwright for e2e
-- `worker/`: `tsx`, `@supabase/supabase-js`, `@sentry/node`, depends on the root package as `multipersonas` (workspace dependency)
+- `worker/`: `tsx`, `@supabase/supabase-js`, `@sentry/node`, depends on the root package as `personaudit` (workspace dependency)
 - Package manager: pnpm (pnpm-lock.yaml at root; `packageManager: pnpm@10.34.5`)
 
 ## Commands
@@ -58,9 +58,9 @@ cd web && pnpm lint && pnpm exec tsc --noEmit && pnpm test && pnpm build
 
 ## Layout
 
-- `src/` - the `mpersonas` CLI/engine (TypeScript), published as npm package `multipersonas`. Subdirs: `agent/`, `auth/`, `crawler/`, `domain/`, `grader/`, `personas/`, `report/`, `security/`, `tasks/`.
+- `src/` - the CLI/engine (TypeScript), packaged as npm package `personaudit`. NOT YET PUBLISHED: `npm view personaudit` returns E404 as of 2026-09-24, so every `npx personaudit` instruction in the docs and on the site is a dead link until the first `npm publish`. Subdirs: `agent/`, `auth/`, `crawler/`, `domain/`, `grader/`, `personas/`, `report/`, `security/`, `tasks/`.
 - `web/` - Next.js app, its own workspace with its own `package.json`, `AGENTS.md`, and `CLAUDE.md` (do not edit those from here; they govern `web/` specifically).
-- `worker/` - persistent background job runner (claims `audit_jobs`, runs the browser + engine, writes results back). Depends on the root package as `multipersonas`.
+- `worker/` - persistent background job runner (claims `audit_jobs`, runs the browser + engine, writes results back). Depends on the root package as `personaudit`.
 - `experiments/` - evidence behind the product's positioning claims. Kept on purpose; do not delete.
 - `docs/` - includes `DEPLOYMENT.md`, `TESTING.md`, `ssrf-egress-hardening.md`, ADRs (`docs/adr/`), plans, audits.
 - `examples/github-actions/` - a ready-to-use CI accessibility gate action.
@@ -98,6 +98,10 @@ cd web && pnpm lint && pnpm exec tsc --noEmit && pnpm test && pnpm build
 - `WORKER_REAP_INTERVAL_SECONDS` - optional, default 60 (worker stale-job check interval).
 - `AUDIT_BROWSER_PROXY` - routes the audit browser through the in-container smokescreen egress guard (worker deploy).
 - `AUDIT_REQUIRE_EGRESS_PROXY` - fail-closed flag: refuse to launch the audit browser if the egress proxy is unset/unreachable.
+- `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `STRIPE_FOUNDING_PRICE_ID` - required together before any checkout opens.
+- `NEXT_PUBLIC_FOUNDING_CHECKOUT_URL` - the explicit launch switch for the $199 agency tier. Credentials alone must not reopen an offer that was intentionally hidden.
+- `STRIPE_SOLO_PRICE_ID` - optional. Setting it IS the switch that makes the $39 Solo tier visible and buyable on /pricing; unset, the tier shows as not open yet.
+- `STRIPE_TRIAL_DAYS` - optional, default 14, `0` disables. Applied to every paid checkout session.
 
 Re-check `.env.example` directly (outside this sandbox) for the complete, current list.
 

@@ -45,6 +45,12 @@ export async function SiteHeader({
         >
           For agencies
         </Link>
+        <Link
+          href="/pricing"
+          className="hidden rounded-sm px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] sm:inline"
+        >
+          Pricing
+        </Link>
         {user ? (
           <Link
             href="/dashboard"

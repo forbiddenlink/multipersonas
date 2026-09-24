@@ -50,3 +50,32 @@ describe("marketing copy stays honest about hosted vs CLI", () => {
     expect(src).not.toMatch(/What do I get at \$199/);
   });
 });
+
+describe("pricing page states what each tier really gets", () => {
+  it("does not present a paid price as buyable when its checkout is closed", () => {
+    const src = read("src/app/pricing/page.tsx");
+    expect(src).toMatch(/isSoloCheckoutOpen\(\)/);
+    expect(src).toMatch(/isFoundingCheckoutOpen\(\)/);
+    expect(src).toMatch(/Not open yet/);
+  });
+
+  it("keeps behind-login on the CLI side of the split", () => {
+    const src = read("src/app/pricing/page.tsx");
+    expect(src).toMatch(/Behind-login scanning runs in the CLI/);
+    expect(src).toMatch(/Hosted behind-login is not built/);
+    expect(src).not.toMatch(/hosted behind-login (is |now )?(ready|live|available)/i);
+  });
+
+  it("does not claim the docs page can scan behind a login from the browser", () => {
+    const src = read("src/app/docs/page.tsx");
+    expect(src).toMatch(/stays on your machine/);
+    expect(src).not.toMatch(/hosted behind-login/i);
+  });
+
+  it("states the project caps the code actually enforces", () => {
+    const src = read("src/app/pricing/page.tsx");
+    // The numbers come from PROJECT_LIMITS, so a cap change cannot drift from the page.
+    expect(src).toMatch(/PROJECT_LIMITS\.free/);
+    expect(src).toMatch(/PROJECT_LIMITS\.pro/);
+  });
+});

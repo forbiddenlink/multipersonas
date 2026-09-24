@@ -326,12 +326,14 @@ export default function ForAgenciesPage() {
         </Reveal>
         <Reveal delay={60}>
           <pre tabIndex={0} role="region" aria-label="Command-line scanning example" className="mt-10 overflow-x-auto rounded-md border border-border bg-card p-5 font-mono text-xs leading-relaxed text-foreground">
-{`# snapshot today's defects (commit the baseline)
-mpersonas scan https://client.app --session ./session.json \\
+{`npm i -g personaudit
+
+# snapshot today's defects (commit the baseline)
+personaudit scan https://client.app --session ./session.json \\
   --baseline mpersonas-baseline.json --update-baseline
 
 # CI: exit 2 only on NEW defects at/above serious
-mpersonas scan https://client.app --session ./session.json \\
+personaudit scan https://client.app --session ./session.json \\
   --baseline mpersonas-baseline.json --fail-on serious`}
           </pre>
           <p className="mt-4 text-sm text-muted-foreground">
@@ -496,7 +498,7 @@ mpersonas scan https://client.app --session ./session.json \\
                   as a yes, and more honest than silence.
                 </p>
                 <div className="mt-4">
-                  <WaitlistForm />
+                  <WaitlistForm variant="feedback" />
                 </div>
               </div>
             ) : (

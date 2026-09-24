@@ -33,7 +33,13 @@ const SCAN_PREF_BANDS = [
   { value: "unsure", label: "Not sure yet" },
 ] as const;
 
-export function WaitlistForm() {
+/**
+ * `variant` exists because this form appears in two different situations. When founding
+ * checkout is CLOSED it is the only ask, and "request founding access" is accurate. When
+ * checkout is OPEN it sits under a live buy button, and the same words told a visitor the
+ * offer had not opened yet — contradicting the button directly above it.
+ */
+export function WaitlistForm({ variant = "waitlist" }: { variant?: "waitlist" | "feedback" } = {}) {
   const emailId = useId();
   const sitesId = useId();
   const authNeedId = useId();
@@ -263,11 +269,17 @@ export function WaitlistForm() {
         disabled={status === "submitting" || !turnstileReady}
         className="inline-flex w-full items-center justify-center rounded-sm bg-foreground px-6 py-3.5 text-sm font-semibold text-background transition-[background-color,transform] hover:bg-foreground/90 active:translate-y-px disabled:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] sm:w-auto"
       >
-        {status === "submitting" ? "Sending…" : "Request founding access"}
+        {status === "submitting"
+          ? "Sending…"
+          : variant === "feedback"
+            ? "Send this instead"
+            : "Request founding access"}
       </button>
 
       <p className="text-xs text-muted-foreground">
-        No spam, no overlay sales pitch. One email when founding access opens.
+        {variant === "feedback"
+          ? "No spam, no overlay sales pitch. This goes straight to Liz, and a reply comes from a person."
+          : "No spam, no overlay sales pitch. One email when founding access opens."}
       </p>
     </form>
   );

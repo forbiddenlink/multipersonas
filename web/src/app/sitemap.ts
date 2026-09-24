@@ -6,6 +6,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: base, changeFrequency: "weekly", priority: 1 },
     { url: `${base}/for-agencies`, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${base}/pricing`, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${base}/docs`, changeFrequency: "monthly", priority: 0.85 },
     { url: `${base}/grade`, changeFrequency: "monthly", priority: 0.7 },
     // /auth/* is Disallow'd in robots.txt — keep it out of the sitemap too.
     { url: `${base}/guides/ci-accessibility-gate`, changeFrequency: "monthly", priority: 0.85 },

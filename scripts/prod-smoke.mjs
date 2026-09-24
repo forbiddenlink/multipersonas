@@ -35,7 +35,7 @@ await check("health reports database and queue ok", async () => {
   if (json.checks?.queue !== "ok") throw new Error("queue health was not ok");
 });
 
-for (const path of ["/", "/grade", "/for-agencies", "/auth/login"]) {
+for (const path of ["/", "/grade", "/for-agencies", "/pricing", "/docs", "/auth/login"]) {
   await check(`GET ${path}`, async () => {
     const res = await fetchWithTimeout(`${baseUrl}${path}`);
     expectStatus(res, [200]);
