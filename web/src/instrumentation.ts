@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { scrubEvent } from "@/lib/sentry-scrub";
+import { isClientAbortedStream } from "@/lib/sentry-noise";
 
 // Server + edge Sentry init. dsn comes from NEXT_PUBLIC_SENTRY_DSN; when it is unset
 // (local dev, or before the env var is provisioned) Sentry.init with an undefined dsn
@@ -17,7 +18,8 @@ export async function register() {
       environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
       release: process.env.VERCEL_GIT_COMMIT_SHA,
       tracesSampleRate: 0.1,
-      beforeSend: (event) => scrubEvent(event),
+      beforeSend: (event, hint) =>
+        isClientAbortedStream(hint?.originalException) ? null : scrubEvent(event),
     });
   }
 }
