@@ -47,8 +47,8 @@
     }
   },
   "bin": {
-    "personaudit": "./dist/cli.js",
-    "mpersonas": "./dist/cli.js"
+    "personaudit": "dist/cli.js",
+    "mpersonas": "dist/cli.js"
   },
   "files": [
     "dist"
