@@ -82,4 +82,14 @@ export default withSentryConfig(nextConfig, {
   silent: true,
   widenClientFileUpload: true,
   tunnelRoute: "/monitoring",
+  // Build-time tree-shaking. Session Replay is not initialised anywhere (see
+  // instrumentation-client.ts), so its shadow-DOM, iframe and worker support is
+  // dead weight in every visitor's download. Debug statements go too: they only
+  // feed Sentry's own console logging, which we never read.
+  bundleSizeOptimizations: {
+    excludeDebugStatements: true,
+    excludeReplayShadowDom: true,
+    excludeReplayIframe: true,
+    excludeReplayWorker: true,
+  },
 });

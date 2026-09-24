@@ -13,6 +13,11 @@ if (!Number.isFinite(budgetKb) || budgetKb <= 0) {
   process.exit(1);
 }
 
+// NOTE ON WHAT THIS MEASURES: the sum of every emitted chunk, not a visitor's
+// first-load payload. Adding a route therefore raises this number even when no
+// page got heavier, so a rise here is a prompt to look, not proof of a
+// regression. Check the per-route First Load JS in the build output before
+// treating a breach as one.
 function walk(dir) {
   const out = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
