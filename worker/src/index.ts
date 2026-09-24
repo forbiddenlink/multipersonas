@@ -2,14 +2,14 @@ import * as os from "node:os";
 import * as path from "node:path";
 import * as fs from "node:fs";
 import * as Sentry from "@sentry/node";
-import { scrubEvent } from "multipersonas/security/sentry-scrub";
+import { scrubEvent } from "personaudit/security/sentry-scrub";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { type TestResult } from "multipersonas/orchestrator";
-import type { gradeScan } from "multipersonas/grader";
+import { type TestResult } from "personaudit/orchestrator";
+import type { gradeScan } from "personaudit/grader";
 import { runJobProcess, ScanCleanupError } from "./job-process.js";
 import { isIntervalDue, positiveEnvInt } from "./config.js";
 import { persistGradeResult, writeJobState } from "./job-write.js";
-import { clampFindingCategory, clampSeverity } from "multipersonas/domain/vocab";
+import { clampFindingCategory, clampSeverity } from "personaudit/domain/vocab";
 
 // --- config ---------------------------------------------------------------
 // The worker runs personas against URLs strangers supply via POST /api/audit, so

@@ -44,7 +44,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["multipersonas"],
+  transpilePackages: ["personaudit"],
   async headers() {
     return [
       {

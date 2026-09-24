@@ -73,14 +73,14 @@ export default function CiGateGuidePage() {
       <h2 className="mt-10 text-xl font-semibold tracking-tight">CLI</h2>
       <pre className="mt-4 overflow-x-auto rounded-sm border border-border bg-card p-4 font-mono text-xs leading-relaxed text-foreground">
 {`# once — authenticate and save session (local machine)
-mpersonas auth https://app.example.com --save ./session.json
+personaudit auth https://app.example.com --save ./session.json
 
 # once — snapshot today's defects
-mpersonas scan https://app.example.com --session ./session.json \\
+personaudit scan https://app.example.com --session ./session.json \\
   --baseline mpersonas-baseline.json --update-baseline
 
 # CI — exit 2 only on NEW defects at/above serious
-mpersonas scan https://app.example.com --session ./session.json \\
+personaudit scan https://app.example.com --session ./session.json \\
   --baseline mpersonas-baseline.json --fail-on serious`}
       </pre>
 
@@ -102,7 +102,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install -g multipersonas
+      - run: npm install -g personaudit
       - run: npx playwright install --with-deps chromium
 
       # Session is optional — omit for a public site.
@@ -114,7 +114,7 @@ jobs:
 
       - name: Scan and gate on new critical/serious defects
         run: |
-          mpersonas scan "\${{ vars.MPERSONAS_TARGET_URL }}" \\
+          personaudit scan "\${{ vars.MPERSONAS_TARGET_URL }}" \\
             \${{ secrets.MPERSONAS_SESSION != '' && '--session session.json' || '' }} \\
             --baseline mpersonas-baseline.json \\
             --fail-on serious

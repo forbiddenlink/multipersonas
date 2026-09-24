@@ -1,4 +1,4 @@
-# multipersonas
+# Personaudit
 
 Point it at a URL, including one behind a login. It crawls the site and checks
 every state it reaches for accessibility defects.
@@ -114,9 +114,10 @@ pnpm dev -- delete <id>
 observations, and the same axe defects `scan` produces. Personas live in `./mpersonas/`
 in your repo, so they are diffable, reviewable, and picked up automatically.
 
-The npm package is **`multipersonas`**; the command it installs is **`mpersonas`**.
-After `npm install -g multipersonas` (or `pnpm build` locally) the same commands work as
-`mpersonas scan <url>`.
+The npm package is **`personaudit`**. It installs two names for the same binary:
+`personaudit` and the older `mpersonas`, so existing scripts keep working.
+After `npm install -g personaudit` (or `pnpm build` locally) the same commands work as
+`personaudit scan <url>`.
 
 ## How it works
 

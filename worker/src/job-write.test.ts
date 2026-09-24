@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { GradeScanResult } from "multipersonas/grader";
+import type { GradeScanResult } from "personaudit/grader";
 import { describe, expect, it, vi } from "vitest";
 import { persistGradeResult, writeJobState } from "./job-write.js";
 

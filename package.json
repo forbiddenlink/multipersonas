@@ -1,22 +1,53 @@
 {
-  "name": "multipersonas",
+  "name": "personaudit",
   "version": "0.1.0",
-  "description": "AI persona-based website testing CLI",
+  "description": "Accessibility scanning that crawls behind a login and runs axe-core at every state it reaches. Keyless CI gate.",
   "type": "module",
   "main": "./dist/agent/orchestrator.js",
   "exports": {
-    "./orchestrator": { "types": "./dist/agent/orchestrator.d.ts", "default": "./dist/agent/orchestrator.js" },
-    "./engine": { "types": "./dist/agent/engine.d.ts", "default": "./dist/agent/engine.js" },
-    "./personas/types": { "types": "./dist/personas/types.d.ts", "default": "./dist/personas/types.js" },
-    "./personas/library": { "types": "./dist/personas/library.d.ts", "default": "./dist/personas/library.js" },
-    "./personas/generator": { "types": "./dist/personas/generator.d.ts", "default": "./dist/personas/generator.js" },
-    "./personas/prebuilt": { "types": "./dist/personas/prebuilt.d.ts", "default": "./dist/personas/prebuilt.js" },
-    "./domain/vocab": { "types": "./dist/domain/vocab.d.ts", "default": "./dist/domain/vocab.js" },
-    "./security/sentry-scrub": { "types": "./dist/security/sentry-scrub.d.ts", "default": "./dist/security/sentry-scrub.js" },
-    "./tasks": { "types": "./dist/tasks/definition.d.ts", "default": "./dist/tasks/definition.js" },
-    "./grader": { "types": "./dist/grader/scan.d.ts", "default": "./dist/grader/scan.js" }
+    "./orchestrator": {
+      "types": "./dist/agent/orchestrator.d.ts",
+      "default": "./dist/agent/orchestrator.js"
+    },
+    "./engine": {
+      "types": "./dist/agent/engine.d.ts",
+      "default": "./dist/agent/engine.js"
+    },
+    "./personas/types": {
+      "types": "./dist/personas/types.d.ts",
+      "default": "./dist/personas/types.js"
+    },
+    "./personas/library": {
+      "types": "./dist/personas/library.d.ts",
+      "default": "./dist/personas/library.js"
+    },
+    "./personas/generator": {
+      "types": "./dist/personas/generator.d.ts",
+      "default": "./dist/personas/generator.js"
+    },
+    "./personas/prebuilt": {
+      "types": "./dist/personas/prebuilt.d.ts",
+      "default": "./dist/personas/prebuilt.js"
+    },
+    "./domain/vocab": {
+      "types": "./dist/domain/vocab.d.ts",
+      "default": "./dist/domain/vocab.js"
+    },
+    "./security/sentry-scrub": {
+      "types": "./dist/security/sentry-scrub.d.ts",
+      "default": "./dist/security/sentry-scrub.js"
+    },
+    "./tasks": {
+      "types": "./dist/tasks/definition.d.ts",
+      "default": "./dist/tasks/definition.js"
+    },
+    "./grader": {
+      "types": "./dist/grader/scan.d.ts",
+      "default": "./dist/grader/scan.js"
+    }
   },
   "bin": {
+    "personaudit": "./dist/cli.js",
     "mpersonas": "./dist/cli.js"
   },
   "files": [
@@ -40,10 +71,14 @@
   },
   "keywords": [
     "accessibility",
+    "a11y",
+    "axe-core",
+    "wcag",
     "testing",
+    "ci",
+    "playwright",
     "personas",
-    "ux",
-    "ai"
+    "ux"
   ],
   "author": "Elizabeth Stein",
   "license": "MIT",
@@ -82,5 +117,16 @@
       "fast-uri": ">=3.1.4 <4",
       "uuid": ">=11.1.1"
     }
+  },
+  "homepage": "https://personaudit.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/forbiddenlink/multipersonas.git"
+  },
+  "bugs": {
+    "url": "https://github.com/forbiddenlink/multipersonas/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

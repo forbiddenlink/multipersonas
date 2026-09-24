@@ -1,7 +1,7 @@
-import { taskDefinitionSchema } from "multipersonas/tasks";
-import { runMultiPersonaTest } from "multipersonas/orchestrator";
-import { gradeScan } from "multipersonas/grader";
-import { personaLibrary, isBuiltinPersonaId } from "multipersonas/personas/library";
+import { taskDefinitionSchema } from "personaudit/tasks";
+import { runMultiPersonaTest } from "personaudit/orchestrator";
+import { gradeScan } from "personaudit/grader";
+import { personaLibrary, isBuiltinPersonaId } from "personaudit/personas/library";
 
 process.env.MP_BLOCK_DESTRUCTIVE_ACTIONS = "1";
 

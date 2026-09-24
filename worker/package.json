@@ -12,7 +12,7 @@
   "dependencies": {
     "@sentry/node": "^10.71.0",
     "@supabase/supabase-js": "^2.112.4",
-    "multipersonas": "workspace:*",
+    "personaudit": "workspace:*",
     "tsx": "^4.23.12"
   },
   "devDependencies": {

@@ -295,12 +295,14 @@ export default function Home() {
             saved session.
           </p>
           <pre tabIndex={0} role="region" aria-label="Command-line scanning example" className="mt-6 overflow-x-auto rounded-sm border border-border bg-background p-4 font-mono text-xs leading-relaxed text-foreground">
-{`# snapshot today's defects (commit the baseline)
-mpersonas scan https://app.example.com --session ./session.json \\
+{`npm i -g personaudit
+
+# snapshot today's defects (commit the baseline)
+personaudit scan https://app.example.com --session ./session.json \\
   --baseline mpersonas-baseline.json --update-baseline
 
 # CI: exit 2 only on NEW defects at/above serious
-mpersonas scan https://app.example.com --session ./session.json \\
+personaudit scan https://app.example.com --session ./session.json \\
   --baseline mpersonas-baseline.json --fail-on serious`}
           </pre>
           <p className="mt-4 text-sm text-muted-foreground">
