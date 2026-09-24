@@ -6,6 +6,7 @@ import { wcagTagsToCriteria, AXE_TESTABLE_CODES, type Criterion } from "./wcag";
 import { buildConformance, type ConformanceSummary } from "./conformance";
 import { WCAG22_AA_CATALOG } from "./wcag-catalog";
 import { SEVERITIES, severityRank as domainSeverityRank, type Severity } from "@engine/domain/vocab";
+import { planAllowsReportBranding } from "@/lib/entitlements";
 
 export type { Severity };
 
@@ -430,9 +431,13 @@ export async function buildReport(supabase: SB, id: string): Promise<ReportData 
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("agency_name")
+        .select("plan,agency_name")
         .eq("id", user.id)
         .single();
+      // White-label headers are an agency-tier entitlement. A stored name from a
+      // previous tier stays in the row but is not rendered, so a downgrade drops the
+      // branding instead of leaking it.
+      if (!planAllowsReportBranding(profile?.plan)) return null;
       return profile?.agency_name ?? null;
     })(),
   ]);

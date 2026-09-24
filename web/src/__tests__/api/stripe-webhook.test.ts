@@ -62,7 +62,7 @@ describe("POST /api/stripe/webhook", () => {
   it("verifies the raw body before granting paid founding access", async () => {
     expect((await POST(request())).status).toBe(200);
     expect(constructEvent).toHaveBeenCalledWith("synthetic-event-body", "synthetic-signature", "synthetic-webhook-secret");
-    expect(update).toHaveBeenCalledWith({ plan: "pro", stripe_customer_id: "cus_test" });
+    expect(update).toHaveBeenCalledWith({ plan: "team", stripe_customer_id: "cus_test" });
     expect(eq).toHaveBeenCalledWith("id", "user-1");
     expect(maybeSingle).toHaveBeenCalled();
   });
@@ -82,7 +82,7 @@ describe("POST /api/stripe/webhook", () => {
   it("grants access when a delayed checkout payment succeeds", async () => {
     checkoutEvent("checkout.session.async_payment_succeeded");
     expect((await POST(request())).status).toBe(200);
-    expect(update).toHaveBeenCalledWith({ plan: "pro", stripe_customer_id: "cus_test" });
+    expect(update).toHaveBeenCalledWith({ plan: "team", stripe_customer_id: "cus_test" });
   });
 
   it("accepts a subscription checkout requiring no payment", async () => {
@@ -115,15 +115,31 @@ describe("POST /api/stripe/webhook", () => {
   it("can safely repeat a paid-access assignment", async () => {
     expect((await POST(request())).status).toBe(200);
     expect((await POST(request())).status).toBe(200);
-    expect(update).toHaveBeenNthCalledWith(1, { plan: "pro", stripe_customer_id: "cus_test" });
-    expect(update).toHaveBeenNthCalledWith(2, { plan: "pro", stripe_customer_id: "cus_test" });
+    expect(update).toHaveBeenNthCalledWith(1, { plan: "team", stripe_customer_id: "cus_test" });
+    expect(update).toHaveBeenNthCalledWith(2, { plan: "team", stripe_customer_id: "cus_test" });
   });
 
   it.each(["active", "canceled", "unpaid"])("persists subscription status %s", async (status) => {
     activeSubscriptions(status === "active" ? [{ id: "sub_current", metadata }] : []);
     constructEvent.mockReturnValue({ type: "customer.subscription.updated", data: { object: { metadata, status, customer: "cus_test" } } });
     expect((await POST(request())).status).toBe(200);
-    expect(update).toHaveBeenCalledWith({ plan: status === "active" ? "pro" : "free", stripe_customer_id: "cus_test" });
+    expect(update).toHaveBeenCalledWith({ plan: status === "active" ? "team" : "free", stripe_customer_id: "cus_test" });
+  });
+
+  it("grants the solo tier its own lower entitlement", async () => {
+    const solo = { personaudit_plan: "solo", supabase_user_id: "user-1" };
+    activeSubscriptions([{ id: "sub_solo", metadata: solo }]);
+    constructEvent.mockReturnValue({ type: "customer.subscription.updated", data: { object: { metadata: solo, status: "active", customer: "cus_test" } } });
+    expect((await POST(request())).status).toBe(200);
+    expect(update).toHaveBeenCalledWith({ plan: "pro", stripe_customer_id: "cus_test" });
+  });
+
+  it("keeps the stronger grant while an upgrade leaves both subscriptions entitled", async () => {
+    const solo = { personaudit_plan: "solo", supabase_user_id: "user-1" };
+    activeSubscriptions([{ id: "sub_solo", metadata: solo }, { id: "sub_founding", metadata }]);
+    constructEvent.mockReturnValue({ type: "customer.subscription.updated", data: { object: { metadata, status: "active", customer: "cus_test" } } });
+    expect((await POST(request())).status).toBe(200);
+    expect(update).toHaveBeenCalledWith({ plan: "team", stripe_customer_id: "cus_test" });
   });
 
   it("does not restore access when an old paid checkout arrives after cancellation", async () => {
@@ -138,7 +154,7 @@ describe("POST /api/stripe/webhook", () => {
     } } });
     expect((await POST(request())).status).toBe(200);
     expect(listSubscriptions).toHaveBeenCalledWith({ customer: "cus_test", status: "all", limit: 100 });
-    expect(update).toHaveBeenCalledWith({ plan: "pro", stripe_customer_id: "cus_test" });
+    expect(update).toHaveBeenCalledWith({ plan: "team", stripe_customer_id: "cus_test" });
   });
 
   it("does not grant access for another product or another account's subscription", async () => {
@@ -156,14 +172,14 @@ describe("POST /api/stripe/webhook", () => {
       { id: "sub_current", metadata },
     ]);
     expect((await POST(request())).status).toBe(200);
-    expect(update).toHaveBeenCalledWith({ plan: "pro", stripe_customer_id: "cus_test" });
+    expect(update).toHaveBeenCalledWith({ plan: "team", stripe_customer_id: "cus_test" });
   });
 
   it("keeps trial access when checkout requires no initial payment", async () => {
     checkoutEvent("checkout.session.completed", "no_payment_required");
     activeSubscriptions([{ id: "sub_trial", metadata, status: "trialing" }]);
     expect((await POST(request())).status).toBe(200);
-    expect(update).toHaveBeenCalledWith({ plan: "pro", stripe_customer_id: "cus_test" });
+    expect(update).toHaveBeenCalledWith({ plan: "team", stripe_customer_id: "cus_test" });
   });
 
   it.each(["canceled", "past_due", "unpaid", "incomplete", "incomplete_expired", "paused"])("does not grant access from a current %s subscription", async (status) => {

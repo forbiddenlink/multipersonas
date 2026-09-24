@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getExactPlan, planAllowsReportBranding } from "@/lib/entitlements";
 
 export async function updateAgencyNameAction(formData: FormData): Promise<void> {
   const supabase = await createClient();
@@ -11,6 +12,12 @@ export async function updateAgencyNameAction(formData: FormData): Promise<void> 
   } = await supabase.auth.getUser();
   if (!user) {
     redirect("/auth/login?returnTo=/settings");
+  }
+
+  // The form is hidden for lower tiers, but hiding a control is not a control. Check
+  // the entitlement here too, where a hand-crafted POST also has to pass.
+  if (!planAllowsReportBranding(await getExactPlan(supabase, user.id))) {
+    redirect("/settings?error=agency-plan");
   }
 
   const raw = String(formData.get("agencyName") ?? "").trim();

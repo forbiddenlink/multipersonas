@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createProject, updateProject, deleteProject, getProject } from "@/lib/projects";
-import { getSessionPlan, planAllowsPersonas } from "@/lib/entitlements";
+import { getExactPlan, getSessionPlan, planAllowsPersonas, projectLimitFor } from "@/lib/entitlements";
 import { isScanInterval, upsertProjectSchedule } from "@/lib/schedules";
 
 function readProjectFields(formData: FormData) {
@@ -44,6 +44,24 @@ export async function createProjectAction(formData: FormData): Promise<void> {
   const normalizedUrl = normalizeUrl(url);
   if (!normalizedUrl) {
     redirect(`/projects?error=${encodeURIComponent("Enter a valid http(s) URL.")}`);
+  }
+
+  // Tier cap. getExactPlan fails closed to "free" (the smallest cap), so a read error
+  // blocks a new project rather than handing out a paid-tier allowance.
+  const plan = await getExactPlan(supabase, user.id);
+  const limit = projectLimitFor(plan);
+  if (limit !== null) {
+    const { count, error: countError } = await supabase
+      .from("projects")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+    if (countError || count === null) {
+      redirect(`/projects?error=${encodeURIComponent("Could not check your project allowance. Please try again.")}`);
+    }
+    if (count >= limit) {
+      const message = `Your plan includes ${limit} project${limit === 1 ? "" : "s"}. See pricing to add more.`;
+      redirect(`/projects?error=${encodeURIComponent(message)}`);
+    }
   }
 
   let project;
