@@ -6,6 +6,8 @@ const FOOTER_LINK =
 
 const LINKS = [
   { href: "/for-agencies", label: "For agencies" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/docs", label: "CLI docs" },
   { href: "/grade", label: "Free grade" },
   { href: "/guides/ci-accessibility-gate", label: "CI gate" },
   { href: "/guides/wcag-checklist", label: "WCAG Checklist" },
