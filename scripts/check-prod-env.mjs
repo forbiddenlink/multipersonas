@@ -61,8 +61,18 @@ function requireHttpsUrl(key) {
   }
 }
 
+function requireHttpsUrlOrSameOriginPath(key) {
+  if (present(key) && !env[key].startsWith("https://") && !env[key].startsWith("/")) {
+    failures.push(
+      `${key} must be an https:// URL or a same-origin path such as /ingest in production`,
+    );
+  }
+}
+
 function hostAllowed(key, allowed) {
   if (!present(key)) return;
+  // A same-origin proxy path has no host to check; the rewrite target is pinned in next.config.
+  if (env[key].startsWith("/")) return;
   try {
     const host = new URL(env[key]).host;
     if (!allowed.includes(host)) {
@@ -91,7 +101,9 @@ if (prod) {
   requireHttpsUrl("NEXT_PUBLIC_SUPABASE_URL");
   requireHttpsUrl("NEXT_PUBLIC_SITE_URL");
   requireHttpsUrl("NEXT_PUBLIC_SENTRY_DSN");
-  requireHttpsUrl("NEXT_PUBLIC_POSTHOG_HOST");
+  // PostHog is reached either directly or through the same-origin /ingest rewrite in
+  // next.config, so a path is as valid as an absolute URL here.
+  requireHttpsUrlOrSameOriginPath("NEXT_PUBLIC_POSTHOG_HOST");
   hostAllowed("NEXT_PUBLIC_POSTHOG_HOST", ["us.i.posthog.com", "eu.i.posthog.com"]);
 }
 
