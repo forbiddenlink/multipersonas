@@ -40,6 +40,9 @@ function captureCurrentPageview(client: Pick<typeof posthog, "capture">): void {
 
 const posthogOptions = {
   api_host: POSTHOG_HOST,
+  // api_host may be the same-origin /ingest proxy. ui_host keeps the toolbar and
+  // every "view in PostHog" link pointing at the real app instead of the proxy.
+  ui_host: 'https://us.posthog.com',
   autocapture: false,
   capture_pageview: false,
   capture_pageleave: false,
