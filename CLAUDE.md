@@ -58,7 +58,7 @@ cd web && pnpm lint && pnpm exec tsc --noEmit && pnpm test && pnpm build
 
 ## Layout
 
-- `src/` - the CLI/engine (TypeScript), packaged as npm package `personaudit`. NOT YET PUBLISHED: `npm view personaudit` returns E404 as of 2026-09-24, so every `npx personaudit` instruction in the docs and on the site is a dead link until the first `npm publish`. Subdirs: `agent/`, `auth/`, `crawler/`, `domain/`, `grader/`, `personas/`, `report/`, `security/`, `tasks/`.
+- `src/` - the CLI/engine (TypeScript), packaged as npm package `personaudit`. Published: `personaudit@0.1.0` (verified `npm view personaudit` 2026-09-26), both bins `personaudit` and `mpersonas`. Subdirs: `agent/`, `auth/`, `crawler/`, `domain/`, `grader/`, `personas/`, `report/`, `security/`, `tasks/`.
 - `web/` - Next.js app, its own workspace with its own `package.json`, `AGENTS.md`, and `CLAUDE.md` (do not edit those from here; they govern `web/` specifically).
 - `worker/` - persistent background job runner (claims `audit_jobs`, runs the browser + engine, writes results back). Depends on the root package as `personaudit`.
 - `experiments/` - evidence behind the product's positioning claims. Kept on purpose; do not delete.

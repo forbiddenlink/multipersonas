@@ -44,8 +44,8 @@ export default async function ProjectsPage({
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
-      <p className="mt-1 text-muted-foreground">
+      <h1 className="display text-2xl leading-tight text-foreground">Projects</h1>
+      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
         Group your saved audits by site so a scan history and re-runs stay together.
       </p>
 
@@ -54,7 +54,7 @@ export default async function ProjectsPage({
       <form action={createProjectAction} className="space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="name" className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
+            <Label htmlFor="name" className="label-mono">
               Name
             </Label>
             <Input
@@ -67,7 +67,7 @@ export default async function ProjectsPage({
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="url" className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
+            <Label htmlFor="url" className="label-mono">
               URL
             </Label>
             <Input
@@ -81,7 +81,7 @@ export default async function ProjectsPage({
           </div>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="description" className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
+          <Label htmlFor="description" className="label-mono">
             Description <span className="normal-case tracking-normal">(optional)</span>
           </Label>
           <Input id="description" name="description" placeholder="What is this site for?" maxLength={500} />
@@ -98,43 +98,56 @@ export default async function ProjectsPage({
 
       {projects.length === 0 ? (
         <EmptyPrompt
-          prompt="no projects yet — create one above"
-          hint="Group saved audits by client site so history and re-runs stay together."
+          prompt="No projects yet."
+          hint="Create one above to group saved audits by client site, so history and re-runs stay together."
         />
       ) : (
-        <div className="overflow-hidden rounded-md border border-border bg-card font-mono text-sm">
-          <div className="border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
-            <span className="select-none text-[var(--primary)]">┌─ </span>
-            projects
-            <span className="ml-2 tabular-nums text-muted-foreground">{projects.length}</span>
-          </div>
-          <ul className="divide-y divide-border">
-            {projects.map((project) => (
-              <li key={project.id}>
-                <Link
-                  href={`/projects/${project.id}`}
-                  className="flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-card-foreground">
-                      <span className="select-none text-[var(--primary)]">›&nbsp;</span>
+        <div
+      tabIndex={0}
+      role="region"
+      aria-label="All projects table"
+      className="min-w-0 overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+    >
+          <table className="w-full min-w-[26rem] border-collapse text-left text-sm">
+            <caption className="sr-only">Your projects by name, host, and creation date</caption>
+            <thead>
+              <tr className="border-b-2 border-foreground">
+                <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+                  Project
+                </th>
+                <th scope="col" className="hidden py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground sm:table-cell">
+                  Host
+                </th>
+                <th scope="col" className="py-2 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+                  Created
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {projects.map((project) => (
+                <tr key={project.id} className="border-b border-border">
+                  <th scope="row" className="py-3 pr-4 font-normal">
+                    <Link href={`/projects/${project.id}`} className="text-link truncate">
                       {project.name}
-                    </p>
-                    <p className="truncate pl-3.5 text-xs text-muted-foreground">
+                    </Link>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground sm:hidden">
                       {hostname(project.url)}
                     </p>
-                  </div>
-                  <span className="shrink-0 text-xs text-muted-foreground">
+                  </th>
+                  <td className="hidden truncate py-3 pr-4 font-mono text-xs text-muted-foreground sm:table-cell">
+                    {hostname(project.url)}
+                  </td>
+                  <td className="py-3 text-right text-xs text-muted-foreground">
                     {new Date(project.created_at).toLocaleDateString(undefined, {
                       year: "numeric",
                       month: "short",
                       day: "numeric",
                     })}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

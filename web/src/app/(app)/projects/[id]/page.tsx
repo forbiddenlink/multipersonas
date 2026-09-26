@@ -11,6 +11,8 @@ import { compareProjectRuns } from "@/lib/baseline";
 import { AuditForm } from "@/components/audit-form";
 import { AuditHistory } from "@/components/audit-history";
 import { RunDiff } from "@/components/run-diff";
+import { FindingsTrend } from "@/components/findings-trend";
+import { buildFindingsTrend } from "@/lib/findings-trend";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BoxDivider } from "@/components/forensic/divider";
@@ -18,7 +20,6 @@ import { saveProjectTaskAction, updateProjectAction, deleteProjectAction, upsert
 import { getSessionPlan, planAllowsPersonas } from "@/lib/entitlements";
 import { getProjectSchedule, SCAN_INTERVALS } from "@/lib/schedules";
 import { FINDING_STATUS_LABELS, FINDING_STATUSES } from "@/lib/finding-workflow";
-import { ProAuditUpsell } from "@/components/pro-audit-upsell";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { DeleteProjectForm } from "../delete-project-form";
 
@@ -67,6 +68,7 @@ export default async function ProjectDetailPage({
         .eq("source", "axe")
     : { data: [] };
   const workflowIssues = issueRows ?? [];
+  const findingsTrend = buildFindingsTrend(audits, workflowIssues);
   const latestAuditId = audits[0]?.id ?? null;
   const latestIssues = latestAuditId
     ? workflowIssues.filter((issue) => issue.test_run_id === latestAuditId)
@@ -115,7 +117,7 @@ export default async function ProjectDetailPage({
             <span className="mx-1.5 select-none">/</span>
             {project.name}
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{project.name}</h1>
+          <h1 className="display mt-1 text-2xl leading-tight text-foreground">{project.name}</h1>
           <p className="mt-1 truncate font-mono text-sm text-muted-foreground">
             {project.url}
           </p>
@@ -133,12 +135,12 @@ export default async function ProjectDetailPage({
         )}
 
       <BoxDivider label="task to test" className="my-5" />
-      <form action={saveTask} className="space-y-3 rounded-md border border-border p-4">
+      <form action={saveTask} className="sheet space-y-3 p-4">
         <div className="space-y-1.5">
           <Label htmlFor="task-goal">What should a visitor accomplish?</Label>
           <textarea id="task-goal" name="goal" defaultValue={savedTask?.goal ?? ""} minLength={10} maxLength={1000}
             placeholder="Find the service that fits a small business and reach the quote request form."
-            className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm" />
+            className="min-h-24 w-full rounded-sm border border-input bg-background p-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]" />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="task-success-text">Exact visible text expected on the final page</Label>
@@ -172,7 +174,17 @@ export default async function ProjectDetailPage({
       {canRunPersonas ? (
         <AuditForm key={JSON.stringify(savedTask)} projectId={project.id} defaultUrl={project.url} submitLabel={savedTask ? "Test saved task" : "Run audit"} />
       ) : (
-        <ProAuditUpsell />
+        <p className="text-sm text-muted-foreground">
+          Persona task-success runs are part of Pro.{" "}
+          <Link href="/grade" className="text-link">
+            Run a free grade
+          </Link>{" "}
+          or{" "}
+          <Link href="/for-agencies#early-access" className="text-link">
+            see founding access
+          </Link>
+          .
+        </p>
       )}
 
       {latestRun?.task_definition ? (
@@ -185,24 +197,24 @@ export default async function ProjectDetailPage({
 
       <BoxDivider label="issue work" className="my-5" />
 
-      <div className="space-y-4 rounded-md border border-border p-4">
+      <div className="sheet space-y-4 p-4">
         <div className="grid gap-3 lg:grid-cols-[1fr_0.8fr]">
           <div className="grid gap-2 sm:grid-cols-4">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">latest open</p>
+              <p className="label-mono">Latest open</p>
               <p className="mt-1 text-2xl font-semibold tabular-nums">{latestOpenCount}</p>
             </div>
             {FINDING_STATUSES.slice(1, 4).map((status) => (
               <div key={status}>
-                <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                <p className="label-mono">
                   {FINDING_STATUS_LABELS[status]}
                 </p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums">{projectStatusCounts[status]}</p>
               </div>
             ))}
           </div>
-          <div className="rounded-md border border-border bg-background/60 p-3">
-            <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">persona outcome</p>
+          <div className="rounded-sm border border-border bg-background/60 p-3">
+            <p className="label-mono">Persona outcome</p>
             <p className="mt-1 text-2xl font-semibold tabular-nums">
               {latestPersonaReached} / {latestPersonaTotal}
             </p>
@@ -234,20 +246,17 @@ export default async function ProjectDetailPage({
       <BoxDivider label="scan schedule" className="my-5" />
 
       {canRunPersonas ? (
-        <form action={saveScheduleWithId} className="space-y-3 rounded-md border border-border p-4">
+        <form action={saveScheduleWithId} className="sheet space-y-3 p-4">
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
             <div className="space-y-1.5">
-              <Label
-                htmlFor="interval"
-                className="font-mono text-xs uppercase tracking-wide text-muted-foreground"
-              >
+              <Label htmlFor="interval" className="label-mono">
                 Frequency
               </Label>
               <select
                 id="interval"
                 name="interval"
                 defaultValue={schedule?.interval ?? "weekly"}
-                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                className="h-9 w-full rounded-sm border border-input bg-background px-3 py-1 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
               >
                 {SCAN_INTERVALS.map((interval) => (
                   <option key={interval} value={interval}>
@@ -256,31 +265,31 @@ export default async function ProjectDetailPage({
                 ))}
               </select>
             </div>
-            <label className="flex h-9 items-center gap-2 rounded-md border border-border px-3 text-sm">
+            <label className="flex h-9 items-center gap-2 rounded-sm border border-border px-3 text-sm">
               <input
                 type="checkbox"
                 name="enabled"
                 defaultChecked={schedule?.enabled ?? true}
-                className="size-4 rounded border-border"
+                className="size-4 rounded-sm border-border"
               />
               Enabled
             </label>
           </div>
-          <div className="grid gap-2 font-mono text-xs text-muted-foreground sm:grid-cols-2">
+          <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
             <p>
-              next run: {schedule ? new Date(schedule.next_run_at).toLocaleString() : "after save"}
+              Next run: {schedule ? new Date(schedule.next_run_at).toLocaleString() : "after save"}
             </p>
             <p>
-              last run: {schedule?.last_run_at ? new Date(schedule.last_run_at).toLocaleString() : "not yet"}
+              Last run: {schedule?.last_run_at ? new Date(schedule.last_run_at).toLocaleString() : "not yet"}
             </p>
           </div>
-          <p className="font-mono text-xs text-muted-foreground">
-            runner: {scheduleRunnerConfigured ? "configured" : "needs CRON_SECRET + scheduled runner"}
+          <p className="text-xs text-muted-foreground">
+            Runner: {scheduleRunnerConfigured ? "configured" : "needs CRON_SECRET and a scheduled runner"}
           </p>
           <SubmitButton variant="outline" size="sm">Save schedule</SubmitButton>
         </form>
       ) : (
-        <div className="rounded-md border border-border p-4 text-sm text-muted-foreground">
+        <div className="sheet p-4 text-sm text-muted-foreground">
           Scheduled persona scans are included with Pro projects.
         </div>
       )}
@@ -292,6 +301,16 @@ export default async function ProjectDetailPage({
         </>
       ) : null}
 
+      {findingsTrend.length >= 2 ? (
+        <>
+          <BoxDivider label="findings over time" className="my-5" />
+          <p className="mb-3 text-sm text-muted-foreground">
+            Axe findings detected in each of your last {findingsTrend.length} runs, oldest first.
+          </p>
+          <FindingsTrend rows={findingsTrend} />
+        </>
+      ) : null}
+
       <BoxDivider label="saved runs" className="my-5" />
 
       <AuditHistory audits={audits} />
@@ -300,10 +319,7 @@ export default async function ProjectDetailPage({
 
       <form action={updateWithId} className="space-y-3">
         <div className="space-y-1.5">
-          <Label
-            htmlFor="name"
-            className="font-mono text-xs uppercase tracking-wide text-muted-foreground"
-          >
+          <Label htmlFor="name" className="label-mono">
             Name
           </Label>
           <Input
@@ -315,11 +331,8 @@ export default async function ProjectDetailPage({
           />
         </div>
         <div className="space-y-1.5">
-          <Label
-            htmlFor="description"
-            className="font-mono text-xs uppercase tracking-wide text-muted-foreground"
-          >
-            Description <span className="normal-case text-muted-foreground">(optional)</span>
+          <Label htmlFor="description" className="label-mono">
+            Description <span className="normal-case tracking-normal">(optional)</span>
           </Label>
           <Input
             id="description"

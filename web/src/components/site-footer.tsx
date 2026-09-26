@@ -2,26 +2,43 @@ import Link from "next/link";
 import { Wordmark } from "@/components/forensic/wordmark";
 
 const FOOTER_LINK =
-  "py-2 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] rounded-sm";
+  "inline-block rounded-sm py-1 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
 
-const LINKS = [
-  { href: "/for-agencies", label: "For agencies" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/docs", label: "CLI docs" },
-  { href: "/grade", label: "Free grade" },
-  { href: "/guides/ci-accessibility-gate", label: "CI gate" },
-  { href: "/guides/wcag-checklist", label: "WCAG Checklist" },
-  { href: "/guides/common-accessibility-issues", label: "Common Issues" },
-  { href: "/guides/screen-reader-testing", label: "Screen Reader Testing" },
-  { href: "mailto:hello@personaudit.com", label: "Contact", external: true },
-  { href: "/accessibility", label: "Accessibility" },
-  { href: "/privacy", label: "Privacy" },
-  { href: "/terms", label: "Terms" },
-] as const;
+const GROUPS: { title: string; links: { href: string; label: string; external?: boolean }[] }[] = [
+  {
+    title: "Product",
+    links: [
+      { href: "/grade", label: "Free grade" },
+      { href: "/sample-report", label: "Sample report" },
+      { href: "/pricing", label: "Pricing" },
+      { href: "/for-agencies", label: "For agencies" },
+      { href: "/docs", label: "CLI docs" },
+    ],
+  },
+  {
+    title: "Field guides",
+    links: [
+      { href: "/guides/accessibility-deadlines", label: "2025–2028 deadlines" },
+      { href: "/guides/ci-accessibility-gate", label: "CI accessibility gate" },
+      { href: "/guides/wcag-checklist", label: "WCAG 2.2 checklist" },
+      { href: "/guides/common-accessibility-issues", label: "Common issues" },
+      { href: "/guides/screen-reader-testing", label: "Screen reader testing" },
+    ],
+  },
+  {
+    title: "The fine print",
+    links: [
+      { href: "/accessibility", label: "Accessibility statement" },
+      { href: "/privacy", label: "Privacy" },
+      { href: "/terms", label: "Terms" },
+      { href: "mailto:hello@personaudit.com", label: "hello@personaudit.com", external: true },
+    ],
+  },
+];
 
 /**
- * Shared marketing footer — one link set, focus rings, AI disclaimer.
- * Optional footnotes slot for agency citations above the chrome.
+ * Colophon footer — what the product is, grouped links, and the standing disclosure
+ * that separates deterministic findings from AI-written notes.
  */
 export function SiteFooter({
   footnotes,
@@ -31,49 +48,57 @@ export function SiteFooter({
   className?: string;
 }) {
   return (
-    <footer className={`border-t border-border px-6 py-8 ${className}`}>
-      <div className="mx-auto max-w-6xl">
-        {footnotes ? <div className="mb-8">{footnotes}</div> : null}
-        <div
-          className={`flex flex-col items-center gap-6 sm:flex-row sm:justify-between ${
-            footnotes ? "border-t border-border pt-6" : ""
-          }`}
-        >
-          <div className="text-center sm:text-left">
-            <Wordmark className="text-sm text-foreground" />
-            <p className="mt-1 text-xs text-muted-foreground">
-              Built by{" "}
-              <a
-                href="https://github.com/forbiddenlink"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`${FOOTER_LINK} inline-block`}
-              >
-                Elizabeth Stein
-              </a>
+    <footer className={`mt-auto border-t border-border bg-card ${className}`}>
+      <div className="frame py-14">
+        {footnotes ? <div className="mb-12 border-b border-border pb-10">{footnotes}</div> : null}
+        <div className="grid gap-12 md:grid-cols-[minmax(0,1.1fr)_minmax(0,2fr)]">
+          <div className="max-w-sm">
+            <Wordmark className="text-lg text-foreground" />
+            <p className="mt-4 font-serif text-[1.0625rem] leading-relaxed text-muted-foreground">
+              Accessibility evidence you can put in front of a client: axe-core at every state a
+              crawl reaches, including behind the login.
             </p>
           </div>
-          <nav
-            aria-label="Footer"
-            className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground"
-          >
-            {LINKS.map((link) =>
-              "external" in link && link.external ? (
-                <a key={link.href} href={link.href} className={FOOTER_LINK}>
-                  {link.label}
-                </a>
-              ) : (
-                <Link key={link.href} href={link.href} className={FOOTER_LINK}>
-                  {link.label}
-                </Link>
-              ),
-            )}
+          <nav aria-label="Footer" className="grid grid-cols-2 gap-8 sm:grid-cols-3">
+            {GROUPS.map((g) => (
+              <div key={g.title} className="min-w-0">
+                <p className="label-mono">{g.title}</p>
+                <ul className="mt-3 space-y-1.5">
+                  {g.links.map((l) => (
+                    <li key={l.href}>
+                      {l.external ? (
+                        <a href={l.href} className={`${FOOTER_LINK} break-all`}>
+                          {l.label}
+                        </a>
+                      ) : (
+                        <Link href={l.href} className={FOOTER_LINK}>
+                          {l.label}
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </nav>
         </div>
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          Persona usability notes are generated by AI and should be verified manually.
-          Accessibility violations come from axe-core and are deterministic.
-        </p>
+        <div className="mt-14 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted-foreground sm:flex-row sm:items-start sm:justify-between">
+          <p className="max-w-2xl leading-relaxed">
+            Accessibility violations come from axe-core and are deterministic. Persona notes are
+            written by AI, labeled as opinion, and should be checked by a person.
+          </p>
+          <p className="shrink-0 font-mono">
+            Built by{" "}
+            <a
+              href="https://github.com/forbiddenlink"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-link text-muted-foreground"
+            >
+              Elizabeth Stein
+            </a>
+          </p>
+        </div>
       </div>
     </footer>
   );

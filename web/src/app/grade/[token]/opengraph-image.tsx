@@ -1,22 +1,27 @@
 import { ImageResponse } from "next/og";
 import { getGraderScan } from "@/lib/grade";
+import { ogFonts } from "@/lib/og-fonts";
 import type { GradeReport } from "@engine/grader/score";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// Forensic-terminal warm-dark palette — literal hex values for Satori/ImageResponse.
-const BG = "#17130e";
-const FG = "#f4f1ec";
-const MUTED = "#a39e95";
-const BORDER = "rgba(244, 241, 236, 0.14)";
-const TEAL = "#4ecdc0";
+// Evidence Dossier palette — literal hex values for Satori/ImageResponse (no CSS vars).
+// Same warm manila desk / near-white sheet / blue-black ink as the on-site tokens
+// (web/DESIGN.md); a social card should look like the same case file, not a different
+// dark-terminal brand.
+const DESK = "#f5f1e6";
+const SHEET = "#fdfcf9";
+const INK = "#211f2e";
+const MUTED = "#615f70";
+const BORDER = "#d9d2bd";
+const REDLINE = "#a3341c";
 
 function gradeColor(grade: string): string {
-  if (grade === "A" || grade === "B") return "#4ecdc0";
-  if (grade === "C") return "#f59e0b";
-  if (grade === "D") return "#f97316";
-  return "#ef4444";
+  if (grade === "A" || grade === "B") return "#2c3868"; // ink blue
+  if (grade === "C") return "#8a6a1f"; // moderate
+  if (grade === "D") return "#a85a1c"; // serious
+  return REDLINE; // critical / F
 }
 
 export default async function Image({
@@ -25,9 +30,9 @@ export default async function Image({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const scan = await getGraderScan(token);
+  const [scan, fonts] = await Promise.all([getGraderScan(token), ogFonts()]);
 
-  let host = "Website";
+  let host = "a website";
   if (scan?.entry_url) {
     try {
       host = new URL(scan.entry_url).host;
@@ -50,105 +55,73 @@ export default async function Image({
           flexDirection: "column",
           width: "100%",
           height: "100%",
-          backgroundColor: BG,
-          color: FG,
-          fontFamily: "system-ui, sans-serif",
-          padding: "60px 80px",
+          backgroundColor: DESK,
+          color: INK,
+          fontFamily: fonts.some((f) => f.name === "Plex Mono") ? "Plex Mono" : "monospace",
+          padding: "56px 72px",
           justifyContent: "space-between",
         }}
       >
-        {/* Header wordmark and label */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            width: "100%",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              gap: "2px",
-              fontSize: "30px",
-              fontWeight: 600,
-            }}
-          >
+        {/* File tab + wordmark */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "2px", fontSize: "26px", fontWeight: 600 }}>
             <span>Person</span>
             <span style={{ color: MUTED }}>audit</span>
-            <span
-              style={{
-                display: "flex",
-                width: "10px",
-                height: "26px",
-                marginLeft: "4px",
-                backgroundColor: TEAL,
-                borderRadius: "1px",
-              }}
-            />
           </div>
           <div
             style={{
               display: "flex",
               padding: "6px 14px",
-              borderRadius: "4px",
+              borderRadius: "3px",
               border: `1px solid ${BORDER}`,
-              fontSize: "14px",
+              fontSize: "13px",
               color: MUTED,
               textTransform: "uppercase",
               letterSpacing: "0.08em",
             }}
           >
-            ACCESSIBILITY GRADE REPORT
+            Case file · accessibility grade
           </div>
         </div>
 
-        {/* Center Card */}
+        {/* The sheet */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            backgroundColor: "rgba(255, 255, 255, 0.03)",
+            backgroundColor: SHEET,
             border: `1px solid ${BORDER}`,
-            borderRadius: "12px",
-            padding: "40px 50px",
+            borderRadius: "4px",
+            padding: "44px 52px",
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column", maxWidth: "650px" }}>
-            <div style={{ fontSize: "18px", color: MUTED, marginBottom: "8px" }}>
-              Public Scan Result for
+          <div style={{ display: "flex", flexDirection: "column", maxWidth: "660px" }}>
+            <div style={{ fontSize: "16px", color: MUTED, marginBottom: "10px", letterSpacing: "0.04em" }}>
+              Public scan result for
             </div>
             <div
               style={{
-                fontSize: "40px",
-                fontWeight: 700,
+                fontSize: "42px",
+                fontWeight: 500,
                 letterSpacing: "-0.02em",
-                color: FG,
+                color: INK,
                 wordBreak: "break-all",
+                fontFamily: fonts.some((f) => f.name === "Newsreader") ? "Newsreader" : "serif",
               }}
             >
               {host}
             </div>
-            <div
-              style={{
-                display: "flex",
-                gap: "20px",
-                marginTop: "24px",
-                fontSize: "18px",
-                color: MUTED,
-              }}
-            >
+            <div style={{ display: "flex", gap: "18px", marginTop: "22px", fontSize: "17px", color: MUTED }}>
               <span>
-                Score: <strong style={{ color: FG }}>{score}/100</strong>
+                Score: <strong style={{ color: INK }}>{score}/100</strong>
               </span>
               <span>·</span>
               <span>
-                Violations: <strong style={{ color: FG }}>{violations}</strong>
+                Violations: <strong style={{ color: INK }}>{violations}</strong>
               </span>
               <span>·</span>
-              <span>axe-core verified</span>
+              <span>axe-core</span>
             </div>
           </div>
 
@@ -158,41 +131,26 @@ export default async function Image({
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              width: "140px",
-              height: "140px",
-              borderRadius: "12px",
-              border: `2px solid ${color}`,
-              backgroundColor: "rgba(255, 255, 255, 0.02)",
+              gap: "2px",
+              width: "132px",
+              height: "132px",
+              borderRadius: "3px",
+              border: `3px solid ${color}`,
+              transform: "rotate(-4deg)",
             }}
           >
-            <span
-              style={{
-                fontSize: "80px",
-                fontWeight: 800,
-                color: color,
-                lineHeight: 1,
-              }}
-            >
-              {grade}
-            </span>
+            <span style={{ fontSize: "68px", fontWeight: 700, color, lineHeight: 1 }}>{grade}</span>
+            <span style={{ fontSize: "12px", color, letterSpacing: "0.1em" }}>VERDICT</span>
           </div>
         </div>
 
         {/* Footer */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            fontSize: "15px",
-            color: MUTED,
-          }}
-        >
-          <span>Deterministic WCAG 2.1 / 2.2 testing · axe-core</span>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "14px", color: MUTED }}>
+          <span>Deterministic WCAG 2.1 / 2.2 testing · axe-core · no overlay</span>
           <span>personaudit.com</span>
         </div>
       </div>
     ),
-    { ...size }
+    { ...size, fonts },
   );
 }

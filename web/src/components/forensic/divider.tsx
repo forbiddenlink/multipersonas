@@ -1,5 +1,6 @@
-// Box-drawing divider — a subtle terminal/forensic section motif. Decorative only,
-// so the drawing characters are aria-hidden; an optional label sits inline.
+// Section divider — a label-mono eyebrow over a hairline rule, the same ledger-paper
+// language as the rest of the app shell. Decorative only (no heading semantics), so
+// it's aria-hidden; an optional label sits inline, ahead of the rule.
 export function BoxDivider({
   label,
   className = "",
@@ -8,19 +9,9 @@ export function BoxDivider({
   className?: string;
 }) {
   return (
-    <div
-      className={`flex items-center gap-3 font-mono text-xs text-muted-foreground ${className}`}
-      aria-hidden="true"
-    >
-      <span className="select-none">└</span>
+    <div className={`flex items-center gap-3 ${className}`} aria-hidden="true">
+      {label ? <span className="label-mono shrink-0">{label}</span> : null}
       <span className="h-px flex-1 bg-border" />
-      {label ? (
-        <>
-          <span className="select-none tracking-wide">{label}</span>
-          <span className="h-px flex-1 bg-border" />
-        </>
-      ) : null}
-      <span className="select-none">┘</span>
     </div>
   );
 }

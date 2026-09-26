@@ -49,7 +49,7 @@ export default async function WaitlistPage() {
   const campaignBands: Record<string, number> = {};
   const followUpBands: Record<string, number> = {};
   for (const r of signups) {
-    const k = r.sites_count ?? "—";
+    const k = r.sites_count ?? "–";
     bands[k] = (bands[k] ?? 0) + 1;
     const signals = parseWaitlistSignals(r.note);
     sourceBands[r.source] = (sourceBands[r.source] ?? 0) + 1;
@@ -99,7 +99,7 @@ export default async function WaitlistPage() {
                   key={band}
                   className="rounded-sm border border-border bg-card px-2.5 py-1 font-mono text-xs text-muted-foreground"
                 >
-                  {band === "—" ? "no scale given" : `${band} sites`}:{" "}
+                  {band === "–" ? "no scale given" : `${band} sites`}:{" "}
                   <span className="font-medium text-foreground tabular-nums">{n}</span>
                 </span>
               ))}
@@ -165,7 +165,12 @@ export default async function WaitlistPage() {
             </div>
           )}
 
-          <div className="mt-6 overflow-x-auto rounded-md border border-border">
+          <div
+      tabIndex={0}
+      role="region"
+      aria-label="Waitlist entries table"
+      className="mt-6 overflow-x-auto rounded-md border border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+    >
             <table className="w-full text-left text-sm">
               <thead className="border-b border-border bg-card font-mono text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
@@ -181,7 +186,7 @@ export default async function WaitlistPage() {
                   <tr key={r.email} className="border-b border-border/60 last:border-0 align-top">
                     <td className="px-4 py-2.5 font-mono font-medium text-foreground">{r.email}</td>
                     <td className="px-4 py-2.5 whitespace-nowrap text-muted-foreground">
-                      {r.sites_count ?? "—"}
+                      {r.sites_count ?? "–"}
                     </td>
                     <td className="px-4 py-2.5">
                       <form action={setWaitlistLeadStatusAction} className="flex items-center gap-2">
@@ -206,7 +211,7 @@ export default async function WaitlistPage() {
                         </button>
                       </form>
                     </td>
-                    <td className="max-w-sm px-4 py-2.5 text-muted-foreground">{r.note || "—"}</td>
+                    <td className="max-w-sm px-4 py-2.5 text-muted-foreground">{r.note || "–"}</td>
                     <td className="px-4 py-2.5 whitespace-nowrap text-muted-foreground tabular-nums">
                       {new Date(r.created_at).toLocaleDateString(undefined, {
                         month: "short",

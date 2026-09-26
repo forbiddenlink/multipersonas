@@ -12,8 +12,8 @@ function initials(name: string): string {
 function hueFromName(name: string): number {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 1000;
-  // Warm-neutral band [30, 120]; deliberately excludes teal (195) and the severity hues.
-  return 30 + (h % 90);
+  // Cool paper band [200, 300]; stays off the severity hues (25–85).
+  return 200 + (h % 100);
 }
 
 export function Monogram({

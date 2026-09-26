@@ -3,8 +3,9 @@
 import { useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
 
-// Terminal-native error state: a `fail` line in the critical severity colour with a
-// retry prompt, framed as tool output (forensic-terminal spec §6).
+// On-brand error state: a case file stamped "unreadable", framed like every other
+// dossier sheet. Dossier tokens only — this segment renders inside the root layout,
+// so globals.css is already loaded (unlike global-error.tsx below it).
 export default function Error({
   error,
   reset,
@@ -17,28 +18,37 @@ export default function Error({
   }, [error]);
 
   return (
-    <main id="main" className="flex min-h-dvh items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-md border border-border bg-card font-mono text-sm">
-        <div className="border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
-          <span aria-hidden="true" className="select-none text-[var(--primary)]">┌─ </span>
-          personaudit ~/error
+    <main id="main" className="flex min-h-dvh items-center justify-center px-4 py-16">
+      <div className="w-full max-w-md">
+        <div className="file-tab ml-5">
+          <span>Case unreadable</span>
         </div>
-        <div className="space-y-3 px-4 py-5">
-          <p style={{ color: "var(--severity-critical)" }}>
-            <span aria-hidden="true" className="select-none">✗&nbsp;</span>
-            fail — something broke
+        <div className="sheet margin-rule relative -mt-px pb-8 pl-12 pr-6 pt-7 sm:pl-14 sm:pr-8">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="label-mono">Something broke</p>
+              <h1 className="display mt-2 text-[clamp(1.5rem,3.2vw,1.9rem)] leading-[1.1]">
+                This page didn&apos;t load.
+              </h1>
+            </div>
+            <span
+              className="stamp shrink-0 text-[0.6rem]"
+              aria-label="Verdict: unreadable"
+            >
+              Unreadable
+            </span>
+          </div>
+          <p className="mt-4 max-w-sm break-words leading-relaxed text-muted-foreground">
+            {error.message || "Try again. If this keeps happening, reload the page."}
           </p>
-          <p className="break-words text-muted-foreground">
-            {error.message ||
-              "Try refreshing the page. If this keeps happening, clear your browser cache."}
-          </p>
-          <button
-            onClick={reset}
-            className="rounded-sm border border-border px-3 py-1.5 text-left transition-colors hover:border-[var(--primary)]/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-          >
-            <span aria-hidden="true" className="select-none text-[var(--primary)]">›&nbsp;</span>
-            retry
-          </button>
+          <div className="mt-7 border-t border-border pt-6">
+            <button
+              onClick={reset}
+              className="inline-flex h-10 items-center justify-center rounded-sm bg-primary px-5 text-sm font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+            >
+              Try again
+            </button>
+          </div>
         </div>
       </div>
     </main>

@@ -1,136 +1,110 @@
-# Personaudit Design Direction — Forensic Evidence Terminal
+# Personaudit design system: Evidence Dossier
 
-**Canonical.** Matches `docs/superpowers/specs/2026-07-28-forensic-terminal-redesign-design.md`
-and the live token layer in `src/app/globals.css` + `src/app/layout.tsx`.
-If this file disagrees with those, the code/spec win — update this doc.
+**Canonical, locked 2026-09-26.** Replaces the retired "Forensic Evidence Terminal" system.
+The token layer lives in `src/app/globals.css` and the fonts in `src/app/layout.tsx`. If this
+file and the code disagree, the code wins and this file gets updated.
 
-## Product Identity
+Reference implementation: `src/app/page.tsx` (home), `src/components/dossier/evidence-sheet.tsx`,
+`src/components/site-header.tsx`, and `src/components/site-footer.tsx`. Match them.
 
-**Category:** Accessibility scanning + persona task-success (not a disability simulator)
-**Users:** Agencies, freelancers, QA / a11y consultants shipping many client sites
-**Emotional response:** Authority, precision, forensic trust — an instrument, not a chatbot
-**Differentiator:** Dark warm mono-forward evidence UI. Nobody in the a11y category owns this.
+## Idea
 
-## The Single Design Move
+The product sells evidence an agency hands to a client. So the brand is the **case file**:
+warm manila desk, near-white sheets of paper, blue-black ink, a redline annotator, a
+highlighter, a rubber stamp. It must never look like a dark dev-tool terminal or a
+gradient SaaS template. The standard to hit: "this looks like a document I'd trust in a legal
+file", not "an AI made this".
 
-**The live audit log is the brand.** Show the instrument working — axe verdicts landing
-in severity color, personas reporting task-success — not a polished fake dashboard mock.
+Genre: editorial. Light-first. Dark ("night desk") is a supported secondary theme.
 
-## Design References (steal discipline, not cosmetics)
+## Tokens (use names, never raw values)
 
-| Source | What to steal | Avoid stealing |
-|--------|---------------|----------------|
-| **Linear** | Interaction completeness (6 states), density rhythm, teal/accent demotion, flat tiled surfaces | Indigo brand, Inter-as-identity |
-| **Raycast** | Keyboard-first affordances, compact rows, instant feedback | Soft glass panels |
-| **Resend / Vercel** | Restraint, typography hierarchy, one focal point per section | Gradient mesh heroes |
-| **Stark / Polypane** | Product-as-demo, multi-pane concept adapted to personas | Soft marketing card grids |
-| **Siteimprove** | Score-as-meter language (we use thin meters, not glossy donuts) | Enterprise navy + logo walls |
-| **uiverse / termcn / shadcn log blocks** | Microinteraction *ideas* (prompt cursor, scanline loader, hover border) | Neon glows, glitch, traffic-light window dots, glassmorphism |
-| **sysui Terminal theme** | Prompt/host framing, panel chrome vocabulary | Cyberpunk neon / hologram effects |
+| Role | Token | Notes |
+|---|---|---|
+| Desk (page) | `--background` / `bg-background` | warm manila |
+| Sheet (surface) | `--card` / `bg-card`, `.sheet` | near-white paper + `--shadow-sheet` |
+| Ink | `--foreground` | blue-black |
+| Secondary ink | `--muted-foreground` | ≥ 6.4:1 on desk; never use `/60` opacities on text |
+| CTA + links | `--primary` (ink blue) | one filled primary per view |
+| Annotation | `--redline` / `text-[var(--redline)]` | margin notes, stamps, "net new", critical |
+| Highlighter | `--highlight`, `.mark` | marks the evidence phrase inside prose |
+| Rules | `--border` | hairlines; `border-foreground` 2px for document heads |
+| Severity | `--severity-{critical,serious,moderate,minor}` | always glyph + color + text via `SeverityChip` |
 
-Inspiration workflow: search specific components (empty state, log row hover, focus ring,
-severity chip, meter) — never paste a whole aesthetic. Translate into our tokens.
+Radius is `--radius` (3px). Use `rounded-sm`. No `rounded-xl`, no pills on product chrome.
+No gradients, no glow, no glassmorphism, no drop shadows except `.sheet`.
 
-## Token System (locked)
+## Type
 
-### Fonts
-- **Mono — JetBrains Mono** (`--font-mono`): logs, rule IDs, counts, meters, tool labels, wordmark accent
-- **Sans — Inter** (`--font-sans` / `--font-heading`): copy, CTAs, tight headings
-- **Serif — Source Serif 4** (`--font-serif`): report verdict body, WCAG citations, guide prose
+- **Display: Newsreader** (`.display` class, or `font-serif`). Weight 500, tracking −0.022em,
+  upright only. **Never italic headings.** H1 `clamp(2.6rem,5.6vw,4.5rem)`, H2
+  `clamp(1.9rem,3.4vw,2.6rem)`, leading ~1.05.
+- **UI + copy: IBM Plex Sans** (`font-sans`, default). Body 16–18px, `leading-relaxed`,
+  measure ≤ 65ch (`max-w-xl`/`max-w-2xl`).
+- **Evidence: IBM Plex Mono** (`font-mono`). Rule IDs, WCAG codes, file numbers, counts,
+  commands, tables of numbers (`tabular-nums`).
+- **Eyebrow:** `.label-mono` (11px uppercase mono, muted). At most one per section, stacked
+  above its heading, never beside it.
+- Long-form prose (guides, legal, report body): `font-serif` at 1.0625–1.125rem.
 
-Retired: DM Serif Display (display face, wrong for document body).
+## Layout
 
-### Color
-Warm near-neutral hue **70**. Dark-first. Teal hue **195** DEMOTED to active/live/cursor ONLY.
+- Every section uses `.frame` (72rem, 1.25rem → 2rem gutters) or `.frame-narrow` (46rem) so
+  **all left edges line up**. Never invent a new `max-w-* mx-auto px-*` wrapper.
+- Vertical rhythm: `.section-y` (large) / `.section-y-sm`. Alternate `bg-background` and
+  `bg-card` bands with a `border-y border-border` to change "paper".
+- Asymmetric two-column grids (`lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]`), not
+  3-up icon card rows. Always `minmax(0,…)` tracks and `min-w-0` on children.
+- Numbered procedures, ledgers (tables with a 2px `border-foreground` head), and document
+  sheets are the preferred shapes. Avoid rows of identical rounded cards.
 
-```
-/* Dark (default) */
---background: oklch(0.15 0.006 70)
---card:       oklch(0.19 0.006 70)
---foreground: oklch(0.96 0.004 70)
---primary:    oklch(0.72 0.12 195)   /* live/cursor only — not every CTA */
---severity-critical: oklch(0.65 0.20 25)
---severity-serious:  oklch(0.72 0.16 55)
---severity-moderate: oklch(0.80 0.13 85)
---severity-minor:    oklch(0.70 0.12 250)  /* pulled off teal */
-```
+## Signature primitives (in `globals.css`)
 
-Light = "paper lab" variant (same system, warmer off-white). Report paper is always white
-ink-on-paper regardless of app theme.
+| Class | Use |
+|---|---|
+| `.sheet` | a piece of paper on the desk |
+| `.margin-rule` | legal-pad redline down the left of a sheet (needs `pl-12`+) |
+| `.file-tab` | "Case PA-0426 · host" tab on top of a sheet |
+| `.stamp` | verdict stamp; max one per viewport |
+| `.mark` | highlighter over the key evidence phrase |
+| `.redline-note` | annotator voice, mono, redline color |
+| `.ruled` | faint ledger lines, decorative only |
+| `.text-link` | inline body link (ink blue, underline, instant focus ring) |
+| `.label-mono` | eyebrow / field label |
+| `.display` | headings |
 
-### Radius
-`--radius: 0.375rem`. Prefer `rounded-sm` / `rounded-md`. No soft SaaS `rounded-xl` /
-`rounded-full` pills on product chrome.
+## Components
 
-### Severity (always color + glyph + text)
-```
-■ critical · ▲ serious · ◆ moderate · ● minor
-```
-Source of truth: `components/forensic/severity.ts`. Never color-only. Never severity on
-persona *opinion* (honesty wall).
+- **Primary CTA:** `Button` default (ink-blue fill, 1px inset bottom shade), `size="lg"`
+  (h-11/h-12) on marketing. Copy is a verb + object: "Grade a site free", "Save project",
+  "Export report". Never "Get started", never "Learn more".
+- **Secondary:** `.text-link` or `Button variant="outline"`. Never two filled buttons side by side.
+- **Inputs:** h-11/h-12, `border-input`, `bg-card`, mono for URLs, visible label (`.label-mono`)
+  above, hint text below, error in redline with a `■` glyph and `role="alert"`.
+- **Severity:** `SeverityChip` only (outline, glyph, label, WCAG id).
+- **Empty states:** a blank sheet with one sentence and one action. No illustrations.
+- **App shell:** light sheet sidebar/topbar, ink text, active item marked with a 2px ink-blue
+  left rule. Dense tables over cards.
 
-## Component Primitives
+## Interaction
 
-| Primitive | File | Role |
-|-----------|------|------|
-| Wordmark | `forensic/wordmark.tsx` | Mono name + teal cursor |
-| SeverityChip | `forensic/severity-chip.tsx` | Outline chip (no tint fill — AA) |
-| Meter | `forensic/meter.tsx` | CI fraction + thin bar |
-| BoxDivider | `forensic/divider.tsx` | Box-drawing section markers |
-| Monogram | `forensic/monogram.tsx` | Deterministic persona tile |
-| ReportExcerpt | `forensic/report-excerpt.tsx` | VPAT-lite sample |
-| FocusDemo / ContrastBadge | dogfood band | Credibility proof |
-| AuditTerminal | `audit-terminal.tsx` | Signature hero asset |
-| EmptyPrompt | `forensic/empty-prompt.tsx` | Terminal-native empty states |
+States required on every control: default · hover · focus-visible · active · disabled ·
+loading (and error/success where relevant). Focus ring: 2px `--ring`, 2px offset, never
+animated. Motion: 150ms color, 300ms state, `--ease-out`; transform/opacity only; honor
+`prefers-reduced-motion`. Silent success over celebratory toasts.
 
-## Layout Patterns
+## Content rules (honesty wall — non-negotiable)
 
-### Marketing
-Hero = grain + tight Inter headline + live AuditTerminal → dogfood band → scan form →
-how-it-works as run-log → honesty wall → report excerpt → CTA → Wordmark footer.
+- axe-core findings = the only compliance output. Persona output = task success + labeled
+  AI opinion. Never blur the two. Never simulate or imply disabled users.
+- No invented metrics, logos, testimonials, or customer counts. Real numbers come from
+  `experiments/` (see `src/lib/probe-ledger.ts`, `src/lib/sample-evidence.ts`) and are
+  labeled "probe" / "sample".
+- Hosted behind-login scanning is **not built**: behind-login is CLI-only. Don't imply otherwise.
+- No em dashes in UI copy. Second person, present tense, sentence-case headings.
 
-### App (observability console)
-Mono nav labels, teal left-border active marker, dense log rows for audits/projects,
-scan form as `› new scan` console input. Flat surfaces; borders do hierarchy, not shadows.
+## Anti-patterns (do not ship)
 
-### Report
-Paper stays paper (`report.module.css` print contract untouched). On-screen = console
-toolbar frame; print = white document.
-
-## Motion
-
-- 150ms hover/focus · 300ms state · 500ms entrance
-- Transform + opacity only; exponential ease-out
-- Always honor `prefers-reduced-motion` (terminal already ships a static complete frame)
-- No scroll-triggered gimmicks that hide content without JS (`data-reveal` + noscript)
-
-## Interaction Completeness (Linear lesson)
-
-Every interactive control needs designed: default · hover · focus-visible · active ·
-disabled · loading. Focus rings are a *feature* (thick, offset, teal) — dogfood them.
-
-## Anti-patterns (do NOT)
-
-- Purple-to-blue / pink mesh gradients
-- Soft `rounded-xl` card grids + icon+title+blurb feature rows
-- Fake traffic-light window dots
-- Glossy SVG donut score rings
-- `text-muted-foreground/60` (fails AA — use full muted)
-- Severity as filled tint chips (fails AA on 10% fills)
-- Neon glow / glitch / glassmorphism decoration
-- Disability-simulation personas or costume UI
-- Logo walls, star badges, fake social proof
-- "Get started" / dual Book-demo CTAs
-- Blurring Verdict / Task-success / Opinion in the UI
-
-## Content Gaps Still Worth Filling
-
-1. Signed-in *live* console screenshot (probe-grounded samples ship on marketing; swap when a saved customer run exists)
-2. Demand distribution for `/for-agencies` (outreach kit + CI docs live; 10 human outreaches outstanding)
-3. ~~CI-gate docs surface for agencies~~ → `/guides/ci-accessibility-gate`
-4. Session-artifact UX — **only after demand pull** (ADR 0001)
-
-## Build North Star
-
-If someone says "AI made this," we failed. If they say "this looks like a diagnostic
-instrument," we succeeded.
+Dark terminal heroes · fake window chrome / traffic-light dots · gradient meshes · icon +
+title + blurb 3-card rows · `rounded-xl` cards · grey disabled-looking primary buttons ·
+italic headings · logo walls · star ratings · "Get started" · text below 4.5:1.

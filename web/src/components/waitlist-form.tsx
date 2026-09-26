@@ -20,7 +20,7 @@ const SITE_BANDS = [
 
 const AUTH_NEED_BANDS = [
   { value: "", label: "How many sit behind a login?" },
-  { value: "none", label: "None — public sites only" },
+  { value: "none", label: "None, public sites only" },
   { value: "some", label: "Some of them" },
   { value: "most", label: "Most of them" },
   { value: "all", label: "All of them" },
@@ -28,8 +28,8 @@ const AUTH_NEED_BANDS = [
 
 const SCAN_PREF_BANDS = [
   { value: "", label: "Where should those scans run?" },
-  { value: "local", label: "Locally — password never leaves my machine" },
-  { value: "hosted", label: "Hosted — I'd hand over a short-lived session" },
+  { value: "local", label: "Locally, password never leaves my machine" },
+  { value: "hosted", label: "Hosted, I'd hand over a short-lived session" },
   { value: "unsure", label: "Not sure yet" },
 ] as const;
 
@@ -149,14 +149,14 @@ export function WaitlistForm({ variant = "waitlist" }: { variant?: "waitlist" | 
       <div
         role="status"
         aria-live="polite"
-        className="rounded-md border border-border bg-card p-8"
+        className="sheet p-8"
       >
         <p className="font-heading text-2xl text-foreground">
           {status === "already" ? "You're already on the list." : "You're on the list."}
         </p>
         <p className="mt-3 max-w-md text-sm text-muted-foreground">
           We&apos;re building the agency workspace with a handful of early partners. We&apos;ll
-          reach out before it opens — and if you left a note, it goes straight into what we
+          reach out before it opens. If you left a note, it goes straight into what we
           prioritise.
         </p>
         <p className="mt-5 text-sm">
@@ -189,7 +189,7 @@ export function WaitlistForm({ variant = "waitlist" }: { variant?: "waitlist" | 
           placeholder="you@youragency.com"
           aria-describedby={error ? `${emailId}-err` : undefined}
           aria-invalid={status === "error" || undefined}
-          className="mt-2 w-full rounded-sm border border-input bg-background px-4 py-3 text-base md:text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+          className="mt-2 w-full rounded-sm border border-input bg-card px-4 hover:border-foreground/70 py-3 text-base md:text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         />
       </div>
 
@@ -207,7 +207,7 @@ export function WaitlistForm({ variant = "waitlist" }: { variant?: "waitlist" | 
           id={sitesId}
           name="sitesCount"
           defaultValue=""
-          className="mt-2 w-full rounded-sm border border-input bg-background px-4 py-3 text-base md:text-sm outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+          className="mt-2 w-full rounded-sm border border-input bg-card px-4 hover:border-foreground/70 py-3 text-base md:text-sm outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
           {SITE_BANDS.map((b) => (
             <option key={b.value} value={b.value} disabled={b.value === ""}>
@@ -226,7 +226,7 @@ export function WaitlistForm({ variant = "waitlist" }: { variant?: "waitlist" | 
             <label htmlFor={authNeedId} className="block font-mono text-xs uppercase tracking-wide text-muted-foreground">
               Sites behind a login <span className="normal-case font-sans">(a no is as useful as a yes)</span>
             </label>
-            <select id={authNeedId} name="authNeed" defaultValue="" className="mt-2 w-full rounded-sm border border-input bg-background px-4 py-3 text-base md:text-sm outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
+            <select id={authNeedId} name="authNeed" defaultValue="" className="mt-2 w-full rounded-sm border border-input bg-card px-4 hover:border-foreground/70 py-3 text-base md:text-sm outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
               {AUTH_NEED_BANDS.map((b) => <option key={b.value} value={b.value} disabled={b.value === ""}>{b.label}</option>)}
             </select>
           </div>
@@ -234,7 +234,7 @@ export function WaitlistForm({ variant = "waitlist" }: { variant?: "waitlist" | 
             <label htmlFor={scanPrefId} className="block font-mono text-xs uppercase tracking-wide text-muted-foreground">
               Scan preference <span className="normal-case font-sans">(optional)</span>
             </label>
-            <select id={scanPrefId} name="scanPref" defaultValue="" className="mt-2 w-full rounded-sm border border-input bg-background px-4 py-3 text-base md:text-sm outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
+            <select id={scanPrefId} name="scanPref" defaultValue="" className="mt-2 w-full rounded-sm border border-input bg-card px-4 hover:border-foreground/70 py-3 text-base md:text-sm outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
               {SCAN_PREF_BANDS.map((b) => <option key={b.value} value={b.value} disabled={b.value === ""}>{b.label}</option>)}
             </select>
           </div>
@@ -242,7 +242,7 @@ export function WaitlistForm({ variant = "waitlist" }: { variant?: "waitlist" | 
             <label htmlFor={noteId} className="block font-mono text-xs uppercase tracking-wide text-muted-foreground">
               Anything else <span className="normal-case font-sans">(optional)</span>
             </label>
-            <textarea id={noteId} name="note" rows={2} maxLength={400} placeholder="e.g. mostly checkout and account dashboards" className="mt-2 w-full resize-y rounded-sm border border-input bg-background px-4 py-3 text-base md:text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]" />
+            <textarea id={noteId} name="note" rows={2} maxLength={400} placeholder="e.g. mostly checkout and account dashboards" className="mt-2 w-full resize-y rounded-sm border border-input bg-card px-4 hover:border-foreground/70 py-3 text-base md:text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]" />
           </div>
         </div>
       </details>
@@ -259,7 +259,7 @@ export function WaitlistForm({ variant = "waitlist" }: { variant?: "waitlist" | 
       )}
 
       {error && (
-        <p id={`${emailId}-err`} role="alert" className="text-sm text-destructive">
+        <p id={`${emailId}-err`} role="alert" className="text-sm text-[var(--redline)]">
           {error}
         </p>
       )}
@@ -267,7 +267,7 @@ export function WaitlistForm({ variant = "waitlist" }: { variant?: "waitlist" | 
       <button
         type="submit"
         disabled={status === "submitting" || !turnstileReady}
-        className="inline-flex w-full items-center justify-center rounded-sm bg-foreground px-6 py-3.5 text-sm font-semibold text-background transition-[background-color,transform] hover:bg-foreground/90 active:translate-y-px disabled:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] sm:w-auto"
+        className="inline-flex h-11 w-full items-center justify-center rounded-sm bg-primary px-5 text-[0.9375rem] font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] sm:w-auto"
       >
         {status === "submitting"
           ? "Sending…"

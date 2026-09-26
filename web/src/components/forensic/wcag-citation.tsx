@@ -23,7 +23,7 @@ export function WcagCitation({ code, className = "" }: { code: string; className
       </PreviewCard.Trigger>
       <PreviewCard.Portal>
         <PreviewCard.Positioner side="top" sideOffset={8}>
-          <PreviewCard.Popup className="max-w-[16rem] rounded-md border border-border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-lg shadow-black/20 transition-[transform,opacity] data-[starting-style]:scale-95 data-[starting-style]:opacity-0 data-[ending-style]:scale-95 data-[ending-style]:opacity-0">
+          <PreviewCard.Popup className="sheet max-w-[16rem] px-3 py-2 text-sm transition-[transform,opacity] data-[starting-style]:scale-95 data-[starting-style]:opacity-0 data-[ending-style]:scale-95 data-[ending-style]:opacity-0">
             <p className="font-mono text-xs tabular-nums text-[var(--primary)]">
               {`WCAG ${code}`}
             </p>

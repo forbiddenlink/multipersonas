@@ -9,8 +9,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/pricing`, changeFrequency: "monthly", priority: 0.9 },
     { url: `${base}/docs`, changeFrequency: "monthly", priority: 0.85 },
     { url: `${base}/grade`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/sample-report`, changeFrequency: "monthly", priority: 0.75 },
     // /auth/* is Disallow'd in robots.txt — keep it out of the sitemap too.
     { url: `${base}/guides/ci-accessibility-gate`, changeFrequency: "monthly", priority: 0.85 },
+    { url: `${base}/guides/accessibility-deadlines`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/guides/wcag-checklist`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/guides/common-accessibility-issues`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/guides/screen-reader-testing`, changeFrequency: "monthly", priority: 0.8 },

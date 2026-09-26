@@ -20,7 +20,12 @@ import {
   FINDING_STATUSES,
   isFindingStatus,
 } from "@/lib/finding-workflow";
+import { wcagTagsToCriteria } from "@/lib/wcag";
+import { splitLocations } from "@/lib/report";
 import { updateFindingWorkflowAction } from "./actions";
+import { ReportIssueCopy } from "./report-issue-copy";
+import { ReportIssueCopyAll } from "./report-issue-copy-all";
+import type { IssueFindingInput } from "./report-issue-markdown";
 
 export const metadata: Metadata = {
   title: "Audit details",
@@ -41,6 +46,29 @@ function successTone(achieved: number, total: number): "minor" | "moderate" | "c
 function severityRank(value: string): number {
   const i = SEVERITY_ORDER.indexOf(value as Severity);
   return i === -1 ? SEVERITY_ORDER.length : i;
+}
+
+// Shape a persisted axe finding row into the "Copy as issue" builder's input — never
+// fabricating a field the row doesn't carry (rule_id/wcag_tags/target are all nullable
+// for pre-migration rows; see supabase/migrations/010_findings_wcag.sql, 012_findings_target.sql).
+function toIssueFinding(f: {
+  title: string;
+  severity: string;
+  rule_id: string | null;
+  wcag_tags: string[] | null;
+  target: string | null;
+  page_url: string | null;
+  recommendation: string | null;
+}): IssueFindingInput {
+  return {
+    title: f.title,
+    severity: f.severity,
+    ruleId: f.rule_id,
+    wcagCodes: wcagTagsToCriteria(f.wcag_tags).map((c) => c.code),
+    target: f.target,
+    locations: splitLocations(f.page_url),
+    recommendation: f.recommendation,
+  };
 }
 
 export default async function AuditDetailPage({
@@ -92,7 +120,7 @@ export default async function AuditDetailPage({
   const { data: findingRows } = await supabase
     .from("findings")
     .select(
-      "id,persona_id,source,severity,category,title,description,recommendation,page_url,status,owner,notes,resolved_at"
+      "id,persona_id,source,severity,category,title,description,recommendation,page_url,status,owner,notes,resolved_at,rule_id,wcag_tags,target"
     )
     .eq("test_run_id", run.id)
     .order("created_at", { ascending: true });
@@ -119,9 +147,10 @@ export default async function AuditDetailPage({
       axeFindings.filter((f) => (f.status ?? "open") === status).length,
     ]),
   ) as Record<(typeof FINDING_STATUSES)[number], number>;
-  const openWorkflowCount = axeFindings.filter(
+  const openAxeFindings = axeFindings.filter(
     (f) => !["fixed", "accepted-risk", "false-positive"].includes(f.status ?? "open"),
-  ).length;
+  );
+  const openWorkflowCount = openAxeFindings.length;
   const owners = [...new Set(axeFindings.map((f) => f.owner?.trim()).filter(Boolean))].sort();
   const filteredAxeFindings = sortedAxeFindings.filter((f) => {
     const matchesStatus = selectedStatus === "all" || (f.status ?? "open") === selectedStatus;
@@ -196,6 +225,27 @@ export default async function AuditDetailPage({
     .sort((a, b) => b.priorityScore - a.priorityScore)
     .slice(0, 3);
 
+  const severityCounts = Object.fromEntries(
+    SEVERITY_ORDER.map((sev) => [sev, axeFindings.filter((f) => f.severity === sev).length]),
+  ) as Record<Severity, number>;
+  let host = run.url;
+  try {
+    host = new URL(run.url).host;
+  } catch {
+    // run.url may be a bare host on older rows — keep it as-is.
+  }
+  const caseDate = new Date(run.created_at).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+  const caseStatus =
+    openWorkflowCount === 0 && axeFindings.length > 0
+      ? "All clear"
+      : axeFindings.length === 0
+        ? "No findings"
+        : `${openWorkflowCount} open`;
+
   const evidenceJourney = journeys.find((journey) => journey.personaId === personaParam);
   const verificationIndex = evidenceJourney?.steps.findIndex((step) => step.action === "verify_task") ?? -1;
   const initialStep = evidence === "task" && verificationIndex >= 0
@@ -243,26 +293,40 @@ export default async function AuditDetailPage({
             </li>
           </ol>
         </nav>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              <span className="font-mono text-base font-normal text-muted-foreground">Results for </span>
-              <span className="font-mono break-all">{run.url}</span>
-            </h1>
-            <p className="mt-1 font-mono text-xs text-muted-foreground">
-              {new Date(run.created_at).toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </p>
+        <div>
+          <div className="file-tab">
+            <span>Case {run.id.slice(0, 8)}</span>
+            <span className="text-foreground/70">·</span>
+            <span className="normal-case">{host}</span>
+            <span className="text-foreground/70">·</span>
+            <span className="normal-case">{caseDate}</span>
+            <span className="ml-auto normal-case text-[var(--redline)]">·&nbsp;{caseStatus}</span>
           </div>
-          <Link
-            href={`/audits/${run.id}/report`}
-            className={buttonVariants({ variant: "outline", size: "sm" })}
-          >
-            Export accessibility report
-          </Link>
+          <div className="sheet -mt-px flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
+            <div className="min-w-0">
+              <h1 className="display text-xl leading-tight sm:text-2xl">
+                <span className="break-all">{run.url}</span>
+              </h1>
+              {axeFindings.length > 0 ? (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {SEVERITY_ORDER.filter((sev) => severityCounts[sev] > 0).map((sev) => (
+                    <span key={sev} className="inline-flex items-center gap-1.5">
+                      <SeverityChip severity={sev} />
+                      <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                        {severityCounts[sev]}
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+            <Link
+              href={`/audits/${run.id}/report`}
+              className={buttonVariants({ variant: "outline", size: "lg", className: "shrink-0" })}
+            >
+              Export accessibility report
+            </Link>
+          </div>
         </div>
         <Meter
           className="w-full max-w-xs"
@@ -282,10 +346,11 @@ export default async function AuditDetailPage({
       {/* Persona Replay Theater — the scrubbable walk a real user took */}
       {journeys.length > 0 && (
         <div className="space-y-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-lg font-semibold tracking-tight">Replay</h2>
-            <p className="font-mono text-xs text-muted-foreground">
-              what a persona saw, thought, and hit — step by step
+          <div className="space-y-1.5">
+            <p className="label-mono">Evidence walk</p>
+            <h2 className="display text-2xl leading-tight">Replay</h2>
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              What a persona saw, thought, and hit, step by step.
             </p>
           </div>
           <ReplayTheater
@@ -302,15 +367,16 @@ export default async function AuditDetailPage({
       {/* Fix first — what to remediate before the full evidence wall. */}
       {priorityFindings.length > 0 && (
         <div className="space-y-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-lg font-semibold tracking-tight">Fix first</h2>
-            <p className="font-mono text-xs text-muted-foreground">
-              severity plus persona task impact
+          <div className="space-y-1.5">
+            <p className="label-mono">Priority</p>
+            <h2 className="display text-2xl leading-tight">Fix first</h2>
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              Severity combined with persona task impact.
             </p>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             {priorityFindings.map((f) => (
-              <div key={f.id} className="rounded-md border border-border p-4">
+              <div key={f.id} className="sheet p-4">
                 <div className="flex items-center justify-between gap-3">
                   <SeverityChip severity={f.severity} />
                   <span className="font-mono text-lg font-semibold tabular-nums">{f.priorityScore}</span>
@@ -326,10 +392,13 @@ export default async function AuditDetailPage({
       {/* Persona impact — the client story before the raw evidence. */}
       {personaImpact.length > 0 && (
         <div className="space-y-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-lg font-semibold tracking-tight">Persona impact</h2>
-            <p className="font-mono text-xs text-muted-foreground">
-              {run.task_definition ? "which profiles matched the text check and where evidence was captured" : "who got through, who got blocked, and where proof appeared"}
+          <div className="space-y-1.5">
+            <p className="label-mono">Client story</p>
+            <h2 className="display text-2xl leading-tight">Persona impact</h2>
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              {run.task_definition
+                ? "Which profiles matched the text check, and where evidence was captured."
+                : "Who got through, who got blocked, and where proof appeared."}
             </p>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
@@ -337,7 +406,7 @@ export default async function AuditDetailPage({
               <Link
                 key={persona.personaId}
                 href={`/audits/${run.id}?persona=${encodeURIComponent(persona.personaId)}&step=0`}
-                className="rounded-md border border-border p-4 transition-colors hover:border-foreground/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                className="sheet p-4 transition-colors hover:border-foreground/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -371,14 +440,21 @@ export default async function AuditDetailPage({
       {/* Persona findings */}
       {byPersona.size > 0 && (
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold tracking-tight">Persona findings</h2>
+          <div className="space-y-1.5">
+            <span className="redline-note uppercase tracking-[0.1em]">Opinion · AI</span>
+            <h2 className="display text-2xl leading-tight">Persona findings</h2>
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              Usability notes from AI browser personas trying to finish a real task, never a
+              compliance verdict and never mixed into the axe verdicts below.
+            </p>
+          </div>
           <div className="grid gap-6 sm:grid-cols-3">
             {[...byPersona.entries()].map(([personaId, list]) => {
               const meta = PERSONA_DATA[personaId as keyof typeof PERSONA_DATA];
               return (
                 <div
                   key={personaId}
-                  className="space-y-3 rounded-md border border-border p-4"
+                  className="sheet space-y-3 p-4"
                 >
                   <div>
                     <p className="text-sm font-medium">{meta?.name ?? personaId}</p>
@@ -390,11 +466,11 @@ export default async function AuditDetailPage({
                     {list.map((f) => (
                       <div
                         key={f.id}
-                        className="space-y-1.5 rounded-md border border-border p-3"
+                        className="space-y-1.5 rounded-sm border border-border p-3"
                       >
                         <div className="flex flex-wrap items-center gap-2">
                           {/* Opinion tier — never SeverityChip (axe severity vocab). */}
-                          <span className="inline-flex items-center rounded-sm border border-border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                          <span className="inline-flex items-center rounded-sm border border-border px-2 py-0.5 label-mono">
                             AI observation
                           </span>
                           <span className="text-xs font-medium truncate">
@@ -422,33 +498,38 @@ export default async function AuditDetailPage({
       {/* Axe findings */}
       {axeFindings.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold tracking-tight">
-            Accessibility issues (axe-core)
-          </h2>
-          <div className="grid gap-2 sm:grid-cols-4">
-            <div className="rounded-md border border-border p-3">
-              <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">open work</p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums">{openWorkflowCount}</p>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="space-y-1.5">
+              <p className="label-mono">Axe-core verdicts</p>
+              <h2 className="display text-2xl leading-tight">Accessibility issues</h2>
+              <p className="max-w-2xl text-sm text-muted-foreground">
+                Deterministic, cited to WCAG.
+              </p>
+            </div>
+            <ReportIssueCopyAll findings={openAxeFindings.map(toIssueFinding)} />
+          </div>
+          <div className="sheet grid grid-cols-2 divide-x divide-y divide-border overflow-hidden sm:grid-cols-4 sm:divide-y-0">
+            <div className="p-3">
+              <p className="label-mono">open work</p>
+              <p className="mt-1 font-mono text-2xl font-semibold tabular-nums">{openWorkflowCount}</p>
             </div>
             {FINDING_STATUSES.slice(1, 4).map((status) => (
-              <div key={status} className="rounded-md border border-border p-3">
-                <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-                  {FINDING_STATUS_LABELS[status]}
-                </p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums">{workflowCounts[status]}</p>
+              <div key={status} className="p-3">
+                <p className="label-mono">{FINDING_STATUS_LABELS[status]}</p>
+                <p className="mt-1 font-mono text-2xl font-semibold tabular-nums">{workflowCounts[status]}</p>
               </div>
             ))}
           </div>
-          <form className="grid gap-3 rounded-md border border-border p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+          <form className="flex flex-wrap items-end gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="status-filter" className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-                Status filter
+              <Label htmlFor="status-filter" className="label-mono">
+                Status
               </Label>
               <select
                 id="status-filter"
                 name="status"
                 defaultValue={selectedStatus}
-                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                className="h-10 rounded-sm border border-input bg-card px-3 text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
               >
                 <option value="all">All statuses</option>
                 {FINDING_STATUSES.map((status) => (
@@ -459,14 +540,14 @@ export default async function AuditDetailPage({
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="owner-filter" className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-                Owner filter
+              <Label htmlFor="owner-filter" className="label-mono">
+                Owner
               </Label>
               <select
                 id="owner-filter"
                 name="owner"
                 defaultValue={selectedOwner}
-                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                className="h-10 rounded-sm border border-input bg-card px-3 text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
               >
                 <option value="">All owners</option>
                 {owners.map((owner) => (
@@ -480,11 +561,10 @@ export default async function AuditDetailPage({
               Apply
             </button>
           </form>
-          <div className="overflow-hidden rounded-md border border-border bg-card">
-            <div className="flex items-center gap-2 border-b border-border px-4 py-2.5 font-mono text-xs text-muted-foreground">
-              <span className="text-[var(--primary)]">›</span>
-              <span>verdicts — deterministic, cited to WCAG</span>
-              <span className="ml-auto rounded-sm border border-border px-1.5 py-0.5 tabular-nums">
+          <div className="sheet overflow-hidden">
+            <div className="flex items-center gap-2 border-b border-border px-4 py-2.5 label-mono">
+              <span>Showing</span>
+              <span className="ml-auto rounded-sm border border-border px-1.5 py-0.5 font-mono text-xs tabular-nums normal-case text-muted-foreground">
                 {filteredAxeFindings.length} / {axeFindings.length}
               </span>
             </div>
@@ -501,7 +581,7 @@ export default async function AuditDetailPage({
                     <span className="text-sm font-medium text-card-foreground">
                       {f.title}
                     </span>
-                    <span className="rounded-sm border border-border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                    <span className="rounded-sm border border-border px-2 py-0.5 label-mono">
                       {FINDING_STATUS_LABELS[f.status as keyof typeof FINDING_STATUS_LABELS] ??
                         "Open"}
                     </span>
@@ -518,14 +598,20 @@ export default async function AuditDetailPage({
                       {formatLocation(f.page_url)}
                     </p>
                   )}
-                  <form
-                    action={updateFindingWorkflowAction.bind(null, run.id, f.id)}
-                    className="mt-4 grid gap-3 rounded-md border border-border bg-background/60 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
-                  >
+                  <ReportIssueCopy finding={toIssueFinding(f)} className="mt-3" />
+                  <details className="mt-3 group/details">
+                    <summary className="label-mono flex w-fit list-none cursor-pointer select-none items-center gap-1.5 rounded-sm border border-border px-2 py-1 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] [&::-webkit-details-marker]:hidden">
+                      <span aria-hidden="true" className="inline-block transition-transform group-open/details:rotate-90">▸</span>
+                      Update status
+                    </summary>
+                    <form
+                      action={updateFindingWorkflowAction.bind(null, run.id, f.id)}
+                      className="mt-3 grid gap-3 rounded-sm border border-border bg-background/60 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+                    >
                     <div className="space-y-1.5">
                       <Label
                         htmlFor={`status-${f.id}`}
-                        className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground"
+                        className="label-mono"
                       >
                         Status
                       </Label>
@@ -545,7 +631,7 @@ export default async function AuditDetailPage({
                     <div className="space-y-1.5">
                       <Label
                         htmlFor={`owner-${f.id}`}
-                        className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground"
+                        className="label-mono"
                       >
                         Owner
                       </Label>
@@ -565,7 +651,7 @@ export default async function AuditDetailPage({
                     <div className="space-y-1.5 sm:col-span-3">
                       <Label
                         htmlFor={`notes-${f.id}`}
-                        className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground"
+                        className="label-mono"
                       >
                         Notes
                       </Label>
@@ -579,7 +665,8 @@ export default async function AuditDetailPage({
                         placeholder="Fix plan, acceptance note, or handoff context"
                       />
                     </div>
-                  </form>
+                    </form>
+                  </details>
                 </div>
               ))}
             </div>

@@ -169,14 +169,12 @@ export function ReplayTheater({
   return (
     <section
       aria-label="Persona replay"
-      className="overflow-hidden rounded-md border border-border bg-card"
+      className="sheet overflow-hidden"
       onKeyDown={onKeyDown}
       tabIndex={0}
     >
-      {/* Console header + persona switcher */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-4 py-2.5 font-mono text-xs">
-        <span className="text-[var(--primary)]">›</span>
-        <span className="text-muted-foreground">replay</span>
+      {/* Header + persona switcher */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-4 py-2.5 label-mono">
         {journeys.length > 1 ? (
           <div className="flex flex-wrap gap-1" role="tablist" aria-label="Personas">
             {journeys.map((j, i) => {
@@ -215,7 +213,7 @@ export function ReplayTheater({
                       document.getElementById(`${baseId}-tab-${journeys[next]!.personaId}`)?.focus();
                     });
                   }}
-                  className={`rounded-sm border px-2 py-0.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] ${
+                  className={`rounded-sm border px-2 py-0.5 normal-case transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] ${
                     active
                       ? "border-[var(--primary)] text-foreground"
                       : "border-border text-muted-foreground hover:text-foreground"
@@ -227,11 +225,11 @@ export function ReplayTheater({
             })}
           </div>
         ) : (
-          <span className="text-foreground">{meta.name}</span>
+          <span className="normal-case text-foreground">{meta.name}</span>
         )}
         <span className="ml-auto flex items-center gap-2">
           <span
-            className="rounded-sm border px-1.5 py-0.5"
+            className="rounded-sm border px-1.5 py-0.5 normal-case"
             style={{
               borderColor: journey.goalCompleted
                 ? "var(--severity-minor)"
@@ -252,7 +250,7 @@ export function ReplayTheater({
         {/* Frame viewport */}
         <div className="flex flex-col border-b border-border md:border-b-0 md:border-r">
           <div className="flex items-center justify-between gap-2 px-4 py-2 font-mono text-[11px] text-muted-foreground">
-            <span className="min-w-0 truncate">{location || "—"}</span>
+            <span className="min-w-0 truncate">{location || "no location recorded"}</span>
             <span className="shrink-0 tabular-nums">
               frame {sIdx + 1} / {stepCount}
             </span>
@@ -266,7 +264,7 @@ export function ReplayTheater({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={step.screenshotUrl}
-                  alt={`${meta.name} — step ${sIdx + 1}: ${step.action}`}
+                  alt={`${meta.name}, step ${sIdx + 1}: ${step.action}`}
                   className="absolute inset-0 h-full w-full object-cover object-top transition-opacity duration-300 motion-reduce:transition-none"
                   onError={(e) => {
                     const el = e.currentTarget;
@@ -279,7 +277,7 @@ export function ReplayTheater({
                   className="absolute inset-0 hidden items-center justify-center px-6 text-center font-mono text-xs text-muted-foreground"
                   aria-hidden="true"
                 >
-                  screenshot expired — reload to refresh
+                  screenshot expired, reload to refresh
                 </div>
               </>
             ) : (
@@ -293,10 +291,13 @@ export function ReplayTheater({
         {/* Narration + evidence at this state */}
         <div className="flex flex-col gap-4 p-4">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
-              {step.action}
-              {step.detail ? <span className="normal-case"> — {step.detail}</span> : null}
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                {step.action}
+                {step.detail ? <span className="normal-case">: {step.detail}</span> : null}
+              </p>
+              <span className="redline-note shrink-0 uppercase tracking-[0.1em]">Opinion · AI</span>
+            </div>
             {step.reasoning ? (
               // Keyed by frame so a long finish monologue re-collapses when you scrub away.
               <Monologue key={`${pIdx}-${sIdx}`} text={step.reasoning} />
@@ -349,7 +350,7 @@ export function ReplayTheater({
         <div
           className="flex h-7 gap-px"
           role="group"
-          aria-label="Journey timeline — click a step to jump"
+          aria-label="Journey timeline, click a step to jump"
         >
           {journey.steps.map((s, i) => {
             const b = frustrationBand(s.frustration);
@@ -361,7 +362,7 @@ export function ReplayTheater({
                   setPlaying(false);
                   setSIdx(i);
                 }}
-                title={taskCheck ? `step ${i + 1} — ${s.action}` : `step ${i + 1} — ${b.label} (${s.frustration})`}
+                title={taskCheck ? `step ${i + 1}: ${s.action}` : `step ${i + 1}: ${b.label} (${s.frustration})`}
                 aria-label={taskCheck ? `Jump to step ${i + 1}, ${s.action}` : `Jump to step ${i + 1}, ${b.label}`}
                 aria-current={active}
                 className="group relative flex-1 overflow-hidden rounded-[2px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
@@ -384,14 +385,14 @@ export function ReplayTheater({
         </div>
 
         {/* Transport */}
-        <div className="mt-3 flex flex-wrap items-center gap-2 font-mono text-xs">
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
           <button
             onClick={() => go(-1)}
             disabled={sIdx === 0}
             aria-label="Previous step"
-            className="rounded-sm border border-border px-2 py-1 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+            className="rounded-sm border border-border px-3 py-1 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
           >
-            ⏮ prev
+            Previous
           </button>
           <button
             onClick={() => {
@@ -402,27 +403,27 @@ export function ReplayTheater({
             className="rounded-sm border px-3 py-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
             style={{ borderColor: "var(--primary)", color: "var(--primary)" }}
           >
-            {isPlaying ? "⏸ pause" : atEnd ? "↻ replay" : "▶ play"}
+            {isPlaying ? "Pause" : atEnd ? "Replay" : "Play"}
           </button>
           <button
             onClick={() => go(1)}
             disabled={atEnd}
             aria-label="Next step"
-            className="rounded-sm border border-border px-2 py-1 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+            className="rounded-sm border border-border px-3 py-1 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
           >
-            next ⏭
+            Next
           </button>
-          <span className="hidden text-[10px] text-muted-foreground lg:inline">
-            [←/→] step · [Space] play
+          <span className="hidden text-xs text-muted-foreground lg:inline">
+            Use left and right arrow to step, space to play.
           </span>
           <button
             onClick={copyMoment}
             aria-label="Copy a link to this moment"
-            className="ml-auto rounded-sm border border-border px-2 py-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+            className="ml-auto rounded-sm border border-border px-3 py-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
           >
-            {copied ? "✓ copied" : "⧉ link"}
+            {copied ? "Copied" : "Copy link"}
           </button>
-          <span className="text-muted-foreground">
+          <span className="font-mono text-xs text-muted-foreground">
             <span className="tabular-nums text-foreground">{sIdx + 1}</span>
             <span> / {stepCount}</span>
           </span>

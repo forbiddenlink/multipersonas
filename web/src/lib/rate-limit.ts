@@ -24,7 +24,7 @@ export async function consumeRateLimit(
 
   if (!admin) {
     console.warn(
-      "[rate-limit] SUPABASE_SERVICE_ROLE_KEY not set — durable rate limiting unavailable (refusing).",
+      "[rate-limit] SUPABASE_SERVICE_ROLE_KEY not set; durable rate limiting unavailable (refusing).",
     );
     return { allowed: false, retryAfterSeconds: 60, unavailable: true };
   }

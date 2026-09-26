@@ -4,25 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Wordmark } from "@/components/forensic/wordmark";
 import { Eye, EyeOff } from "lucide-react";
-
-// Terminal header bar shared by every state of this card — a mono prompt line
-// framing the card as tool output, per the forensic-terminal auth spec.
-function CardHeaderBar() {
-  return (
-    <div className="flex items-center gap-2 border-b border-border px-5 py-3 font-mono text-xs text-muted-foreground">
-      <span aria-hidden="true" className="select-none text-[var(--primary)]">
-        ›
-      </span>
-      <Wordmark className="text-foreground" />
-      <span className="text-muted-foreground">/ update-password</span>
-    </div>
-  );
-}
+import { AuthShell, AuthCardTab, AuthFormError } from "@/components/dossier/app-auth-shell";
 
 function validatePassword(v: string): string | undefined {
   const issues: string[] = [];
@@ -36,11 +22,12 @@ export default function UpdatePasswordPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [show, setShow] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
 
@@ -81,122 +68,113 @@ export default function UpdatePasswordPage() {
 
   if (done) {
     return (
-      <main id="main" className="flex min-h-dvh items-center justify-center px-4">
-        <div className="w-full max-w-sm rounded-md border border-border bg-card">
-          <CardHeaderBar />
-          <div className="px-5 py-6 text-center">
-            <h1 className="text-xl font-semibold tracking-tight text-foreground">
-              Password updated
-            </h1>
-            <p className="mt-2 text-sm text-muted-foreground">Your password has been changed.</p>
-            <Link
-              href="/dashboard"
-              className="mt-5 inline-flex w-full items-center justify-center rounded-sm bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-            >
-              Go to dashboard
-            </Link>
+      <main id="main">
+        <AuthShell>
+          <div className="sheet w-full max-w-sm">
+            <AuthCardTab route="update-password" />
+            <div className="px-5 py-6 text-center">
+              <h1 className="display text-2xl leading-tight text-foreground">Password updated</h1>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Your password has been changed.</p>
+              <Link href="/dashboard" className={buttonVariants({ className: "mt-5 w-full" })}>
+                Go to dashboard
+              </Link>
+            </div>
           </div>
-        </div>
+        </AuthShell>
       </main>
     );
   }
 
   return (
-    <main id="main" className="flex min-h-dvh items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-md border border-border bg-card">
-        <CardHeaderBar />
-        <div className="px-5 py-6">
-          <div className="text-center">
-            <h1 className="text-xl font-semibold tracking-tight text-foreground">
-              Set a new password
-            </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Choose a password you don&apos;t use anywhere else
-            </p>
-          </div>
+    <main id="main">
+      <AuthShell>
+        <div className="sheet w-full max-w-sm">
+          <AuthCardTab route="update-password" />
+          <div className="px-5 py-6">
+            <div>
+              <p className="label-mono">Almost done</p>
+              <h1 className="display mt-1.5 text-2xl leading-tight text-foreground">Set a new password</h1>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Choose a password you don&apos;t use anywhere else.
+              </p>
+            </div>
 
-          <div className="mt-6 flex flex-col gap-4">
-            {error && (
-              <div
-                id="update-password-error"
-                role="alert"
-                className="rounded-sm border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            <div className="mt-6 flex flex-col gap-4">
+              {error && <AuthFormError id="update-password-error" message={error} />}
+
+              <form
+                onSubmit={handleSubmit}
+                aria-describedby={error ? "update-password-error" : undefined}
+                className="flex flex-col gap-4"
               >
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="password"
-                  className="font-mono text-xs uppercase tracking-wide text-muted-foreground"
-                >
-                  New password
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={show ? "text" : "password"}
-                    placeholder="At least 8 characters"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="new-password"
-                    aria-describedby={error ? "update-password-error" : undefined}
-                    className="rounded-sm pr-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShow(!show)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-                    aria-label={show ? "Hide password" : "Show password"}
-                  >
-                    {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                  </button>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="password" className="label-mono">New password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={show ? "text" : "password"}
+                      placeholder="At least 8 characters"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="new-password"
+                      aria-describedby={error ? "update-password-error" : "update-password-hint"}
+                      className="pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShow(!show)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                      aria-label={show ? "Hide password" : "Show password"}
+                    >
+                      {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
+                  {!error && (
+                    <p id="update-password-hint" className="text-xs text-muted-foreground">
+                      8+ characters with a number or symbol
+                    </p>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground">8+ characters with a number or symbol</p>
-              </div>
 
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="confirm-password"
-                  className="font-mono text-xs uppercase tracking-wide text-muted-foreground"
-                >
-                  Confirm new password
-                </Label>
-                <Input
-                  id="confirm-password"
-                  type={show ? "text" : "password"}
-                  placeholder="Repeat your password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  autoComplete="new-password"
-                  required
-                  className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-                />
-              </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="confirm-password" className="label-mono">Confirm new password</Label>
+                  <div className="relative">
+                    <Input
+                      id="confirm-password"
+                      type={showConfirm ? "text" : "password"}
+                      placeholder="Repeat your password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      autoComplete="new-password"
+                      className="pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm(!showConfirm)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                      aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
+                    >
+                      {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
+                </div>
 
-              <Button
-                type="submit"
-                disabled={loading}
-                className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-              >
-                {loading ? "Updating..." : "Update password"}
-              </Button>
-            </form>
+                <Button type="submit" loading={loading} className="w-full">
+                  Update password
+                </Button>
+              </form>
 
-            <p className="text-center text-sm text-muted-foreground">
-              <Link
-                href="/auth/login"
-                className="rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-              >
-                Back to sign in
-              </Link>
-            </p>
+              <p className="text-center text-sm text-muted-foreground">
+                <Link href="/auth/login" className="text-link">
+                  &larr; Back to sign in
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </AuthShell>
     </main>
   );
 }

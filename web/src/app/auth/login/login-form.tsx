@@ -8,27 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Wordmark } from "@/components/forensic/wordmark";
 import { Eye, EyeOff } from "lucide-react";
 import { safeRedirectPath } from "@/lib/safe-redirect";
+import { AuthShell, AuthCardTab, AuthFormError } from "@/components/dossier/app-auth-shell";
 
 // Callers redirect here with either ?next= (server guards: settings, projects actions)
 // or ?returnTo= (middleware). Read both; safeRedirectPath blocks open redirects.
 function safeReturnTo(params: URLSearchParams): string {
   return safeRedirectPath(params.get("next") ?? params.get("returnTo"));
-}
-
-// Terminal header bar — frames the auth card as tool output (forensic-terminal spec).
-function CardHeaderBar({ route }: { route: string }) {
-  return (
-    <div className="flex items-center gap-2 border-b border-border px-5 py-3 font-mono text-xs text-muted-foreground">
-      <span aria-hidden="true" className="select-none text-[var(--primary)]">
-        ›
-      </span>
-      <Wordmark className="text-foreground" />
-      <span className="text-muted-foreground">/ {route}</span>
-    </div>
-  );
 }
 
 export function LoginForm() {
@@ -54,7 +41,7 @@ export function LoginForm() {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
 
-  async function handleEmailLogin(e: React.FormEvent) {
+  async function handleEmailLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setFormError("");
 
@@ -113,27 +100,24 @@ export function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-md border border-border bg-card">
-        <CardHeaderBar route="sign-in" />
+    <AuthShell>
+      <div className="sheet w-full max-w-sm">
+        <AuthCardTab route="sign-in" />
         <div className="px-5 py-6">
-          <div className="text-center">
-            <h1 className="text-xl font-semibold tracking-tight text-foreground">Sign in</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
+          <div>
+            <p className="label-mono">Welcome back</p>
+            <h1 className="display mt-1.5 text-2xl leading-tight text-foreground">Sign in</h1>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Open your audit history and resume from where you left off.
             </p>
           </div>
 
           <div className="mt-6 flex flex-col gap-4">
-          {formError && (
-            <div id="form-error" role="alert" className="rounded-sm border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {formError}
-            </div>
-          )}
+          {formError && <AuthFormError id="form-error" message={formError} />}
 
           <form onSubmit={handleEmailLogin} aria-describedby={formError ? "form-error" : undefined} className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="email" className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Email</Label>
+              <Label htmlFor="email" className="label-mono">Email</Label>
               <Input
                 ref={emailRef}
                 id="email"
@@ -143,12 +127,11 @@ export function LoginForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 required
-                className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
               />
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="password" className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Password</Label>
+              <Label htmlFor="password" className="label-mono">Password</Label>
               <div className="relative">
                 <Input
                   ref={passwordRef}
@@ -158,7 +141,7 @@ export function LoginForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
-                  className="pr-10 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                  className="pr-10"
                   required
                 />
                 <button
@@ -171,17 +154,14 @@ export function LoginForm() {
                 </button>
               </div>
               <div className="flex justify-end">
-                <Link
-                  href="/auth/forgot-password"
-                  className="rounded-sm py-1 text-sm text-muted-foreground hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-                >
+                <Link href="/auth/forgot-password" className="text-link text-sm">
                   Forgot password?
                 </Link>
               </div>
             </div>
 
-            <Button type="submit" disabled={loading} className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
-              {loading ? "Signing in..." : "Sign in"}
+            <Button type="submit" loading={loading} className="w-full">
+              Sign in
             </Button>
           </form>
 
@@ -191,7 +171,7 @@ export function LoginForm() {
             <Separator className="flex-1" />
           </div>
 
-          <Button variant="outline" onClick={handleGitHubLogin} disabled={loading} className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
+          <Button variant="outline" onClick={handleGitHubLogin} loading={loading} className="w-full">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -205,21 +185,18 @@ export function LoginForm() {
 
           <p className="text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
-            <Link
-              href={signupHref}
-              className="rounded-sm text-foreground underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-            >
+            <Link href={signupHref} className="text-link">
               Sign up
             </Link>
           </p>
           <p className="text-center text-xs text-muted-foreground">
-            <Link href="/" className="rounded-sm hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
+            <Link href="/" className="text-link">
               &larr; Back to home
             </Link>
           </p>
           </div>
         </div>
       </div>
-    </div>
+    </AuthShell>
   );
 }

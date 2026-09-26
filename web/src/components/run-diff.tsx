@@ -17,18 +17,17 @@ export function RunDiff({ diff }: { diff: RunRegression }) {
   const hasPrevious = diff.previous != null;
 
   return (
-    <div className="overflow-hidden rounded-md border border-border bg-card font-mono text-sm">
-      <div className="border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
-        <span className="select-none text-[var(--primary)]">┌─ </span>
-        regression
+    <div className="sheet overflow-hidden font-mono text-sm">
+      <div className="border-b border-border px-4 py-2.5 label-mono">
+        <span>Retest</span>
         {hasPrevious ? (
-          <span className="ml-2">
+          <span className="ml-2 normal-case">
             {shortDate(diff.previous!.created_at)}
             <span className="mx-1.5">→</span>
             {shortDate(diff.current.created_at)}
           </span>
         ) : (
-          <span className="ml-2">first run — establishing baseline</span>
+          <span className="ml-2 normal-case">first run, establishing baseline</span>
         )}
       </div>
 
@@ -62,7 +61,7 @@ export function RunDiff({ diff }: { diff: RunRegression }) {
             {diff.cleared.length}
           </p>
           <p className="mt-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-            cleared
+            fixed
           </p>
         </div>
         <div className="px-3 py-3">
@@ -70,16 +69,15 @@ export function RunDiff({ diff }: { diff: RunRegression }) {
             {diff.unchangedCount}
           </p>
           <p className="mt-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-            unchanged
+            still open
           </p>
         </div>
       </div>
 
       {!hasPrevious ? (
         <p className="px-4 py-4 text-xs leading-relaxed text-muted-foreground">
-          <span className="select-none text-[var(--primary)]">›&nbsp;</span>
-          Run another scan on this project to see new vs cleared defects. Same
-          identity the CI gate uses — fail builds only on regressions.
+          Run another scan on this project to see new versus fixed defects, using the
+          same identity the CI gate uses. Builds only fail on regressions.
         </p>
       ) : (
         <div className="divide-y divide-border">
@@ -145,8 +143,7 @@ export function RunDiff({ diff }: { diff: RunRegression }) {
 
           {diff.newDefects.length === 0 && diff.cleared.length === 0 ? (
             <p className="px-4 py-4 text-xs text-muted-foreground">
-              <span className="select-none text-[var(--primary)]">›&nbsp;</span>
-              No new or cleared axe verdicts vs the previous run.
+              No new or fixed axe verdicts versus the previous run.
             </p>
           ) : null}
         </div>

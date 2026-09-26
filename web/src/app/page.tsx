@@ -1,348 +1,451 @@
+/* Hallmark · genre: editorial · macrostructure: Long Document (case file) · design-system: DESIGN.md · designed-as-app */
 import type { Metadata } from "next";
+import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { GradeForm } from "@/components/grade-form";
-import { AuditTerminal } from "@/components/audit-terminal";
-import { ReportExcerpt } from "@/components/forensic/report-excerpt";
-import { ReportPaper } from "@/components/forensic/report-paper";
-import { ConsolePreview } from "@/components/forensic/console-preview";
-import { ReplayStrip } from "@/components/forensic/replay-strip";
+import { EvidenceSheet } from "@/components/dossier/evidence-sheet";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { Meter } from "@/components/forensic/meter";
-import { FocusDemo } from "@/components/forensic/focus-demo";
-import { ContrastBadge } from "@/components/forensic/contrast-badge";
-import { BoxDivider } from "@/components/forensic/divider";
-import { LogReveal } from "@/components/log-reveal";
-import Link from "next/link";
+import { PROBE_LEDGER, SAUCEDEMO_TRAIL } from "@/lib/probe-ledger";
 
 // Canonical only — title/description are inherited from the root layout default.
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-// How-it-works as a run-log — real tool steps, not numbered marketing circles.
-const RUN_LOG: { src: string; text: string }[] = [
-  { src: "input", text: "point it at a URL — public here, or behind a login via a saved CLI session" },
-  { src: "crawl", text: "walk every reachable state: authed pages, checkout, multi-step flows" },
-  { src: "axe-core", text: "render the deterministic verdict at each state — citable to WCAG" },
-  { src: "persona", text: "attempt a saved task and check for expected final-page text" },
-];
+const PROCEDURE = [
+  {
+    n: "1",
+    title: "Save a session on your machine",
+    body: "Log in once in a real browser. The session file stays on your laptop, mode 0600. Nothing is uploaded.",
+    cmd: "personaudit auth https://app.client.com",
+  },
+  {
+    n: "2",
+    title: "Crawl every reachable state",
+    body: "Carts, dashboards, error screens, open menus: states that exist only after you do something.",
+    cmd: "personaudit scan https://app.client.com --session ./session.json",
+  },
+  {
+    n: "3",
+    title: "Get the axe-core verdict at each one",
+    body: "Deterministic, cited to WCAG, merged so one broken component reads as one defect, not forty.",
+    cmd: "→ report.md  ·  3 critical  ·  2 serious",
+  },
+  {
+    n: "4",
+    title: "Gate CI on new defects only",
+    body: "Baseline today's backlog, then fail the build only when something new ships.",
+    cmd: "personaudit scan … --baseline base.json --fail-on serious",
+  },
+] as const;
+
+const DELIVERABLE = [
+  { term: "Fix first", desc: "The defects to clear before anything else, grouped by the component that owns them." },
+  { term: "Status per finding", desc: "Open, assigned, fixed, accepted risk, or false positive, with a note for the handoff." },
+  { term: "Copy as issue", desc: "One click turns a finding into a GitHub, Jira, or Linear issue body." },
+  { term: "Retest compare", desc: "New, cleared, and still-open findings between two runs: proof of progress." },
+  { term: "CSV and print", desc: "Export the verdicts, or print the report as a clean paper document." },
+  { term: "Your name on it", desc: "Agency plans put your studio's name on the report, not ours." },
+] as const;
+
+const DEADLINES = [
+  { date: "Jun 28, 2025", what: "European Accessibility Act enforcement began for products and services sold in the EU." },
+  { date: "Apr 26, 2027", what: "ADA Title II web rule applies to US state and local governments serving 50,000 or more people." },
+  { date: "Apr 26, 2028", what: "Title II applies to smaller governments and special districts. The standard is WCAG 2.1 AA." },
+] as const;
+
+const PERSONAS = [
+  { who: "Sarah", role: "First-time buyer", goal: "Find pricing and start a trial", reached: true },
+  { who: "Keyboard traversal", role: "Reachability harness", goal: "Tab through checkout end to end", reached: true },
+  { who: "Maria", role: "Slow mobile visitor", goal: "Finish checkout on a phone", reached: false },
+] as const;
 
 export default function Home() {
   return (
     <div className="flex min-h-dvh flex-col pb-[env(safe-area-inset-bottom)]">
       <SiteHeader />
 
-      <main id="main">
-      {/* Hero — the signature: tight headline + live audit-terminal. Grain on the dark
-          fill; real content sits above it on z-10. */}
-      <section className="grain relative overflow-hidden border-b border-border">
-        <div className="relative z-10 mx-auto grid max-w-6xl gap-12 px-6 py-16 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:py-24">
-          <div>
-            <p className="fade-up font-mono text-xs uppercase tracking-wide text-muted-foreground" style={{ animationDelay: "0.05s" }}>
-              axe-core · session crawl · CI gate
-            </p>
-            {/* No entrance animation on the headline: it's the LCP element, so it must
-                paint immediately rather than fade in from opacity:0. */}
-            <h1 className="mt-6 text-[clamp(2.4rem,5.5vw,3.75rem)] font-bold leading-[1.03] tracking-tight text-balance">
-              Scan behind the login. The password stays on your machine.
-            </h1>
-            <p className="fade-up mt-5 max-w-xl font-serif text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "0.19s" }}>
-              Every SaaS scanner that audits your checkout wants your client&apos;s login first.
-              Personaudit crawls with a saved session from your own machine, through checkout,
-              dashboards, and multi-step flows a page-level scanner never reaches, and runs{" "}
-              <strong className="font-medium text-foreground not-italic">axe-core</strong> at every
-              state it lands on. Nothing to hand over.
-            </p>
-            <div className="fade-up mt-8 flex flex-col gap-3 sm:flex-row sm:items-center" style={{ animationDelay: "0.26s" }}>
-              <Link
-                href="#scan"
-                className="rounded-sm bg-foreground px-5 py-2.5 text-center text-sm font-medium text-background transition-colors hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-              >
-                Run a free grade
-              </Link>
-              <Link
-                href="/for-agencies"
-                className="rounded-sm border border-border px-5 py-2.5 text-center text-sm font-medium text-muted-foreground transition-colors hover:border-foreground/25 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-              >
-                For agencies
-              </Link>
+      <main id="main" className="flex-1">
+        {/* ── Hero: the claim on the left, the finished case file on the right. ── */}
+        <section className="grain relative overflow-hidden border-b border-border">
+          <div className="frame relative z-10 grid gap-14 pt-14 pb-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.02fr)] lg:items-center lg:gap-16 lg:pt-20 lg:pb-24">
+            <div className="min-w-0">
+              <p className="label-mono">Accessibility evidence for agencies and dev teams</p>
+              {/* LCP element: no entrance animation. */}
+              <h1 className="display mt-5 text-[clamp(2.6rem,5.6vw,4.5rem)] leading-[1]">
+                Scan behind the login. Keep the password.
+              </h1>
+              <p className="mt-7 max-w-[34rem] text-lg leading-relaxed text-muted-foreground">
+                Personaudit runs <span className="font-medium text-foreground">axe-core</span> at
+                every state a signed-in crawl reaches: carts, checkouts, error screens. The session
+                never leaves your machine, and the report is ready to hand to a client.
+              </p>
+              <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+                <Link
+                  href="#scan"
+                  className="inline-flex h-12 items-center justify-center rounded-sm bg-primary px-6 text-[0.9375rem] font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                >
+                  Grade a site free
+                </Link>
+                <Link href="/sample-report" className="text-link self-start text-[0.9375rem] sm:self-center">
+                  Read a sample client report
+                </Link>
+              </div>
+              <dl className="mt-12 grid max-w-md grid-cols-3 gap-4 border-t border-border pt-5" aria-label="At a glance">
+                <div>
+                  <dt className="label-mono">Engine</dt>
+                  <dd className="mt-1 font-mono text-sm">axe-core</dd>
+                </div>
+                <div>
+                  <dt className="label-mono">Overlay</dt>
+                  <dd className="mt-1 font-mono text-sm">None</dd>
+                </div>
+                <div>
+                  <dt className="label-mono">Credentials</dt>
+                  <dd className="mt-1 font-mono text-sm">Stay local</dd>
+                </div>
+              </dl>
             </div>
-            <p className="fade-up mt-4 max-w-xl font-mono text-xs leading-relaxed text-muted-foreground" style={{ animationDelay: "0.32s" }}>
-              The free grade covers public pages, no signup. Behind-login scanning stays on your machine.
-            </p>
-          </div>
 
-          <div className="fade-up lg:pl-2" style={{ animationDelay: "0.34s" }}>
-            <AuditTerminal />
-            <p className="mt-3 flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
-              <span className="inline-block size-1.5 rounded-full bg-[var(--primary)] motion-safe:animate-pulse" aria-hidden="true" />
-              illustrative CLI transcript. See the same evidence structure in every completed report.
-            </p>
+            <EvidenceSheet className="mx-auto w-full max-w-[34rem] lg:mr-0" />
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Dogfood band — the product demonstrates the exact things it audits. */}
-      <section className="mx-auto w-full max-w-6xl px-6 py-10" aria-labelledby="dogfood-heading">
-        <h2 id="dogfood-heading" className="sr-only">
-          This site, audited by itself
-        </h2>
-        <BoxDivider label="this site, audited by itself" className="mb-6" />
-        <div className="grid gap-6 sm:grid-cols-[1.4fr_1fr] sm:items-center">
-          <FocusDemo />
-          <div className="flex items-center gap-3 sm:justify-end">
-            <span className="font-mono text-xs text-muted-foreground">body text contrast:</span>
-            <ContrastBadge ratio="17.5:1" level="AAA" />
-          </div>
-        </div>
-      </section>
+        {/* ── Where scanners stop: the SauceDemo trail, state by state. ── */}
+        <section id="behind" aria-labelledby="behind-heading" className="section-y scroll-mt-20">
+          <div className="frame">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-end">
+              <h2 id="behind-heading" className="display text-[clamp(2rem,4vw,3rem)] leading-[1.05]">
+                A URL scanner sees one page. Your users see the whole flow.
+              </h2>
+              <p className="max-w-xl text-[1.0625rem] leading-relaxed text-muted-foreground lg:justify-self-end">
+                We ran both on the SauceDemo test store. The public login page scanned clean. Three
+                critical defects were waiting in states that only exist after you sign in, add to
+                cart, or get something wrong.
+              </p>
+            </div>
 
-      {/* The free entry — a public grade anyone can run (axe-core, no signup). Pro unlocks
-          the HOSTED persona audit, which is public-URL only (/api/audit takes
-          { url, personaIds, projectId } and no credentials). Behind-login belongs to the
-          CLI, which runs the full crawl free. Do not conflate the two in copy. */}
-      <section id="scan" className="border-y border-border bg-card px-6 py-16">
-        <div className="mx-auto max-w-3xl">
-          <p className="mb-6 font-mono text-xs text-muted-foreground">
-            <span className="select-none text-[var(--primary)]">›&nbsp;</span>free grade — up to 10 public pages, no signup
-          </p>
-          <GradeForm />
-          <p className="mt-5 font-mono text-xs leading-relaxed text-muted-foreground">
-            Persona task-success on public flows is the{" "}
-            <span className="text-foreground">Pro</span> layer. Behind-login crawls run
-            free from the{" "}
-            <Link
-              href="/guides/ci-accessibility-gate"
-              className="text-foreground underline underline-offset-4 hover:text-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-            >
-              keyless CLI
-            </Link>
-            , where the password never leaves your machine.{" "}
-            <Link
-              href="/for-agencies"
-              className="text-foreground underline underline-offset-4 hover:text-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-            >
-              Get early access
-            </Link>
-            .
-          </p>
-        </div>
-      </section>
-
-      {/* How it works — a run-log. */}
-      <section className="mx-auto w-full max-w-3xl px-6 section-y">
-        <p className="label-mono">pipeline</p>
-        <h2 className="mt-3 text-2xl font-semibold tracking-tight">How it works</h2>
-        <div className="mt-6 overflow-hidden rounded-md border border-border bg-card font-mono text-sm">
-          <div className="border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
-            <span className="select-none text-[var(--primary)]">┌─ </span>personaudit ~/run
-          </div>
-          <LogReveal>
-            <ol className="divide-y divide-border">
-              {RUN_LOG.map((l) => (
-                <li key={l.src} className="log-line flex gap-3 px-4 py-3 leading-relaxed">
-                  <span className="select-none text-[var(--primary)]">›</span>
-                  <span>
-                    <span className="text-muted-foreground">[{l.src}]</span>{" "}
-                    <span className="text-card-foreground">{l.text}</span>
-                  </span>
+            <ol className="mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-border bg-border md:grid-cols-3 lg:grid-cols-6">
+              {SAUCEDEMO_TRAIL.map((s, i) => (
+                <li
+                  key={s.path}
+                  className="relative flex min-w-0 flex-col bg-card p-3 sm:p-4"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span
+                      className={`truncate font-mono text-[10px] uppercase tracking-[0.1em] ${
+                        s.publicUrl ? "text-muted-foreground" : "text-primary"
+                      }`}
+                    >
+                      {s.publicUrl ? "Public" : "Session only"}
+                    </span>
+                  </div>
+                  <p className="mt-4 font-medium">{s.label}</p>
+                  <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">{s.path}</p>
+                  <p className="mt-3 flex-1 text-[13px] leading-snug text-muted-foreground sm:text-sm">{s.why}</p>
+                  <div className="mt-4 border-t border-border pt-3">
+                    {s.findings > 0 ? (
+                      <SeverityChip severity="critical" ruleId="4.1.2" />
+                    ) : (
+                      <span className="font-mono text-xs text-muted-foreground">No violations</span>
+                    )}
+                  </div>
                 </li>
               ))}
             </ol>
-          </LogReveal>
-        </div>
-      </section>
 
-      {/* Two outputs, never blurred — the honesty wall. */}
-      <section className="border-y border-border bg-card px-6 section-y">
-        <div className="mx-auto w-full max-w-3xl">
-        <p className="font-serif text-[clamp(1.3rem,2.6vw,1.8rem)] leading-[1.3] font-medium text-balance text-foreground">
-          &ldquo;Violation&rdquo; and &ldquo;opinion&rdquo; are different words for a reason.
-        </p>
-        <p className="mt-2 label-mono">honesty wall</p>
-        <div className="mt-6 grid gap-6 sm:grid-cols-2 sm:gap-10">
-          <div>
-            <div className="flex items-center gap-2">
-              <SeverityChip severity="critical" />
-              <span className="font-medium">Accessibility violations</span>
-            </div>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              From <strong className="font-medium text-foreground">axe-core</strong> — deterministic,
-              citable, per state. The only output that touches compliance.
-            </p>
-          </div>
-          <div>
-            <p className="font-medium">
-              Usability &amp; task success
-              <span className="ml-2 rounded-sm border border-border px-1.5 py-0.5 text-xs font-normal text-muted-foreground">
-                Pro
-              </span>
-            </p>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              AI browser agents attempt your task. A separate check looks for expected text on
-              the final page. Inspect the evidence and compare retests; this is not a
-              human-success measure or a compliance verdict.
-            </p>
-          </div>
-        </div>
-        <p className="mt-6 text-sm text-muted-foreground">
-          We don&apos;t simulate disabled users, and nothing here replaces testing with them — for
-          that, use{" "}
-          <a
-            href="https://makeitfable.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-4 hover:text-foreground"
-          >
-            Fable
-          </a>
-          .
-        </p>
-        </div>
-      </section>
-
-      {/* Persona wedge — the product's memorable reason to exist. */}
-      <section className="mx-auto w-full max-w-6xl px-6 section-y" aria-labelledby="persona-wedge-heading">
-        <p className="label-mono">persona layer</p>
-        <h2 id="persona-wedge-heading" className="mt-3 max-w-3xl text-2xl font-semibold tracking-tight">
-          The report says what broke. The persona shows why it mattered.
-        </h2>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Agencies do not just need another violation list. They need the client story: the
-          first-time buyer who never found pricing, the keyboard-only path that got trapped,
-          the mobile visitor who abandoned checkout, and the fix owner who can clear it.
-        </p>
-        <div className="mt-8 grid gap-3 md:grid-cols-3">
-          <div className="rounded-md border border-border p-4">
-            <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">Sarah</p>
-            <h3 className="mt-2 text-sm font-medium">First-time buyer</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Finds the promise, pricing, proof, and next step before trust runs out.
-            </p>
-          </div>
-          <div className="rounded-md border border-border p-4">
-            <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">Keyboard traversal</p>
-            <h3 className="mt-2 text-sm font-medium">Reachability harness</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Drives focus through real states so axe can judge screens a URL scan misses.
-            </p>
-          </div>
-          <div className="rounded-md border border-border p-4">
-            <p className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">Maria</p>
-            <h3 className="mt-2 text-sm font-medium">Slow mobile visitor</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Surfaces the messy mobile moments that decide whether a flow survives contact.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* What you get — instrument gallery: report paper, replay, console. */}
-      <section id="example" className="mx-auto w-full max-w-6xl px-6 section-y">
-        <p className="label-mono">output</p>
-        <h2 className="mt-3 text-2xl font-semibold tracking-tight">The instrument, not a mockup.</h2>
-        <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-          Deterministic axe-core violations on paper, a scrubbable persona walk with verdicts at
-          each state, and the signed-in console language — the same primitives the product uses.
-        </p>
-
-        <div className="mt-10 grid gap-6 lg:grid-cols-2 lg:items-start">
-          <ReportPaper />
-          <ReplayStrip />
-        </div>
-
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
-          <ConsolePreview />
-          <div className="space-y-4">
-            <ReportExcerpt />
-            <div className="rounded-md border border-border bg-card p-5">
-              <p className="label-mono">persona task-success</p>
-              <Meter
-                className="mt-4"
-                value={2}
-                total={3}
-                label="reached their goal"
-                unit="personas"
-                tone="serious"
-              />
-              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                One persona was blocked at checkout by the critical violation — a task a page-level
-                crawler can&apos;t measure.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <SeverityChip severity="critical" ruleId="4.1.2" />
-                <SeverityChip severity="serious" ruleId="1.4.3" />
+            {/* Probe ledger — every target, including the one where the crawl found nothing. */}
+            <div className="mt-16 grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+              <div>
+                <p className="label-mono">Probe ledger</p>
+                <p className="mt-3 max-w-sm font-serif text-[1.125rem] leading-relaxed">
+                  Four public demo apps, scanned both ways. The last row found nothing new, and it
+                  stays in the table.
+                </p>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Method and raw results:{" "}
+                  <a
+                    href="https://github.com/forbiddenlink/multipersonas/tree/main/experiments/net-new-violations"
+                    className="text-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    experiments/net-new-violations
+                  </a>
+                </p>
+              </div>
+              <div
+      tabIndex={0}
+      role="region"
+      aria-label="Probe ledger table"
+      className="min-w-0 overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+    >
+                <table className="w-full border-collapse text-left text-sm">
+                  <caption className="sr-only">
+                    Violations found by a public-page scan versus net-new violations found by a
+                    session crawl
+                  </caption>
+                  <thead>
+                    <tr className="border-b-2 border-foreground">
+                      <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Target</th>
+                      <th scope="col" className="py-2 pr-4 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Public<span className="hidden sm:inline"> scan</span></th>
+                      <th scope="col" className="hidden py-2 pr-4 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground sm:table-cell">States</th>
+                      <th scope="col" className="py-2 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Net new</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {PROBE_LEDGER.map((r) => (
+                      <tr key={r.host} className="border-b border-border">
+                        <th scope="row" className="py-3 pr-4 font-mono text-[12px] font-normal break-all sm:text-[13px]">{r.host}</th>
+                        <td className="py-3 pr-4 text-right font-mono tabular-nums text-muted-foreground">{r.publicScan}</td>
+                        <td className="hidden py-3 pr-4 text-right font-mono tabular-nums text-muted-foreground sm:table-cell">{r.states}</td>
+                        <td className="py-3 text-right font-mono tabular-nums">
+                          {r.netNew > 0 ? (
+                            <span className="font-semibold text-[var(--redline)]">+{r.netNew}</span>
+                          ) : (
+                            <span className="text-muted-foreground">0</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* CI gate — already built in the CLI; surface it as a selling point. */}
-      <section className="border-y border-border bg-card px-6 section-y-sm">
-        <div className="mx-auto max-w-3xl">
-          <p className="font-mono text-sm">
-            <span className="select-none text-[var(--primary)]">›&nbsp;</span>
-            <span className="text-muted-foreground"># ci-gate</span>
-          </p>
-          <h2 className="mt-3 text-2xl font-semibold tracking-tight">
-            Fail the build only on new defects.
-          </h2>
-          <p className="mt-3 text-muted-foreground">
-            Baseline today&apos;s backlog once, then gate CI on regressions — existing issues
-            stay ignored until you clear them. Deterministic, no API key, works behind a
-            saved session.
-          </p>
-          <pre tabIndex={0} role="region" aria-label="Command-line scanning example" className="mt-6 overflow-x-auto rounded-sm border border-border bg-background p-4 font-mono text-xs leading-relaxed text-foreground">
-{`npm i -g personaudit
-
-# snapshot today's defects (commit the baseline)
-personaudit scan https://app.example.com --session ./session.json \\
-  --baseline mpersonas-baseline.json --update-baseline
-
-# CI: exit 2 only on NEW defects at/above serious
-personaudit scan https://app.example.com --session ./session.json \\
-  --baseline mpersonas-baseline.json --fail-on serious`}
-          </pre>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Full walkthrough and ready-to-use GitHub Action:{" "}
-            <Link
-              href="/guides/ci-accessibility-gate"
-              className="rounded-sm underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-            >
-              CI accessibility gate
-            </Link>
-            .
-          </p>
-        </div>
-      </section>
-
-      {/* Bottom CTA — account save only; primary scan CTA lives at #scan / sticky. */}
-      <section className="border-t border-border px-6 section-y">
-        <div className="mx-auto flex max-w-3xl flex-col items-start gap-4">
-          <h2 className="text-2xl font-semibold tracking-tight">Build the audit trail.</h2>
-          <p className="max-w-md font-serif text-muted-foreground leading-relaxed">
-            Sign up after a free grade and that scan lands on your dashboard — axe violations
-            by page, a shareable score, ready to show a client. Persona task-success is the
-            Pro layer. Behind-login crawls stay in the keyless CLI.
-          </p>
-          <div className="mt-2 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/auth/signup"
-              className="rounded-sm border border-border px-5 py-2.5 text-sm font-medium text-foreground transition-colors duration-150 hover:border-foreground/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-            >
-              Create an account
-            </Link>
-            <Link
-              href="/for-agencies"
-              className="rounded-sm px-5 py-2.5 text-sm font-medium text-muted-foreground underline-offset-4 transition-colors duration-150 hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-            >
-              Agency founding access
-            </Link>
+        {/* ── The free entry: a request slip. ── */}
+        <section id="scan" aria-labelledby="scan-heading" className="scroll-mt-20 border-y border-border bg-card">
+          <div className="frame grid gap-10 py-16 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16 lg:py-20">
+            <div>
+              <p className="label-mono">Free grade · no signup</p>
+              <h2 id="scan-heading" className="display mt-3 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+                Start with the public pages.
+              </h2>
+              <p className="mt-4 max-w-sm leading-relaxed text-muted-foreground">
+                A letter grade, the pages we reached, and every failing axe rule by name, with the
+                WCAG criterion it breaks.
+              </p>
+            </div>
+            <div className="min-w-0 lg:pt-2">
+              <GradeForm />
+              <p className="mt-6 border-t border-border pt-5 text-sm leading-relaxed text-muted-foreground">
+                Need the signed-in flows? That&apos;s the{" "}
+                <Link href="/docs" className="text-link">free, keyless CLI</Link>, run from your own
+                machine. Persona task-success on public flows is part of{" "}
+                <Link href="/pricing" className="text-link">Solo</Link>.
+              </p>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+        {/* ── Procedure: how a scan runs, with the command at each step. ── */}
+        <section aria-labelledby="procedure-heading" className="section-y">
+          <div className="frame">
+            <p className="label-mono">Procedure</p>
+            <h2 id="procedure-heading" className="display mt-3 max-w-2xl text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+              Four steps from login to a gated build.
+            </h2>
+            <ol className="mt-12 border-t-2 border-foreground">
+              {PROCEDURE.map((p) => (
+                <li
+                  key={p.n}
+                  className="grid gap-4 border-b border-border py-7 md:grid-cols-[3rem_minmax(0,1fr)_minmax(0,1.15fr)] md:gap-8"
+                >
+                  <span className="display text-3xl leading-none text-muted-foreground">{p.n}</span>
+                  <div className="min-w-0">
+                    <h3 className="text-[1.0625rem] font-semibold">{p.title}</h3>
+                    <p className="mt-2 max-w-md leading-relaxed text-muted-foreground">{p.body}</p>
+                  </div>
+                  <pre
+                    tabIndex={0}
+                    role="region"
+                    aria-label={`${p.title} command`}
+                    className="min-w-0 self-start overflow-x-auto whitespace-pre rounded-sm border border-border bg-card px-4 py-3 font-mono text-[13px] leading-relaxed text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                  >
+                    {p.cmd}
+                  </pre>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-6 text-sm text-muted-foreground">
+              Full setup, including a ready-to-use GitHub Action:{" "}
+              <Link href="/guides/ci-accessibility-gate" className="text-link">
+                the CI accessibility gate guide
+              </Link>
+              .
+            </p>
+          </div>
+        </section>
+
+        {/* ── The deliverable: what exists in the app today. ── */}
+        <section aria-labelledby="deliverable-heading" className="border-t border-border section-y">
+          <div className="frame grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
+            <div>
+              <p className="label-mono">The case file</p>
+              <h2 id="deliverable-heading" className="display mt-3 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+                Built for the handoff, not the screenshot.
+              </h2>
+              <p className="mt-5 max-w-md leading-relaxed text-muted-foreground">
+                A violation list is where the work starts. Each scan becomes something a client can
+                read and a developer can close.
+              </p>
+              <Link href="/sample-report" className="text-link mt-6 inline-block">
+                Read the sample report
+              </Link>
+            </div>
+            <dl className="grid min-w-0 gap-x-10 border-t-2 border-foreground sm:grid-cols-2">
+              {DELIVERABLE.map((d) => (
+                <div key={d.term} className="border-b border-border py-5">
+                  <dt className="font-semibold">{d.term}</dt>
+                  <dd className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{d.desc}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </section>
+
+        {/* ── Two kinds of output, kept apart. ── */}
+        <section aria-labelledby="honesty-heading" className="border-y border-border bg-card section-y">
+          <div className="frame">
+            <h2 id="honesty-heading" className="display max-w-3xl text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+              A finding and an opinion are different documents.
+            </h2>
+            <div className="mt-12 grid gap-10 md:grid-cols-2 md:gap-14">
+              <div className="min-w-0 border-t-2 border-foreground pt-5">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold">Findings</p>
+                  <SeverityChip severity="critical" ruleId="4.1.2" />
+                </div>
+                <p className="mt-3 leading-relaxed text-muted-foreground">
+                  From axe-core. Deterministic: run it twice, get the same answer. Cited to a WCAG
+                  success criterion. The only output that goes into a compliance report.
+                </p>
+              </div>
+              <div className="min-w-0 border-t-2 border-dashed border-[var(--redline)] pt-5">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold">Persona notes</p>
+                  <span className="redline-note uppercase tracking-[0.1em]">Opinion · AI</span>
+                </div>
+                <p className="mt-3 leading-relaxed text-muted-foreground">
+                  AI browser agents try to finish a task, and a separate check reads the final page.
+                  Useful for the client story. Never a compliance verdict, never mixed into the
+                  findings.
+                </p>
+              </div>
+            </div>
+            <p className="mt-10 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              Personaudit does not simulate disabled users, and nothing here replaces testing with
+              them. For that, work with{" "}
+              <a href="https://makeitfable.com/" target="_blank" rel="noopener noreferrer" className="text-link">
+                Fable
+              </a>
+              .
+            </p>
+          </div>
+        </section>
+
+        {/* ── Persona layer: task success, the client story. ── */}
+        <section aria-labelledby="persona-heading" className="section-y">
+          <div className="frame grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
+            <div>
+              <p className="label-mono">Persona layer · Solo and up</p>
+              <h2 id="persona-heading" className="display mt-3 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+                The report says what broke. The persona shows who it stopped.
+              </h2>
+              <p className="mt-5 max-w-md leading-relaxed text-muted-foreground">
+                Clients don&apos;t act on a rule ID. They act on &ldquo;a first-time buyer never
+                found pricing.&rdquo; Personas give you that sentence, with the run to back it up.
+              </p>
+            </div>
+            <div className="sheet min-w-0 p-6 sm:p-8">
+              <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border pb-4">
+                <p className="label-mono">Sample run · checkout flow</p>
+                <p className="font-mono text-[11px] text-muted-foreground">illustrative</p>
+              </div>
+              <ul className="divide-y divide-border">
+                {PERSONAS.map((p) => (
+                  <li key={p.who} className="grid gap-1 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-6">
+                    <div className="min-w-0">
+                      <p className="font-medium">
+                        {p.who} <span className="font-normal text-muted-foreground">· {p.role}</span>
+                      </p>
+                      <p className="mt-0.5 text-sm text-muted-foreground">{p.goal}</p>
+                    </div>
+                    <p
+                      className={`font-mono text-xs uppercase tracking-[0.1em] ${
+                        p.reached ? "text-muted-foreground" : "text-[var(--redline)]"
+                      }`}
+                    >
+                      {p.reached ? "✓ Reached goal" : "■ Blocked at checkout"}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+              <Meter className="mt-5" value={2} total={3} label="reached their goal" unit="personas" tone="serious" />
+            </div>
+          </div>
+        </section>
+
+        {/* ── Why now: dated, sourced. ── */}
+        <section aria-labelledby="deadlines-heading" className="border-t border-border bg-card section-y-sm">
+          <div className="frame grid gap-8 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] md:items-start">
+            <div>
+              <p className="label-mono">Why this year</p>
+              <h2 id="deadlines-heading" className="display mt-3 text-[clamp(1.7rem,3vw,2.2rem)] leading-[1.1]">
+                The deadlines are on the calendar.
+              </h2>
+            </div>
+            <ol className="min-w-0 divide-y divide-border border-y border-border">
+              {DEADLINES.map((d) => (
+                <li key={d.date} className="grid gap-1 py-4 sm:grid-cols-[9.5rem_minmax(0,1fr)] sm:gap-6">
+                  <p className="font-mono text-sm tabular-nums text-[var(--redline)]">{d.date}</p>
+                  <p className="text-[0.9375rem] leading-relaxed">{d.what}</p>
+                </li>
+              ))}
+              <li className="py-4 text-sm text-muted-foreground">
+                Sources and what to do this quarter:{" "}
+                <Link href="/guides/accessibility-deadlines" className="text-link">
+                  the deadlines guide
+                </Link>
+                . Not legal advice.
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        {/* ── Close. ── */}
+        <section aria-labelledby="close-heading" className="border-t border-border">
+          <div className="frame flex flex-col items-start gap-8 py-20 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h2 id="close-heading" className="display max-w-2xl text-[clamp(2.2rem,4.6vw,3.5rem)] leading-[1.02]">
+                Open a case file on your next client.
+              </h2>
+              <p className="mt-4 max-w-lg leading-relaxed text-muted-foreground">
+                Grade the public site now. Run the CLI behind the login tonight. Hand over the
+                report tomorrow. Enterprise platforms sell annual contracts; Solo is $39 a month,
+                and the CLI is free.
+              </p>
+            </div>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <Link
+                href="#scan"
+                className="inline-flex h-12 items-center justify-center rounded-sm bg-primary px-6 text-[0.9375rem] font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              >
+                Grade a site free
+              </Link>
+              <Link href="/for-agencies" className="text-link text-[0.9375rem]">
+                Agency plans
+              </Link>
+            </div>
+          </div>
+        </section>
       </main>
 
       <SiteFooter />

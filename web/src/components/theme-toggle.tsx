@@ -5,7 +5,7 @@ import { Moon, Sun } from "lucide-react";
 
 // Read the current theme straight from the <html> class the no-FOUC layout script
 // set before paint. useSyncExternalStore avoids a set-state-in-effect and stays
-// hydration-safe: SSR + first client render use the dark-first server snapshot,
+// hydration-safe: SSR + first client render use the paper-first server snapshot,
 // then it reconciles to the real DOM value.
 function subscribe(onChange: () => void): () => void {
   const observer = new MutationObserver(onChange);
@@ -20,7 +20,7 @@ export function ThemeToggle() {
   const isDark = useSyncExternalStore(
     subscribe,
     () => document.documentElement.classList.contains("dark"),
-    () => true, // dark-first default during SSR
+    () => false, // paper-first default during SSR
   );
 
   function toggle() {

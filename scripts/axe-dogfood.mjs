@@ -16,17 +16,22 @@ const ROUTES = [
   "/",
   "/for-agencies",
   "/grade",
+  "/sample-report",
+  "/pricing",
+  "/docs",
   "/auth/login",
   "/auth/signup",
   "/guides/wcag-checklist",
   "/guides/common-accessibility-issues",
   "/guides/screen-reader-testing",
+  "/guides/ci-accessibility-gate",
+  "/guides/accessibility-deadlines",
   "/privacy",
   "/terms",
   "/accessibility",
 ];
 
-// The site is dark-first, toggled by localStorage 'theme' (see layout.tsx no-FOUC
+// The site is light-first, toggled by localStorage 'theme' (see layout.tsx no-FOUC
 // script). Light regressions have bitten before (2026-07-30 dogfood), so scan both.
 const THEMES = ["dark", "light"];
 
@@ -39,7 +44,7 @@ async function scan(browser, route, theme) {
     try {
       window.localStorage.setItem("theme", t);
     } catch {
-      /* storage may be unavailable; dark is the default */
+      /* storage may be unavailable; the system theme applies */
     }
   }, theme);
   const page = await context.newPage();
