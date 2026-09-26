@@ -77,7 +77,7 @@ clients if you already ship sites for them.
 >
 > Straight about where it stands: hosted behind-login isn't built. That runs in the CLI
 > today, which is also why your client's password never touches my servers. Founding
-> access is what funds the hosted version, and if I don't build it you get your money back.
+> access is what funds the hosted version, and you can cancel any time.
 >
 > Happy to jump on a 15-min call and scan one of your staging sites.
 >
