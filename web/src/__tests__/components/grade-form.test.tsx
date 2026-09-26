@@ -41,7 +41,7 @@ describe("GradeForm", () => {
       target: { value: "example.com" },
     });
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /get my grade/i }));
+      fireEvent.click(screen.getByRole("button", { name: /grade this site/i }));
     });
 
     expect(screen.getByRole("alert")).toHaveTextContent(
@@ -62,7 +62,7 @@ describe("GradeForm", () => {
       target: { value: " https://example.com " },
     });
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /get my grade/i }));
+      fireEvent.click(screen.getByRole("button", { name: /grade this site/i }));
     });
 
     expect(fetchMock).toHaveBeenCalledWith("/api/grade", {

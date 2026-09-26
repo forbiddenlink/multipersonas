@@ -11,8 +11,8 @@ export function TaskEvidencePanel({ task, outcomes, runId }: {
   if (!definition) return null;
   const results = parseTaskOutcomes(definition, outcomes);
   return (
-    <section aria-label="Saved task result" className="space-y-3 rounded-md border border-border p-4">
-      <h2 className="text-lg font-semibold">Task tested</h2>
+    <section aria-label="Saved task result" className="sheet space-y-3 p-4">
+      <p className="label-mono">Task tested</p>
       <p className="text-sm">{definition.goal}</p>
       <p className="text-sm text-muted-foreground">Expected visible text: <q>{definition.successText}</q></p>
       {definition.version === 2 && definition.expectedUrl && <p className="break-all text-sm">Expected final URL: {definition.expectedUrl}</p>}
@@ -25,7 +25,7 @@ export function TaskEvidencePanel({ task, outcomes, runId }: {
               {": "}{taskEvidenceLabel(definition, evidence)}
               {evidence.checks && <p className="text-xs text-muted-foreground">{taskCheckDetails(evidence)}</p>}
               {runId && evidence.stepIndex !== null ? (
-                <Link className="ml-2 underline underline-offset-4" href={`/audits/${runId}?persona=${encodeURIComponent(personaId)}&evidence=task`}>
+                <Link className="text-link ml-2" href={`/audits/${runId}?persona=${encodeURIComponent(personaId)}&evidence=task`}>
                   View evidence
                 </Link>
               ) : null}

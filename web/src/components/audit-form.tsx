@@ -230,7 +230,7 @@ export function AuditForm({
       setLoading(false);
       setTimedOut(true);
       setError(
-        "Lost connection while watching the audit. Your scan may still be running — use Check status to retry.",
+        "Lost connection while watching the audit. Your scan may still be running. Use Check status to retry.",
       );
       return;
     }
@@ -473,7 +473,7 @@ export function AuditForm({
       {timedOut && pendingJobId && (
         <div role="status" className="mt-4 text-center">
           <p className="text-sm text-muted-foreground">
-            Still running — this can take a few minutes. Check back or refresh; we&apos;ll pick it up.
+            Still running. This can take a few minutes. Check back or refresh; we&apos;ll pick it up.
           </p>
           <Button
             type="button"

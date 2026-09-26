@@ -257,17 +257,14 @@
   text-transform: uppercase;
 }
 
-/* On-screen console-toolbar frame around the paper — never printed
-   (report-print-hide, see globals.css). Themed (var(--card)/var(--border)),
-   unlike the paper below, since it's app chrome, not the document. */
+/* On-screen case-file header around the paper — never printed (report-print-hide,
+   see globals.css). Sizing wrapper only: the file-tab + .sheet pairing inside supply
+   their own border/background (globals.css dossier primitives, see web/DESIGN.md),
+   so this stays unstyled to avoid a doubled border around them. */
 .toolbar {
   width: 100%;
   max-width: 60rem;
   margin: 0 auto 1.25rem;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  background: var(--card);
 }
 
 @media screen and (max-width: 700px) {
@@ -307,3 +304,20 @@
 /* Print show/hide lives in globals.css (`@media print`, `.report-print-root` /
  * `.report-print-hide`): CSS Modules reject the bare `:global(body)` selectors the
  * "print only this element" trick needs. This module keeps the screen + paper styling. */
+
+/* A clean print: a section's heading never lands alone at the bottom of a page (it
+ * carries its first paragraph with it), and a cluster card or summary tile never
+ * splits across the fold. .table tr (above) already keeps one finding row whole.
+ * Deliberately NOT `break-inside: avoid` on the whole `.section` — the Verdicts and
+ * conformance tables can run to dozens of rows, and forcing one of those onto a
+ * single page would waste paper or overflow it; only short, fixed-size blocks get
+ * the treatment. */
+@media print {
+  .sectionTitle {
+    break-after: avoid;
+  }
+  .count,
+  .clusterCard {
+    break-inside: avoid;
+  }
+}

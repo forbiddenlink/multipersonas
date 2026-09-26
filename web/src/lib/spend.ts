@@ -17,7 +17,7 @@ export async function reserveSpend(personaCount: number, callerKey: string): Pro
 
   if (!admin) {
     console.warn(
-      "[spend] SUPABASE_SERVICE_ROLE_KEY not set — spend cap disabled (allowing). Required before public deploy.",
+      "[spend] SUPABASE_SERVICE_ROLE_KEY not set; spend cap disabled (allowing). Required before public deploy.",
     );
     return true;
   }

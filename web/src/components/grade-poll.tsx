@@ -44,18 +44,15 @@ export function GradePoll({ token }: { token: string }) {
 
   if (stale) {
     return (
-      <div
-        role="status"
-        className="mt-8 rounded-md border border-border bg-card px-4 py-4 font-mono text-sm text-muted-foreground"
-      >
-        <p className="text-foreground">This is taking longer than expected.</p>
-        <p className="mt-1.5">
-          The scan may still finish —{" "}
-          <Link href={`/grade/${token}`} className="text-foreground underline underline-offset-4">
+      <div role="status" className="font-mono text-sm">
+        <p className="redline-note uppercase tracking-[0.1em]">Taking longer than expected</p>
+        <p className="mt-2 leading-relaxed text-muted-foreground">
+          The scan may still finish, or{" "}
+          <Link href={`/grade/${token}`} className="text-link">
             refresh now
           </Link>
           , or{" "}
-          <Link href="/grade" className="text-foreground underline underline-offset-4">
+          <Link href="/grade" className="text-link">
             try another URL
           </Link>
           .
@@ -65,26 +62,27 @@ export function GradePoll({ token }: { token: string }) {
   }
 
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="mt-8 flex flex-wrap items-center gap-2.5 rounded-md border border-border bg-card px-4 py-3 font-mono text-sm text-muted-foreground"
-    >
-      <span
-        className="size-1.5 shrink-0 rounded-full bg-[var(--primary)] motion-safe:animate-pulse"
-        aria-hidden
-      />
-      still scanning — {paused ? "auto-refresh paused" : "updates automatically"}, or{" "}
-      <Link href={`/grade/${token}`} className="text-foreground underline underline-offset-4">
-        refresh now
-      </Link>
-      <button
-        type="button"
-        onClick={() => setPaused((p) => !p)}
-        className="ml-auto rounded-sm px-2 py-1 text-xs underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-      >
-        {paused ? "Resume auto-refresh" : "Pause auto-refresh"}
-      </button>
+    <div role="status" aria-live="polite">
+      <p className="label-mono">Scanning</p>
+      <div className="mt-3 flex flex-wrap items-center gap-3 border-t-2 border-foreground pt-5">
+        <span
+          className="size-1.5 shrink-0 rounded-full bg-[var(--primary)] motion-safe:animate-pulse"
+          aria-hidden
+        />
+        <p className="font-mono text-sm text-muted-foreground">
+          {paused ? "auto-refresh paused" : "updates automatically"}, or{" "}
+          <Link href={`/grade/${token}`} className="text-link">
+            refresh now
+          </Link>
+        </p>
+        <button
+          type="button"
+          onClick={() => setPaused((p) => !p)}
+          className="ml-auto rounded-sm px-2 py-1 font-mono text-xs text-muted-foreground underline decoration-dotted underline-offset-4 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+        >
+          {paused ? "Resume auto-refresh" : "Pause auto-refresh"}
+        </button>
+      </div>
     </div>
   );
 }

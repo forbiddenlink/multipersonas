@@ -25,22 +25,20 @@ export function GradeNextSteps({
   const projectPath = `/projects?url=${encodeURIComponent(entryUrl)}`;
 
   return (
-    <div className="space-y-4 rounded-md border border-border bg-card px-5 py-5">
-      <p className="text-sm leading-relaxed text-muted-foreground">
-        Scanned {pageLabel} only. It does not see behind login, PDFs, or real user
-        flows — the checkout and account states where most of the risk sits.
-      </p>
+    <div className="sheet margin-rule space-y-5 p-6 pl-12 sm:p-7 sm:pl-14">
       <div>
-        <h2 className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
-          What to check next
-        </h2>
-        <ul className="mt-3 space-y-2 text-sm leading-relaxed text-muted-foreground">
-          <li>› Keyboard-only navigation through the highest-value path.</li>
-          <li>› Screen reader pass on forms, dialogs, menus, and checkout states.</li>
-          <li>› Logged-in pages, PDFs, and multi-step flows this scan cannot reach.</li>
-        </ul>
+        <p className="label-mono">Next steps</p>
+        <p className="mt-2 max-w-lg leading-relaxed text-muted-foreground">
+          Scanned {pageLabel} only. It does not see behind login, PDFs, or a real checkout:
+          the states where most accessibility risk sits.
+        </p>
       </div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+      <ul className="space-y-1.5 border-t border-border pt-4 text-sm leading-relaxed text-muted-foreground">
+        <li>Keyboard-only navigation through the highest-value path.</li>
+        <li>Screen reader pass on forms, dialogs, menus, and checkout states.</li>
+        <li>Logged-in pages, PDFs, and multi-step flows this scan cannot reach.</li>
+      </ul>
+      <div className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row sm:flex-wrap">
         {signedIn ? (
           <Link
             href="/dashboard"
@@ -80,9 +78,9 @@ export function GradeNextSteps({
         </Link>
       </div>
       {!signedIn ? (
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          Create an account and this grade lands on your dashboard. The CLI scans
-          behind login today, where a client password never leaves your machine.
+        <p className="redline-note">
+          Create an account and this grade lands on your dashboard. The CLI scans behind
+          login today, where a client password never leaves your machine.
         </p>
       ) : null}
     </div>

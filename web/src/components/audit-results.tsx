@@ -101,9 +101,12 @@ export function AuditResults({
         ) : null}
       </div>
 
+      {results.personas.length > 0 && (
+        <p className="redline-note text-center uppercase tracking-[0.1em]">Opinion · AI</p>
+      )}
       <div className={`grid gap-4 ${compact ? "sm:grid-cols-1" : "sm:grid-cols-3 gap-6"}`}>
         {results.personas.map((persona) => (
-          <div key={persona.id} className="space-y-3 rounded-md border border-border p-4">
+          <div key={persona.id} className="sheet space-y-3 p-4">
             <div>
               <p className="text-sm font-medium">{persona.name}</p>
               <p className="text-xs text-muted-foreground">
@@ -130,15 +133,15 @@ export function AuditResults({
             {persona.findings.length > 0 ? (
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">
-                  UX observations ({persona.findings.length}) — AI judgement
+                  UX observations ({persona.findings.length}), AI judgement
                 </p>
                 {persona.findings.slice(0, 3).map((finding, i) => (
                   <div
                     key={i}
-                    className="space-y-1.5 rounded-md border border-border p-3"
+                    className="space-y-1.5 rounded-sm border border-border p-3"
                   >
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center rounded-sm border border-border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                      <span className="inline-flex items-center rounded-sm border border-border px-2 py-0.5 label-mono">
                         AI observation
                       </span>
                       <span className="truncate text-xs font-medium">{finding.title}</span>
@@ -167,14 +170,17 @@ export function AuditResults({
 
       {results.axeFindings.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold tracking-tight">
-            Accessibility issues (axe-core)
-          </h3>
-          <div className="overflow-hidden rounded-md border border-border bg-card">
-            <div className="flex items-center gap-2 border-b border-border px-4 py-2.5 font-mono text-xs text-muted-foreground">
-              <span className="text-[var(--primary)]">›</span>
-              <span>verdicts — deterministic, cited to WCAG</span>
-              <span className="ml-auto rounded-sm border border-border px-1.5 py-0.5 tabular-nums">
+          <div className="space-y-1.5">
+            <p className="label-mono">Axe-core verdicts</p>
+            <h3 className="display text-2xl leading-tight">Accessibility issues</h3>
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              Deterministic, cited to WCAG.
+            </p>
+          </div>
+          <div className="sheet overflow-hidden">
+            <div className="flex items-center gap-2 border-b border-border px-4 py-2.5 label-mono">
+              <span>Showing</span>
+              <span className="ml-auto rounded-sm border border-border px-1.5 py-0.5 font-mono text-xs tabular-nums normal-case text-muted-foreground">
                 {results.axeFindings.length}
               </span>
             </div>
@@ -209,7 +215,7 @@ export function AuditResults({
           <h3 className="text-lg font-semibold tracking-tight">Persona conflicts</h3>
           <div className="space-y-3">
             {results.conflicts.map((conflict, i) => (
-              <div key={i} className="space-y-2 rounded-md border border-border p-4">
+              <div key={i} className="sheet space-y-2 p-4">
                 <p className="text-sm">{conflict.description}</p>
                 <p className="text-xs text-muted-foreground">
                   Suggestion: {conflict.suggestion}

@@ -10,8 +10,8 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
-  /* Headings are Inter tight; the document voice (serif) is font-serif, applied explicitly. */
-  --font-heading: var(--font-sans);
+  /* Headings are the Newsreader display serif; UI + copy are Plex Sans; evidence is Plex Mono. */
+  --font-heading: var(--font-serif);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -29,6 +29,9 @@
   --color-severity-serious: var(--severity-serious);
   --color-severity-moderate: var(--severity-moderate);
   --color-severity-minor: var(--severity-minor);
+  --color-redline: var(--redline);
+  --color-highlight: var(--highlight);
+  --color-stamp: var(--stamp);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -55,101 +58,116 @@
 }
 
 /* ============================================================================
- * FORENSIC EVIDENCE TERMINAL — token system (spec 2026-07-28 §5).
- * Warm near-neutral (hue 70). Teal is DEMOTED to active/live/cursor ONLY; it is
- * NOT a blanket CTA color. Severity is axe vocabulary, hue-distant + colorblind-
- * safe, always used as color + icon + text. All pairs verified WCAG AA, both
- * themes, in sRGB gamut. Light = "paper lab" variant; dark (below) is default.
+ * EVIDENCE DOSSIER — token system (web/DESIGN.md, 2026-09-26).
+ * Light-first: warm manila desk, near-white sheets, blue-black fountain-pen ink.
+ * Ink-blue (--primary) carries CTAs + links. Redline (--redline) is the annotation
+ * and stamp color, and it IS severity-critical on purpose: a critical finding is a
+ * redline. Highlighter (--highlight) marks evidence inline. Severity is always
+ * color + glyph + text. Every text pair verified >= WCAG AA (scripts in DESIGN.md).
+ * Dark = "night desk" variant of the same system.
  * ==========================================================================*/
 :root {
-  /* Paper lab — warmer off-white, slightly stronger ink, quieter borders than dark. */
-  --background: oklch(0.985 0.006 70);
-  --foreground: oklch(0.20 0.012 70);
-  --card: oklch(0.995 0.004 70);
-  --card-foreground: oklch(0.20 0.012 70);
-  --popover: oklch(0.995 0.004 70);
-  --popover-foreground: oklch(0.20 0.012 70);
-  /* Teal (hue 195), chroma-clamped to stay in sRGB gamut; AA against white text. */
-  --primary: oklch(0.48 0.09 195);
-  --primary-foreground: oklch(0.99 0.002 70);
-  --secondary: oklch(0.955 0.008 70);
-  --secondary-foreground: oklch(0.26 0.012 70);
-  --muted: oklch(0.955 0.008 70);
-  --muted-foreground: oklch(0.48 0.014 70);
-  --accent: oklch(0.94 0.016 195);
-  --accent-foreground: oklch(0.26 0.012 70);
-  --destructive: oklch(0.50 0.20 25);
-  --border: oklch(0.88 0.008 70);
-  --input: oklch(0.55 0.014 70);
-  --ring: oklch(0.48 0.09 195);
-  /* Chart ramp = teal + the four severities (cohesive with the evidence vocabulary). */
-  --chart-1: oklch(0.48 0.09 195);
-  --chart-2: oklch(0.55 0.134 55);
-  --chart-3: oklch(0.56 0.113 85);
-  --chart-4: oklch(0.50 0.14 250);
-  --chart-5: oklch(0.50 0.20 25);
-  --radius: 0.375rem;
-  --sidebar: oklch(0.97 0.006 70);
-  --sidebar-foreground: oklch(0.20 0.012 70);
-  --sidebar-primary: oklch(0.48 0.09 195);
-  --sidebar-primary-foreground: oklch(0.99 0.002 70);
-  --sidebar-accent: oklch(0.94 0.016 195);
-  --sidebar-accent-foreground: oklch(0.26 0.012 70);
-  --sidebar-border: oklch(0.88 0.008 70);
-  --sidebar-ring: oklch(0.48 0.09 195);
-  /* Severity — light "paper lab" variant, AA as text. Minor pulled to hue 250 so
-     it never collides with active-teal (195). */
-  --severity-critical: oklch(0.50 0.20 25);
-  --severity-serious: oklch(0.52 0.14 55);
-  --severity-moderate: oklch(0.52 0.12 85);
-  --severity-minor: oklch(0.48 0.14 250);
+  --background: oklch(0.967 0.013 86);      /* desk / manila */
+  --foreground: oklch(0.22 0.025 262);      /* ink */
+  --card: oklch(0.993 0.004 90);            /* sheet */
+  --card-foreground: oklch(0.22 0.025 262);
+  --popover: oklch(0.993 0.004 90);
+  --popover-foreground: oklch(0.22 0.025 262);
+  --primary: oklch(0.38 0.13 264);          /* carbon ink blue */
+  --primary-foreground: oklch(0.985 0.004 90);
+  --secondary: oklch(0.935 0.016 86);
+  --secondary-foreground: oklch(0.26 0.025 262);
+  --muted: oklch(0.935 0.016 86);
+  --muted-foreground: oklch(0.46 0.022 262);
+  --accent: oklch(0.925 0.03 264);
+  --accent-foreground: oklch(0.26 0.025 262);
+  --destructive: oklch(0.5 0.19 28);
+  --border: oklch(0.855 0.02 84);           /* ruled line */
+  --input: oklch(0.56 0.022 262);
+  --ring: oklch(0.38 0.13 264);
+  --redline: oklch(0.5 0.19 28);
+  --highlight: oklch(0.925 0.1 98);         /* highlighter yellow — ink text on it */
+  --stamp: oklch(0.5 0.19 28);
+  --chart-1: oklch(0.38 0.13 264);
+  --chart-2: oklch(0.52 0.14 55);
+  --chart-3: oklch(0.52 0.11 85);
+  --chart-4: oklch(0.47 0.03 262);
+  --chart-5: oklch(0.5 0.19 28);
+  --radius: 0.1875rem;
+  --sidebar: oklch(0.955 0.015 86);
+  --sidebar-foreground: oklch(0.22 0.025 262);
+  --sidebar-primary: oklch(0.38 0.13 264);
+  --sidebar-primary-foreground: oklch(0.985 0.004 90);
+  --sidebar-accent: oklch(0.925 0.03 264);
+  --sidebar-accent-foreground: oklch(0.26 0.025 262);
+  --sidebar-border: oklch(0.855 0.02 84);
+  --sidebar-ring: oklch(0.38 0.13 264);
+  /* Severity on paper. Minor is slate (low urgency), never ink-blue, so a minor
+     finding can't be mistaken for a link or CTA. */
+  --severity-critical: oklch(0.5 0.19 28);
+  --severity-serious: oklch(0.52 0.12 52);
+  --severity-moderate: oklch(0.5 0.095 82);
+  --severity-minor: oklch(0.47 0.035 262);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --shadow-sheet: 0 1px 0 oklch(0.8 0.02 84), 0 18px 40px -24px oklch(0.3 0.04 262 / 0.35);
 }
 
 .dark {
-  --background: oklch(0.15 0.006 70);
-  --foreground: oklch(0.96 0.004 70);
-  --card: oklch(0.19 0.006 70);
-  --card-foreground: oklch(0.96 0.004 70);
-  --popover: oklch(0.19 0.006 70);
-  --popover-foreground: oklch(0.96 0.004 70);
-  --primary: oklch(0.72 0.12 195);
-  --primary-foreground: oklch(0.15 0.01 195);
-  --secondary: oklch(0.24 0.008 70);
-  --secondary-foreground: oklch(0.96 0.004 70);
-  --muted: oklch(0.24 0.008 70);
-  --muted-foreground: oklch(0.68 0.01 70);
-  --accent: oklch(0.24 0.008 70);
-  --accent-foreground: oklch(0.96 0.004 70);
-  --destructive: oklch(0.65 0.20 25);
-  --border: oklch(0.98 0.004 70 / 10%);
-  --input: oklch(0.98 0.004 70 / 14%);
-  --ring: oklch(0.72 0.12 195);
-  --chart-1: oklch(0.72 0.12 195);
-  --chart-2: oklch(0.72 0.16 55);
-  --chart-3: oklch(0.80 0.13 85);
-  --chart-4: oklch(0.70 0.12 250);
-  --chart-5: oklch(0.65 0.20 25);
-  --sidebar: oklch(0.17 0.006 70);
-  --sidebar-foreground: oklch(0.96 0.004 70);
-  --sidebar-primary: oklch(0.72 0.12 195);
-  --sidebar-primary-foreground: oklch(0.15 0.01 195);
-  --sidebar-accent: oklch(0.24 0.008 70);
-  --sidebar-accent-foreground: oklch(0.96 0.004 70);
-  --sidebar-border: oklch(0.98 0.004 70 / 10%);
-  --sidebar-ring: oklch(0.72 0.12 195);
-  --severity-critical: oklch(0.65 0.20 25);
-  --severity-serious: oklch(0.72 0.16 55);
-  --severity-moderate: oklch(0.80 0.13 85);
-  --severity-minor: oklch(0.70 0.12 250);
+  --background: oklch(0.175 0.014 262);     /* night desk */
+  --foreground: oklch(0.94 0.012 88);       /* paper-white ink */
+  --card: oklch(0.215 0.016 262);
+  --card-foreground: oklch(0.94 0.012 88);
+  --popover: oklch(0.215 0.016 262);
+  --popover-foreground: oklch(0.94 0.012 88);
+  --primary: oklch(0.8 0.09 258);
+  --primary-foreground: oklch(0.18 0.03 262);
+  --secondary: oklch(0.26 0.016 262);
+  --secondary-foreground: oklch(0.94 0.012 88);
+  --muted: oklch(0.26 0.016 262);
+  --muted-foreground: oklch(0.72 0.018 88);
+  --accent: oklch(0.28 0.03 262);
+  --accent-foreground: oklch(0.94 0.012 88);
+  --destructive: oklch(0.7 0.16 28);
+  --border: oklch(0.94 0.012 88 / 13%);
+  --input: oklch(0.94 0.012 88 / 22%);
+  --ring: oklch(0.8 0.09 258);
+  --redline: oklch(0.72 0.15 28);
+  --highlight: oklch(0.42 0.07 98);
+  --stamp: oklch(0.72 0.15 28);
+  --chart-1: oklch(0.8 0.09 258);
+  --chart-2: oklch(0.76 0.13 55);
+  --chart-3: oklch(0.8 0.11 85);
+  --chart-4: oklch(0.72 0.03 262);
+  --chart-5: oklch(0.72 0.15 28);
+  --sidebar: oklch(0.195 0.015 262);
+  --sidebar-foreground: oklch(0.94 0.012 88);
+  --sidebar-primary: oklch(0.8 0.09 258);
+  --sidebar-primary-foreground: oklch(0.18 0.03 262);
+  --sidebar-accent: oklch(0.28 0.03 262);
+  --sidebar-accent-foreground: oklch(0.94 0.012 88);
+  --sidebar-border: oklch(0.94 0.012 88 / 13%);
+  --sidebar-ring: oklch(0.8 0.09 258);
+  --severity-critical: oklch(0.72 0.15 28);
+  --severity-serious: oklch(0.77 0.13 55);
+  --severity-moderate: oklch(0.82 0.11 85);
+  --severity-minor: oklch(0.74 0.03 262);
+  --shadow-sheet: 0 1px 0 oklch(0.1 0.01 262), 0 18px 40px -24px oklch(0 0 0 / 0.6);
 }
 
-
-/* Paper report preview sits on a white sheet inside dark chrome — use light severity tokens. */
+/* Paper report preview is always a white sheet, even on the night desk — light
+   severity + ink tokens scoped to it. */
 .report-paper-surface {
-  --severity-critical: oklch(0.50 0.20 25);
-  --severity-serious: oklch(0.52 0.14 55);
-  --severity-moderate: oklch(0.52 0.12 85);
-  --severity-minor: oklch(0.48 0.14 250);
+  --foreground: oklch(0.22 0.025 262);
+  --muted-foreground: oklch(0.46 0.022 262);
+  --border: oklch(0.855 0.02 84);
+  --severity-critical: oklch(0.5 0.19 28);
+  --severity-serious: oklch(0.52 0.12 52);
+  --severity-moderate: oklch(0.5 0.095 82);
+  --severity-minor: oklch(0.47 0.035 262);
+  --redline: oklch(0.5 0.19 28);
+  --stamp: oklch(0.5 0.19 28);
+  --highlight: oklch(0.925 0.1 98);
 }
 
 @layer base {
@@ -157,10 +175,18 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground overflow-x-hidden;
+    @apply bg-background text-foreground;
+    overflow-x: clip;
   }
   html {
-    @apply font-sans overflow-x-hidden;
+    @apply font-sans;
+    overflow-x: clip;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "ss02", "cv05";
+  }
+  ::selection {
+    background: var(--highlight);
+    color: var(--foreground);
   }
 }
 
@@ -181,16 +207,169 @@
 }
 .label-mono {
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   line-height: 1rem;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
 
+/* ---------------------------------------------------------------------------
+ * Dossier primitives. Named, reusable, token-only. See web/DESIGN.md.
+ * -------------------------------------------------------------------------*/
+
+/* Display serif — upright always (no italic headings), optical sizing on. */
+.display {
+  font-family: var(--font-serif), ui-serif, Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.022em;
+  font-optical-sizing: auto;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  hyphens: manual;
+  min-width: 0;
+}
+
+/* A sheet of paper resting on the desk. */
+.sheet {
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sheet);
+}
+
+/* Legal-pad margin: one redline down the left edge of a sheet. Put on a
+   position:relative element with left padding >= 2.5rem. */
+.margin-rule {
+  position: relative;
+}
+.margin-rule::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 1.75rem;
+  width: 1px;
+  background: color-mix(in oklch, var(--redline) 45%, transparent);
+  pointer-events: none;
+}
+
+/* Faint ruled lines, like ledger paper. Decorative background only. */
+.ruled {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(2rem - 1px),
+    color-mix(in oklch, var(--border) 55%, transparent) calc(2rem - 1px),
+    color-mix(in oklch, var(--border) 55%, transparent) 2rem
+  );
+}
+
+/* Rubber stamp — the verdict mark. Rotated a few degrees, double border in stamp
+   ink. Use at most once or twice per viewport. */
+.stamp {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.5rem 0.875rem;
+  border: 2px solid var(--stamp);
+  outline: 1px solid var(--stamp);
+  outline-offset: 3px;
+  border-radius: 2px;
+  color: var(--stamp);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  transform: rotate(-4deg);
+}
+:root:not(.dark) .stamp {
+  mix-blend-mode: multiply;
+}
+
+/* Highlighter pass over a phrase. Ink text stays on it (>= 7:1 both themes). */
+.mark {
+  background-image: linear-gradient(
+    to top,
+    var(--highlight) 0,
+    var(--highlight) 62%,
+    transparent 62%
+  );
+  padding-inline: 0.12em;
+  margin-inline: -0.06em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  color: inherit;
+}
+
+/* Redline margin note — the annotator's voice. */
+.redline-note {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--redline);
+}
+
+/* File tab label that sits on the top edge of a sheet. */
+.file-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--card);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+/* Standard page frame: one left edge for every section on every page. */
+.frame {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+@media (min-width: 640px) {
+  .frame { padding-inline: 2rem; }
+}
+.frame-narrow {
+  width: 100%;
+  max-width: 46rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+@media (min-width: 640px) {
+  .frame-narrow { padding-inline: 2rem; }
+}
+
+/* Inline text link in body copy: ink-blue, underlined, instant focus ring. */
+.text-link {
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  border-radius: 2px;
+  transition: text-decoration-thickness 150ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.text-link:hover {
+  text-decoration-thickness: 2px;
+}
+.text-link:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
 /* Theme toggle / state change — 150ms color only (motion budget). */
 .theme-transition {
-  transition: background-color 150ms ease-out, color 150ms ease-out, border-color 150ms ease-out;
+  transition: background-color 150ms var(--ease-out), color 150ms var(--ease-out), border-color 150ms var(--ease-out);
 }
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(12px); }
@@ -245,12 +424,13 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.04;
+  opacity: 0.05;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: repeat;
 }
 :root:not(.dark) .grain::before {
-  opacity: 0.025;
+  opacity: 0.06;
+  mix-blend-mode: multiply;
 }
 
 /* Report export (audits/[id]/report): print only the report document, never the app

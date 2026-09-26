@@ -22,7 +22,7 @@ export function MarketingShell({
         id="main"
         className={
           narrow
-            ? "mx-auto w-full max-w-2xl flex-1 px-6 section-y"
+            ? "frame-narrow flex-1 section-y"
             : "w-full flex-1"
         }
       >

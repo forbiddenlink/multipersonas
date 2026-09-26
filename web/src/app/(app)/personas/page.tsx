@@ -37,16 +37,16 @@ export default async function PersonasPage({
     <div>
       <div className="mb-1 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Personas</h1>
-          <p className="mt-1 text-muted-foreground">
-            Navigators that browse toward a goal — task-success, not compliance verdicts
+          <h1 className="display text-2xl leading-tight text-foreground">Personas</h1>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+            Navigators that browse toward a goal. Task success, not a compliance verdict.
           </p>
         </div>
         <Link
           href="/dashboard"
           className="rounded-sm border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-foreground/25 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
-          Run an audit →
+          Run an audit &rarr;
         </Link>
       </div>
 
@@ -59,7 +59,7 @@ export default async function PersonasPage({
       {filteredPersonas.length === 0 ? (
         <EmptyPrompt
           className="mt-8"
-          prompt="no personas in this category"
+          prompt="No personas in this category."
           hint="Try another filter, or clear it to see the full library."
           action={
             <Link

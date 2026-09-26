@@ -1,0 +1,253 @@
+/* Evidence Dossier long-form reading layout: guides, docs, legal pages.
+ * Token-only (web/DESIGN.md). Newsreader for headings, IBM Plex Sans body via the
+ * inherited font-serif set on .prose itself for prose paragraphs (per DESIGN.md:
+ * "Long-form prose ... font-serif at 1.0625-1.125rem"), Plex Mono for code/labels.
+ */
+
+.prose {
+  min-width: 0;
+  max-width: 65ch;
+  font-family: var(--font-serif), ui-serif, Georgia, serif;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--foreground);
+}
+
+.prose > * + * {
+  margin-top: 1.3em;
+}
+
+.prose h2 {
+  margin-top: 2.6em;
+  margin-bottom: 0.6em;
+  font-family: var(--font-serif), ui-serif, Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  font-size: clamp(1.4rem, 2.6vw, 1.75rem);
+  line-height: 1.2;
+  color: var(--foreground);
+  scroll-margin-top: 6rem;
+  text-wrap: balance;
+}
+.prose h2:first-child {
+  margin-top: 0;
+}
+
+.prose h3 {
+  margin-top: 2.1em;
+  margin-bottom: 0.5em;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 1.0625rem;
+  letter-spacing: -0.005em;
+  color: var(--foreground);
+  scroll-margin-top: 6rem;
+}
+
+.prose p {
+  color: inherit;
+}
+
+.prose strong {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.375em;
+}
+.prose li + li {
+  margin-top: 0.55em;
+}
+.prose li::marker {
+  color: var(--muted-foreground);
+}
+
+.prose a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  border-radius: 2px;
+  transition: text-decoration-thickness 150ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.prose a:hover {
+  text-decoration-thickness: 2px;
+}
+.prose a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.prose code {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.875em;
+  background: var(--muted);
+  border-radius: 3px;
+  padding: 0.1em 0.35em;
+  word-break: break-word;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+}
+.prose th {
+  text-align: left;
+  border-bottom: 2px solid var(--foreground);
+  padding: 0.55em 0.75em 0.55em 0;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 400;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+.prose td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.65em 0.75em 0.65em 0;
+  vertical-align: top;
+}
+
+.prose blockquote {
+  border-left: 2px solid var(--border);
+  padding-left: 1em;
+  color: var(--muted-foreground);
+  font-style: normal;
+}
+
+.prose hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2.6em 0;
+}
+
+/* Table needs to scroll, not overflow the viewport, at 375px. */
+.tableScroll {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+/* ---------------------------------------------------------------------------
+ * Callouts — redline margin note vs. highlighter block. Both token-only.
+ * ------------------------------------------------------------------------- */
+.calloutRedline {
+  position: relative;
+  padding-left: 1.375rem;
+  border-left: 2px solid color-mix(in oklch, var(--redline) 55%, transparent);
+}
+
+.calloutHighlight {
+  border-left: 3px solid var(--highlight);
+  background: color-mix(in oklch, var(--highlight) 22%, transparent);
+  border-radius: var(--radius);
+  padding: 0.9rem 1.1rem;
+}
+.calloutHighlight p {
+  color: var(--foreground);
+}
+
+/* ---------------------------------------------------------------------------
+ * Code sheet — a bordered evidence block with a copy button.
+ * ------------------------------------------------------------------------- */
+.codeBlock {
+  position: relative;
+  min-width: 0;
+}
+
+.codePre {
+  min-width: 0;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 1rem 3.25rem 1rem 1rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: var(--foreground);
+  white-space: pre;
+}
+
+.codeLabel {
+  position: absolute;
+  top: -0.55rem;
+  left: 0.875rem;
+  padding: 0 0.4rem;
+  background: var(--background);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.copyBtn {
+  position: absolute;
+  top: 0.625rem;
+  right: 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  height: 1.75rem;
+  padding: 0 0.625rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    color 150ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),
+    border-color 150ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),
+    background-color 150ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.copyBtn:hover {
+  color: var(--foreground);
+  border-color: color-mix(in oklch, var(--foreground) 25%, transparent);
+}
+.copyBtn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.copyBtn:active {
+  transform: translateY(1px);
+}
+.copyBtn[data-copied="true"] {
+  color: var(--primary);
+  border-color: color-mix(in oklch, var(--primary) 45%, transparent);
+}
+.copyBtn[data-failed="true"] {
+  color: var(--redline);
+  border-color: color-mix(in oklch, var(--redline) 45%, transparent);
+}
+
+/* ---------------------------------------------------------------------------
+ * Table of contents — plain anchors, sticky on wide screens, no JS required.
+ * ------------------------------------------------------------------------- */
+.toc {
+  position: sticky;
+  top: 6rem;
+}
+
+.tocLink {
+  display: block;
+  padding-block: 0.3rem;
+  color: var(--muted-foreground);
+  text-decoration: none;
+  transition: color 150ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.tocLink:hover {
+  color: var(--foreground);
+}
+.tocLink:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}

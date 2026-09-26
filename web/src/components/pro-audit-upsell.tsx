@@ -15,33 +15,30 @@ import Link from "next/link";
  */
 export function ProAuditUpsell() {
   return (
-    <div className="rounded-md border border-border bg-card p-5">
-      <p className="font-mono text-xs uppercase tracking-wide text-[var(--primary)]">Pro</p>
-      <p className="mt-2 text-lg font-semibold tracking-tight">
+    <div className="sheet margin-rule p-6 pl-12 sm:p-7 sm:pl-14">
+      <p className="label-mono">Pro</p>
+      <p className="display mt-2 text-xl leading-snug">
         The hosted persona audit is a Pro feature.
       </p>
-      <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-muted-foreground">
+      <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
         Save a task for an AI browser agent to attempt on your public site. Check for
         expected final-page text, inspect recorded evidence, and compare retests after
         changes. These checks do not predict human success. Free accounts get the
         deterministic axe-core grade on public URLs.
       </p>
-      <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
+      <p className="redline-note mt-3 max-w-prose leading-relaxed">
         Scanning behind a login runs in the CLI today, where your client&apos;s credentials
         never leave your machine. Hosted behind-login is what founding access funds. We
         won&apos;t sell it as shipped before it is.
       </p>
-      <div className="mt-4 flex flex-wrap gap-3">
+      <div className="mt-5 flex flex-wrap gap-x-6 gap-y-3 border-t border-border pt-5">
         <Link
           href="/grade"
-          className="inline-flex items-center justify-center rounded-sm bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors duration-150 hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+          className="inline-flex h-10 items-center justify-center rounded-sm bg-primary px-4 text-sm font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
           Run a free grade
         </Link>
-        <Link
-          href="/for-agencies#early-access"
-          className="inline-flex items-center justify-center rounded-sm border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors duration-150 hover:border-foreground/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-        >
+        <Link href="/for-agencies#early-access" className="text-link self-center text-sm">
           See founding access
         </Link>
       </div>

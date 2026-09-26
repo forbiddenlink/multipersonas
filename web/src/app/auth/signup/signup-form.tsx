@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Wordmark } from "@/components/forensic/wordmark";
 import { Eye, EyeOff } from "lucide-react";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 import { trackProductEvent } from "@/lib/analytics";
+import { AuthShell, AuthCardTab, AuthFormError } from "@/components/dossier/app-auth-shell";
 
 // Same-origin path only — mirrors login-form so a crafted ?returnTo=//evil.com
 // can't turn signup/OAuth into an open redirect.
@@ -21,19 +21,6 @@ function safeReturnTo(params: URLSearchParams): string {
 
 function returnToQuery(returnTo: string): string {
   return returnTo === "/dashboard" ? "" : `?returnTo=${encodeURIComponent(returnTo)}`;
-}
-
-// Terminal header bar — frames the auth card as tool output (forensic-terminal spec).
-function CardHeaderBar({ route }: { route: string }) {
-  return (
-    <div className="flex items-center gap-2 border-b border-border px-5 py-3 font-mono text-xs text-muted-foreground">
-      <span aria-hidden="true" className="select-none text-[var(--primary)]">
-        ›
-      </span>
-      <Wordmark className="text-foreground" />
-      <span className="text-muted-foreground">/ {route}</span>
-    </div>
-  );
 }
 
 type FieldErrors = {
@@ -116,7 +103,7 @@ export function SignupForm() {
     return true;
   }
 
-  async function handleSignup(e: React.FormEvent) {
+  async function handleSignup(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setFormError("");
 
@@ -200,52 +187,46 @@ export function SignupForm() {
 
   if (success) {
     return (
-      <div className="flex min-h-dvh items-center justify-center px-4">
-        <div className="w-full max-w-sm rounded-md border border-border bg-card">
-          <CardHeaderBar route="create-account" />
+      <AuthShell>
+        <div className="sheet w-full max-w-sm">
+          <AuthCardTab route="create-account" />
           <div className="px-5 py-6 text-center">
-            <h1 className="text-xl font-semibold tracking-tight text-foreground">Check your email</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <h1 className="display text-2xl leading-tight text-foreground">Check your email</h1>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               We sent a confirmation link to <strong className="font-medium text-foreground">{email}</strong>. Click it
               to activate your account.
             </p>
             <p className="mt-5 text-sm text-muted-foreground">
               Already confirmed?{" "}
-              <Link
-                href={loginHref}
-                className="rounded-sm text-foreground underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-              >
+              <Link href={loginHref} className="text-link">
                 Sign in
               </Link>
             </p>
           </div>
         </div>
-      </div>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-md border border-border bg-card">
-        <CardHeaderBar route="create-account" />
+    <AuthShell>
+      <div className="sheet w-full max-w-sm">
+        <AuthCardTab route="create-account" />
         <div className="px-5 py-6">
-          <div className="text-center">
-            <h1 className="text-xl font-semibold tracking-tight text-foreground">Create your account</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Save every audit you run — axe verdicts and persona task-success, kept in one place.
+          <div>
+            <p className="label-mono">Free to start</p>
+            <h1 className="display mt-1.5 text-2xl leading-tight text-foreground">Create your account</h1>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Save every audit you run: axe verdicts and persona task-success, kept in one place.
             </p>
           </div>
 
           <div className="mt-6 flex flex-col gap-4">
-          {formError && (
-            <div id="form-error" role="alert" className="rounded-sm border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {formError}
-            </div>
-          )}
+          {formError && <AuthFormError id="form-error" message={formError} />}
 
           <form onSubmit={handleSignup} aria-describedby={formError ? "form-error" : undefined} className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="email" className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Email</Label>
+              <Label htmlFor="email" className="label-mono">Email</Label>
               <Input
                 ref={emailRef}
                 id="email"
@@ -258,15 +239,14 @@ export function SignupForm() {
                 aria-invalid={!!fieldErrors.email}
                 aria-describedby={fieldErrors.email ? "email-error" : undefined}
                 required
-                className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
               />
               {fieldErrors.email && (
-                <p id="email-error" className="text-xs text-destructive">{fieldErrors.email}</p>
+                <p id="email-error" role="alert" className="text-xs text-[var(--redline)]">■ {fieldErrors.email}</p>
               )}
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="password" className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Password</Label>
+              <Label htmlFor="password" className="label-mono">Password</Label>
               <div className="relative">
                 <Input
                   ref={passwordRef}
@@ -279,7 +259,7 @@ export function SignupForm() {
                   autoComplete="new-password"
                   aria-invalid={!!fieldErrors.password}
                   aria-describedby={fieldErrors.password ? "password-error" : "password-hint"}
-                  className="pr-10 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                  className="pr-10"
                   required
                 />
                 <button
@@ -292,14 +272,14 @@ export function SignupForm() {
                 </button>
               </div>
               {fieldErrors.password ? (
-                <p id="password-error" className="text-xs text-destructive">{fieldErrors.password}</p>
+                <p id="password-error" role="alert" className="text-xs text-[var(--redline)]">■ {fieldErrors.password}</p>
               ) : (
                 <p id="password-hint" className="text-xs text-muted-foreground">8+ characters with a number or symbol</p>
               )}
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="confirm-password" className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Confirm password</Label>
+              <Label htmlFor="confirm-password" className="label-mono">Confirm password</Label>
               <div className="relative">
                 <Input
                   ref={confirmRef}
@@ -312,7 +292,7 @@ export function SignupForm() {
                   autoComplete="new-password"
                   aria-invalid={!!fieldErrors.confirmPassword}
                   aria-describedby={fieldErrors.confirmPassword ? "confirm-error" : undefined}
-                  className="pr-10 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                  className="pr-10"
                   required
                 />
                 <button
@@ -325,12 +305,12 @@ export function SignupForm() {
                 </button>
               </div>
               {fieldErrors.confirmPassword && (
-                <p id="confirm-error" className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>
+                <p id="confirm-error" role="alert" className="text-xs text-[var(--redline)]">■ {fieldErrors.confirmPassword}</p>
               )}
             </div>
 
-            <Button type="submit" disabled={loading} className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
-              {loading ? "Creating account..." : "Create account"}
+            <Button type="submit" loading={loading} className="w-full">
+              Create account
             </Button>
           </form>
 
@@ -340,7 +320,7 @@ export function SignupForm() {
             <Separator className="flex-1" />
           </div>
 
-          <Button variant="outline" onClick={handleGitHubSignup} disabled={loading} className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
+          <Button variant="outline" onClick={handleGitHubSignup} loading={loading} className="w-full">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -354,21 +334,18 @@ export function SignupForm() {
 
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link
-              href={loginHref}
-              className="rounded-sm text-foreground underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-            >
+            <Link href={loginHref} className="text-link">
               Sign in
             </Link>
           </p>
           <p className="text-center text-xs text-muted-foreground">
-            <Link href="/" className="rounded-sm hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
+            <Link href="/" className="text-link">
               &larr; Back to home
             </Link>
           </p>
           </div>
         </div>
       </div>
-    </div>
+    </AuthShell>
   );
 }

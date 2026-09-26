@@ -22,7 +22,7 @@ export function Meter({
   return (
     <div className={className}>
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
+        <span className="label-mono">{label}</span>
         <span className="font-mono text-sm tabular-nums">
           {value}
           <span className="text-muted-foreground">{` / ${total}`}</span>
@@ -33,7 +33,7 @@ export function Meter({
         </span>
       </div>
       <div
-        className="mt-1.5 h-1 overflow-hidden rounded-sm bg-border"
+        className="mt-2 h-1.5 overflow-hidden rounded-[1px] bg-border"
         role="progressbar"
         aria-valuenow={value}
         aria-valuemin={0}
@@ -41,7 +41,7 @@ export function Meter({
         aria-label={unit ? `${label}: ${value} of ${total} ${unit}` : `${label}: ${value} of ${total}`}
       >
         <div
-          className="h-full rounded-sm transition-[width] duration-500 ease-out"
+          className="h-full transition-[width] duration-500 ease-[var(--ease-out)]"
           style={{ width: `${Math.round(pct * 100)}%`, backgroundColor: barColor }}
         />
       </div>

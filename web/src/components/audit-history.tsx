@@ -28,62 +28,78 @@ export function AuditHistory({ audits }: { audits: AuditListItem[] }) {
   if (audits.length === 0) {
     return (
       <EmptyPrompt
-        prompt="no saved runs yet — point it at a URL above"
-        hint="Signed-in scans land here so you can track which defects you’ve cleared over time."
+        prompt="No saved runs yet."
+        hint="Point a URL at the form above and your first scan lands here, so you can track what you've cleared over time."
       />
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-md border border-border bg-card font-mono text-sm">
-      <div className="border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
-        <span className="select-none text-[var(--primary)]">┌─ </span>
-        recent runs
-        <span className="ml-2 tabular-nums text-muted-foreground">{audits.length}</span>
-      </div>
-      <ul className="divide-y divide-border">
-        {audits.map((a) => {
-          const tone = successTone(a.task_success_achieved, a.task_success_total);
-          const color = tone ? `var(--severity-${tone})` : undefined;
-          return (
-            <li key={a.id}>
-              <Link
-                href={`/audits/${a.id}`}
-                aria-label={`View details for the audit of ${hostname(a.url)} on ${new Date(
-                  a.created_at,
-                ).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}, ${a.task_success_achieved ?? 0} of ${a.task_success_total ?? 0} ${a.task_definition ? "profiles matched the text check" : "personas reached their goal"}`}
-                className="flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-card-foreground">
-                    <span className="select-none text-[var(--primary)]">›&nbsp;</span>
+    <div
+      tabIndex={0}
+      role="region"
+      aria-label="Recent runs table"
+      className="min-w-0 overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+    >
+      <table className="w-full min-w-[30rem] border-collapse text-left text-sm">
+        <caption className="sr-only">Recent audit runs by host, date, and persona task success</caption>
+        <thead>
+          <tr className="border-b-2 border-foreground">
+            <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+              Host
+            </th>
+            <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+              Date
+            </th>
+            <th scope="col" className="hidden py-2 pr-4 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground sm:table-cell">
+              Personas
+            </th>
+            <th scope="col" className="py-2 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+              Task success
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {audits.map((a) => {
+            const tone = successTone(a.task_success_achieved, a.task_success_total);
+            const color = tone ? `var(--severity-${tone})` : undefined;
+            return (
+              <tr key={a.id} className="border-b border-border">
+                <th scope="row" className="py-3 pr-4 font-normal">
+                  <Link
+                    href={`/audits/${a.id}`}
+                    aria-label={`View details for the audit of ${hostname(a.url)} on ${new Date(
+                      a.created_at,
+                    ).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}, ${a.task_success_achieved ?? 0} of ${a.task_success_total ?? 0} ${a.task_definition ? "profiles matched the text check" : "personas reached their goal"}`}
+                    className="text-link truncate"
+                  >
                     {hostname(a.url)}
-                  </p>
-                  <p className="truncate pl-3.5 text-xs text-muted-foreground">
-                    {new Date(a.created_at).toLocaleDateString(undefined, {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                    {" · "}
-                    {a.persona_ids.length} persona{a.persona_ids.length === 1 ? "" : "s"}
-                  </p>
-                </div>
-                <div className="shrink-0 text-right">
+                  </Link>
+                </th>
+                <td className="py-3 pr-4 text-muted-foreground">
+                  {new Date(a.created_at).toLocaleDateString(undefined, {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </td>
+                <td className="hidden py-3 pr-4 text-right font-mono tabular-nums text-muted-foreground sm:table-cell">
+                  {a.persona_ids.length}
+                </td>
+                <td className="py-3 text-right">
                   <span
-                    className={`font-medium tabular-nums ${color ? "" : "text-muted-foreground"}`}
+                    className={`font-mono font-medium tabular-nums ${color ? "" : "text-muted-foreground"}`}
                     style={color ? { color } : undefined}
                   >
                     {a.task_success_achieved ?? 0}
                     <span className="text-muted-foreground">/{a.task_success_total ?? 0}</span>
                   </span>
-                  <p className="text-xs text-muted-foreground">{a.task_definition ? "text observed" : "reached goal"}</p>
-                </div>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

@@ -15,7 +15,7 @@ export default function SignupPage() {
       <Suspense
         fallback={
           <div className="flex min-h-dvh items-center justify-center px-4">
-            <div className="h-96 w-full max-w-sm animate-pulse rounded-md border border-border bg-card" />
+            <div className="sheet h-[28rem] w-full max-w-sm animate-pulse" />
           </div>
         }
       >

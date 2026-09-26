@@ -31,22 +31,19 @@ export function GradeBadgeEmbed({ token, host }: { token: string; host: string }
   }, []);
 
   return (
-    <div className="space-y-4 rounded-md border border-border bg-card p-5">
+    <section className="border-t border-border pt-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
-          Embed Scorecard Badge
-        </h2>
-        <span className="font-mono text-[11px] text-muted-foreground">
-          auto-updating · SVG
-        </span>
+        <p className="label-mono">Embed Scorecard Badge</p>
+        <span className="font-mono text-[11px] text-muted-foreground">auto-updating · SVG</span>
       </div>
 
-      <p className="text-sm leading-relaxed text-muted-foreground">
-        Embed this verifiable accessibility grade on your GitHub README, documentation, or client website footer.
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+        Embed this verifiable accessibility grade on your GitHub README, documentation, or
+        client website footer.
       </p>
 
       {/* Live Badge Preview */}
-      <div className="flex items-center gap-4 rounded-sm border border-border bg-background px-4 py-3">
+      <div className="mt-4 flex items-center gap-4 rounded-sm border border-border bg-background px-4 py-3">
         <span className="font-mono text-xs text-muted-foreground">Preview:</span>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -56,10 +53,14 @@ export function GradeBadgeEmbed({ token, host }: { token: string; host: string }
         />
       </div>
 
-      {copyError && <p role="alert" className="text-sm text-destructive">{copyError}</p>}
+      {copyError && (
+        <p role="alert" className="mt-3 text-sm text-[var(--redline)]">
+          {copyError}
+        </p>
+      )}
 
       {/* Code Snippets & Copy Buttons */}
-      <div className="space-y-3">
+      <div className="mt-4 space-y-3">
         <div>
           <div className="mb-1.5 flex items-center justify-between text-xs">
             <span className="font-mono text-muted-foreground">Markdown</span>
@@ -92,6 +93,6 @@ export function GradeBadgeEmbed({ token, host }: { token: string; host: string }
           </pre>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

@@ -1,24 +1,27 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
+import { IBM_Plex_Mono, IBM_Plex_Sans, Newsreader } from "next/font/google";
 import { PostHogProvider } from "@/components/posthog-provider";
 import "./globals.css";
 
-// Sans — copy, CTAs, UI, and tight headings.
-const inter = Inter({
+// Sans — UI, copy, CTAs. Plex reads as a technical document, not a SaaS default.
+const plexSans = IBM_Plex_Sans({
   variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
-// Mono — the evidence face: logs, rule IDs, counts, meters, tool labels, host names.
-const jetbrainsMono = JetBrains_Mono({
+// Mono — the evidence face: rule IDs, file numbers, counts, stamps, commands.
+const plexMono = IBM_Plex_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
-// Serif — the document voice: report verdict body, WCAG citations, guide prose.
-const sourceSerif = Source_Serif_4({
+// Serif — display headings and the document voice (report body, guide prose).
+const newsreader = Newsreader({
   variable: "--font-serif",
   subsets: ["latin"],
+  axes: ["opsz"],
 });
 
 export const metadata: Metadata = {
@@ -26,10 +29,10 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL || "https://personaudit.com"
   ),
   title: {
-    default: "Personaudit — accessibility scanning, plus a persona task-success layer",
+    default: "Personaudit: accessibility evidence behind the login",
     template: "%s | Personaudit",
   },
-  description: "Scan a public URL with axe-core for deterministic accessibility violations, and run UX personas that browse toward a goal to measure whether a real-shaped user completes the flow. To scan behind your login, use the CLI — your credentials never leave your machine.",
+  description: "Personaudit runs axe-core at every state a signed-in crawl reaches (carts, checkouts, error screens) and turns it into a report an agency can hand a client. Free public grade, free CLI for behind-login scans. The password never leaves your machine. Not an overlay.",
   openGraph: {
     type: "website",
     siteName: "Personaudit",
@@ -43,10 +46,10 @@ export const metadata: Metadata = {
 // the media-paired theme-color keeps the mobile address bar in sync with light/dark
 // instead of pinning it to the dark value.
 export const viewport: Viewport = {
-  colorScheme: "dark light",
+  colorScheme: "light dark",
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#17130e" },
-    { media: "(prefers-color-scheme: light)", color: "#fdfcfa" },
+    { media: "(prefers-color-scheme: light)", color: "#f6f2e8" },
+    { media: "(prefers-color-scheme: dark)", color: "#12151d" },
   ],
 };
 
@@ -70,7 +73,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${jetbrainsMono.variable} ${sourceSerif.variable} antialiased`}
+      className={`${plexSans.variable} ${plexMono.variable} ${newsreader.variable} antialiased`}
       suppressHydrationWarning
     >
       <body className="theme-transition min-h-dvh bg-background text-foreground font-sans">
@@ -78,12 +81,12 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        {/* Dark-first, no-FOUC: apply the theme class before paint. Defaults to dark
-            unless the user has explicitly chosen light. */}
+        {/* Paper-first, no-FOUC: apply the theme class before paint. Light unless the
+            visitor chose dark, or has never chosen and their OS asks for dark. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var t=localStorage.getItem('theme');document.documentElement.classList.toggle('dark',t!=='light');}catch(e){document.documentElement.classList.add('dark');}})();",
+              "(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',d);}catch(e){}})();",
           }}
         />
         {/* Scroll-reveal sections default to hidden and are revealed by JS. Without JS,

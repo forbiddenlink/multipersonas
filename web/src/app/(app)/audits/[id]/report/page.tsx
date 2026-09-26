@@ -90,33 +90,38 @@ export default async function ReportPage({
           preview independent of the app theme, so themed components (SeverityChip)
           live here in the chrome, never inside the print root. */}
       <div className={`${styles.toolbar} report-print-hide`}>
-        <div className="flex items-center gap-2 border-b border-border px-4 py-2.5 font-mono text-xs text-muted-foreground">
-          <span className="text-[var(--primary)]">›</span>
-          <span>report: accessibility compliance record</span>
-          <span className="ml-auto rounded-sm border border-border px-1.5 py-0.5 tabular-nums">
-            {report.runId}
+        <div className="file-tab">
+          <span>Case {report.runId.slice(0, 8)}</span>
+          <span className="text-foreground/70">·</span>
+          <span className="normal-case">{report.url}</span>
+          <span className="text-foreground/70">·</span>
+          <span className="normal-case">{formatDate(report.auditDate)}</span>
+          <span className="ml-auto normal-case text-[var(--redline)]">·&nbsp;
+            {totalViolations === 0 ? "No findings" : `${totalViolations} finding${totalViolations === 1 ? "" : "s"}`}
           </span>
         </div>
-        {totalViolations > 0 && (
-          <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
-            {SEVERITY_ORDER.filter((sev) => report.severityCounts[sev] > 0).map((sev) => (
-              <span key={sev} className="inline-flex items-center gap-1.5">
-                <SeverityChip severity={sev} />
-                <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                  {report.severityCounts[sev]}
+        <div className="sheet -mt-px overflow-hidden">
+          {totalViolations > 0 && (
+            <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
+              {SEVERITY_ORDER.filter((sev) => report.severityCounts[sev] > 0).map((sev) => (
+                <span key={sev} className="inline-flex items-center gap-1.5">
+                  <SeverityChip severity={sev} />
+                  <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                    {report.severityCounts[sev]}
+                  </span>
                 </span>
-              </span>
-            ))}
+              ))}
+            </div>
+          )}
+          <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+            <Link href={`/audits/${id}`} className={buttonVariants({ variant: "outline" })}>
+              Back to audit
+            </Link>
+            <ExportButton
+              csvRows={csvRows}
+              filename={`personaudit-${report.runId}-verdicts.csv`}
+            />
           </div>
-        )}
-        <div className="flex items-center gap-3 px-4 py-3">
-          <Link href={`/audits/${id}`} className={buttonVariants({ variant: "outline" })}>
-            Back to audit
-          </Link>
-          <ExportButton
-            csvRows={csvRows}
-            filename={`personaudit-${report.runId}-verdicts.csv`}
-          />
         </div>
       </div>
 
@@ -381,7 +386,7 @@ export default async function ReportPage({
                             </div>
                           ))
                         ) : (
-                          <span className={styles.scDash}>—</span>
+                          <span className={styles.scDash}>–</span>
                         )}
                       </td>
                       <td className={styles.sev} style={{ color: meta.color }}>
@@ -398,7 +403,7 @@ export default async function ReportPage({
                             </div>
                           ))
                         ) : (
-                          <span className={styles.scDash}>—</span>
+                          <span className={styles.scDash}>–</span>
                         )}
                       </td>
                       <td className={styles.rec}>{v.recommendation}</td>

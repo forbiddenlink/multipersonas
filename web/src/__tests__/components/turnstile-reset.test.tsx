@@ -67,7 +67,7 @@ describe("Turnstile-backed forms", () => {
       target: { value: "https://example.com" },
     });
     fireEvent.click(screen.getByRole("button", { name: /solve verification/i }));
-    fireEvent.click(screen.getByRole("button", { name: /get my grade/i }));
+    fireEvent.click(screen.getByRole("button", { name: /grade this site/i }));
 
     await waitFor(() => expect(resetTurnstile).toHaveBeenCalledTimes(1));
     expect(fetchMock).toHaveBeenCalledWith("/api/grade", {

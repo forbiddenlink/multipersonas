@@ -57,7 +57,7 @@ export function AppNav({
   return (
     <>
       {/* Mobile header */}
-      <div className="flex items-center justify-between border-b border-border bg-card px-4 py-3 md:hidden">
+      <header className="flex items-center justify-between border-b border-border bg-card px-4 py-3 md:hidden">
         <Link
           href="/dashboard"
           className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
@@ -69,7 +69,7 @@ export function AppNav({
           <button
             ref={menuButtonRef}
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+            className="rounded-sm p-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileOpen}
             aria-controls="app-mobile-nav"
@@ -77,13 +77,14 @@ export function AppNav({
             {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
         </div>
-      </div>
+      </header>
 
       {/* Mobile nav dropdown */}
       {mobileOpen && (
         <nav
           ref={mobileNavRef}
           id="app-mobile-nav"
+          aria-label="App"
           className="flex flex-col gap-1 border-b border-border bg-card p-3 md:hidden"
         >
           {navItems.map((item) => {

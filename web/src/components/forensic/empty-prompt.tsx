@@ -2,8 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Terminal-native empty state — a prompt line, not a dashed marketing card.
- * Matches the forensic empty/loading/error language (spec §6).
+ * Empty state — a blank sheet with one sentence and one action (DESIGN.md).
  */
 export function EmptyPrompt({
   prompt,
@@ -19,24 +18,16 @@ export function EmptyPrompt({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-md border border-border bg-card font-mono text-sm",
+        "sheet px-6 py-8 sm:px-8",
         className,
       )}
     >
-      <div className="border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
-        <span className="select-none text-[var(--primary)]">┌─ </span>
-        empty
-      </div>
-      <div className="px-4 py-5">
-        <p className="text-card-foreground">
-          <span className="select-none text-[var(--primary)]">›&nbsp;</span>
-          {prompt}
-        </p>
-        {hint ? (
-          <p className="mt-2 pl-3.5 text-xs leading-relaxed text-muted-foreground">{hint}</p>
-        ) : null}
-        {action ? <div className="mt-4 pl-3.5">{action}</div> : null}
-      </div>
+      <p className="label-mono">Nothing on file yet</p>
+      <p className="display mt-2 text-xl leading-snug text-card-foreground">{prompt}</p>
+      {hint ? (
+        <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">{hint}</p>
+      ) : null}
+      {action ? <div className="mt-5">{action}</div> : null}
     </div>
   );
 }

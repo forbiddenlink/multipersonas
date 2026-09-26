@@ -49,9 +49,9 @@ function downloadCsv(filename: string, rows: CsvVerdict[]) {
  * file (design doc removed in the docs cleanup; see git log for
  * docs/superpowers/specs/2026-07-28-report-export-design.md).
  *
- * `secondary` variant, not `default` (bg-primary/teal): teal is demoted to active/live/
- * cursor state only in this design system, never a blanket CTA fill — see globals.css
- * token-system comment. Focus ring + keyboard activation come from the shared Button. */
+ * Export is the primary action on this screen (DESIGN.md: one filled primary per view),
+ * so "Print / Save as PDF" takes the ink-blue fill and `size="lg"`; CSV is the outline
+ * secondary. Focus ring + keyboard activation come from the shared Button. */
 export function ExportButton({
   csvRows = [],
   filename = "personaudit-verdicts.csv",
@@ -61,12 +61,13 @@ export function ExportButton({
 }) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row">
-      <Button type="button" variant="secondary" onClick={() => window.print()}>
+      <Button type="button" size="lg" onClick={() => window.print()}>
         Print / Save as PDF
       </Button>
       <Button
         type="button"
         variant="outline"
+        size="lg"
         disabled={csvRows.length === 0}
         onClick={() => downloadCsv(filename, csvRows)}
       >

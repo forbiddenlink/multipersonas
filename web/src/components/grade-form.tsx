@@ -118,12 +118,12 @@ export function GradeForm() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl">
+    <div className="w-full">
       <form onSubmit={handleSubmit} noValidate className="space-y-3">
-        <label htmlFor={inputId} className="block font-mono text-xs uppercase tracking-wide text-muted-foreground">
+        <label htmlFor={inputId} className="label-mono block">
           Public website URL
         </label>
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <input
             id={inputId}
             type="url"
@@ -133,34 +133,42 @@ export function GradeForm() {
               setUrl(e.target.value);
               if (error) setError(null);
             }}
-            placeholder="https://example.com"
+            placeholder="https://your-client.com"
             required
             disabled={loading}
             autoComplete="url"
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? `${hintId} ${errorId}` : hintId}
-            className="h-10 flex-1 rounded-sm border border-border bg-card px-4 text-base text-foreground transition-colors duration-150 placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] disabled:opacity-50 md:text-sm"
+            className="h-12 min-w-0 flex-1 rounded-sm border border-input bg-card px-4 font-mono text-base text-foreground transition-[border-color] duration-150 placeholder:text-muted-foreground hover:border-foreground/70 focus-visible:border-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] aria-invalid:border-[var(--redline)] disabled:cursor-not-allowed disabled:opacity-60"
           />
           <Button
             type="submit"
             size="lg"
-            disabled={loading || !url.trim() || !turnstileReady}
-            className="h-10 shrink-0 px-6 font-mono text-sm uppercase tracking-wide"
+            loading={loading}
+            disabled={!turnstileReady}
+            className="h-12 shrink-0 px-6"
           >
-            {loading ? "Grading..." : "Get my grade"}
+            {loading ? "Queuing grade" : "Grade this site"}
           </Button>
         </div>
-        <p id={hintId} className="font-mono text-xs leading-relaxed text-muted-foreground">
+        <p id={hintId} className="text-sm leading-relaxed text-muted-foreground">
           Up to 10 same-site public pages. Use the CLI for logged-in flows.
         </p>
-        <div
+        <dl
           aria-label="What your free grade includes"
-          className="grid gap-x-5 gap-y-2 border-l border-border pl-3 font-mono text-xs leading-relaxed text-muted-foreground sm:grid-cols-3"
+          className="grid grid-cols-1 gap-x-6 gap-y-1.5 border-t border-border pt-3 text-sm sm:grid-cols-3"
         >
-          <p><span className="text-foreground">01</span> letter grade</p>
-          <p><span className="text-foreground">02</span> pages reached</p>
-          <p><span className="text-foreground">03</span> named axe rules</p>
-        </div>
+          {[
+            ["Grade", "A letter grade for the site"],
+            ["Coverage", "The pages reached, listed"],
+            ["Evidence", "Findings as named axe rules"],
+          ].map(([term, detail]) => (
+            <div key={term} className="min-w-0">
+              <dt className="label-mono">{term}</dt>
+              <dd className="mt-0.5 text-foreground">{detail}</dd>
+            </div>
+          ))}
+        </dl>
         {TURNSTILE_SITE_KEY && (
           <Turnstile
             ref={turnstileRef}
@@ -174,8 +182,9 @@ export function GradeForm() {
       </form>
 
       {error && (
-        <div id={errorId} role="alert" className="mt-4 text-center">
-          <p className="text-sm text-destructive">{error}</p>
+        <div id={errorId} role="alert" className="mt-3 flex gap-2 text-sm text-[var(--redline)]">
+          <span aria-hidden="true" className="font-mono">■</span>
+          <p>{error}</p>
         </div>
       )}
 
@@ -183,16 +192,13 @@ export function GradeForm() {
         <div
           role="status"
           aria-live="polite"
-          className="mt-6 flex items-center gap-2.5 rounded-md border border-border bg-card px-4 py-3 font-mono text-sm text-muted-foreground"
+          className="mt-4 flex items-center gap-2.5 font-mono text-sm text-muted-foreground"
         >
           <span
             className="size-1.5 shrink-0 rounded-full bg-[var(--primary)] motion-safe:animate-pulse"
             aria-hidden
           />
-          <span>
-            <span className="select-none text-[var(--primary)]">›&nbsp;</span>
-            queued…
-          </span>
+          <span>Opening your case file…</span>
         </div>
       )}
     </div>

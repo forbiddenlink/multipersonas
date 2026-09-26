@@ -10,7 +10,7 @@ export function StartSoloPlanButton({ className }: { className?: string }) {
       eventPrefix="solo_checkout"
       clickProperties={{ price_usd: 39, funnel_location: "pricing_solo_tier" }}
       signInHref="/auth/login?returnTo=%2Fpricing%3Fcheckout%3Dready%23solo"
-      label="Start Solo — $39/mo"
+      label="Start Solo · $39/mo"
     />
   );
 }

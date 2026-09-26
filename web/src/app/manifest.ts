@@ -5,11 +5,11 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Personaudit",
     short_name: "Personaudit",
     description:
-      "Authenticated accessibility scanner — axe-core at every crawled state, plus UX personas for task success.",
+      "Authenticated accessibility scanner: axe-core at every crawled state, plus UX personas for task success.",
     start_url: "/",
     display: "standalone",
-    background_color: "#17130e",
-    theme_color: "#17130e",
+    background_color: "#f8f4eb",
+    theme_color: "#f8f4eb",
     icons: [
       {
         src: "/icon.svg",
