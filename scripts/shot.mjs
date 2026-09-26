@@ -1,6 +1,7 @@
 // Dev-only: capture full-page screenshots of local routes in dark + light for a
 // design review. Not shipped, not linted into CI. Usage:
 //   SHOT_URL=http://localhost:3111 node scripts/shot.mjs /  /for-agencies
+// SHOT_STATE=<storageState.json> captures signed-in routes.
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 
@@ -17,12 +18,13 @@ for (const route of routes) {
         width: Number(process.env.SHOT_W) || 1440,
         height: Number(process.env.SHOT_H) || 900,
       },
+      ...(process.env.SHOT_STATE ? { storageState: process.env.SHOT_STATE } : {}),
     });
     await ctx.addInitScript((t) => {
       try {
         window.localStorage.setItem("theme", t);
       } catch {
-        /* storage unavailable; dark is the default */
+        /* storage unavailable; the system theme applies */
       }
     }, theme);
     const page = await ctx.newPage();
