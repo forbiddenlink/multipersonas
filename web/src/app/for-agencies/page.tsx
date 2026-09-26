@@ -72,7 +72,7 @@ const AGENCY_FAQS = [
   {
     question: "What does founding access include?",
     answer: FOUNDING_CHECKOUT_OPEN
-      ? "$199 a month for the hosted agency workspace that exists today: multi-site projects, scheduled re-scans, a CI gate, and a verdicts-only compliance report you can white-label. Behind-login stays in the CLI until the hosted pipeline ships. If we never build that, you get your money back."
+      ? "$199 a month for the hosted agency workspace that exists today: multi-site projects, scheduled re-scans, a CI gate, and a verdicts-only compliance report you can white-label. Behind-login stays in the CLI until the hosted pipeline ships. You can cancel any time from the billing portal."
       : "The hosted agency workspace that exists today: multi-site projects, scheduled re-scans, a CI gate, and a verdicts-only compliance report you can white-label. Behind-login stays in the CLI until the hosted pipeline ships. Founding access is a paid pre-order of that workspace; the price is named when checkout is live.",
   },
   {
@@ -365,7 +365,7 @@ export default function ForAgenciesPage() {
                 <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
                   Behind-login scanning runs in the CLI today; your client&apos;s password never
                   leaves your machine. Running those scans hosted is not built yet. It is what
-                  founding access funds, and if it never ships, you get your money back.
+                  founding access funds. You can cancel any time from the billing portal.
                 </p>
               </div>
               <p className="mt-6 max-w-md leading-relaxed text-muted-foreground">

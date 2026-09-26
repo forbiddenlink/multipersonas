@@ -102,7 +102,7 @@ const PRICING_FAQS = [
   {
     question: "Do you scan behind a login on your servers?",
     answer:
-      "No. Behind-login scanning runs in the CLI on your machine, so a client password never leaves your laptop. Hosted behind-login is not built. Agency founding access is what funds it, and if it never ships you get your money back.",
+      "No. Behind-login scanning runs in the CLI on your machine, so a client password never leaves your laptop. Hosted behind-login is not built. Agency founding access is what funds it, and you can cancel any time from the billing portal.",
   },
   {
     question: "What happens when the trial ends?",
