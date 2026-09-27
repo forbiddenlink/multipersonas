@@ -77,7 +77,7 @@ const TIERS: Tier[] = [
       "Unlimited client projects",
       "White-label reports under your agency name",
       "Founding price locked for as long as you stay",
-      "Money back if hosted behind-login never ships",
+      "Cancel any time from the billing portal",
     ],
     limits: "Hosted behind-login scanning is not built yet. It is what this funds.",
   },
@@ -202,7 +202,7 @@ export default function PricingPage() {
                       ) : null}
                       {tier.id === "agency" ? (
                         foundingOpen ? (
-                          <UnlockFoundingAccessButton className={PRIMARY_CTA} />
+                          <UnlockFoundingAccessButton className={PRIMARY_CTA} label="Unlock founding access" />
                         ) : (
                           <Link href="/for-agencies#early-access" className={OUTLINE_CTA}>
                             Request founding access
