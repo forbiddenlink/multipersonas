@@ -72,11 +72,22 @@ const nextConfig: NextConfig = {
       { source: "/login", destination: "/auth/login", permanent: true },
     ];
   },
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       "@engine": path.resolve(__dirname, "../src"),
     };
+    if (!isServer) {
+      // posthog-provider.tsx disables session recording, surveys, web experiments,
+      // feature flags, autocapture and external dependency loading (see its config).
+      // The default "posthog-js" build still ships the code for all of that behind a
+      // lazy loader that this config guarantees never fires. The "slim" build strips
+      // it at compile time instead of shipping it dead, cutting ~40KB gzip. Aliasing
+      // the bare specifier (not changing the import) also redirects posthog-js/react's
+      // own internal `import posthog from "posthog-js"` fallback to the same slim file.
+      // "$" pins this to the exact bare specifier so "posthog-js/react" still resolves normally.
+      config.resolve.alias["posthog-js$"] = require.resolve("posthog-js/dist/module.slim");
+    }
     // Resolve .js imports to .ts files (engine uses Node ESM .js extensions)
     config.resolve.extensionAlias = {
       ".js": [".ts", ".js"],
