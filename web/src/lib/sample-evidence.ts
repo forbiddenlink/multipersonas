@@ -68,7 +68,7 @@ export const SAMPLE_REPLAY_FRAMES = [
   {
     id: "checkout-error",
     step: "03",
-    state: "/checkout (validation)",
+    state: "/checkout (error)",
     action: "dismiss error message",
     frustration: 89,
     target: "button.error-button",
