@@ -198,7 +198,8 @@ export function StateFlowTrail() {
                 <StateWireframe index={i} />
                 {s.findings > 0 && (
                   <span
-                    className="absolute right-2 top-2 rounded-xs bg-[var(--redline)] px-1.5 py-0.5 font-mono text-[9px] font-bold text-white shadow-xs"
+                    className="absolute right-2 top-2 rounded-xs border bg-card px-1.5 py-0.5 font-mono text-[9px] font-bold text-[var(--redline)] shadow-xs"
+                    style={{ borderColor: "var(--redline)" }}
                     title="Critical accessibility defect found at this state"
                   >
                     DEFECT
