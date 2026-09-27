@@ -20,5 +20,5 @@ export const SAUCEDEMO_TRAIL = [
   { path: "/inventory", label: "Inventory", publicUrl: false, findings: 1, why: "Behind auth. No session, no page." },
   { path: "/cart", label: "Cart", publicUrl: false, findings: 0, why: "Needs an item added first." },
   { path: "/checkout-step-one", label: "Checkout", publicUrl: false, findings: 0, why: "Three interactions deep." },
-  { path: "/checkout (validation)", label: "Checkout error", publicUrl: false, findings: 1, why: "An error state inside a multi-step flow." },
+  { path: "/checkout (error)", label: "Checkout error", publicUrl: false, findings: 1, why: "An error state inside a multi-step flow." },
 ] as const;
