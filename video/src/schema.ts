@@ -1,12 +1,15 @@
 // Props the clip is parametrized with. A journey exported from a real audit (see
 // web/src/lib/journey-clip-props.ts) drops straight in here as `inputProps`.
 
-export interface ClipFinding {
+// `type`, not `interface`: Remotion's <Composition> generic requires Props to
+// satisfy `Record<string, unknown>`, and an `interface` has no index signature
+// so it fails that structural check even though the shape matches (see Root.tsx).
+export type ClipFinding = {
   severity: string;
   title: string;
-}
+};
 
-export interface ClipStep {
+export type ClipStep = {
   action: string;
   /** The persona's inner monologue for this step. Narration, never a verdict. */
   reasoning: string | null;
@@ -15,14 +18,14 @@ export interface ClipStep {
   /** 0-100 inferred frustration (from web/src/lib/frustration.ts). */
   frustration: number;
   findings: ClipFinding[];
-}
+};
 
-export interface JourneyClipProps {
+export type JourneyClipProps = {
   url: string;
   personaName: string;
   goalCompleted: boolean;
   steps: ClipStep[];
-}
+};
 
 export const DEFAULT_PROPS: JourneyClipProps = {
   url: "https://example.com",
