@@ -158,6 +158,12 @@
 /* Paper report preview is always a white sheet, even on the night desk — light
    severity + ink tokens scoped to it. */
 .report-paper-surface {
+  /* .sheet paints with --card/--card-foreground, not --foreground — without these
+     two the card kept the night-desk's dark card + light ink in .dark, silently
+     breaking the "always white sheet" rule and leaving highlighter marks (dark ink
+     assumed) unreadable against light ink on a dark card. */
+  --card: oklch(0.993 0.004 90);
+  --card-foreground: oklch(0.22 0.025 262);
   --foreground: oklch(0.22 0.025 262);
   --muted-foreground: oklch(0.46 0.022 262);
   --border: oklch(0.855 0.02 84);
