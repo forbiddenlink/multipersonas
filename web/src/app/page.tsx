@@ -6,8 +6,9 @@ import { SiteFooter } from "@/components/site-footer";
 import { GradeForm } from "@/components/grade-form";
 import { EvidenceSheet } from "@/components/dossier/evidence-sheet";
 import { SeverityChip } from "@/components/forensic/severity-chip";
-import { Meter } from "@/components/forensic/meter";
-import { PROBE_LEDGER, SAUCEDEMO_TRAIL } from "@/lib/probe-ledger";
+import { StateFlowTrail } from "@/components/dossier/state-flow-trail";
+import { SampleTaskSuccess } from "@/components/dossier/sample-task-success";
+import { PROBE_LEDGER } from "@/lib/probe-ledger";
 
 // Canonical only — title/description are inherited from the root layout default.
 export const metadata: Metadata = {
@@ -56,11 +57,7 @@ const DEADLINES = [
   { date: "Apr 26, 2028", what: "Title II applies to smaller governments and special districts. The standard is WCAG 2.1 AA." },
 ] as const;
 
-const PERSONAS = [
-  { who: "Sarah", role: "First-time buyer", goal: "Find pricing and start a trial", reached: true },
-  { who: "Keyboard traversal", role: "Reachability harness", goal: "Tab through checkout end to end", reached: true },
-  { who: "Maria", role: "Slow mobile visitor", goal: "Finish checkout on a phone", reached: false },
-] as const;
+
 
 export default function Home() {
   return (
@@ -127,37 +124,7 @@ export default function Home() {
               </p>
             </div>
 
-            <ol className="mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-border bg-border md:grid-cols-3 lg:grid-cols-6">
-              {SAUCEDEMO_TRAIL.map((s, i) => (
-                <li
-                  key={s.path}
-                  className="relative flex min-w-0 flex-col bg-card p-3 sm:p-4"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <span
-                      className={`truncate font-mono text-[10px] uppercase tracking-[0.1em] ${
-                        s.publicUrl ? "text-muted-foreground" : "text-primary"
-                      }`}
-                    >
-                      {s.publicUrl ? "Public" : "Session only"}
-                    </span>
-                  </div>
-                  <p className="mt-4 font-medium">{s.label}</p>
-                  <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">{s.path}</p>
-                  <p className="mt-3 flex-1 text-[13px] leading-snug text-muted-foreground sm:text-sm">{s.why}</p>
-                  <div className="mt-4 border-t border-border pt-3">
-                    {s.findings > 0 ? (
-                      <SeverityChip severity="critical" ruleId="4.1.2" />
-                    ) : (
-                      <span className="font-mono text-xs text-muted-foreground">No violations</span>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ol>
+            <StateFlowTrail />
 
             {/* Probe ledger — every target, including the one where the crawl found nothing. */}
             <div className="mt-16 grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
@@ -364,31 +331,8 @@ export default function Home() {
                 found pricing.&rdquo; Personas give you that sentence, with the run to back it up.
               </p>
             </div>
-            <div className="sheet min-w-0 p-6 sm:p-8">
-              <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border pb-4">
-                <p className="label-mono">Sample run · checkout flow</p>
-                <p className="font-mono text-[11px] text-muted-foreground">illustrative</p>
-              </div>
-              <ul className="divide-y divide-border">
-                {PERSONAS.map((p) => (
-                  <li key={p.who} className="grid gap-1 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-6">
-                    <div className="min-w-0">
-                      <p className="font-medium">
-                        {p.who} <span className="font-normal text-muted-foreground">· {p.role}</span>
-                      </p>
-                      <p className="mt-0.5 text-sm text-muted-foreground">{p.goal}</p>
-                    </div>
-                    <p
-                      className={`font-mono text-xs uppercase tracking-[0.1em] ${
-                        p.reached ? "text-muted-foreground" : "text-[var(--redline)]"
-                      }`}
-                    >
-                      {p.reached ? "✓ Reached goal" : "■ Blocked at checkout"}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-              <Meter className="mt-5" value={2} total={3} label="reached their goal" unit="personas" tone="serious" />
+            <div className="min-w-0">
+              <SampleTaskSuccess />
             </div>
           </div>
         </section>

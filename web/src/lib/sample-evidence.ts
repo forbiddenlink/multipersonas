@@ -39,6 +39,9 @@ export const SAMPLE_REPLAY_FRAMES = [
     id: "login-error",
     step: "01",
     state: "/login (error)",
+    action: "submit credentials",
+    frustration: 18,
+    target: null,
     thought: "Bad credentials. Looking for what went wrong.",
     finding: null as null | {
       severity: string;
@@ -51,6 +54,9 @@ export const SAMPLE_REPLAY_FRAMES = [
     id: "inventory",
     step: "02",
     state: "/inventory",
+    action: "sort product catalog",
+    frustration: 52,
+    target: 'select[data-test="product_sort_container"]',
     thought: "Behind the login now. Sorting the catalog.",
     finding: {
       severity: "critical",
@@ -63,6 +69,9 @@ export const SAMPLE_REPLAY_FRAMES = [
     id: "checkout-error",
     step: "03",
     state: "/checkout (validation)",
+    action: "dismiss error message",
+    frustration: 89,
+    target: "button.error-button",
     thought: "I can't tell what this button actually does.",
     finding: {
       severity: "critical",
