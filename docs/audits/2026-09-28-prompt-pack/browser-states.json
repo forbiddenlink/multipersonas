@@ -1,0 +1,234 @@
+[
+  {
+    "browser": "chromium",
+    "scheme": "light",
+    "route": "/grade",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "chromium",
+    "scheme": "light",
+    "route": "/auth/login",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "chromium",
+    "scheme": "light",
+    "route": "/auth/signup",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "chromium",
+    "scheme": "light",
+    "route": "/auth/forgot-password",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "chromium",
+    "scheme": "light",
+    "route": "/auth/update-password",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "chromium",
+    "scheme": "light",
+    "check": "empty-grade",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "scheme": "light",
+    "check": "grade-failure-retains-input",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "scheme": "dark",
+    "route": "/grade",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "chromium",
+    "scheme": "dark",
+    "route": "/auth/login",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "chromium",
+    "scheme": "dark",
+    "route": "/auth/signup",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "chromium",
+    "scheme": "dark",
+    "route": "/auth/forgot-password",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "chromium",
+    "scheme": "dark",
+    "route": "/auth/update-password",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "chromium",
+    "scheme": "dark",
+    "check": "empty-grade",
+    "passed": true
+  },
+  {
+    "browser": "chromium",
+    "scheme": "dark",
+    "check": "grade-failure-retains-input",
+    "passed": true
+  },
+  {
+    "browser": "firefox",
+    "scheme": "light",
+    "route": "/grade",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "firefox",
+    "scheme": "light",
+    "route": "/auth/login",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "firefox",
+    "scheme": "light",
+    "route": "/auth/signup",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "firefox",
+    "scheme": "light",
+    "route": "/auth/forgot-password",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "firefox",
+    "scheme": "light",
+    "route": "/auth/update-password",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "firefox",
+    "scheme": "light",
+    "check": "empty-grade",
+    "passed": true
+  },
+  {
+    "browser": "firefox",
+    "scheme": "light",
+    "check": "grade-failure-retains-input",
+    "passed": true
+  },
+  {
+    "browser": "firefox",
+    "scheme": "dark",
+    "route": "/grade",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "firefox",
+    "scheme": "dark",
+    "route": "/auth/login",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "firefox",
+    "scheme": "dark",
+    "route": "/auth/signup",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "firefox",
+    "scheme": "dark",
+    "route": "/auth/forgot-password",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "firefox",
+    "scheme": "dark",
+    "route": "/auth/update-password",
+    "status": 200,
+    "overflow": false,
+    "errors": [],
+    "axe": []
+  },
+  {
+    "browser": "firefox",
+    "scheme": "dark",
+    "check": "empty-grade",
+    "passed": true
+  },
+  {
+    "browser": "firefox",
+    "scheme": "dark",
+    "check": "grade-failure-retains-input",
+    "passed": true
+  },
+  {
+    "browser": "webkit",
+    "status": "unavailable"
+  }
+]

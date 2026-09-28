@@ -105,19 +105,25 @@ export async function POST(request: Request) {
   });
 
   // Signed-in grades skip the localStorage claim hop and land on the dashboard immediately.
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) {
-    const { error: claimError } = await admin
-      .from("grader_scans")
-      .update({ user_id: user.id })
-      .eq("token", scan.token)
-      .is("user_id", null);
-    if (claimError) {
-      Sentry.captureException(claimError, { tags: { route: "grade", stage: "claim" } });
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const { error: claimError } = await admin
+        .from("grader_scans")
+        .update({ user_id: user.id })
+        .eq("token", scan.token)
+        .is("user_id", null);
+      if (claimError) {
+        Sentry.captureException(claimError, { tags: { route: "grade", stage: "claim" } });
+      }
     }
+  } catch (error) {
+    // The scan is already queued. Return its token even if optional account linking
+    // fails; the browser can retain it and retry claiming it after sign-in.
+    Sentry.captureException(error, { tags: { route: "grade", stage: "claim" } });
   }
 
   return NextResponse.json({ token: scan.token }, { status: 202 });

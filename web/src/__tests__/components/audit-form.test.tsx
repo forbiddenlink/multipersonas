@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { StrictMode } from "react";
 import { AuditForm } from "@/components/audit-form";
 import type { AuditResponse } from "@/components/audit-results";
 
@@ -44,6 +45,56 @@ describe("AuditForm — resume from an active job", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
+
+  it("clears an inaccessible URL job instead of polling another account's job", async () => {
+    window.history.replaceState(null, "", "/?job=other-account-job");
+    const fetchMock = vi.fn(async () => ({ ok: false, status: 404 }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<AuditForm userId="user-b" />);
+    await advance(2500);
+    expect(screen.getByText("This audit is unavailable for this account. Start a new audit or sign in to the account that created it.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Website URL to audit")).toBeEnabled();
+    expect(window.location.search).not.toContain("job=");
+    await advance(5000);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("stores and clears completed results only for the current account", async () => {
+    sessionStorage.setItem(`${ACTIVE_JOB_KEY}:user-b`, JSON.stringify({ jobId: "own-job", personaIds: [] }));
+    sessionStorage.setItem(`${RESULTS_KEY}:user-a`, JSON.stringify(auditResponse));
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ status: "completed", result: auditResponse })));
+    render(<AuditForm userId="user-b" />);
+    await advance(2500);
+    expect(sessionStorage.getItem(`${RESULTS_KEY}:user-b`)).toBe(JSON.stringify(auditResponse));
+    expect(sessionStorage.getItem(RESULTS_KEY)).toBeNull();
+    expect(sessionStorage.getItem(`${ACTIVE_JOB_KEY}:user-b`)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /run another audit/i }));
+    expect(sessionStorage.getItem(`${RESULTS_KEY}:user-b`)).toBeNull();
+    expect(sessionStorage.getItem(`${RESULTS_KEY}:user-a`)).toBe(JSON.stringify(auditResponse));
+  });
+
+  it("keeps the current poll running when Strict Mode cleans up the first effect", async () => {
+    sessionStorage.setItem(ACTIVE_JOB_KEY, JSON.stringify({ jobId: "strict-job", personaIds: ["first-time-visitor"] }));
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ status: "running" })));
+    render(<StrictMode><AuditForm /></StrictMode>);
+    await advance(2500);
+    expect(screen.queryByRole("button", { name: /check status/i })).not.toBeInTheDocument();
+    expect(screen.getByText("scanning")).toBeInTheDocument();
+  });
+
+  it.each([{}, { jobId: "stale-job" }, { jobId: 7, personaIds: [] }])(
+    "ignores malformed saved jobs and resumes the URL job instead: %j",
+    async (stored) => {
+      sessionStorage.setItem(ACTIVE_JOB_KEY, JSON.stringify(stored));
+      window.history.replaceState(null, "", "/?job=valid-job");
+      const fetchMock = vi.fn(async () => jsonResponse({ status: "completed", result: auditResponse }));
+      vi.stubGlobal("fetch", fetchMock);
+      render(<AuditForm />);
+      await advance(2500);
+      expect(fetchMock).toHaveBeenCalledWith("/api/audit/valid-job", expect.anything());
+      expect(screen.getByText("https://example.com")).toBeInTheDocument();
+    },
+  );
 
   it("resumes polling a jobId persisted in sessionStorage instead of showing a fresh form, and never re-submits", async () => {
     sessionStorage.setItem(
@@ -205,6 +256,20 @@ describe("AuditForm — dead auth-signup branch removed", () => {
 });
 
 describe("AuditForm — saved project task retests", () => {
+  it("does not display another account's cached results after switching accounts", () => {
+    sessionStorage.setItem(RESULTS_KEY, JSON.stringify(auditResponse));
+    sessionStorage.setItem(`${RESULTS_KEY}:user-a`, JSON.stringify(auditResponse));
+    render(<AuditForm userId="user-b" submitLabel="Run audit" />);
+    expect(screen.queryByText("https://example.com")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Website URL to audit")).toBeInTheDocument();
+  });
+
+  it("restores only the signed-in account's own cached results", () => {
+    sessionStorage.setItem(`${RESULTS_KEY}:user-a`, JSON.stringify(auditResponse));
+    render(<AuditForm userId="user-a" submitLabel="Run audit" />);
+    expect(screen.getByText("https://example.com")).toBeInTheDocument();
+  });
+
   it("does not restore another project's completed result or active job", async () => {
     sessionStorage.setItem(RESULTS_KEY, JSON.stringify(auditResponse));
     sessionStorage.setItem(ACTIVE_JOB_KEY, JSON.stringify({ jobId: "another-project", personaIds: ["first-time-visitor"] }));

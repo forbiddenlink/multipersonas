@@ -34,3 +34,15 @@ for (const { route, block } of ROUTES) {
     await expect.poll(() => example.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
   });
 }
+
+for (const route of ["/docs", "/guides/wcag-checklist", "/sample-report"]) {
+  test(`${route} keeps its content visible when printed`, async ({ page }) => {
+    await page.goto(route);
+    await page.emulateMedia({ media: "print" });
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.locator("main p").filter({ visible: true }).first()).toBeVisible();
+    if (route === "/sample-report") {
+      await expect(page.getByRole("navigation").first()).toBeHidden();
+    }
+  });
+}

@@ -172,7 +172,7 @@ export default async function ProjectDetailPage({
       <BoxDivider label="new scan for this project" className="my-5" />
 
       {canRunPersonas ? (
-        <AuditForm key={JSON.stringify(savedTask)} projectId={project.id} defaultUrl={project.url} submitLabel={savedTask ? "Test saved task" : "Run audit"} />
+        <AuditForm key={`${user?.id}:${JSON.stringify(savedTask)}`} userId={user?.id} projectId={project.id} defaultUrl={project.url} submitLabel={savedTask ? "Test saved task" : "Run audit"} />
       ) : (
         <p className="text-sm text-muted-foreground">
           Persona task-success runs are part of Pro.{" "}

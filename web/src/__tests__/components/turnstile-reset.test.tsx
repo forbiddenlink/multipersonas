@@ -54,6 +54,21 @@ afterEach(() => {
 });
 
 describe("Turnstile-backed forms", () => {
+  it("requires fresh verification when an accepted grade response has no usable token", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({})));
+    const { GradeForm } = await importTurnstileForm<typeof import("@/components/grade-form")>(
+      "@/components/grade-form",
+    );
+    render(<GradeForm />);
+    fireEvent.change(screen.getByLabelText("Public website URL"), { target: { value: "https://example.com" } });
+    fireEvent.click(screen.getByRole("button", { name: /solve verification/i }));
+    fireEvent.click(screen.getByRole("button", { name: /grade this site/i }));
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Could not queue the grade"));
+    expect(resetTurnstile).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: /grade this site/i })).toBeDisabled();
+    expect(push).not.toHaveBeenCalled();
+  });
+
   it("resets the grade widget after a rejected submit", async () => {
     const fetchMock = vi.fn(async () => jsonResponse({ error: "Verification failed." }, false));
     vi.stubGlobal("fetch", fetchMock);
