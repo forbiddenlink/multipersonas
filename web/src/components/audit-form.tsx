@@ -24,10 +24,10 @@ interface ActiveJob {
   personaIds: string[];
 }
 
-function readStoredResults(): AuditResponse | null {
+function readStoredResults(storageKey = STORAGE_KEY): AuditResponse | null {
   if (typeof window === "undefined") return null;
   try {
-    const saved = sessionStorage.getItem(STORAGE_KEY);
+    const saved = sessionStorage.getItem(storageKey);
     return saved ? (JSON.parse(saved) as AuditResponse) : null;
   } catch {
     return null;
@@ -40,7 +40,14 @@ function readActiveJob(storageKey = ACTIVE_JOB_KEY): ActiveJob | null {
   if (typeof window === "undefined") return null;
   try {
     const saved = sessionStorage.getItem(storageKey);
-    if (saved) return JSON.parse(saved) as ActiveJob;
+    if (saved) {
+      const job: unknown = JSON.parse(saved);
+      if (job && typeof job === "object" && "jobId" in job && "personaIds" in job &&
+        typeof job.jobId === "string" && job.jobId.length > 0 &&
+        Array.isArray(job.personaIds) && job.personaIds.every((id) => typeof id === "string")) {
+        return { jobId: job.jobId, personaIds: job.personaIds };
+      }
+    }
   } catch {
     // ignore malformed storage
   }
@@ -100,6 +107,12 @@ async function pollAuditJob(jobId: string, signal?: AbortSignal): Promise<PollOu
     let data: { status?: string; result?: AuditResponse; error?: string };
     try {
       const res = await fetch(`/api/audit/${jobId}`, { signal });
+      if ([401, 403, 404].includes(res.status)) {
+        return {
+          status: "failed",
+          error: "This audit is unavailable for this account. Start a new audit or sign in to the account that created it.",
+        };
+      }
       if (!res.ok) continue;
       data = await res.json();
     } catch (err) {
@@ -125,10 +138,13 @@ async function pollAuditJob(jobId: string, signal?: AbortSignal): Promise<PollOu
 }
 
 export function AuditForm({
+  userId,
   projectId,
   defaultUrl,
   submitLabel,
 }: {
+  /** Scopes cached jobs and results to the signed-in account. */
+  userId?: string;
   /** When set, included on the queued job so the worker links the saved run back to
    * this project (see app/api/audit/route.ts, which verifies ownership server-side). */
   projectId?: string;
@@ -138,7 +154,9 @@ export function AuditForm({
   submitLabel?: string;
 } = {}) {
   const router = useRouter();
-  const activeJobStorageKey = projectId ? `${ACTIVE_JOB_KEY}:${projectId}` : ACTIVE_JOB_KEY;
+  const resultsStorageKey = userId ? `${STORAGE_KEY}:${userId}` : STORAGE_KEY;
+  const accountJobKey = userId ? `${ACTIVE_JOB_KEY}:${userId}` : ACTIVE_JOB_KEY;
+  const activeJobStorageKey = projectId ? `${accountJobKey}:${projectId}` : accountJobKey;
   const abortRef = useRef<AbortController | null>(null);
   const [url, setUrl] = useState(defaultUrl ?? "");
   const [loading, setLoading] = useState(false);
@@ -152,7 +170,7 @@ export function AuditForm({
   const [init] = useState(() => {
     // Project results already live in history. Start a fresh task check instead of
     // restoring a completed audit from another project or an older task definition.
-    const storedResults = projectId ? null : readStoredResults();
+    const storedResults = projectId ? null : readStoredResults(resultsStorageKey);
     const activeJob = storedResults ? null : readActiveJob(activeJobStorageKey);
     return { storedResults, activeJob };
   });
@@ -224,6 +242,7 @@ export function AuditForm({
     try {
       outcome = await pollAuditJob(jobId, ctrl.signal);
     } catch {
+      if (ctrl.signal.aborted) return;
       // Safety net: pollAuditJob already swallows transient network errors, but any
       // unexpected throw here must never leave the spinner stuck (watchJob is called
       // fire-and-forget, so a rejection would otherwise be an unhandled one).
@@ -234,6 +253,8 @@ export function AuditForm({
       );
       return;
     }
+
+    if (ctrl.signal.aborted) return;
 
     if (outcome.status === "timeout") {
       // Keep the jobId persisted — the scan is still running server-side, and
@@ -263,7 +284,7 @@ export function AuditForm({
 
     // Persist to sessionStorage so results survive refresh
     try {
-      if (!projectId) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(outcome.result));
+      if (!projectId) sessionStorage.setItem(resultsStorageKey, JSON.stringify(outcome.result));
     } catch {
       // Storage full or unavailable — results still shown, just won't survive refresh
     }
@@ -279,18 +300,22 @@ export function AuditForm({
   // this effect only starts the actual poll (an external network operation), so it
   // has nothing to set synchronously itself.
   useEffect(() => {
-    if (!init.activeJob) return;
-    const { jobId, personaIds: storedPersonaIds } = init.activeJob;
-    const personaIds = storedPersonaIds.length ? storedPersonaIds : [...DEFAULT_PERSONA_IDS];
+    let cancelled = false;
     // Deferred a tick: watchJob sets state synchronously at its start (to show the
     // loading UI without a stale-content frame), which react-hooks/set-state-in-effect
     // flags when called directly from an effect body — queueMicrotask moves the call
     // into its own callback, matching the rule's "setState in a callback" escape hatch.
     queueMicrotask(() => {
+      if (cancelled || !init.activeJob) return;
+      const { jobId, personaIds: storedPersonaIds } = init.activeJob;
+      const personaIds = storedPersonaIds.length ? storedPersonaIds : [...DEFAULT_PERSONA_IDS];
       void watchJob(jobId, personaIds);
     });
     // Abort the poll if the component unmounts before the scan completes.
-    return () => { abortRef.current?.abort(); };
+    return () => {
+      cancelled = true;
+      abortRef.current?.abort();
+    };
     // Resume-on-mount only — intentionally run once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -369,7 +394,7 @@ export function AuditForm({
     setTimedOut(false);
     persistActiveJob(null, activeJobStorageKey);
     try {
-      if (!projectId) sessionStorage.removeItem(STORAGE_KEY);
+      if (!projectId) sessionStorage.removeItem(resultsStorageKey);
     } catch {
       // ignore
     }

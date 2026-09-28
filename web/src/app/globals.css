@@ -447,7 +447,7 @@
   body {
     background: #ffffff !important;
   }
-  body * {
+  body:where(:has(.report-print-root)) * {
     visibility: hidden !important;
   }
   .report-print-root,

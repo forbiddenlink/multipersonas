@@ -1,0 +1,206 @@
+{
+ "base": "http://127.0.0.1:3210/",
+ "runId": "2026-09-28T19-06-58",
+ "pagesCrawled": 17,
+ "unvisitedQueued": 0,
+ "ms": 148625,
+ "axe": "ran",
+ "totals": {
+  "brokenInternal": 0,
+  "consoleErrors": 0,
+  "pageErrors": 0,
+  "failedRequests": 0,
+  "brokenImages": 0,
+  "axeViolations": 0
+ },
+ "brokenLinks": [],
+ "pages": [
+  {
+   "url": "http://127.0.0.1:3210/",
+   "status": 200,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failedRequests": [],
+   "brokenImages": [],
+   "issues": [],
+   "axe": [],
+   "title": "Personaudit: accessibility evidence behind the login"
+  },
+  {
+   "url": "http://127.0.0.1:3210/for-agencies",
+   "status": 200,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failedRequests": [],
+   "brokenImages": [],
+   "issues": [],
+   "axe": [],
+   "title": "For agencies: one case file per client site | Personaudit"
+  },
+  {
+   "url": "http://127.0.0.1:3210/pricing",
+   "status": 200,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failedRequests": [],
+   "brokenImages": [],
+   "issues": [],
+   "axe": [],
+   "title": "Pricing: free CLI, hosted workspace from $39 | Personaudit"
+  },
+  {
+   "url": "http://127.0.0.1:3210/docs",
+   "status": 200,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failedRequests": [],
+   "brokenImages": [],
+   "issues": [],
+   "axe": [],
+   "title": "CLI docs: install and first scan | Personaudit"
+  },
+  {
+   "url": "http://127.0.0.1:3210/guides/wcag-checklist",
+   "status": 200,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failedRequests": [],
+   "brokenImages": [],
+   "issues": [],
+   "axe": [],
+   "title": "WCAG 2.2 AA checklist | Personaudit"
+  },
+  {
+   "url": "http://127.0.0.1:3210/auth/login",
+   "status": 200,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failedRequests": [],
+   "brokenImages": [],
+   "issues": [],
+   "axe": [],
+   "title": "Sign in | Personaudit"
+  },
+  {
+   "url": "http://127.0.0.1:3210/sample-report",
+   "status": 200,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failedRequests": [],
+   "brokenImages": [],
+   "issues": [],
+   "axe": [],
+   "title": "Sample accessibility report | Personaudit"
+  },
+  {
+   "url": "http://127.0.0.1:3210/guides/ci-accessibility-gate",
+   "status": 200,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failedRequests": [],
+   "brokenImages": [],
+   "issues": [],
+   "axe": [],
+   "title": "CI accessibility gate | Personaudit"
+  },
+  {
+   "url": "http://127.0.0.1:3210/guides/accessibility-deadlines",
+   "status": 200,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failedRequests": [],
+   "brokenImages": [],
+   "issues": [],
+   "axe": [],
+   "title": "The 2025–2028 accessibility deadlines | Personaudit"
+  },
+  {
+   "url": "http://127.0.0.1:3210/grade",
+   "status": 200,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failedRequests": [],
+   "brokenImages": [],
+   "issues": [],
+   "axe": [],
+   "title": "Free accessibility grade | Personaudit"
+  },
+  {
+   "url": "http://127.0.0.1:3210/guides/common-accessibility-issues",
+   "status": 200,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failedRequests": [],
+   "brokenImages": [],
+   "issues": [],
+   "axe": [],
+   "title": "10 most common accessibility issues | Personaudit"
+  },
+  {
+   "url": "http://127.0.0.1:3210/guides/screen-reader-testing",
+   "status": 200,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failedRequests": [],
+   "brokenImages": [],
+   "issues": [],
+   "axe": [],
+   "title": "Screen reader testing guide | Personaudit"
+  },
+  {
+   "url": "http://127.0.0.1:3210/accessibility",
+   "status": 200,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failedRequests": [],
+   "brokenImages": [],
+   "issues": [],
+   "axe": [],
+   "title": "Accessibility statement | Personaudit"
+  },
+  {
+   "url": "http://127.0.0.1:3210/privacy",
+   "status": 200,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failedRequests": [],
+   "brokenImages": [],
+   "issues": [],
+   "axe": [],
+   "title": "Privacy policy | Personaudit"
+  },
+  {
+   "url": "http://127.0.0.1:3210/terms",
+   "status": 200,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failedRequests": [],
+   "brokenImages": [],
+   "issues": [],
+   "axe": [],
+   "title": "Terms of service | Personaudit"
+  },
+  {
+   "url": "http://127.0.0.1:3210/auth/forgot-password",
+   "status": 200,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failedRequests": [],
+   "brokenImages": [],
+   "issues": [],
+   "axe": [],
+   "title": "Personaudit: accessibility evidence behind the login"
+  },
+  {
+   "url": "http://127.0.0.1:3210/auth/signup",
+   "status": 200,
+   "consoleErrors": [],
+   "pageErrors": [],
+   "failedRequests": [],
+   "brokenImages": [],
+   "issues": [],
+   "axe": [],
+   "title": "Sign up | Personaudit"
+  }
+ ]
+}

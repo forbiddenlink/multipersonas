@@ -116,7 +116,7 @@ export default async function DashboardPage() {
       <BoxDivider label="new scan" className="my-5" />
 
       {canRunPersonas ? (
-        <AuditForm submitLabel="Run audit" />
+        <AuditForm key={user?.id} userId={user?.id} submitLabel="Run audit" />
       ) : (
         <p className="text-sm text-muted-foreground">
           Persona task-success runs are part of Pro.{" "}

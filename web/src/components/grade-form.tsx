@@ -91,6 +91,7 @@ export function GradeForm() {
 
       const token = data.token as string | undefined;
       if (!token) {
+        resetTurnstile();
         setError("Could not queue the grade. Please try again.");
         trackProductEvent("grade_submit_rejected", { reason: "missing_token" });
         return;

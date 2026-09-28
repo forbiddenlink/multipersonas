@@ -85,6 +85,20 @@ describe("POST /api/grade — atomic queue admission", () => {
     expect(updateEq).toHaveBeenCalledWith("token", "scan-1");
     expect(updateIs).toHaveBeenCalledWith("user_id", null);
   });
+
+  it.each(["auth", "claim"])("returns the queued token even if optional %s fails", async (failure) => {
+    if (failure === "auth") getUser.mockRejectedValueOnce(new Error("Auth unavailable"));
+    else {
+      getUser.mockResolvedValueOnce({ data: { user: { id: "user-1" } } });
+      updateIs.mockRejectedValueOnce(new Error("Claim unavailable"));
+    }
+    const response = await POST(new Request("http://localhost/api/grade", {
+      method: "POST", body: JSON.stringify({ url: "https://example.invalid" }),
+    }));
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ token: "scan-1" });
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("POST /api/grade — transactional rate limit", () => {

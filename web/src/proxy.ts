@@ -17,7 +17,7 @@ export async function proxy(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet, headers) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
@@ -25,12 +25,25 @@ export async function proxy(request: NextRequest) {
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           );
+          Object.entries(headers).forEach(([name, value]) =>
+            supabaseResponse.headers.set(name, value)
+          );
         },
       },
     }
   );
 
   const { data: { user } } = await supabase.auth.getUser();
+
+  function redirectWithSession(url: URL): NextResponse {
+    const response = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie));
+    for (const name of ["cache-control", "pragma", "expires"]) {
+      const value = supabaseResponse.headers.get(name);
+      if (value) response.headers.set(name, value);
+    }
+    return response;
+  }
 
   const isAppRoute = request.nextUrl.pathname.startsWith("/dashboard") ||
     request.nextUrl.pathname.startsWith("/projects") ||
@@ -56,7 +69,7 @@ export async function proxy(request: NextRequest) {
     url.pathname = "/auth/login";
     url.search = "";
     url.searchParams.set("returnTo", returnTo);
-    return NextResponse.redirect(url);
+    return redirectWithSession(url);
   }
 
   if (isAuthRoute && user) {
@@ -66,7 +79,7 @@ export async function proxy(request: NextRequest) {
       request.nextUrl.searchParams.get("next") ??
         request.nextUrl.searchParams.get("returnTo"),
     );
-    return NextResponse.redirect(new URL(dest, request.url));
+    return redirectWithSession(new URL(dest, request.url));
   }
 
   return supabaseResponse;
