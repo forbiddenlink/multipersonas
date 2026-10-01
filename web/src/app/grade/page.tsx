@@ -36,29 +36,31 @@ export default function GradePage() {
 
       <main id="main" className="flex-1">
         <section className="border-b border-border">
-          <div className="frame-narrow py-14 sm:py-20">
-            <p className="label-mono">Free · public pages · no signup</p>
-            <h1 className="display mt-4 text-[clamp(2.2rem,5vw,3.5rem)] leading-[1.05]">
-              Grade any public site in one pass.
-            </h1>
-            <p className="mt-5 max-w-[36rem] text-lg leading-relaxed text-muted-foreground">
-              Enter a URL. We crawl what a stranger can reach without logging in, run{" "}
-              <span className="font-medium text-foreground">axe-core</span> on every page, and
-              hand back a letter grade with the evidence behind it, never a fabricated score,
-              never a persona costume.
-            </p>
+          <div className="frame py-14 sm:py-20">
+            <div className="max-w-[40rem]">
+              <p className="label-mono">Free · public pages · no signup</p>
+              <h1 className="display mt-4 text-[clamp(2.2rem,5vw,3.5rem)] leading-[1.05]">
+                Grade any public site in one pass.
+              </h1>
+              <p className="mt-5 max-w-[36rem] text-lg leading-relaxed text-muted-foreground">
+                Enter a URL. We crawl what a stranger can reach without logging in, run{" "}
+                <span className="font-medium text-foreground">axe-core</span> on every page, and
+                hand back a letter grade with the evidence behind it, never a fabricated score,
+                never a persona costume.
+              </p>
 
-            <div className="sheet mt-10 p-6 sm:p-8">
-              <GradeForm />
+              <div className="sheet mt-10 p-6 sm:p-8">
+                <GradeForm />
+              </div>
+
+              <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
+                Not ready to hand over a real URL yet?{" "}
+                <Link href="/sample-report" className="text-link">
+                  See a finished sample report
+                </Link>{" "}
+                from a public test store first.
+              </p>
             </div>
-
-            <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
-              Not ready to hand over a real URL yet?{" "}
-              <Link href="/sample-report" className="text-link">
-                See a finished sample report
-              </Link>{" "}
-              from a public test store first.
-            </p>
           </div>
         </section>
 
@@ -86,7 +88,7 @@ export default function GradePage() {
         </section>
 
         <section aria-labelledby="scope-heading" className="section-y-sm">
-          <div className="frame-narrow">
+          <div className="frame">
             <h2 id="scope-heading" className="label-mono">
               What this scan doesn&apos;t see
             </h2>

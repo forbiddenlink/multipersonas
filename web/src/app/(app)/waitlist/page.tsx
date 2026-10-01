@@ -169,7 +169,7 @@ export default async function WaitlistPage() {
       tabIndex={0}
       role="region"
       aria-label="Waitlist entries table"
-      className="mt-6 overflow-x-auto rounded-md border border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+      className="mt-6 overflow-x-auto rounded-sm border border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
     >
             <table className="w-full text-left text-sm">
               <thead className="border-b border-border bg-card font-mono text-xs uppercase tracking-wide text-muted-foreground">

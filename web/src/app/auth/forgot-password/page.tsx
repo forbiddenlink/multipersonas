@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
                 We sent a password reset link to <strong className="font-medium text-foreground">{email}</strong>.
               </p>
               <p className="mt-5 text-sm text-muted-foreground">
-                <Link href="/auth/login" className="text-link">
+                <Link href="/auth/login" className="text-link inline-flex min-h-10 items-center">
                   &larr; Back to sign in
                 </Link>
               </p>
@@ -99,12 +99,12 @@ export default function ForgotPasswordPage() {
 
               <p className="text-center text-sm text-muted-foreground">
                 Remember your password?{" "}
-                <Link href="/auth/login" className="text-link">
+                <Link href="/auth/login" className="text-link inline-flex min-h-10 items-center">
                   Sign in
                 </Link>
               </p>
               <p className="text-center text-xs text-muted-foreground">
-                <Link href="/" className="text-link">
+                <Link href="/" className="text-link inline-flex min-h-10 items-center">
                   &larr; Back to home
                 </Link>
               </p>

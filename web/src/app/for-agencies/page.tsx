@@ -140,7 +140,7 @@ export default function ForAgenciesPage() {
                   <li key={s.fact} className="grid gap-1 py-4 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:gap-4">
                     <p className="font-mono text-sm tabular-nums text-[var(--redline)]">
                       {s.fact}
-                      <sup className="ml-0.5 text-[10px] text-muted-foreground">{s.cite}</sup>
+                      <sup className="ml-0.5 text-[11px] text-muted-foreground">{s.cite}</sup>
                     </p>
                     <p className="text-[0.9375rem] leading-relaxed">{s.detail}</p>
                   </li>
@@ -216,7 +216,7 @@ export default function ForAgenciesPage() {
       aria-label="Client roster table"
       className="mt-10 min-w-0 overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
     >
-              <table className="w-full min-w-[30rem] border-collapse text-left text-sm">
+              <table className="w-full sm:min-w-[30rem] border-collapse text-left text-sm">
                 <caption className="sr-only">
                   Illustrative example of a multi-client project roster, not real client data
                 </caption>

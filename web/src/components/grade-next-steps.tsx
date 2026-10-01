@@ -38,7 +38,7 @@ export function GradeNextSteps({
         <li>Screen reader pass on forms, dialogs, menus, and checkout states.</li>
         <li>Logged-in pages, PDFs, and multi-step flows this scan cannot reach.</li>
       </ul>
-      <div className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row sm:flex-wrap">
+      <div className="grade-print-hide flex flex-col gap-3 border-t border-border pt-5 sm:flex-row sm:flex-wrap">
         {signedIn ? (
           <Link
             href="/dashboard"
@@ -78,7 +78,7 @@ export function GradeNextSteps({
         </Link>
       </div>
       {!signedIn ? (
-        <p className="redline-note">
+        <p className="redline-note grade-print-hide">
           Create an account and this grade lands on your dashboard. The CLI scans behind
           login today, where a client password never leaves your machine.
         </p>

@@ -58,3 +58,17 @@ describe("GradeNextSteps", () => {
     expect(screen.getByText(/1 public page only/)).toBeInTheDocument();
   });
 });
+
+describe("GradeNextSteps print behaviour", () => {
+  afterEach(cleanup);
+
+  it("keeps the untested-flow checklist printable and hides only the conversion controls", () => {
+    const { container } = render(<GradeNextSteps signedIn={false} pagesScanned={3} entryUrl="https://example.com" />);
+    const hidden = Array.from(container.querySelectorAll(".grade-print-hide"));
+    const checklist = screen.getByText(/Keyboard-only navigation/);
+    expect(hidden.some((el) => el.contains(checklist))).toBe(false);
+    expect(hidden.some((el) => el.contains(screen.getByRole("link", { name: "Save this grade" })))).toBe(true);
+    expect(hidden.some((el) => el.contains(screen.getByRole("link", { name: /founding access/i })))).toBe(true);
+    expect(hidden.some((el) => el.contains(screen.getByText(/Create an account and this grade/)))).toBe(true);
+  });
+});

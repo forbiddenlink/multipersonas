@@ -413,7 +413,7 @@ export default async function AuditDetailPage({
                     <p className="text-sm font-medium">{persona.name}</p>
                     <p className="text-xs text-muted-foreground">{persona.role}</p>
                   </div>
-                  <span className={`rounded-sm border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide ${persona.goalCompleted ? "border-[var(--severity-minor)] text-[var(--severity-minor)]" : "border-[var(--severity-critical)] text-[var(--severity-critical)]"}`}>
+                  <span className={`rounded-sm border px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide ${persona.goalCompleted ? "border-[var(--severity-minor)] text-[var(--severity-minor)]" : "border-[var(--severity-critical)] text-[var(--severity-critical)]"}`}>
                     {run.task_definition ? (persona.goalCompleted ? "text observed" : "not verified") : (persona.goalCompleted ? "reached" : "blocked")}
                   </span>
                 </div>
@@ -529,7 +529,7 @@ export default async function AuditDetailPage({
                 id="status-filter"
                 name="status"
                 defaultValue={selectedStatus}
-                className="h-10 rounded-sm border border-input bg-card px-3 text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                className="h-10 rounded-sm border border-input bg-card px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
               >
                 <option value="all">All statuses</option>
                 {FINDING_STATUSES.map((status) => (
@@ -547,7 +547,7 @@ export default async function AuditDetailPage({
                 id="owner-filter"
                 name="owner"
                 defaultValue={selectedOwner}
-                className="h-10 rounded-sm border border-input bg-card px-3 text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                className="h-10 rounded-sm border border-input bg-card px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
               >
                 <option value="">All owners</option>
                 {owners.map((owner) => (
@@ -619,7 +619,7 @@ export default async function AuditDetailPage({
                         id={`status-${f.id}`}
                         name="status"
                         defaultValue={f.status ?? "open"}
-                        className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                        className="h-9 w-full rounded-sm border border-input bg-background px-3 py-1 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
                       >
                         {FINDING_STATUSES.map((status) => (
                           <option key={status} value={status}>
@@ -661,7 +661,7 @@ export default async function AuditDetailPage({
                         defaultValue={f.notes ?? ""}
                         maxLength={2000}
                         rows={2}
-                        className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                        className="min-h-20 w-full rounded-sm border border-input bg-background px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
                         placeholder="Fix plan, acceptance note, or handoff context"
                       />
                     </div>

@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { ogFonts } from "@/lib/og-fonts";
+import { PALETTE } from "@/lib/og-palette";
 
 export const alt = "Personaudit: scan behind the login, keep the password";
 export const size = { width: 1200, height: 630 };
@@ -7,13 +8,7 @@ export const contentType = "image/png";
 
 // Evidence-dossier palette as literal hex (Satori can't read CSS vars or oklch()).
 // Converted from the :root tokens in globals.css.
-const DESK = "#f8f4eb";
-const SHEET = "#fefdfa";
-const INK = "#141b26";
-const MUTED = "#515865";
-const RULE = "#d6cfc1";
-const REDLINE = "#b71a18";
-const HIGHLIGHT = "#f8e899";
+const { desk: DESK, sheet: SHEET, ink: INK, muted: MUTED, rule: RULE, redline: REDLINE, highlight: HIGHLIGHT } = PALETTE;
 
 export default async function OGImage() {
   const fonts = await ogFonts();

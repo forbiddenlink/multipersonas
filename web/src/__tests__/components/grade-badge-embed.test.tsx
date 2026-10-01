@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
 import { GradeBadgeEmbed } from "@/components/grade-badge-embed";
 
 describe("GradeBadgeEmbed", () => {
@@ -52,4 +53,17 @@ it("makes both scrollable code snippets reachable by keyboard", () => {
   expect(screen.getByRole("region", { name: "Markdown badge snippet" })).toHaveAttribute("tabindex", "0");
   expect(screen.getByRole("region", { name: "HTML badge snippet" })).toHaveAttribute("tabindex", "0");
   cleanup();
+});
+
+it("renders the same snippet text on the server and on first client render", () => {
+  // window exists under jsdom, so a render that read it would differ from the server default.
+  const html = renderToString(<GradeBadgeEmbed token="test-token" host="example.com" />);
+  expect(html).toContain("https://personaudit.com/grade/test-token");
+  expect(html).not.toContain(window.location.origin + "/grade/test-token");
+});
+
+it("switches to the page origin after mount", () => {
+  cleanup();
+  render(<GradeBadgeEmbed token="test-token" host="example.com" />);
+  expect(document.body.textContent).toContain(`${window.location.origin}/grade/test-token`);
 });

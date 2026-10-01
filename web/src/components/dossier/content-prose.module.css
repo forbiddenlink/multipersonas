@@ -75,6 +75,12 @@
 .prose a:hover {
   text-decoration-thickness: 2px;
 }
+/* A filled button inside the article keeps its own label colour. Without this the link
+   colour above wins and the label paints primary-on-primary, an empty-looking button. */
+.prose a[class*="bg-primary"] {
+  color: var(--primary-foreground);
+  text-decoration: none;
+}
 .prose a:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
@@ -165,7 +171,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--card);
-  padding: 1rem 3.25rem 1rem 1rem;
+  padding: 1rem;
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 0.8125rem;
   line-height: 1.65;
@@ -184,11 +190,17 @@
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--muted-foreground);
+  /* Leave room for the copy button on the same edge. */
+  max-width: calc(100% - 6rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .copyBtn {
+  /* Straddles the top border, like the label, so it never covers scrolled code. */
   position: absolute;
-  top: 0.625rem;
+  top: -0.875rem;
   right: 0.625rem;
   display: inline-flex;
   align-items: center;

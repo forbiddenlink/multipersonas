@@ -1,26 +1,20 @@
 import { ImageResponse } from "next/og";
 import { getGraderScan } from "@/lib/grade";
 import { ogFonts } from "@/lib/og-fonts";
+import { PALETTE } from "@/lib/og-palette";
 import type { GradeReport } from "@engine/grader/score";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// Evidence Dossier palette — literal hex values for Satori/ImageResponse (no CSS vars).
-// Same warm manila desk / near-white sheet / blue-black ink as the on-site tokens
-// (web/DESIGN.md); a social card should look like the same case file, not a different
-// dark-terminal brand.
-const DESK = "#f5f1e6";
-const SHEET = "#fdfcf9";
-const INK = "#211f2e";
-const MUTED = "#615f70";
-const BORDER = "#d9d2bd";
-const REDLINE = "#a3341c";
+// Evidence Dossier palette (src/lib/og-palette.ts), so a shared grade card is the same
+// case file as the site and the root card.
+const { desk: DESK, sheet: SHEET, ink: INK, muted: MUTED, rule: BORDER, redline: REDLINE, primary: PRIMARY, serious: SERIOUS, moderate: MODERATE } = PALETTE;
 
 function gradeColor(grade: string): string {
-  if (grade === "A" || grade === "B") return "#2c3868"; // ink blue
-  if (grade === "C") return "#8a6a1f"; // moderate
-  if (grade === "D") return "#a85a1c"; // serious
+  if (grade === "A" || grade === "B") return PRIMARY;
+  if (grade === "C") return MODERATE;
+  if (grade === "D") return SERIOUS;
   return REDLINE; // critical / F
 }
 
@@ -32,7 +26,7 @@ export default async function Image({
   const { token } = await params;
   const [scan, fonts] = await Promise.all([getGraderScan(token), ogFonts()]);
 
-  let host = "a website";
+  let host: string | null = null;
   if (scan?.entry_url) {
     try {
       host = new URL(scan.entry_url).host;
@@ -42,7 +36,10 @@ export default async function Image({
   }
 
   const report = (scan?.report as unknown as GradeReport) ?? null;
-  const grade = report?.grade ?? "–";
+  // No finished report (unknown token, scan still running, or the service key unset):
+  // show a neutral brand card. Never print a grade or "0/100" the scan did not earn.
+  const hasResult = report?.grade != null;
+  const grade = report?.grade ?? "";
   const score = report?.score ?? 0;
   const violations = report?.totalViolations ?? 0;
   const color = gradeColor(grade);
@@ -64,9 +61,21 @@ export default async function Image({
       >
         {/* File tab + wordmark */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "2px", fontSize: "26px", fontWeight: 600 }}>
-            <span>Person</span>
-            <span style={{ color: MUTED }}>audit</span>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              fontSize: "28px",
+              fontWeight: 600,
+              fontFamily: fonts.some((f) => f.name === "Newsreader") ? "Newsreader" : "serif",
+            }}
+          >
+            <svg width="30" height="30" viewBox="0 0 20 20" fill="none">
+              <rect x="1.5" y="1.5" width="17" height="17" rx="1.5" stroke={REDLINE} strokeWidth="1.6" />
+              <path d="M5.5 10.5l3 3 6-7" stroke={REDLINE} strokeWidth="2" strokeLinecap="square" />
+            </svg>
+            Personaudit
           </div>
           <div
             style={{
@@ -98,7 +107,7 @@ export default async function Image({
         >
           <div style={{ display: "flex", flexDirection: "column", maxWidth: "660px" }}>
             <div style={{ fontSize: "16px", color: MUTED, marginBottom: "10px", letterSpacing: "0.04em" }}>
-              Public scan result for
+              {hasResult ? "Public scan result for" : "Public accessibility grade"}
             </div>
             <div
               style={{
@@ -110,21 +119,28 @@ export default async function Image({
                 fontFamily: fonts.some((f) => f.name === "Newsreader") ? "Newsreader" : "serif",
               }}
             >
-              {host}
+              {hasResult ? (host ?? "a website") : "Grade any public site with axe-core"}
             </div>
-            <div style={{ display: "flex", gap: "18px", marginTop: "22px", fontSize: "17px", color: MUTED }}>
-              <span>
-                Score: <strong style={{ color: INK }}>{score}/100</strong>
-              </span>
-              <span>·</span>
-              <span>
-                Violations: <strong style={{ color: INK }}>{violations}</strong>
-              </span>
-              <span>·</span>
-              <span>axe-core</span>
-            </div>
+            {hasResult ? (
+              <div style={{ display: "flex", gap: "18px", marginTop: "22px", fontSize: "17px", color: MUTED }}>
+                <span>
+                  Score: <strong style={{ color: INK }}>{score}/100</strong>
+                </span>
+                <span>·</span>
+                <span>
+                  Violations: <strong style={{ color: INK }}>{violations}</strong>
+                </span>
+                <span>·</span>
+                <span>axe-core</span>
+              </div>
+            ) : (
+              <div style={{ display: "flex", marginTop: "22px", fontSize: "17px", color: MUTED }}>
+                Free, deterministic, and shareable. Run a grade at personaudit.com.
+              </div>
+            )}
           </div>
 
+          {hasResult && (
           <div
             style={{
               display: "flex",
@@ -142,6 +158,7 @@ export default async function Image({
             <span style={{ fontSize: "68px", fontWeight: 700, color, lineHeight: 1 }}>{grade}</span>
             <span style={{ fontSize: "12px", color, letterSpacing: "0.1em" }}>VERDICT</span>
           </div>
+          )}
         </div>
 
         {/* Footer */}

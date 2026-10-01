@@ -260,7 +260,7 @@ export default function PricingPage() {
       aria-label="Capabilities by status table"
       className="mt-10 min-w-0 overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
     >
-              <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
+              <table className="w-full sm:min-w-[32rem] border-collapse text-left text-sm">
                 <caption className="sr-only">Capabilities available today versus on the roadmap</caption>
                 <thead>
                   <tr className="border-b-2 border-foreground">

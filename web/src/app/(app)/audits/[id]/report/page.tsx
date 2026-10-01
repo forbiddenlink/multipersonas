@@ -247,7 +247,7 @@ export default async function ReportPage({
               Priority combines axe severity with persona task impact. It is a planning score,
               not a conformance score.
             </p>
-            <table className={styles.table}>
+            <table className={styles.table} tabIndex={0} aria-label="Fix first priorities">
               <thead>
                 <tr>
                   <th style={{ width: "12%" }}>Score</th>
@@ -324,7 +324,7 @@ export default async function ReportPage({
               </div>
             ))}
           </div>
-          <table className={styles.table}>
+          <table className={styles.table} tabIndex={0} aria-label="Conformance by criterion">
             <thead>
               <tr>
                 <th style={{ width: "40%" }}>Success criterion</th>
@@ -354,7 +354,7 @@ export default async function ReportPage({
         {totalViolations > 0 && (
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>Verdicts ({totalViolations})</h2>
-            <table className={styles.table}>
+            <table className={styles.table} tabIndex={0} aria-label="Verdicts">
               <thead>
                 <tr>
                   <th style={{ width: "32%" }}>Rule</th>
@@ -425,7 +425,7 @@ export default async function ReportPage({
               assistive technology, and representative user tasks before making a
               conformance claim.
             </p>
-            <table className={styles.table}>
+            <table className={styles.table} tabIndex={0} aria-label="Criteria that need manual testing">
               <thead>
                 <tr>
                   <th style={{ width: "24%" }}>Success criterion</th>

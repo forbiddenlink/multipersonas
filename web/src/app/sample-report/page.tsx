@@ -128,7 +128,7 @@ export default function SampleReportPage() {
                         {String(i + 1).padStart(2, "0")}
                       </span>
                       <span
-                        className={`truncate font-mono text-[10px] uppercase tracking-[0.08em] ${
+                        className={`truncate font-mono text-[11px] uppercase tracking-[0.08em] ${
                           s.publicUrl ? "text-muted-foreground" : "text-primary"
                         }`}
                       >
