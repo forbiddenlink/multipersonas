@@ -422,13 +422,13 @@ export function AuditForm({
           disabled={loading || !!pendingJobId}
           autoComplete="url"
           aria-label="Website URL to audit"
-          className="h-10 flex-1 rounded-sm border border-border bg-card px-4 text-base text-foreground transition-colors duration-150 placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] disabled:opacity-50 md:text-sm"
+          className="h-11 flex-1 rounded-sm border border-border bg-card px-4 text-base text-foreground transition-colors duration-150 placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] disabled:opacity-50 md:text-sm"
         />
         <Button
           type="submit"
           size="lg"
           disabled={loading || !!pendingJobId || !url}
-          className="h-10 shrink-0 px-6 font-mono text-xs uppercase tracking-wide"
+          className="h-11 shrink-0 px-6 font-mono text-xs uppercase tracking-wide"
         >
           {loading ? "Running…" : timedOut ? "In progress…" : (submitLabel ?? "Run free audit")}
         </Button>
@@ -461,6 +461,7 @@ export function AuditForm({
                     : "border-border text-muted-foreground hover:border-foreground/25 hover:text-foreground"
                 }`}
               >
+                {isOn ? <span aria-hidden="true">✓ </span> : null}
                 {p.name} · {p.role}
               </button>
             );
@@ -471,7 +472,7 @@ export function AuditForm({
       {upgrade && (
         <div
           role="status"
-          className="mt-4 rounded-md border border-border bg-card px-4 py-3 text-sm"
+          className="mt-4 rounded-sm border border-border bg-card px-4 py-3 text-sm"
         >
           <p className="font-medium">Task-success personas are a Pro feature.</p>
           <p className="mt-1 text-muted-foreground">
@@ -490,7 +491,10 @@ export function AuditForm({
           {error.includes("audit limit") ? (
             <p className="text-sm" style={{ color: "var(--severity-moderate)" }}>{error}</p>
           ) : (
-            <p className="text-sm text-destructive">{error}</p>
+            <p className="text-sm text-[var(--redline)]">
+              <span aria-hidden="true">■ </span>
+              {error}
+            </p>
           )}
         </div>
       )}
@@ -516,7 +520,7 @@ export function AuditForm({
         <div
           role="status"
           aria-live="polite"
-          className="mt-6 overflow-hidden rounded-md border border-border bg-card font-mono text-sm"
+          className="mt-6 overflow-hidden rounded-sm border border-border bg-card font-mono text-sm"
         >
           <div className="flex items-center justify-between border-b border-border px-4 py-2.5 text-xs text-muted-foreground">
             <span>

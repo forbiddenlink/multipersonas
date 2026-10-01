@@ -178,7 +178,7 @@ export function StateFlowTrail() {
               onMouseEnter={() => setActiveStep(i)}
               onMouseLeave={() => setActiveStep(null)}
               className={`sheet group relative flex flex-col overflow-hidden transition-all duration-200 ${
-                isSelected ? "ring-2 ring-[var(--primary)] shadow-md" : ""
+                isSelected ? "ring-2 ring-[var(--primary)]" : ""
               }`}
             >
               {/* Top classification banner */}
@@ -198,7 +198,7 @@ export function StateFlowTrail() {
                 <StateWireframe index={i} />
                 {s.findings > 0 && (
                   <span
-                    className="absolute right-2 top-2 rounded-xs border bg-card px-1.5 py-0.5 font-mono text-[11px] font-bold text-[var(--redline)] shadow-xs"
+                    className="absolute right-2 top-2 rounded-xs border bg-card px-1.5 py-0.5 font-mono text-[11px] font-bold text-[var(--redline)]"
                     style={{ borderColor: "var(--redline)" }}
                     title="Critical accessibility defect found at this state"
                   >
