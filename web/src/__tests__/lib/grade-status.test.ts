@@ -29,7 +29,7 @@ vi.mock("@/lib/supabase/admin", () => ({
 }));
 
 describe("getGraderScan lifecycle reads", () => {
-  const scan = { token: "synthetic-token", job_id: "synthetic-job", status: "completed", error: null, report: { grade: "A" } };
+  const scan = { token: "00000000-0000-4000-8000-000000000001", job_id: "synthetic-job", status: "completed", error: null, report: { grade: "A" } };
   beforeEach(() => {
     vi.resetAllMocks();
     eq.mockReturnValue({ maybeSingle });
@@ -66,5 +66,12 @@ describe("getGraderScan lifecycle reads", () => {
     maybeSingle.mockResolvedValueOnce({ data: scan, error: null })
       .mockResolvedValueOnce({ data: { status: "failed", error: "The scan failed." }, error: null });
     expect(await getGraderScan(scan.token)).toMatchObject({ status: "failed", error: "The scan failed." });
+  });
+});
+
+describe("getGraderScan token shape", () => {
+  it("returns null for a malformed token without querying", async () => {
+    await expect(getGraderScan("not-a-uuid")).resolves.toBeNull();
+    await expect(getGraderScan("1' or '1'='1")).resolves.toBeNull();
   });
 });

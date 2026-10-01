@@ -21,17 +21,27 @@ export function MobileNav({
   const ref = useRef<HTMLDetailsElement>(null);
   const [open, setOpen] = useState(false);
 
+  // The disclosure works before hydration, so it may already be open on mount.
+  useEffect(() => {
+    if (ref.current?.open) setOpen(true);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     const el = ref.current;
     if (!el) return;
+    const closeAndRestoreFocus = () => {
+      const hadFocus = el.contains(document.activeElement) && document.activeElement?.tagName !== "SUMMARY";
+      el.open = false;
+      if (hadFocus) el.querySelector("summary")?.focus();
+    };
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       el.open = false;
       el.querySelector("summary")?.focus();
     };
     const onPointer = (e: PointerEvent) => {
-      if (!el.contains(e.target as Node)) el.open = false;
+      if (!el.contains(e.target as Node)) closeAndRestoreFocus();
     };
     document.addEventListener("keydown", onKey);
     document.addEventListener("pointerdown", onPointer);
@@ -42,7 +52,10 @@ export function MobileNav({
   }, [open]);
 
   const close = () => {
-    if (ref.current) ref.current.open = false;
+    const el = ref.current;
+    if (!el) return;
+    el.open = false;
+    el.querySelector("summary")?.focus();
   };
 
   return (
