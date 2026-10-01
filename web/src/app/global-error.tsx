@@ -2,18 +2,19 @@
 
 import { useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
+import { PALETTE_DARK } from "@/lib/og-palette";
 
 // Root fallback when the whole app tree crashes: renders its own <html>, so no
-// Tailwind classes or CSS custom properties are available — literal hex mirrored
-// from globals.css's .dark token block (night desk), in the same dossier "sheet"
-// frame as error.tsx. (background oklch(0.175 0.014 262) ≈ #1b1e26, etc.)
-const BG = "#1b1e26";
-const CARD = "#23262f";
-const FG = "#f1eee7";
-const MUTED = "#b7b2a8";
-const BORDER = "rgba(241,238,231,0.13)";
-const PRIMARY = "#aab7e8";
-const REDLINE = "#e2694a";
+// Tailwind classes or CSS custom properties are available. Literal hex from
+// src/lib/og-palette.ts (the .dark token block in globals.css, "night desk"), in the same
+// dossier "sheet" frame as error.tsx.
+const BG = PALETTE_DARK.desk;
+const CARD = PALETTE_DARK.sheet;
+const FG = PALETTE_DARK.ink;
+const MUTED = PALETTE_DARK.muted;
+const BORDER = "rgba(238,235,226,0.13)";
+const PRIMARY = PALETTE_DARK.primary;
+const REDLINE = PALETTE_DARK.redline;
 const SANS = "ui-sans-serif, system-ui, -apple-system, sans-serif";
 const SERIF = "ui-serif, Georgia, serif";
 const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace";
@@ -103,7 +104,7 @@ export default function GlobalError({
                     borderRadius: "0.1875rem",
                     border: "none",
                     backgroundColor: PRIMARY,
-                    color: "#171a22",
+                    color: PALETTE_DARK.onPrimary,
                     fontFamily: SANS,
                     fontSize: "0.875rem",
                     fontWeight: 500,

@@ -1,26 +1,20 @@
 import { ImageResponse } from "next/og";
 import { getGraderScan } from "@/lib/grade";
 import { ogFonts } from "@/lib/og-fonts";
+import { PALETTE } from "@/lib/og-palette";
 import type { GradeReport } from "@engine/grader/score";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// Evidence Dossier palette — literal hex values for Satori/ImageResponse (no CSS vars).
-// Same warm manila desk / near-white sheet / blue-black ink as the on-site tokens
-// (web/DESIGN.md); a social card should look like the same case file, not a different
-// dark-terminal brand.
-const DESK = "#f5f1e6";
-const SHEET = "#fdfcf9";
-const INK = "#211f2e";
-const MUTED = "#615f70";
-const BORDER = "#d9d2bd";
-const REDLINE = "#a3341c";
+// Evidence Dossier palette (src/lib/og-palette.ts), so a shared grade card is the same
+// case file as the site and the root card.
+const { desk: DESK, sheet: SHEET, ink: INK, muted: MUTED, rule: BORDER, redline: REDLINE, primary: PRIMARY, serious: SERIOUS, moderate: MODERATE } = PALETTE;
 
 function gradeColor(grade: string): string {
-  if (grade === "A" || grade === "B") return "#2c3868"; // ink blue
-  if (grade === "C") return "#8a6a1f"; // moderate
-  if (grade === "D") return "#a85a1c"; // serious
+  if (grade === "A" || grade === "B") return PRIMARY;
+  if (grade === "C") return MODERATE;
+  if (grade === "D") return SERIOUS;
   return REDLINE; // critical / F
 }
 
@@ -64,9 +58,21 @@ export default async function Image({
       >
         {/* File tab + wordmark */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "2px", fontSize: "26px", fontWeight: 600 }}>
-            <span>Person</span>
-            <span style={{ color: MUTED }}>audit</span>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              fontSize: "28px",
+              fontWeight: 600,
+              fontFamily: fonts.some((f) => f.name === "Newsreader") ? "Newsreader" : "serif",
+            }}
+          >
+            <svg width="30" height="30" viewBox="0 0 20 20" fill="none">
+              <rect x="1.5" y="1.5" width="17" height="17" rx="1.5" stroke={REDLINE} strokeWidth="1.6" />
+              <path d="M5.5 10.5l3 3 6-7" stroke={REDLINE} strokeWidth="2" strokeLinecap="square" />
+            </svg>
+            Personaudit
           </div>
           <div
             style={{

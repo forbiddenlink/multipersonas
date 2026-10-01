@@ -1,3 +1,4 @@
+import { PALETTE } from "@/lib/og-palette";
 import { getGraderScan } from "@/lib/grade";
 import type { GradeReport } from "@engine/grader/score";
 
@@ -12,7 +13,7 @@ export async function GET(
   if (!scan || scan.status !== "completed" || !scan.report) {
     const isRunning = scan?.status === "running" || scan?.status === "queued";
     const label = isRunning ? "grading…" : "unknown";
-    const svg = renderSvg("accessibility", label, "#78716c", "#1c1917");
+    const svg = renderSvg("accessibility", label, PALETTE.muted, PALETTE.ink);
     return new Response(svg, {
       headers: {
         "Content-Type": "image/svg+xml",
@@ -26,14 +27,14 @@ export async function GET(
   const score = report.score;
   const color =
     grade === "A" || grade === "B"
-      ? "#0d9488"
+      ? PALETTE.primary
       : grade === "C"
-        ? "#d97706"
+        ? PALETTE.moderate
         : grade === "D"
-          ? "#ea580c"
-          : "#dc2626";
+          ? PALETTE.serious
+          : PALETTE.redline;
 
-  const svg = renderSvg("accessibility", `${grade} (${score}/100)`, color, "#1c1917");
+  const svg = renderSvg("accessibility", `${grade} (${score}/100)`, color, PALETTE.ink);
 
   return new Response(svg, {
     headers: {
