@@ -38,3 +38,6 @@ worker/pnpm-lock.yaml
 web/tests/e2e/.auth/
 web/test-results/
 web/playwright-report/
+
+# Redesign research screenshots (kept local; only markdown and curated webp are committed)
+design-research/screens/
