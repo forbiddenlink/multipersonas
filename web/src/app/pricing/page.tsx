@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { GradeForm } from "@/components/grade-form";
+import { ExhibitHead } from "@/components/dossier/exhibit-head";
 import { WcagCitation } from "@/components/forensic/wcag-citation";
 import { buttonVariants } from "@/components/ui/button";
 import { JsonLd, faqSchema } from "@/components/json-ld";
@@ -142,13 +144,13 @@ export default function PricingPage() {
       <JsonLd data={faqSchema(PRICING_FAQS)} />
       <SiteHeader />
 
-      <main id="main" className="flex-1">
+      <main id="main" className="exhibits flex-1">
         {/* ── Hero ── */}
         <section className="section-y border-b border-border">
           <div className="frame">
-            <p className="label-mono">Pricing</p>
-            <h1 className="display mt-3 max-w-2xl text-[clamp(2.2rem,4.6vw,3.5rem)] leading-[1.05]">
-              The part that proves compliance is free.
+            <ExhibitHead label="Pricing" />
+            <h1 className="display mt-8 max-w-2xl text-[clamp(2.2rem,4.6vw,3.5rem)] leading-[1.05]">
+              The part that proves compliance <span className="mark-sweep">is free.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
               The CLI runs axe-core at every state it reaches, including behind a login, with
@@ -161,10 +163,11 @@ export default function PricingPage() {
         {/* ── Three tiers as a ledger, not identical rounded cards ── */}
         <section aria-labelledby="tiers-heading" className="section-y">
           <div className="frame">
+            <ExhibitHead label="Plans" />
             <h2 id="tiers-heading" className="sr-only">
               Plans
             </h2>
-            <ol className="border-t-2 border-foreground">
+            <ol className="mt-0">
               {TIERS.map((tier) => (
                 <li
                   key={tier.id}
@@ -244,6 +247,7 @@ export default function PricingPage() {
         {/* ── What runs today vs the roadmap, in the open ── */}
         <section aria-labelledby="capability-heading" className="border-y border-border bg-card section-y">
           <div className="frame">
+            <ExhibitHead label="Capability ledger" className="mb-8" />
             <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-end">
               <h2 id="capability-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
                 What runs today. What&apos;s still the roadmap.
@@ -299,10 +303,11 @@ export default function PricingPage() {
 
         {/* ── Why $199 beats an enterprise contract, and why free tools aren't enough ── */}
         <section aria-labelledby="anchor-heading" className="section-y">
-          <div className="frame grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
+          <div className="frame">
+          <ExhibitHead label="Compared to the alternatives" />
+          <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
             <div>
-              <p className="label-mono">Compared to the alternatives</p>
-              <h2 id="anchor-heading" className="display mt-3 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+              <h2 id="anchor-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
                 Cheaper than enterprise. Steadier than free.
               </h2>
               <p className="mt-5 max-w-md leading-relaxed text-muted-foreground">
@@ -328,13 +333,14 @@ export default function PricingPage() {
               </p>
             </div>
           </div>
+          </div>
         </section>
 
         {/* ── FAQ ── */}
         <section aria-labelledby="faq-heading" className="border-t border-border bg-card section-y">
           <div className="frame-narrow">
-            <p className="label-mono">Questions</p>
-            <h2 id="faq-heading" className="display mt-3 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+            <ExhibitHead label="Questions" />
+            <h2 id="faq-heading" className="display mt-8 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
               The questions a serious buyer actually asks.
             </h2>
             <div className="mt-10 border-t border-border">
@@ -363,6 +369,21 @@ export default function PricingPage() {
               </Link>
               .
             </p>
+          </div>
+        </section>
+
+        {/* ── Try before you decide: the free grade, same form as the home page. ── */}
+        <section aria-labelledby="try-heading" className="border-t border-border section-y">
+          <div className="frame">
+            <ExhibitHead label="Before you pay" />
+            <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
+              <h2 id="try-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+                Grade one of your client sites first.
+              </h2>
+              <div className="min-w-0">
+                <GradeForm />
+              </div>
+            </div>
           </div>
         </section>
       </main>

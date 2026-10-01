@@ -14,6 +14,7 @@ export default function PrivacyPage() {
       <ContentArticle
         eyebrow="The fine print"
         title="Privacy policy"
+        mark="Privacy"
         lastReviewed="23 September 2026"
         toc={[
           { id: "collect", label: "What we collect" },

@@ -1,4 +1,5 @@
 import styles from "./content-prose.module.css";
+import { ExhibitHead } from "@/components/dossier/exhibit-head";
 
 export type ContentTocItem = { id: string; label: string; level?: 2 | 3 };
 
@@ -14,6 +15,7 @@ export type ContentTocItem = { id: string; label: string; level?: 2 | 3 };
 export function ContentArticle({
   eyebrow,
   title,
+  mark,
   dek,
   lastReviewed,
   toc,
@@ -21,6 +23,8 @@ export function ContentArticle({
 }: {
   eyebrow: string;
   title: string;
+  /** One phrase inside `title` that gets the highlighter pass (signature move 2). */
+  mark?: string;
   dek?: React.ReactNode;
   /** e.g. "26 September 2026" — rendered next to a "Last reviewed" label. */
   lastReviewed?: string;
@@ -28,11 +32,22 @@ export function ContentArticle({
   children: React.ReactNode;
 }) {
   const hasToc = Boolean(toc && toc.length > 0);
+  const at = mark ? title.indexOf(mark) : -1;
+  const heading =
+    mark && at >= 0 ? (
+      <>
+        {title.slice(0, at)}
+        <span className="mark-sweep">{mark}</span>
+        {title.slice(at + mark.length)}
+      </>
+    ) : (
+      title
+    );
   return (
-    <div className="frame section-y">
+    <div className="exhibits frame section-y">
       <header className="max-w-[65ch]">
-        <p className="label-mono">{eyebrow}</p>
-        <h1 className="display mt-3 text-[clamp(2rem,4.4vw,3rem)] leading-[1.08]">{title}</h1>
+        <ExhibitHead label={eyebrow} />
+        <h1 className="display mt-8 text-[clamp(2rem,4.4vw,3rem)] leading-[1.08]">{heading}</h1>
         {dek ? (
           <p className="mt-5 max-w-[58ch] text-lg leading-relaxed text-muted-foreground">{dek}</p>
         ) : null}
@@ -42,6 +57,23 @@ export function ContentArticle({
           </p>
         ) : null}
       </header>
+
+      {hasToc ? (
+        <details className="mt-8 border-y border-border py-3 lg:hidden">
+          <summary className="cursor-pointer rounded-sm font-mono text-xs uppercase tracking-[0.09em] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
+            On this page
+          </summary>
+          <ul className="mt-3 space-y-1 text-sm">
+            {toc!.map((item) => (
+              <li key={item.id} className={item.level === 3 ? "pl-3" : undefined}>
+                <a href={`#${item.id}`} className={`${styles.tocLink} inline-block py-1`}>
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
 
       <div className={hasToc ? "mt-12 grid gap-12 lg:grid-cols-[minmax(0,1fr)_14rem]" : "mt-12"}>
         <div className={styles.prose}>{children}</div>

@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
           <div className="px-5 py-6">
             <div>
               <p className="label-mono">Locked out</p>
-              <h1 className="display mt-1.5 text-2xl leading-tight text-foreground">Reset your password</h1>
+              <h1 className="display mt-1.5 text-2xl leading-tight text-foreground">Reset <span className="mark-sweep">your password</span></h1>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 Enter your email and we&apos;ll send you a reset link.
               </p>

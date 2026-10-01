@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BatesSerial } from "@/components/dossier/exhibit-head";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -47,7 +48,10 @@ export default function SampleReportPage() {
 
       <main id="main" className="flex-1">
         <div className="report-print-root frame-narrow py-14 sm:py-20">
-          <p className="label-mono report-print-hide">Sample report · read before you scan</p>
+          <div className="report-print-hide flex items-baseline justify-between gap-4">
+            <p className="label-mono">Sample report · read before you scan</p>
+            <BatesSerial n="0002" className="shrink-0" />
+          </div>
           <p className="redline-note mt-2 max-w-xl leading-relaxed">
             Sample report. Real probe of the SauceDemo test store, not a customer.
           </p>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BatesSerial } from "@/components/dossier/exhibit-head";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -17,7 +18,7 @@ export default function NotFound() {
         <div className="sheet margin-rule relative -mt-px pb-8 pl-12 pr-6 pt-7 sm:pl-14 sm:pr-8">
           <p className="label-mono">404</p>
           <h1 className="display mt-3 text-[clamp(1.6rem,3.6vw,2.1rem)] leading-[1.1]">
-            No file under that number.
+            <span className="mark-sweep">No file</span> under that number.
           </h1>
           <p className="mt-4 max-w-sm leading-relaxed text-muted-foreground">
             The page you&apos;re looking for isn&apos;t in the case file. It may have moved, or
@@ -43,6 +44,7 @@ export default function NotFound() {
               Read the CLI docs
             </Link>
           </div>
+          <BatesSerial n="0404" className="mt-6 block text-right" />
         </div>
       </div>
     </main>

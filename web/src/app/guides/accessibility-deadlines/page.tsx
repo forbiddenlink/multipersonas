@@ -28,6 +28,7 @@ export default function AccessibilityDeadlinesGuidePage() {
       <ContentArticle
         eyebrow="Field guide · compliance deadlines"
         title="The 2025–2028 accessibility deadlines"
+        mark="deadlines"
         dek="One deadline has already passed. Two more are on the calendar for U.S. state and local government sites. None of them are optional, and none of them wait for a scan to be convenient."
         lastReviewed="26 September 2026"
         toc={[

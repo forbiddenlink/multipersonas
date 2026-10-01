@@ -29,6 +29,7 @@ export default function CiGateGuidePage() {
       <ContentArticle
         eyebrow="Field guide · CI"
         title="Fail the build only on new defects"
+        mark="only on new defects"
         dek="Snapshot today's backlog once. After that every pull request fails only when axe-core finds a new critical or serious violation, including states behind a saved login session. Deterministic, no API key, and the existing backlog stays ignored until you clear it."
         lastReviewed="26 September 2026"
         toc={[

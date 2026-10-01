@@ -38,6 +38,7 @@ export default function DocsPage() {
       <ContentArticle
         eyebrow="Documentation"
         title="Install and run your first scan"
+        mark="first scan"
         dek="The CLI is the whole compliance path. It needs no API key and no account: scan drives a real Chromium, crawls every same-origin state it can reach, and runs axe-core at each one."
         lastReviewed="26 September 2026"
         toc={[...TOC]}

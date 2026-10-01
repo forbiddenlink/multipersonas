@@ -90,6 +90,7 @@ export default function CommonIssuesPage() {
       <ContentArticle
         eyebrow="Field guide · reference"
         title="10 most common accessibility issues"
+        mark="most common"
         dek={
           <>
             These mirror the failures found most often across the web. The{" "}

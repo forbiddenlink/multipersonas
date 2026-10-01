@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ExhibitHead } from "@/components/dossier/exhibit-head";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -34,13 +35,13 @@ export default function GradePage() {
     <div className="flex min-h-dvh flex-col pb-[env(safe-area-inset-bottom)]">
       <SiteHeader intent="grade" />
 
-      <main id="main" className="flex-1">
+      <main id="main" className="exhibits flex-1">
         <section className="border-b border-border">
           <div className="frame py-14 sm:py-20">
             <div className="max-w-[40rem]">
-              <p className="label-mono">Free · public pages · no signup</p>
-              <h1 className="display mt-4 text-[clamp(2.2rem,5vw,3.5rem)] leading-[1.05]">
-                Grade any public site in one pass.
+              <ExhibitHead label="Free · public pages · no signup" />
+              <h1 className="display mt-8 text-[clamp(2.2rem,5vw,3.5rem)] leading-[1.05]">
+                Grade any public site <span className="mark-sweep">in one pass.</span>
               </h1>
               <p className="mt-5 max-w-[36rem] text-lg leading-relaxed text-muted-foreground">
                 Enter a URL. We crawl what a stranger can reach without logging in, run{" "}
@@ -66,11 +67,11 @@ export default function GradePage() {
 
         <section aria-labelledby="what-you-get-heading" className="section-y bg-card border-b border-border">
           <div className="frame">
-            <p className="label-mono">What comes back</p>
-            <h2 id="what-you-get-heading" className="display mt-3 max-w-2xl text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+            <ExhibitHead label="What comes back" />
+            <h2 id="what-you-get-heading" className="display mt-8 max-w-2xl text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
               A finding you can hand to a client, not a percentage you have to defend.
             </h2>
-            <ol className="mt-12 border-t-2 border-foreground">
+            <ol className="mt-10 border-t border-border">
               {WHAT_YOU_GET.map((item) => (
                 <li
                   key={item.n}
@@ -89,10 +90,11 @@ export default function GradePage() {
 
         <section aria-labelledby="scope-heading" className="section-y-sm">
           <div className="frame">
-            <h2 id="scope-heading" className="label-mono">
+            <ExhibitHead label="Limits" />
+            <h2 id="scope-heading" className="mt-6 font-semibold">
               What this scan doesn&apos;t see
             </h2>
-            <p className="mt-3 max-w-[36rem] leading-relaxed text-muted-foreground">
+            <p className="mt-2 max-w-[36rem] leading-relaxed text-muted-foreground">
               Public pages only. It never sees behind a login, a PDF, or a real checkout flow:
               the states where most accessibility risk sits. For that, run the{" "}
               <Link href="/docs" className="text-link">

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { ExhibitHead } from "@/components/dossier/exhibit-head";
 import { WaitlistForm } from "@/components/waitlist-form";
 import { UnlockFoundingAccessButton } from "@/components/unlock-founding-access-button";
 import { SeverityChip } from "@/components/forensic/severity-chip";
@@ -93,14 +94,14 @@ export default function ForAgenciesPage() {
       <JsonLd data={faqSchema(AGENCY_FAQS)} />
       <SiteHeader intent="waitlist" />
 
-      <main id="main" className="flex-1">
+      <main id="main" className="exhibits flex-1">
         {/* ── Hero: the claim, one primary CTA, the at-a-glance strip. ── */}
         <section className="border-b border-border">
           <div className="frame grid gap-12 py-14 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center lg:gap-16 lg:py-20">
             <div className="min-w-0">
               <p className="label-mono">For agencies and freelance studios</p>
               <h1 className="display mt-5 text-[clamp(2.3rem,4.8vw,3.8rem)] leading-[1.03]">
-                Every client site is your liability now.
+                Every client site is <span className="mark-sweep">your liability</span> now.
               </h1>
               <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-muted-foreground">
                 Personaudit runs <span className="font-medium text-foreground">axe-core</span> at
@@ -156,11 +157,11 @@ export default function ForAgenciesPage() {
         {/* ── Workflow: scan, hand over the case file, retest to prove the fix. ── */}
         <section aria-labelledby="workflow-heading" className="section-y">
           <div className="frame">
-            <p className="label-mono">Your workflow</p>
-            <h2 id="workflow-heading" className="display mt-3 max-w-2xl text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+            <ExhibitHead label="Your workflow" />
+            <h2 id="workflow-heading" className="display mt-8 max-w-2xl text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
               Three steps to a case file you can put in front of a client.
             </h2>
-            <ol className="mt-12 border-t-2 border-foreground">
+            <ol className="mt-10 border-t border-border">
               {WORKFLOW.map((w) => (
                 <li
                   key={w.n}
@@ -175,7 +176,7 @@ export default function ForAgenciesPage() {
                     tabIndex={0}
                     role="region"
                     aria-label={`${w.title} command`}
-                    className="min-w-0 self-start overflow-x-auto whitespace-pre rounded-sm border border-border bg-card px-4 py-3 font-mono text-[13px] leading-relaxed text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                    className="min-w-0 self-start sm:overflow-x-auto whitespace-pre-wrap break-words rounded-sm border border-border bg-card px-4 py-3 font-mono text-[13px] sm:whitespace-pre leading-relaxed text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
                   >
                     {w.cmd}
                   </pre>
@@ -199,6 +200,7 @@ export default function ForAgenciesPage() {
         {/* ── One place, every client — the roster as a ledger, not cards. ── */}
         <section aria-labelledby="roster-heading" className="border-y border-border bg-card section-y">
           <div className="frame">
+            <ExhibitHead label="One place, every client" className="mb-8" />
             <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-end">
               <h2 id="roster-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
                 Stop re-running a single-site scanner twenty times.
@@ -259,10 +261,11 @@ export default function ForAgenciesPage() {
 
         {/* ── White-label: reports carry the agency's name, not ours. ── */}
         <section aria-labelledby="whitelabel-heading" className="section-y">
-          <div className="frame grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
+          <div className="frame">
+          <ExhibitHead label="Agency founding" />
+          <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
             <div>
-              <p className="label-mono">Agency founding</p>
-              <h2 id="whitelabel-heading" className="display mt-3 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+              <h2 id="whitelabel-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
                 The report leaves with your name on it.
               </h2>
               <p className="mt-5 max-w-md leading-relaxed text-muted-foreground">
@@ -291,12 +294,14 @@ export default function ForAgenciesPage() {
               </p>
             </div>
           </div>
+          </div>
         </section>
 
         {/* ── Honesty: not an overlay, not a substitute for disabled testers. ── */}
         <section aria-labelledby="honesty-heading" className="border-t border-border bg-card section-y">
           <div className="frame-narrow">
-            <h2 id="honesty-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+            <ExhibitHead label="Our position" />
+            <h2 id="honesty-heading" className="display mt-8 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
               We don&apos;t sell a fix. We sell the truth.
             </h2>
             <div className="mt-6 space-y-4 font-serif text-[1.0625rem] leading-relaxed text-muted-foreground">
@@ -324,8 +329,8 @@ export default function ForAgenciesPage() {
         {/* ── FAQ ── */}
         <section aria-labelledby="faq-heading" className="section-y">
           <div className="frame-narrow">
-            <p className="label-mono">Before you pay</p>
-            <h2 id="faq-heading" className="display mt-3 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+            <ExhibitHead label="Before you pay" />
+            <h2 id="faq-heading" className="display mt-8 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
               The questions a serious buyer actually asks.
             </h2>
             <div className="mt-10 border-t border-border">
@@ -347,10 +352,11 @@ export default function ForAgenciesPage() {
 
         {/* ── Early access / founding checkout. ── */}
         <section id="early-access" className="scroll-mt-20 border-t border-border bg-card section-y">
-          <div className="frame grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
+          <div className="frame">
+          <ExhibitHead label="Founding access" />
+          <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
             <div>
-              <p className="label-mono">Founding access</p>
-              <h2 className="display mt-3 text-[clamp(1.9rem,4vw,3rem)] leading-[1.08]">
+              <h2 className="display text-[clamp(1.9rem,4vw,3rem)] leading-[1.08]">
                 {FOUNDING_CHECKOUT_OPEN
                   ? "$199 a month. One price, no sales call."
                   : "Help shape the agency workspace."}
@@ -404,6 +410,7 @@ export default function ForAgenciesPage() {
                 </div>
               )}
             </div>
+          </div>
           </div>
         </section>
       </main>

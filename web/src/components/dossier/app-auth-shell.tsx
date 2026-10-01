@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { BatesSerial } from "@/components/dossier/exhibit-head";
 import { Wordmark } from "@/components/forensic/wordmark";
 
 const REASONS = [
@@ -54,6 +55,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
               </li>
             ))}
           </ol>
+          <BatesSerial n="0007" className="mt-6 block text-right" />
         </div>
       </div>
     </div>
