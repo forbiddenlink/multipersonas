@@ -28,3 +28,40 @@ export function isClientAbortedStream(error: unknown): boolean {
           : "";
   return message.trim() === CLIENT_ABORTED_STREAM;
 }
+
+/**
+ * Minimal structural view of a Sentry event: enough to read exception frames
+ * without importing SDK types into this pure module.
+ */
+interface EventLike {
+  exception?: {
+    values?: Array<{
+      type?: string;
+      stacktrace?: { frames?: Array<{ filename?: string; abs_path?: string }> };
+    }>;
+  };
+}
+
+/**
+ * The CSP forbids `unsafe-eval` on purpose, and the app never calls eval or
+ * `new Function`. An `EvalError` whose every frame is `<anonymous>` (code run
+ * from a string) or the Sentry SDK's own wrapper is therefore not our code: it
+ * is a browser extension, automation tool or crawler injecting a script into
+ * the page and tripping the CSP we set (PERSONAUDIT-WEB-2).
+ *
+ * Narrow on purpose: an EvalError with even one frame from the app bundle still
+ * reports, and so does any other error type.
+ */
+export function isInjectedEvalError(event: EventLike): boolean {
+  const values = event.exception?.values;
+  if (!values || values.length === 0) return false;
+  return values.every((value) => {
+    if (value.type !== "EvalError") return false;
+    const frames = value.stacktrace?.frames ?? [];
+    if (frames.length === 0) return false;
+    return frames.every((frame) => {
+      const file = frame.abs_path ?? frame.filename ?? "";
+      return file === "<anonymous>" || /[\\/]@sentry[\\/]|@sentry\+/.test(file);
+    });
+  });
+}
