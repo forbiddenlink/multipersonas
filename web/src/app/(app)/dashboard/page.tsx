@@ -60,7 +60,7 @@ export default async function DashboardPage() {
   const latestRun = audits[0] ?? null;
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-3xl">
       <ExhibitHead label="Case desk" className="mb-5" />
       <h1 className="display text-2xl leading-tight text-foreground">Dashboard</h1>
 
