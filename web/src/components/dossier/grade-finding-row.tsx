@@ -16,6 +16,7 @@ export function GradeFindingRow({
   nodes,
   wcagAA,
   location,
+  fixFirst,
 }: {
   ruleId: string;
   severity: Severity;
@@ -24,12 +25,15 @@ export function GradeFindingRow({
   wcagAA?: boolean;
   /** Where it was found — a URL, a state label, or both. */
   location?: string;
+  /** Top-priority finding: labelled so the reader knows where to start. */
+  fixFirst?: boolean;
 }) {
   const fix = ruleFix(ruleId);
 
   return (
     <li className="border-b border-border py-5">
       <div className="flex flex-wrap items-center gap-2">
+        {fixFirst ? <span className="redline-note uppercase tracking-[0.1em]">Fix first</span> : null}
         <SeverityChip severity={severity} />
         <span className="font-mono text-xs text-muted-foreground">{ruleId}</span>
         {fix ? (

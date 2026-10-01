@@ -9,6 +9,8 @@ import { SeverityChip } from "@/components/forensic/severity-chip";
 import { StateFlowTrail } from "@/components/dossier/state-flow-trail";
 import { SampleTaskSuccess } from "@/components/dossier/sample-task-success";
 import { PROBE_LEDGER } from "@/lib/probe-ledger";
+import { PLANS } from "@/lib/plans";
+import { isSoloCheckoutOpen } from "@/lib/founding-checkout";
 
 // Canonical only — title/description are inherited from the root layout default.
 export const metadata: Metadata = {
@@ -60,6 +62,7 @@ const DEADLINES = [
 
 
 export default function Home() {
+  const SOLO_OPEN = isSoloCheckoutOpen();
   return (
     <div className="flex min-h-dvh flex-col pb-[env(safe-area-inset-bottom)]">
       <SiteHeader />
@@ -81,7 +84,7 @@ export default function Home() {
               </p>
               <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
                 <Link
-                  href="#scan"
+                  href="/grade"
                   className="inline-flex h-12 items-center justify-center rounded-sm bg-primary px-6 text-[0.9375rem] font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
                 >
                   Grade a site free
@@ -90,6 +93,12 @@ export default function Home() {
                   Read a sample client report
                 </Link>
               </div>
+              {/* Named only when Solo checkout can take payment, like the agency page does. */}
+              {SOLO_OPEN ? (
+                <p className="mt-4 text-sm text-muted-foreground text-balance">
+                  Grading is free. The hosted workspace starts at ${PLANS.solo.monthlyUsd} a month.
+                </p>
+              ) : null}
               <dl className="mt-12 grid max-w-md grid-cols-3 gap-4 border-t border-border pt-5" aria-label="At a glance">
                 <div>
                   <dt className="label-mono">Engine</dt>

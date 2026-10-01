@@ -471,3 +471,43 @@
     margin: 18mm;
   }
 }
+
+/* Grade result (grade/[token]): a printed grade is the case file alone, on white paper in
+ * the light-theme ink, whatever theme the screen is in. No site chrome, no calls to action;
+ * the page carries its own graded-URL and date line (`.grade-print-meta`). */
+.grade-print-meta {
+  display: none;
+}
+@media print {
+  .grade-print-root {
+    --background: #ffffff;
+    --card: #ffffff;
+    --card-foreground: oklch(0.22 0.025 262);
+    --foreground: oklch(0.22 0.025 262);
+    --muted-foreground: oklch(0.46 0.022 262);
+    --border: oklch(0.855 0.02 84);
+    --severity-critical: oklch(0.5 0.19 28);
+    --severity-serious: oklch(0.52 0.12 52);
+    --severity-moderate: oklch(0.5 0.095 82);
+    --severity-minor: oklch(0.47 0.035 262);
+    --redline: oklch(0.5 0.19 28);
+    --stamp: oklch(0.5 0.19 28);
+    background: #ffffff;
+    color: var(--foreground);
+  }
+  .grade-print-root > header,
+  .grade-print-root > footer,
+  .grade-print-hide {
+    display: none !important;
+  }
+  .grade-print-root .sheet {
+    box-shadow: none !important;
+    border-color: var(--border);
+  }
+  .grade-print-meta {
+    display: block;
+  }
+  .grade-print-root li {
+    break-inside: avoid;
+  }
+}

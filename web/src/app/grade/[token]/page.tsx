@@ -17,6 +17,9 @@ import { EmptyPrompt } from "@/components/forensic/empty-prompt";
 import { createClient } from "@/lib/supabase/server";
 import type { GradeReport } from "@engine/grader/score";
 
+// Rules arrive sorted by weight, so the first few critical or serious ones are where to start.
+const FIX_FIRST_COUNT = 3;
+
 // Dynamic per-scan metadata so a shared grade link previews the real domain + grade in
 // Slack/iMessage/Twitter. Always noindex: the URL is an unguessable capability token, not
 // an indexable page — letting search engines crawl it would both leak the graded result
@@ -79,11 +82,14 @@ export default async function GradeResultPage({
   })();
 
   return (
-    <div className="flex min-h-dvh flex-col pb-[env(safe-area-inset-bottom)]">
+    <div className="grade-print-root flex min-h-dvh flex-col pb-[env(safe-area-inset-bottom)]">
       <SiteHeader intent="grade" />
 
       <main id="main" className="flex-1">
         <div className="frame-narrow py-14 sm:py-20">
+          <p className="grade-print-meta font-mono text-sm">
+            Graded {scan.entry_url} on {gradedOn(scan.created_at)}
+          </p>
           <div className="file-tab">
             <span>Case file</span>
             <span className="text-foreground/40">·</span>
@@ -127,6 +133,12 @@ export default async function GradeResultPage({
   );
 }
 
+// UTC calendar date, so the printed line does not depend on the server's timezone.
+function gradedOn(createdAt: string): string {
+  const d = new Date(createdAt);
+  return Number.isNaN(d.getTime()) ? "an unknown date" : d.toISOString().slice(0, 10);
+}
+
 function GradeReportView({
   token,
   host,
@@ -152,7 +164,7 @@ function GradeReportView({
             {report.pagesScanned} page{report.pagesScanned === 1 ? "" : "s"}
           </p>
         </div>
-        <div className="ml-auto shrink-0">
+        <div className="grade-print-hide ml-auto shrink-0">
           <GradeCopyLink token={token} />
         </div>
       </header>
@@ -163,9 +175,10 @@ function GradeReportView({
         <section>
           <p className="label-mono">Findings</p>
           <ul className="mt-4 border-t border-border">
-            {report.rules.map((rule) => (
+            {report.rules.map((rule, i) => (
               <GradeFindingRow
                 key={rule.id}
+                fixFirst={i < FIX_FIRST_COUNT && (rule.impact === "critical" || rule.impact === "serious")}
                 ruleId={rule.id}
                 severity={rule.impact}
                 help={rule.help}
@@ -207,14 +220,18 @@ function GradeReportView({
       <GradeCoverage report={report} />
 
       {/* Embed badge + share link */}
-      <GradeBadgeEmbed token={token} host={host} />
+      <div className="grade-print-hide">
+        <GradeBadgeEmbed token={token} host={host} />
+      </div>
 
       {/* Next steps + the actual conversion ask. Never a compliance claim. */}
-      <GradeNextSteps
-        signedIn={signedIn}
-        pagesScanned={report.pagesScanned}
-        entryUrl={entryUrl}
-      />
+      <div className="grade-print-hide">
+        <GradeNextSteps
+          signedIn={signedIn}
+          pagesScanned={report.pagesScanned}
+          entryUrl={entryUrl}
+        />
+      </div>
     </div>
   );
 }
