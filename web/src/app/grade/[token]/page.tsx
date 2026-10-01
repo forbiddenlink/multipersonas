@@ -225,13 +225,12 @@ function GradeReportView({
       </div>
 
       {/* Next steps + the actual conversion ask. Never a compliance claim. */}
-      <div className="grade-print-hide">
-        <GradeNextSteps
-          signedIn={signedIn}
-          pagesScanned={report.pagesScanned}
-          entryUrl={entryUrl}
-        />
-      </div>
+      {/* The checklist prints; the conversion buttons inside it carry grade-print-hide. */}
+      <GradeNextSteps
+        signedIn={signedIn}
+        pagesScanned={report.pagesScanned}
+        entryUrl={entryUrl}
+      />
     </div>
   );
 }

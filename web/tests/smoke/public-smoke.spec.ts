@@ -103,3 +103,41 @@ test("print emulation hides site chrome and shows the graded-URL line", async ({
   await expect(footer).toBeHidden();
   await expect(meta).toBeVisible();
 });
+
+// Dark mode must not leak its pale --primary onto white paper: the A/B verdict stamp reads it.
+test("printed verdict stamp keeps AA contrast on white in dark mode", async ({ page }) => {
+  await useTheme(page, "dark");
+  await page.goto("/", { waitUntil: "load" });
+  await page.evaluate(() => {
+    const root = document.querySelector("main")?.parentElement;
+    root?.classList.add("grade-print-root");
+    const stamp = document.createElement("div");
+    stamp.className = "stamp";
+    stamp.style.color = "var(--primary)";
+    stamp.textContent = "A";
+    document.querySelector("main")?.prepend(stamp);
+  });
+  await page.emulateMedia({ media: "print" });
+  const rgb = await page.evaluate(() => {
+    const el = document.querySelector(".stamp") as HTMLElement;
+    const paint = (css: string) => {
+      const c = document.createElement("canvas");
+      c.width = c.height = 1;
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = css;
+      ctx.fillRect(0, 0, 1, 1);
+      return Array.from(ctx.getImageData(0, 0, 1, 1).data).slice(0, 3);
+    };
+    const bg = getComputedStyle(document.querySelector(".grade-print-root")!).backgroundColor;
+    return { fg: paint(getComputedStyle(el).color), bg: paint(bg) };
+  });
+  const lum = (c: number[]) => {
+    const [r, g, b] = c.map((v) => {
+      const s = (v ?? 0) / 255;
+      return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+    }) as [number, number, number];
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const [hi, lo] = [lum(rgb.fg), lum(rgb.bg)].sort((a, b) => b - a) as [number, number];
+  expect((hi + 0.05) / (lo + 0.05)).toBeGreaterThanOrEqual(4.5);
+});

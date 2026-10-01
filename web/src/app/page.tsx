@@ -382,8 +382,10 @@ export default function Home() {
               </h2>
               <p className="mt-4 max-w-lg leading-relaxed text-muted-foreground">
                 Grade the public site now. Run the CLI behind the login tonight. Hand over the
-                report tomorrow. Enterprise platforms sell annual contracts; Solo is $39 a month,
-                and the CLI is free.
+                report tomorrow.{" "}
+                {SOLO_OPEN
+                  ? `Enterprise platforms sell annual contracts; Solo is $${PLANS.solo.monthlyUsd} a month, and the CLI is free.`
+                  : "The CLI is free."}
               </p>
             </div>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">

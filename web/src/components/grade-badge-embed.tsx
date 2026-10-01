@@ -1,15 +1,17 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export function GradeBadgeEmbed({ token, host }: { token: string; host: string }) {
   const [copyError, setCopyError] = useState<string | null>(null);
   const [copiedFormat, setCopiedFormat] = useState<"md" | "html" | null>(null);
 
-  const origin =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "https://personaudit.com";
+  // Server and first client render must match, so the real origin is applied after mount.
+  // Reading window during render made the snippet text differ and threw hydration error 418.
+  const [origin, setOrigin] = useState("https://personaudit.com");
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   const badgeUrl = `${origin}/api/grade/${token}/badge`;
   const resultUrl = `${origin}/grade/${token}`;
