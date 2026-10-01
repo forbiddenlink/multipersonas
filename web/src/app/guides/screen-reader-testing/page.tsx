@@ -60,6 +60,7 @@ export default function ScreenReaderTestingPage() {
         })}
       />
       <ContentArticle
+        tryIt
         eyebrow="Field guide · manual testing"
         title="Screen reader testing guide"
         mark="Screen reader"

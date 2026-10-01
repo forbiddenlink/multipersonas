@@ -11,7 +11,7 @@ type Status = "idle" | "submitting" | "success" | "already" | "error";
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 const SITE_BANDS = [
-  { value: "", label: "How many client sites do you ship?" },
+  { value: "", label: "How many client sites?" },
   { value: "1", label: "Just mine / one site" },
   { value: "2-5", label: "2–5 sites" },
   { value: "6-20", label: "6–20 sites" },

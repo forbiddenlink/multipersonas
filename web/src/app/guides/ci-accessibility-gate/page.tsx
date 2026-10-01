@@ -27,6 +27,7 @@ export default function CiGateGuidePage() {
         })}
       />
       <ContentArticle
+        tryIt
         eyebrow="Field guide · CI"
         title="Fail the build only on new defects"
         mark="only on new defects"

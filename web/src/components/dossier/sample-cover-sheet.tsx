@@ -10,7 +10,7 @@ export function SampleCoverSheet({ axeVersion, preparedOn }: { axeVersion: strin
     <header className="border-b-2 border-foreground pb-6">
       <p className="label-mono">Accessibility evidence report · sample</p>
       <h1 className="display mt-2 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.05]">
-        {SAMPLE_TARGET.host}
+        <span className="mark-sweep">{SAMPLE_TARGET.host}</span>
       </h1>
       <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
         <div>

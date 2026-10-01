@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AuthShell, AuthCardTab, AuthFormError } from "@/components/dossier/app-auth-shell";
+import { AuthShell, AuthCardTab, AuthFormError, RESET_STEPS } from "@/components/dossier/app-auth-shell";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -41,7 +41,7 @@ export default function ForgotPasswordPage() {
   if (sent) {
     return (
       <main id="main">
-        <AuthShell>
+        <AuthShell reasonsTitle="What happens next" reasons={RESET_STEPS} serial="0009">
           <div className="sheet w-full max-w-sm">
             <AuthCardTab route="reset-password" />
             <div className="px-5 py-6 text-center">
@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <main id="main">
-      <AuthShell>
+      <AuthShell reasonsTitle="What happens next" reasons={RESET_STEPS} serial="0009">
         <div className="sheet w-full max-w-sm">
           <AuthCardTab route="reset-password" />
           <div className="px-5 py-6">

@@ -25,25 +25,47 @@ const REASONS = [
   },
 ] as const;
 
+/** The password-reset path, in order. Shown instead of the sign-in reasons on the reset pages. */
+export const RESET_STEPS = [
+  { n: "1", title: "Enter your account email", body: "Use the address you signed up with." },
+  { n: "2", title: "Open the reset link", body: "We email a link to that address." },
+  { n: "3", title: "Choose a new password", body: "Then sign in as usual." },
+] as const;
+
 /**
  * Split layout for every /auth/* page. Left: the form sheet (children), which
  * carries its own CardHeaderBar + fields — this component only supplies the
  * frame. Right (lg+): the reason to have an account at all. Mobile: form only,
  * top of the page, no reasons column.
  */
-export function AuthShell({ children }: { children: ReactNode }) {
+export function AuthShell({
+  children,
+  reasonsTitle = "Why sign in",
+  reasons = REASONS,
+  serial = "0007",
+}: {
+  children: ReactNode;
+  reasonsTitle?: string;
+  reasons?: readonly { n: string; title: string; body: string }[];
+  /** Bates serial for this page, so each auth page carries its own number. */
+  serial?: string;
+}) {
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
-      <div className="flex items-center justify-center px-4 py-10 sm:px-6">
+      <div className="flex flex-col items-center justify-start px-4 py-8 sm:px-6 lg:pt-28">
+        <div className="mb-6 flex w-full max-w-md items-baseline justify-between lg:hidden">
+          <Wordmark className="text-foreground" />
+          <BatesSerial n={serial} />
+        </div>
         {children}
       </div>
 
-      <div className="hidden border-l border-border bg-card lg:flex lg:flex-col lg:justify-center lg:px-14 xl:px-20">
+      <div className="hidden border-l border-border bg-card lg:flex lg:flex-col lg:justify-start lg:px-14 lg:pt-28 xl:px-20">
         <div className="max-w-sm">
           <Wordmark className="text-foreground" />
-          <p className="label-mono mt-8">Why sign in</p>
+          <p className="label-mono mt-8">{reasonsTitle}</p>
           <ol className="mt-4 divide-y divide-border border-y border-border">
-            {REASONS.map((r) => (
+            {reasons.map((r) => (
               <li key={r.n} className="flex gap-4 py-4">
                 <span className="display shrink-0 text-lg leading-none text-muted-foreground">
                   {r.n}
@@ -55,7 +77,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
               </li>
             ))}
           </ol>
-          <BatesSerial n="0007" className="mt-6 block text-right" />
+          <BatesSerial n={serial} className="mt-6 block text-right" />
         </div>
       </div>
     </div>

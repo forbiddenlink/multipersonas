@@ -3,7 +3,7 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { GradeForm } from "@/components/grade-form";
-import { ExhibitHead } from "@/components/dossier/exhibit-head";
+import { BatesSerial, ExhibitHead } from "@/components/dossier/exhibit-head";
 import { WcagCitation } from "@/components/forensic/wcag-citation";
 import { buttonVariants } from "@/components/ui/button";
 import { JsonLd, faqSchema } from "@/components/json-ld";
@@ -146,17 +146,43 @@ export default function PricingPage() {
 
       <main id="main" className="exhibits flex-1">
         {/* ── Hero ── */}
-        <section className="section-y border-b border-border">
+        <section className="section-y-sm border-b border-border">
           <div className="frame">
             <ExhibitHead label="Pricing" />
-            <h1 className="display mt-8 max-w-2xl text-[clamp(2.2rem,4.6vw,3.5rem)] leading-[1.05]">
-              The part that proves compliance <span className="mark-sweep">is free.</span>
-            </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-              The CLI runs axe-core at every state it reaches, including behind a login, with
-              no API key and no account. You pay when you want that evidence kept, scheduled,
-              and exportable for a client, not for the scan itself.
-            </p>
+            <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center lg:gap-16">
+              <div className="min-w-0">
+                <h1 className="display max-w-2xl text-[clamp(2.2rem,4.6vw,3.5rem)] leading-[1.05]">
+                  The part that proves compliance <span className="mark-sweep">is free.</span>
+                </h1>
+                <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
+                  The CLI runs axe-core at every state it reaches, including behind a login, with
+                  no API key and no account. You pay when you want that evidence kept, scheduled,
+                  and exportable for a client, not for the scan itself.
+                </p>
+              </div>
+              <nav aria-label="Plans at a glance" className="sheet min-w-0 p-6">
+                <p className="label-mono">Plans at a glance</p>
+                <ul className="mt-4 divide-y divide-border border-y border-border">
+                  {TIERS.map((tier) => (
+                    <li key={tier.id}>
+                      <a
+                        href={`#${tier.id}`}
+                        className="flex items-baseline justify-between gap-4 rounded-sm py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                      >
+                        <span className="font-semibold">{tier.name}</span>
+                        <span className="font-mono text-sm tabular-nums">
+                          {tier.price}
+                          <span className="ml-1 text-muted-foreground">{tier.cadence}</span>
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-right">
+                  <BatesSerial n="0003" />
+                </p>
+              </nav>
+            </div>
           </div>
         </section>
 
@@ -183,7 +209,7 @@ export default function PricingPage() {
                       </span>
                     </p>
                     {tier.id !== "free" && !openFor[tier.id] ? (
-                      <p className="redline-note mt-3 uppercase tracking-[0.1em]">
+                      <p className="redline-note mt-3">
                         Not open yet. This is the launch price.
                       </p>
                     ) : null}
@@ -207,7 +233,7 @@ export default function PricingPage() {
                         foundingOpen ? (
                           <UnlockFoundingAccessButton className={PRIMARY_CTA} label="Unlock founding access" />
                         ) : (
-                          <Link href="/for-agencies#early-access" className={OUTLINE_CTA}>
+                          <Link href="/for-agencies#early-access" className={PRIMARY_CTA}>
                             Request founding access
                           </Link>
                         )

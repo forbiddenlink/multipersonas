@@ -8,7 +8,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
-import { AuthShell, AuthCardTab, AuthFormError } from "@/components/dossier/app-auth-shell";
+import { AuthShell, AuthCardTab, AuthFormError, RESET_STEPS } from "@/components/dossier/app-auth-shell";
 
 function validatePassword(v: string): string | undefined {
   const issues: string[] = [];
@@ -69,7 +69,7 @@ export default function UpdatePasswordPage() {
   if (done) {
     return (
       <main id="main">
-        <AuthShell>
+        <AuthShell reasonsTitle="What happens next" reasons={RESET_STEPS} serial="0010">
           <div className="sheet w-full max-w-sm">
             <AuthCardTab route="update-password" />
             <div className="px-5 py-6 text-center">
@@ -87,7 +87,7 @@ export default function UpdatePasswordPage() {
 
   return (
     <main id="main">
-      <AuthShell>
+      <AuthShell reasonsTitle="What happens next" reasons={RESET_STEPS} serial="0010">
         <div className="sheet w-full max-w-sm">
           <AuthCardTab route="update-password" />
           <div className="px-5 py-6">

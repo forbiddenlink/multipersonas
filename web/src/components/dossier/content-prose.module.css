@@ -33,6 +33,48 @@
   margin-top: 0;
 }
 
+/* Signature move 1 in long-form: every section opens as the next exhibit, with the
+ * ink tab on a 2px rule and a Bates-style serial, numbered by the same CSS counter
+ * the page header started (ContentArticle sets the scope). */
+.prose h2:not(:global(.sr-only)) {
+  counter-increment: exhibit;
+  position: relative;
+  margin-top: 3.6em;
+  padding-top: 1.15rem;
+  border-top: 2px solid var(--foreground);
+}
+.prose h2:not(:global(.sr-only)):first-child {
+  margin-top: 1.6em;
+}
+.prose h2:not(:global(.sr-only))::before {
+  content: "Exhibit " counter(exhibit, upper-alpha);
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translateY(-100%);
+  padding: 0.3rem 0.8rem 0.35rem;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--foreground);
+  color: var(--background);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.prose h2:not(:global(.sr-only))::after {
+  content: "PA-0426-" counter(exhibit, decimal-leading-zero);
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translateY(-130%);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  color: var(--muted-foreground);
+}
+
 .prose h3 {
   margin-top: 2.1em;
   margin-bottom: 0.5em;
@@ -177,6 +219,13 @@
   line-height: 1.65;
   color: var(--foreground);
   white-space: pre;
+}
+/* Phone: wrap commands instead of hiding the end of them behind a horizontal scroll. */
+@media (max-width: 639px) {
+  .codePre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
 }
 
 .codeLabel {

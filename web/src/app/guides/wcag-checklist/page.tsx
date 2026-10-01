@@ -68,6 +68,7 @@ export default function WcagChecklistPage() {
         })}
       />
       <ContentArticle
+        tryIt
         eyebrow="Field guide · reference"
         title="WCAG 2.2 AA checklist"
         mark="2.2 AA"

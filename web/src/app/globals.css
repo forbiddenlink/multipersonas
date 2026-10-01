@@ -314,8 +314,8 @@
 /* Redline margin note — the annotator's voice. */
 .redline-note {
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.75rem;
-  line-height: 1.35;
+  font-size: 0.8125rem;
+  line-height: 1.4;
   color: var(--redline);
 }
 

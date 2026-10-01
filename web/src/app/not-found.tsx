@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { BatesSerial } from "@/components/dossier/exhibit-head";
+import { Wordmark } from "@/components/forensic/wordmark";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -12,6 +13,9 @@ export default function NotFound() {
   return (
     <main id="main" className="flex min-h-dvh items-center justify-center px-4 py-16">
       <div className="w-full max-w-md">
+        <Link href="/" className="mb-6 inline-block rounded-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ring)]">
+          <Wordmark className="text-lg" />
+        </Link>
         <div className="file-tab ml-5">
           <span>Case not found</span>
         </div>
@@ -33,13 +37,13 @@ export default function NotFound() {
             </Link>
             <Link
               href="/grade"
-              className="inline-flex h-10 items-center justify-center rounded-sm border border-border px-5 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:border-foreground/25 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              className="inline-flex h-10 items-center justify-center rounded-sm border border-foreground/60 px-5 text-sm font-medium text-foreground transition-colors duration-150 hover:border-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               Grade a site free
             </Link>
             <Link
               href="/docs"
-              className="text-link inline-flex h-10 items-center px-1 text-sm"
+              className="text-link inline-flex h-10 items-center text-sm"
             >
               Read the CLI docs
             </Link>

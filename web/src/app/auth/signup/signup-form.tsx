@@ -187,7 +187,7 @@ export function SignupForm() {
 
   if (success) {
     return (
-      <AuthShell>
+      <AuthShell reasonsTitle="Why an account" serial="0008">
         <div className="sheet w-full max-w-sm">
           <AuthCardTab route="create-account" />
           <div className="px-5 py-6 text-center">
@@ -209,7 +209,7 @@ export function SignupForm() {
   }
 
   return (
-    <AuthShell>
+    <AuthShell reasonsTitle="Why an account" serial="0008">
       <div className="sheet w-full max-w-sm">
         <AuthCardTab route="create-account" />
         <div className="px-5 py-6">
@@ -331,6 +331,18 @@ export function SignupForm() {
             </svg>
             Sign up with GitHub
           </Button>
+
+          <p className="text-center text-xs leading-relaxed text-muted-foreground">
+            By creating an account you accept the{" "}
+            <Link href="/terms" className="text-link">
+              Terms
+            </Link>{" "}
+            and the{" "}
+            <Link href="/privacy" className="text-link">
+              Privacy policy
+            </Link>
+            .
+          </p>
 
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}

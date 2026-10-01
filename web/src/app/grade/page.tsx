@@ -3,6 +3,7 @@ import { ExhibitHead } from "@/components/dossier/exhibit-head";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { EvidenceSheet } from "@/components/dossier/evidence-sheet";
 import { GradeForm } from "@/components/grade-form";
 
 export const metadata: Metadata = {
@@ -37,8 +38,8 @@ export default function GradePage() {
 
       <main id="main" className="exhibits flex-1">
         <section className="border-b border-border">
-          <div className="frame py-14 sm:py-20">
-            <div className="max-w-[40rem]">
+          <div className="frame grid gap-14 py-14 sm:py-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)] lg:items-center lg:gap-16">
+            <div className="min-w-0 max-w-[40rem]">
               <ExhibitHead label="Free · public pages · no signup" />
               <h1 className="display mt-8 text-[clamp(2.2rem,5vw,3.5rem)] leading-[1.05]">
                 Grade any public site <span className="mark-sweep">in one pass.</span>
@@ -62,6 +63,7 @@ export default function GradePage() {
                 from a public test store first.
               </p>
             </div>
+            <EvidenceSheet className="mx-auto hidden w-full max-w-[32rem] lg:block lg:mr-0" />
           </div>
         </section>
 
@@ -71,7 +73,7 @@ export default function GradePage() {
             <h2 id="what-you-get-heading" className="display mt-8 max-w-2xl text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
               A finding you can hand to a client, not a percentage you have to defend.
             </h2>
-            <ol className="mt-10 border-t border-border">
+            <ol className="mt-10 max-w-3xl border-t border-border">
               {WHAT_YOU_GET.map((item) => (
                 <li
                   key={item.n}

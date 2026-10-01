@@ -15,7 +15,7 @@ const buttonVariants = cva(
         accent:
           "bg-primary text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)]",
         outline:
-          "border-foreground/25 bg-card text-foreground hover:border-foreground/60 aria-expanded:border-foreground/60",
+          "border-foreground/60 bg-card text-foreground hover:border-foreground aria-expanded:border-foreground/60",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:

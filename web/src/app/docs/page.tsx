@@ -36,6 +36,7 @@ export default function DocsPage() {
         })}
       />
       <ContentArticle
+        tryIt
         eyebrow="Documentation"
         title="Install and run your first scan"
         mark="first scan"

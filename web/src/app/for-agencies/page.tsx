@@ -235,7 +235,7 @@ export default function ForAgenciesPage() {
                 <tbody>
                   {CLIENT_LEDGER.map((c) => (
                     <tr key={c.domain} className="border-b border-border">
-                      <th scope="row" className="py-3 pr-4 font-mono text-[13px] font-normal break-all">
+                      <th scope="row" className="min-w-[10.5rem] py-3 pr-4 font-mono text-[13px] font-normal">
                         {c.domain}
                       </th>
                       <td className="py-3">

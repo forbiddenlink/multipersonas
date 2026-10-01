@@ -26,6 +26,7 @@ export default function AccessibilityDeadlinesGuidePage() {
         })}
       />
       <ContentArticle
+        tryIt
         eyebrow="Field guide · compliance deadlines"
         title="The 2025–2028 accessibility deadlines"
         mark="deadlines"

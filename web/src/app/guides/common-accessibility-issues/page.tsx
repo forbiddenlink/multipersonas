@@ -88,6 +88,7 @@ export default function CommonIssuesPage() {
         })}
       />
       <ContentArticle
+        tryIt
         eyebrow="Field guide · reference"
         title="10 most common accessibility issues"
         mark="most common"

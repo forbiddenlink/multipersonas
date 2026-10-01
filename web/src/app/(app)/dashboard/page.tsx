@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ExhibitHead } from "@/components/dossier/exhibit-head";
 import Link from "next/link";
 import { AuditForm } from "@/components/audit-form";
 import { AuditHistory } from "@/components/audit-history";
@@ -60,6 +61,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="max-w-2xl">
+      <ExhibitHead label="Case desk" className="mb-5" />
       <h1 className="display text-2xl leading-tight text-foreground">Dashboard</h1>
 
       {latestRun ? (
@@ -118,17 +120,22 @@ export default async function DashboardPage() {
       {canRunPersonas ? (
         <AuditForm key={user?.id} userId={user?.id} submitLabel="Run audit" />
       ) : (
-        <p className="text-sm text-muted-foreground">
-          Persona task-success runs are part of Pro.{" "}
-          <Link href="/grade" className="text-link">
-            Run a free grade
-          </Link>{" "}
-          or{" "}
-          <Link href="/for-agencies#early-access" className="text-link">
-            see founding access
-          </Link>
-          .
-        </p>
+        <div className="sheet flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+            Persona task-success runs are part of Pro. The deterministic grade of a public site is free.
+          </p>
+          <div className="flex shrink-0 flex-col gap-3 sm:items-end">
+            <Link
+              href="/grade"
+              className="inline-flex h-10 items-center justify-center rounded-sm bg-primary px-4 text-sm font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+            >
+              Run a free grade
+            </Link>
+            <Link href="/for-agencies#early-access" className="text-link text-sm">
+              See founding access
+            </Link>
+          </div>
+        </div>
       )}
 
       <BoxDivider label="saved grades" className="my-5" />

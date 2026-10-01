@@ -233,7 +233,7 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
                 aria-controls={panelId}
                 tabIndex={active ? 0 : -1}
                 onClick={() => setIndex(i)}
-                className={`relative flex flex-col rounded-xs border p-2.5 text-left transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
+                className={`relative flex min-w-0 flex-col rounded-xs border p-2 text-left sm:p-2.5 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
                   active
                     ? "border-[var(--primary)] bg-muted/60 text-foreground"
                     : "border-border bg-card text-muted-foreground hover:bg-muted/40"
@@ -245,7 +245,7 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
                     {b.label}
                   </span>
                 </div>
-                <span className="mt-1 min-w-0 break-words font-mono text-xs font-medium text-foreground">
+                <span className="mt-1 min-w-0 break-words font-mono text-[11px] font-medium text-foreground sm:text-xs">
                   {f.state}
                 </span>
               </button>

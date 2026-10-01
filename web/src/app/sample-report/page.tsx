@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BatesSerial } from "@/components/dossier/exhibit-head";
+import { ExhibitHead } from "@/components/dossier/exhibit-head";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -46,14 +46,18 @@ export default function SampleReportPage() {
     <div className="flex min-h-dvh flex-col pb-[env(safe-area-inset-bottom)]">
       <SiteHeader intent="grade" />
 
-      <main id="main" className="flex-1">
+      <main id="main" className="exhibits flex-1">
         <div className="report-print-root frame-narrow py-14 sm:py-20">
-          <div className="report-print-hide flex items-baseline justify-between gap-4">
-            <p className="label-mono">Sample report · read before you scan</p>
-            <BatesSerial n="0002" className="shrink-0" />
-          </div>
+          <ExhibitHead label="Sample report · read before you scan" className="report-print-hide" />
           <p className="redline-note mt-2 max-w-xl leading-relaxed">
             Sample report. Real probe of the SauceDemo test store, not a customer.
+          </p>
+          <p className="report-print-hide mt-2 text-sm text-muted-foreground">
+            Want this for your own site?{" "}
+            <Link href="/grade" className="text-link">
+              Grade a public site free
+            </Link>
+            .
           </p>
 
           <div className="sheet mt-6 p-6 sm:p-8">
