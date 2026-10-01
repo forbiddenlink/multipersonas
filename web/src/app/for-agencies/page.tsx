@@ -176,7 +176,7 @@ export default function ForAgenciesPage() {
                     tabIndex={0}
                     role="region"
                     aria-label={`${w.title} command`}
-                    className="min-w-0 self-start sm:overflow-x-auto whitespace-pre-wrap break-words rounded-sm border border-border bg-card px-4 py-3 font-mono text-[13px] sm:whitespace-pre leading-relaxed text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                    className="min-w-0 self-start overflow-x-auto whitespace-pre rounded-sm border border-border bg-card px-4 py-3 font-mono text-[13px] leading-relaxed text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
                   >
                     {w.cmd}
                   </pre>

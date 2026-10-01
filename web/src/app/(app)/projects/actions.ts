@@ -143,7 +143,7 @@ export async function upsertProjectScheduleAction(
 
   const plan = await getSessionPlan(supabase, user.id);
   if (!planAllowsPersonas(plan)) {
-    redirect(`/projects/${projectId}?error=${encodeURIComponent("Scheduled scans are a Pro feature.")}`);
+    redirect(`/projects/${projectId}?error=${encodeURIComponent("Scheduled scans come with the Solo and Agency plans.")}`);
   }
 
   const intervalRaw = String(formData.get("interval") ?? "weekly");

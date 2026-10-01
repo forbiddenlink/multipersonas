@@ -10,6 +10,7 @@ import { SeverityChip } from "@/components/forensic/severity-chip";
 import { severityMeta, SEVERITY_ORDER } from "@/components/forensic/severity";
 import { ExportButton } from "./export-button";
 import styles from "./report.module.css";
+import { ConformanceTable } from "./conformance-table";
 
 export const metadata: Metadata = {
   title: "Accessibility report",
@@ -231,7 +232,7 @@ export default async function ReportPage({
                       {report.task ? (persona.goalCompleted ? "Text observed" : "Not verified") : (persona.goalCompleted ? "Reached" : "Blocked")}
                     </div>
                     <div className={styles.countLabel}>
-                      {name} · {role} · {persona.steps} steps · {persona.verdictStates} verdict states
+                      {name} · {role} · {persona.steps} steps · {persona.verdictStates} {persona.verdictStates === 1 ? "verdict state" : "verdict states"}
                     </div>
                   </div>
                 );
@@ -247,24 +248,24 @@ export default async function ReportPage({
               Priority combines axe severity with persona task impact. It is a planning score,
               not a conformance score.
             </p>
-            <table className={styles.table} tabIndex={0} aria-label="Fix first priorities">
-              <thead>
-                <tr>
-                  <th style={{ width: "12%" }}>Score</th>
-                  <th style={{ width: "34%" }}>Issue</th>
-                  <th style={{ width: "18%" }}>Severity</th>
-                  <th style={{ width: "36%" }}>Why first</th>
+            <table className={styles.table} data-stack tabIndex={0} aria-label="Fix first priorities" role="table">
+              <thead role="rowgroup">
+                <tr role="row">
+                  <th role="columnheader" style={{ width: "12%" }}>Score</th>
+                  <th role="columnheader" style={{ width: "34%" }}>Issue</th>
+                  <th role="columnheader" style={{ width: "18%" }}>Severity</th>
+                  <th role="columnheader" style={{ width: "36%" }}>Why first</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody role="rowgroup">
                 {priorityVerdicts.map((v) => {
                   const meta = SEVERITY_META[v.severity as Severity] ?? SEVERITY_META.minor;
                   return (
-                    <tr key={v.id}>
-                      <td className={styles.sev}>{v.priorityScore}</td>
-                      <td>{v.title}</td>
-                      <td style={{ color: meta.color }}>{meta.label}</td>
-                      <td>{v.priorityReason}</td>
+                    <tr role="row" key={v.id}>
+                      <td role="cell" className={styles.sev} data-label="Score">{v.priorityScore}</td>
+                      <td role="cell" data-label="Issue">{v.title}</td>
+                      <td role="cell" data-label="Severity" style={{ color: meta.color }}>{meta.label}</td>
+                      <td role="cell" data-label="Why first">{v.priorityReason}</td>
                     </tr>
                   );
                 })}
@@ -324,61 +325,37 @@ export default async function ReportPage({
               </div>
             ))}
           </div>
-          <table className={styles.table} tabIndex={0} aria-label="Conformance by criterion">
-            <thead>
-              <tr>
-                <th style={{ width: "40%" }}>Success criterion</th>
-                <th style={{ width: "8%" }}>Level</th>
-                <th style={{ width: "22%" }}>Conformance</th>
-                <th style={{ width: "30%" }}>Remarks</th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.conformance.rows.map((row) => (
-                <tr key={row.code}>
-                  <td>
-                    <strong>{row.code}</strong> {row.name}
-                  </td>
-                  <td>{row.level}</td>
-                  <td style={{ color: CONFORMANCE_META[row.status].color, whiteSpace: "nowrap" }}>
-                    {CONFORMANCE_META[row.status].label}
-                    {row.violationCount > 0 ? ` (${row.violationCount})` : ""}
-                  </td>
-                  <td>{row.remarks}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <ConformanceTable rows={report.conformance.rows} meta={CONFORMANCE_META} />
         </section>
 
         {totalViolations > 0 && (
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>Verdicts ({totalViolations})</h2>
-            <table className={styles.table} tabIndex={0} aria-label="Verdicts">
-              <thead>
-                <tr>
-                  <th style={{ width: "32%" }}>Rule</th>
-                  <th style={{ width: "16%" }}>WCAG SC</th>
-                  <th style={{ width: "10%" }}>Severity</th>
-                  <th style={{ width: "20%" }}>Found at</th>
-                  <th style={{ width: "22%" }}>Recommendation</th>
+            <table className={styles.table} data-stack tabIndex={0} aria-label="Verdicts" role="table">
+              <thead role="rowgroup">
+                <tr role="row">
+                  <th role="columnheader" style={{ width: "32%" }}>Rule</th>
+                  <th role="columnheader" style={{ width: "16%" }}>WCAG SC</th>
+                  <th role="columnheader" style={{ width: "10%" }}>Severity</th>
+                  <th role="columnheader" style={{ width: "20%" }}>Found at</th>
+                  <th role="columnheader" style={{ width: "22%" }}>Recommendation</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody role="rowgroup">
                 {report.verdicts.map((v) => {
                   const meta =
                     SEVERITY_META[v.severity as Severity] ?? SEVERITY_META.minor;
                   const glyph = severityMeta(v.severity).glyph;
                   return (
-                    <tr key={v.id}>
-                      <td>
+                    <tr role="row" key={v.id}>
+                      <td role="cell" data-label="Rule">
                         <div className={styles.ruleTitle}>{v.title}</div>
                         {v.ruleId && (
                           <div className={styles.ruleId}>Rule: {v.ruleId}</div>
                         )}
                         <div className={styles.desc}>{v.description}</div>
                       </td>
-                      <td className={styles.sc}>
+                      <td role="cell" className={styles.sc} data-label="WCAG SC">
                         {v.criteria.length > 0 ? (
                           v.criteria.map((c) => (
                             <div key={c.code} title={c.name}>
@@ -389,13 +366,13 @@ export default async function ReportPage({
                           <span className={styles.scDash}>–</span>
                         )}
                       </td>
-                      <td className={styles.sev} style={{ color: meta.color }}>
+                      <td role="cell" className={styles.sev} data-label="Severity" style={{ color: meta.color }}>
                         <span aria-hidden="true" className={styles.sevGlyph}>
                           {glyph}
                         </span>
                         {meta.label}
                       </td>
-                      <td className={styles.desc}>
+                      <td role="cell" className={styles.desc} data-label="Found at">
                         {v.locations.length > 0 ? (
                           v.locations.map((loc) => (
                             <div key={loc} className={styles.ruleId}>
@@ -406,7 +383,7 @@ export default async function ReportPage({
                           <span className={styles.scDash}>–</span>
                         )}
                       </td>
-                      <td className={styles.rec}>{v.recommendation}</td>
+                      <td role="cell" className={styles.rec} data-label="Fix">{v.recommendation}</td>
                     </tr>
                   );
                 })}
@@ -425,22 +402,22 @@ export default async function ReportPage({
               assistive technology, and representative user tasks before making a
               conformance claim.
             </p>
-            <table className={styles.table} tabIndex={0} aria-label="Criteria that need manual testing">
-              <thead>
-                <tr>
-                  <th style={{ width: "24%" }}>Success criterion</th>
-                  <th style={{ width: "8%" }}>Level</th>
-                  <th style={{ width: "68%" }}>Manual check</th>
+            <table className={styles.table} data-stack tabIndex={0} aria-label="Criteria that need manual testing" role="table">
+              <thead role="rowgroup">
+                <tr role="row">
+                  <th role="columnheader" style={{ width: "24%" }}>Success criterion</th>
+                  <th role="columnheader" style={{ width: "8%" }}>Level</th>
+                  <th role="columnheader" style={{ width: "68%" }}>Manual check</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody role="rowgroup">
                 {manualReviewRows.map((row) => (
-                  <tr key={row.code}>
-                    <td>
+                  <tr role="row" key={row.code}>
+                    <td role="cell" data-label="Criterion">
                       <strong>{row.code}</strong> {row.name}
                     </td>
-                    <td>{row.level}</td>
-                    <td>{row.remarks}</td>
+                    <td role="cell" data-label="Level">{row.level}</td>
+                    <td role="cell" data-label="Manual check">{row.remarks}</td>
                   </tr>
                 ))}
               </tbody>

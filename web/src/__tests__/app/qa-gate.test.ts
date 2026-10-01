@@ -55,7 +55,9 @@ describe("route titles and headings", () => {
 
 describe("report tables", () => {
   it("are keyboard-focusable and named, since they scroll sideways on phones", () => {
-    const src = read("src/app/(app)/audits/[id]/report/page.tsx");
+    const src =
+      read("src/app/(app)/audits/[id]/report/page.tsx") +
+      read("src/app/(app)/audits/[id]/report/conformance-table.tsx");
     const tables = src.match(/<table className=\{styles\.table\}[^>]*>/g) ?? [];
     expect(tables.length).toBe(4);
     for (const t of tables) {

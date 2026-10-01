@@ -17,7 +17,7 @@ export function RunDiff({ diff }: { diff: RunRegression }) {
   const hasPrevious = diff.previous != null;
 
   return (
-    <div className="sheet overflow-hidden font-mono text-sm">
+    <div className="sheet overflow-hidden text-sm">
       <div className="border-b border-border px-4 py-2.5 label-mono">
         <span>Retest</span>
         {hasPrevious ? (
@@ -34,7 +34,7 @@ export function RunDiff({ diff }: { diff: RunRegression }) {
       <div className="grid grid-cols-3 divide-x divide-border border-b border-border text-center">
         <div className="px-3 py-3">
           <p
-            className="text-xl tabular-nums font-medium"
+            className="font-mono text-xl tabular-nums font-medium"
             style={{
               color:
                 diff.newDefects.length > 0
@@ -50,7 +50,7 @@ export function RunDiff({ diff }: { diff: RunRegression }) {
         </div>
         <div className="px-3 py-3">
           <p
-            className="text-xl tabular-nums font-medium"
+            className="font-mono text-xl tabular-nums font-medium"
             style={{
               color:
                 diff.cleared.length > 0
@@ -65,7 +65,7 @@ export function RunDiff({ diff }: { diff: RunRegression }) {
           </p>
         </div>
         <div className="px-3 py-3">
-          <p className="text-xl tabular-nums font-medium text-foreground">
+          <p className="font-mono text-xl tabular-nums font-medium text-foreground">
             {diff.unchangedCount}
           </p>
           <p className="mt-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">

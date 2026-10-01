@@ -203,7 +203,7 @@ export default function Home() {
                     tabIndex={0}
                     role="region"
                     aria-label={`${p.title} command`}
-                    className="min-w-0 self-start whitespace-pre-wrap break-words rounded-sm sm:overflow-x-auto sm:whitespace-pre border border-border bg-card px-4 py-3 font-mono text-[13px] leading-relaxed text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+                    className="min-w-0 self-start overflow-x-auto whitespace-pre rounded-sm border border-border bg-card px-4 py-3 font-mono text-[13px] leading-relaxed text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
                   >
                     {p.cmd}
                   </pre>

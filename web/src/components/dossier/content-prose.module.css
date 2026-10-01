@@ -212,7 +212,13 @@
   overflow-x: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--card);
+  /* scroll cue: edge shadows appear only where more code lies beyond the edge */
+  background:
+    linear-gradient(to right, var(--card) 30%, transparent) left center / 2rem 100% no-repeat local,
+    linear-gradient(to left, var(--card) 30%, transparent) right center / 2rem 100% no-repeat local,
+    linear-gradient(to right, oklch(0 0 0 / 0.22), transparent) left center / 0.7rem 100% no-repeat scroll,
+    linear-gradient(to left, oklch(0 0 0 / 0.22), transparent) right center / 0.7rem 100% no-repeat scroll,
+    var(--card);
   padding: 1rem;
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 0.8125rem;
@@ -220,14 +226,6 @@
   color: var(--foreground);
   white-space: pre;
 }
-/* Phone: wrap commands instead of hiding the end of them behind a horizontal scroll. */
-@media (max-width: 639px) {
-  .codeWrap {
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-  }
-}
-
 .codePre code {
   background: none;
   padding: 0;
