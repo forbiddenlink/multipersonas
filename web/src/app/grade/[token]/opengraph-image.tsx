@@ -26,7 +26,7 @@ export default async function Image({
   const { token } = await params;
   const [scan, fonts] = await Promise.all([getGraderScan(token), ogFonts()]);
 
-  let host = "a website";
+  let host: string | null = null;
   if (scan?.entry_url) {
     try {
       host = new URL(scan.entry_url).host;
@@ -36,7 +36,10 @@ export default async function Image({
   }
 
   const report = (scan?.report as unknown as GradeReport) ?? null;
-  const grade = report?.grade ?? "–";
+  // No finished report (unknown token, scan still running, or the service key unset):
+  // show a neutral brand card. Never print a grade or "0/100" the scan did not earn.
+  const hasResult = report?.grade != null;
+  const grade = report?.grade ?? "";
   const score = report?.score ?? 0;
   const violations = report?.totalViolations ?? 0;
   const color = gradeColor(grade);
@@ -104,7 +107,7 @@ export default async function Image({
         >
           <div style={{ display: "flex", flexDirection: "column", maxWidth: "660px" }}>
             <div style={{ fontSize: "16px", color: MUTED, marginBottom: "10px", letterSpacing: "0.04em" }}>
-              Public scan result for
+              {hasResult ? "Public scan result for" : "Public accessibility grade"}
             </div>
             <div
               style={{
@@ -116,21 +119,28 @@ export default async function Image({
                 fontFamily: fonts.some((f) => f.name === "Newsreader") ? "Newsreader" : "serif",
               }}
             >
-              {host}
+              {hasResult ? (host ?? "a website") : "Grade any public site with axe-core"}
             </div>
-            <div style={{ display: "flex", gap: "18px", marginTop: "22px", fontSize: "17px", color: MUTED }}>
-              <span>
-                Score: <strong style={{ color: INK }}>{score}/100</strong>
-              </span>
-              <span>·</span>
-              <span>
-                Violations: <strong style={{ color: INK }}>{violations}</strong>
-              </span>
-              <span>·</span>
-              <span>axe-core</span>
-            </div>
+            {hasResult ? (
+              <div style={{ display: "flex", gap: "18px", marginTop: "22px", fontSize: "17px", color: MUTED }}>
+                <span>
+                  Score: <strong style={{ color: INK }}>{score}/100</strong>
+                </span>
+                <span>·</span>
+                <span>
+                  Violations: <strong style={{ color: INK }}>{violations}</strong>
+                </span>
+                <span>·</span>
+                <span>axe-core</span>
+              </div>
+            ) : (
+              <div style={{ display: "flex", marginTop: "22px", fontSize: "17px", color: MUTED }}>
+                Free, deterministic, and shareable. Run a grade at personaudit.com.
+              </div>
+            )}
           </div>
 
+          {hasResult && (
           <div
             style={{
               display: "flex",
@@ -148,6 +158,7 @@ export default async function Image({
             <span style={{ fontSize: "68px", fontWeight: 700, color, lineHeight: 1 }}>{grade}</span>
             <span style={{ fontSize: "12px", color, letterSpacing: "0.1em" }}>VERDICT</span>
           </div>
+          )}
         </div>
 
         {/* Footer */}
