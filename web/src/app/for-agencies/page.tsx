@@ -216,7 +216,7 @@ export default function ForAgenciesPage() {
       aria-label="Client roster table"
       className="mt-10 min-w-0 overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
     >
-              <table className="w-full min-w-[30rem] border-collapse text-left text-sm">
+              <table className="w-full sm:min-w-[30rem] border-collapse text-left text-sm">
                 <caption className="sr-only">
                   Illustrative example of a multi-client project roster, not real client data
                 </caption>

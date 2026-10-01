@@ -154,7 +154,7 @@ export function LoginForm() {
                 </button>
               </div>
               <div className="flex justify-end">
-                <Link href="/auth/forgot-password" className="text-link text-sm">
+                <Link href="/auth/forgot-password" className="text-link text-sm inline-flex min-h-10 items-center">
                   Forgot password?
                 </Link>
               </div>
@@ -190,7 +190,7 @@ export function LoginForm() {
             </Link>
           </p>
           <p className="text-center text-xs text-muted-foreground">
-            <Link href="/" className="text-link">
+            <Link href="/" className="text-link inline-flex min-h-10 items-center">
               &larr; Back to home
             </Link>
           </p>

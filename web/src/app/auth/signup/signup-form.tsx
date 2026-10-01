@@ -339,7 +339,7 @@ export function SignupForm() {
             </Link>
           </p>
           <p className="text-center text-xs text-muted-foreground">
-            <Link href="/" className="text-link">
+            <Link href="/" className="text-link inline-flex min-h-10 items-center">
               &larr; Back to home
             </Link>
           </p>

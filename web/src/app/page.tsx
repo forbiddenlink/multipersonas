@@ -86,7 +86,7 @@ export default function Home() {
                 >
                   Grade a site free
                 </Link>
-                <Link href="/sample-report" className="text-link self-start text-[0.9375rem] sm:self-center">
+                <Link href="/sample-report" className="text-link self-start text-[0.9375rem] sm:self-center inline-flex min-h-10 items-center">
                   Read a sample client report
                 </Link>
               </div>
@@ -384,7 +384,7 @@ export default function Home() {
               >
                 Grade a site free
               </Link>
-              <Link href="/for-agencies" className="text-link text-[0.9375rem]">
+              <Link href="/for-agencies" className="text-link text-[0.9375rem] inline-flex min-h-10 items-center">
                 Agency plans
               </Link>
             </div>

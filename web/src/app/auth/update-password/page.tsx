@@ -167,7 +167,7 @@ export default function UpdatePasswordPage() {
               </form>
 
               <p className="text-center text-sm text-muted-foreground">
-                <Link href="/auth/login" className="text-link">
+                <Link href="/auth/login" className="text-link inline-flex min-h-10 items-center">
                   &larr; Back to sign in
                 </Link>
               </p>
