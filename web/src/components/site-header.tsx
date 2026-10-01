@@ -23,7 +23,7 @@ const NAV_LINK =
   "rounded-sm px-2.5 py-2 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
 
 const CTA_LINK =
-  "inline-flex h-9 items-center whitespace-nowrap rounded-sm bg-primary px-3.5 text-sm font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
+  "inline-flex h-11 items-center whitespace-nowrap sm:h-9 rounded-sm bg-primary px-3.5 text-sm font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
 
 /**
  * Marketing masthead. A thin file line above the nav names what the product is in

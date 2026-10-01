@@ -422,7 +422,7 @@ export function AuditForm({
           disabled={loading || !!pendingJobId}
           autoComplete="url"
           aria-label="Website URL to audit"
-          className="h-11 flex-1 rounded-sm border border-border bg-card px-4 text-base text-foreground transition-colors duration-150 placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] disabled:opacity-50 md:text-sm"
+          className="h-11 sm:flex-1 rounded-sm border border-border bg-card px-4 text-base text-foreground transition-colors duration-150 placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] disabled:opacity-50 md:text-sm"
         />
         <Button
           type="submit"

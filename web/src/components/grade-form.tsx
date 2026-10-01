@@ -140,7 +140,7 @@ export function GradeForm() {
             autoComplete="url"
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? `${hintId} ${errorId}` : hintId}
-            className="h-12 min-w-0 flex-1 rounded-sm border border-input bg-card px-4 font-mono text-base text-foreground transition-[border-color] duration-150 placeholder:text-muted-foreground hover:border-foreground/70 focus-visible:border-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] aria-invalid:border-[var(--redline)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-12 min-w-0 sm:flex-1 rounded-sm border border-input bg-card px-4 font-mono text-base text-foreground transition-[border-color] duration-150 placeholder:text-muted-foreground hover:border-foreground/70 focus-visible:border-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] aria-invalid:border-[var(--redline)] disabled:cursor-not-allowed disabled:opacity-60"
           />
           <Button
             type="submit"

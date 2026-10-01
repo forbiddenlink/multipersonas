@@ -131,7 +131,7 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
     <div className={`sheet overflow-hidden ${className}`} role="region" aria-label="Persona task-success replay, sample">
       {/* Dossier Case Header */}
       <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border bg-card p-4 sm:px-6">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-baseline gap-x-2">
           <p className="label-mono">Persona replay · {SAMPLE_TARGET.host}</p>
           <span className="font-mono text-xs text-muted-foreground">· step {index + 1} of {SAMPLE_REPLAY_FRAMES.length}</span>
         </div>
@@ -236,7 +236,7 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
                     : "border-border bg-card text-muted-foreground hover:bg-muted/40"
                 }`}
               >
-                <div className="flex items-center justify-between gap-1">
+                <div className="flex flex-col items-start gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-1">
                   <span className="font-mono text-[11px] font-bold tabular-nums">Step {f.step}</span>
                   <span className="font-mono text-[11px]" style={{ color: b.token }}>
                     {b.label}
@@ -251,7 +251,7 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
         </div>
 
         {/* Transport controls */}
-        <div className="mt-3 flex items-center justify-between border-t border-border pt-2.5 text-xs">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-border pt-2.5 text-xs">
           <div className="flex gap-2">
             <button
               type="button"
