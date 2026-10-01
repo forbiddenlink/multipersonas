@@ -140,7 +140,7 @@ export default function ForAgenciesPage() {
                   <li key={s.fact} className="grid gap-1 py-4 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:gap-4">
                     <p className="font-mono text-sm tabular-nums text-[var(--redline)]">
                       {s.fact}
-                      <sup className="ml-0.5 text-[10px] text-muted-foreground">{s.cite}</sup>
+                      <sup className="ml-0.5 text-[11px] text-muted-foreground">{s.cite}</sup>
                     </p>
                     <p className="text-[0.9375rem] leading-relaxed">{s.detail}</p>
                   </li>

@@ -39,7 +39,7 @@ export function GradeFindingRow({
             ))}
           </span>
         ) : !wcagAA ? (
-          <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+          <span className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
             best-practice
           </span>
         ) : null}

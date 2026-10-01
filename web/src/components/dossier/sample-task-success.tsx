@@ -171,7 +171,7 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
             {/* Inferred Frustration Gauge */}
             <div className="border-t border-border pt-3">
               <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-muted-foreground uppercase tracking-wider text-[10px]">
+                <span className="text-muted-foreground uppercase tracking-wider text-[11px]">
                   Inferred friction
                 </span>
                 <span className="font-bold tabular-nums" style={{ color: band.token }}>
@@ -238,7 +238,7 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
               >
                 <div className="flex items-center justify-between gap-1">
                   <span className="font-mono text-[11px] font-bold tabular-nums">Step {f.step}</span>
-                  <span className="font-mono text-[10px]" style={{ color: b.token }}>
+                  <span className="font-mono text-[11px]" style={{ color: b.token }}>
                     {b.label}
                   </span>
                 </div>

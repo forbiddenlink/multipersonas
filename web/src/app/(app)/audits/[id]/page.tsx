@@ -413,7 +413,7 @@ export default async function AuditDetailPage({
                     <p className="text-sm font-medium">{persona.name}</p>
                     <p className="text-xs text-muted-foreground">{persona.role}</p>
                   </div>
-                  <span className={`rounded-sm border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide ${persona.goalCompleted ? "border-[var(--severity-minor)] text-[var(--severity-minor)]" : "border-[var(--severity-critical)] text-[var(--severity-critical)]"}`}>
+                  <span className={`rounded-sm border px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide ${persona.goalCompleted ? "border-[var(--severity-minor)] text-[var(--severity-minor)]" : "border-[var(--severity-critical)] text-[var(--severity-critical)]"}`}>
                     {run.task_definition ? (persona.goalCompleted ? "text observed" : "not verified") : (persona.goalCompleted ? "reached" : "blocked")}
                   </span>
                 </div>
