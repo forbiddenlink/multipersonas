@@ -1,17 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState, useSyncExternalStore } from "react";
+
+const FALLBACK_ORIGIN = "https://personaudit.com";
+const subscribeNoop = () => () => {};
 
 export function GradeBadgeEmbed({ token, host }: { token: string; host: string }) {
   const [copyError, setCopyError] = useState<string | null>(null);
   const [copiedFormat, setCopiedFormat] = useState<"md" | "html" | null>(null);
 
-  // Server and first client render must match, so the real origin is applied after mount.
+  // Server and hydration renders use the fallback, then React re-renders with the real origin.
   // Reading window during render made the snippet text differ and threw hydration error 418.
-  const [origin, setOrigin] = useState("https://personaudit.com");
-  useEffect(() => {
-    setOrigin(window.location.origin);
-  }, []);
+  const origin = useSyncExternalStore(
+    subscribeNoop,
+    () => window.location.origin,
+    () => FALLBACK_ORIGIN,
+  );
 
   const badgeUrl = `${origin}/api/grade/${token}/badge`;
   const resultUrl = `${origin}/grade/${token}`;
