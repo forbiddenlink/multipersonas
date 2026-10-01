@@ -35,7 +35,7 @@ const ROUTES = [
 // script). Light regressions have bitten before (2026-07-30 dogfood), so scan both.
 const THEMES = ["dark", "light"];
 
-const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"];
+const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"];
 
 async function scan(browser, route, theme) {
   const context = await browser.newContext();

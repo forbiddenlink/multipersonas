@@ -67,9 +67,14 @@ jobs:
         working-directory: web
         run: pnpm build
 
-      - name: Start app and run the a11y dogfood
+      # The same running server also feeds the public smoke (axe incl. WCAG 2.2 AA, reflow at
+      # 390px with 200% text, zero console errors, grade print stylesheet). It shares this step
+      # so it never depends on a background process surviving a step boundary. Chromium only,
+      # no Supabase stack, no pixel baselines.
+      - name: Start app, run the a11y dogfood and the public smoke
         env:
           DOGFOOD_URL: http://localhost:3000
+          SMOKE_URL: http://localhost:3000
         run: |
           (cd web && pnpm exec next start -p 3000 &)
           for i in $(seq 1 60); do
@@ -77,3 +82,4 @@ jobs:
             sleep 1
           done
           node scripts/axe-dogfood.mjs
+          (cd web && pnpm exec playwright test -c playwright.smoke.config.ts)
