@@ -65,7 +65,7 @@ export function EvidenceSheet({ className = "" }: { className?: string }) {
         </footer>
       </article>
       </div>
-      <figcaption className="relative mt-4 flex items-baseline justify-between gap-4 pl-5 font-mono text-[11px] text-muted-foreground">
+      <figcaption className="relative mt-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pl-5 font-mono text-[11px] text-muted-foreground">
         <span>Real probe of the SauceDemo test store. Not a customer account.</span>
         <BatesSerial n="0001" className="shrink-0" />
       </figcaption>

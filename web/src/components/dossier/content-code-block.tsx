@@ -51,7 +51,7 @@ export function ContentCodeBlock({
         tabIndex={0}
         role="region"
         aria-label={label ? `${label} command` : "Command"}
-        className={styles.codePre}
+        className={`${styles.codePre} ${code.includes("\n") ? "" : styles.codeWrap}`}
       >
         <code>{code}</code>
       </pre>

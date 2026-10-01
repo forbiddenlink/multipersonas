@@ -370,6 +370,8 @@
 }
 .exhibit-tab::before {
   content: "Exhibit " counter(exhibit, upper-alpha);
+  flex-shrink: 0;
+  white-space: nowrap;
   padding-right: 0.5rem;
   border-right: 1px solid color-mix(in oklch, var(--background) 40%, transparent);
   font-weight: 600;

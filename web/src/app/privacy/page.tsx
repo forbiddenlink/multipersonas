@@ -12,9 +12,9 @@ export default function PrivacyPage() {
   return (
     <MarketingShell narrow={false}>
       <ContentArticle
-        eyebrow="The fine print"
-        title="Privacy policy"
-        mark="Privacy"
+        eyebrow="Privacy policy"
+        title="What we collect, and what we don't do"
+        mark="what we don't do"
         lastReviewed="23 September 2026"
         toc={[
           { id: "collect", label: "What we collect" },

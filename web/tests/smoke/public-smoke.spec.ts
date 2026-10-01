@@ -3,7 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 
 // The routes a first-time visitor reaches. Gated app routes need a session and are
 // covered by the e2e workflow instead.
-const ROUTES = ["/", "/grade", "/pricing", "/sample-report", "/for-agencies"];
+const ROUTES = ["/", "/grade", "/pricing", "/sample-report", "/for-agencies", "/docs", "/auth/login"];
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 async function useTheme(page: Page, theme: "light" | "dark") {
@@ -140,4 +140,36 @@ test("printed verdict stamp keeps AA contrast on white in dark mode", async ({ p
   };
   const [hi, lo] = [lum(rgb.fg), lum(rgb.bg)].sort((a, b) => b - a) as [number, number];
   expect((hi + 0.05) / (lo + 0.05)).toBeGreaterThanOrEqual(4.5);
+});
+
+// The redesign's signature moves must survive refactors: one highlighted claim phrase in
+// the page H1, and exhibit tabs on marketing and long-form pages.
+for (const route of ["/", "/pricing", "/for-agencies", "/grade", "/docs", "/guides/wcag-checklist"]) {
+  test(`${route} keeps the signature moves`, async ({ page }) => {
+    await page.goto(route, { waitUntil: "load" });
+    await expect(page.locator("h1 .mark-sweep")).toHaveCount(1);
+    await expect(page.locator(".exhibit-tab").first()).toBeVisible();
+  });
+}
+
+// The main action (grading a URL) is in the first screen of the home page on a phone.
+test("home grade field and button are above the fold at 390px", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/", { waitUntil: "load" });
+  const submit = page.getByRole("button", { name: "Grade this site" });
+  const box = await submit.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.y + box!.height).toBeLessThanOrEqual(844);
+});
+
+// Reduced motion gets the finished highlighter, not a sweep.
+test("reduced motion ends the highlighter sweep at once", async ({ browser }) => {
+  const context = await browser.newContext({ reducedMotion: "reduce" });
+  const page = await context.newPage();
+  await page.goto("/", { waitUntil: "load" });
+  const duration = await page
+    .locator("h1 .mark-sweep")
+    .evaluate((el) => getComputedStyle(el).animationDuration);
+  expect(Number.parseFloat(duration)).toBeLessThan(0.01);
+  await context.close();
 });

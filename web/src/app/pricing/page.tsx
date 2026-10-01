@@ -159,6 +159,9 @@ export default function PricingPage() {
                   no API key and no account. You pay when you want that evidence kept, scheduled,
                   and exportable for a client, not for the scan itself.
                 </p>
+                <Link href="/grade" className={`${PRIMARY_CTA} mt-8`}>
+                  Grade a site free
+                </Link>
               </div>
               <nav aria-label="Plans at a glance" className="sheet min-w-0 p-6">
                 <p className="label-mono">Plans at a glance</p>

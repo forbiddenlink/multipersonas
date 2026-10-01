@@ -3,18 +3,24 @@ import Link from "next/link";
 import { ExhibitHead } from "@/components/dossier/exhibit-head";
 
 /** A small sheet that points a reader of any guide at the main action. */
-function TryIt() {
+export type TryItProps = { title: string; body: string; href: string; label: string };
+const DEFAULT_TRY_IT: TryItProps = {
+  title: "Try it on a client site",
+  body: "A letter grade and every failing axe rule, free, no signup.",
+  href: "/grade",
+  label: "Grade a site free",
+};
+
+function TryIt({ copy }: { copy: TryItProps }) {
   return (
     <div className="sheet p-4">
-      <p className="label-mono">Try it on a client site</p>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-        A letter grade and every failing axe rule, free, no signup.
-      </p>
+      <p className="label-mono">{copy.title}</p>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{copy.body}</p>
       <Link
-        href="/grade"
+        href={copy.href}
         className="mt-3 inline-flex h-10 items-center rounded-sm bg-primary px-4 text-sm font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
       >
-        Grade a site free
+        {copy.label}
       </Link>
     </div>
   );
@@ -46,7 +52,7 @@ export function ContentArticle({
   /** One phrase inside `title` that gets the highlighter pass (signature move 2). */
   mark?: string;
   /** Show the free-grade prompt beside the index (wide) and after the article (narrow). */
-  tryIt?: boolean;
+  tryIt?: boolean | TryItProps;
   dek?: React.ReactNode;
   /** e.g. "26 September 2026" — rendered next to a "Last reviewed" label. */
   lastReviewed?: string;
@@ -115,14 +121,14 @@ export function ContentArticle({
                 ))}
               </ul>
             </nav>
-            {tryIt ? <TryIt /> : null}
+            {tryIt ? <TryIt copy={tryIt === true ? DEFAULT_TRY_IT : tryIt} /> : null}
             </div>
           </aside>
         ) : null}
       </div>
       {tryIt ? (
         <div className="mt-12 lg:hidden">
-          <TryIt />
+          <TryIt copy={tryIt === true ? DEFAULT_TRY_IT : tryIt} />
         </div>
       ) : null}
     </div>

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { BatesSerial } from "@/components/dossier/exhibit-head";
 import { Wordmark } from "@/components/forensic/wordmark";
 
@@ -52,7 +53,7 @@ export function AuthShell({
 }) {
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
-      <div className="flex flex-col items-center justify-start px-4 py-8 sm:px-6 lg:pt-28">
+      <div className="flex flex-col items-center justify-start px-4 py-8 sm:px-6 lg:pt-[14vh]">
         <div className="mb-6 flex w-full max-w-md items-baseline justify-between lg:hidden">
           <Wordmark className="text-foreground" />
           <BatesSerial n={serial} />
@@ -60,7 +61,7 @@ export function AuthShell({
         {children}
       </div>
 
-      <div className="hidden border-l border-border bg-card lg:flex lg:flex-col lg:justify-start lg:px-14 lg:pt-28 xl:px-20">
+      <div className="hidden border-l border-border bg-card lg:flex lg:flex-col lg:justify-start lg:px-14 lg:pt-[14vh] xl:px-20">
         <div className="max-w-sm">
           <Wordmark className="text-foreground" />
           <p className="label-mono mt-8">{reasonsTitle}</p>
@@ -77,6 +78,14 @@ export function AuthShell({
               </li>
             ))}
           </ol>
+          <p className="mt-6 border-l-2 border-foreground pl-4 text-sm leading-relaxed text-muted-foreground">
+            Scans you run in the CLI never upload your login session. What we keep, and for how
+            long, is in the{" "}
+            <Link href="/privacy" className="text-link">
+              privacy policy
+            </Link>
+            .
+          </p>
           <BatesSerial n={serial} className="mt-6 block text-right" />
         </div>
       </div>

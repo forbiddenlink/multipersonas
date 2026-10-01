@@ -22,6 +22,7 @@ import { getProjectSchedule, SCAN_INTERVALS } from "@/lib/schedules";
 import { FINDING_STATUS_LABELS, FINDING_STATUSES } from "@/lib/finding-workflow";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { DeleteProjectForm } from "../delete-project-form";
+import { ExhibitHead } from "@/components/dossier/exhibit-head";
 
 export const metadata: Metadata = {
   title: "Project",
@@ -108,6 +109,7 @@ export default async function ProjectDetailPage({
 
   return (
     <div className="max-w-2xl">
+      <ExhibitHead label="Client file" className="mb-5" />
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="font-mono text-xs text-muted-foreground">

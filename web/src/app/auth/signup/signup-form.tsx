@@ -338,7 +338,7 @@ export function SignupForm() {
               Terms
             </Link>{" "}
             and the{" "}
-            <Link href="/privacy" className="text-link">
+            <Link href="/privacy" className="text-link whitespace-nowrap">
               Privacy policy
             </Link>
             .

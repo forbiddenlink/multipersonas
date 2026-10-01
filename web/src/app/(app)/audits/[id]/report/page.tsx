@@ -90,10 +90,10 @@ export default async function ReportPage({
           preview independent of the app theme, so themed components (SeverityChip)
           live here in the chrome, never inside the print root. */}
       <div className={`${styles.toolbar} report-print-hide`}>
-        <div className="file-tab">
+        <div className="file-tab max-w-full flex-wrap gap-y-1">
           <span>Case {report.runId.slice(0, 8)}</span>
           <span className="text-foreground/70">·</span>
-          <span className="normal-case">{report.url}</span>
+          <span className="min-w-0 break-all normal-case">{report.url}</span>
           <span className="text-foreground/70">·</span>
           <span className="normal-case">{formatDate(report.auditDate)}</span>
           <span className="ml-auto normal-case text-[var(--redline)]">·&nbsp;

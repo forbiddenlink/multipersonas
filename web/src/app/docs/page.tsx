@@ -36,7 +36,12 @@ export default function DocsPage() {
         })}
       />
       <ContentArticle
-        tryIt
+        tryIt={{
+          title: "Next step",
+          body: "Fail the build when a serious violation appears.",
+          href: "/guides/ci-accessibility-gate",
+          label: "Set up the CI gate",
+        }}
         eyebrow="Documentation"
         title="Install and run your first scan"
         mark="first scan"

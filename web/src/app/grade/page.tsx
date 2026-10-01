@@ -63,17 +63,18 @@ export default function GradePage() {
                 from a public test store first.
               </p>
             </div>
-            <EvidenceSheet className="mx-auto hidden w-full max-w-[32rem] lg:block lg:mr-0" />
+            <EvidenceSheet className="mx-auto w-full max-w-[32rem] lg:mr-0" />
           </div>
         </section>
 
         <section aria-labelledby="what-you-get-heading" className="section-y bg-card border-b border-border">
           <div className="frame">
             <ExhibitHead label="What comes back" />
-            <h2 id="what-you-get-heading" className="display mt-8 max-w-2xl text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+            <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
+            <h2 id="what-you-get-heading" className="display max-w-md text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08] lg:sticky lg:top-24 lg:self-start">
               A finding you can hand to a client, not a percentage you have to defend.
             </h2>
-            <ol className="mt-10 max-w-3xl border-t border-border">
+            <ol className="border-t border-border">
               {WHAT_YOU_GET.map((item) => (
                 <li
                   key={item.n}
@@ -87,16 +88,18 @@ export default function GradePage() {
                 </li>
               ))}
             </ol>
+            </div>
           </div>
         </section>
 
         <section aria-labelledby="scope-heading" className="section-y-sm">
           <div className="frame">
             <ExhibitHead label="Limits" />
-            <h2 id="scope-heading" className="mt-6 font-semibold">
+            <div className="sheet margin-rule mt-8 max-w-3xl p-6 pl-12 sm:p-8 sm:pl-14">
+            <h2 id="scope-heading" className="display text-[clamp(1.5rem,2.6vw,1.9rem)] leading-tight">
               What this scan doesn&apos;t see
             </h2>
-            <p className="mt-2 max-w-[36rem] leading-relaxed text-muted-foreground">
+            <p className="mt-3 max-w-[36rem] leading-relaxed text-muted-foreground">
               Public pages only. It never sees behind a login, a PDF, or a real checkout flow:
               the states where most accessibility risk sits. For that, run the{" "}
               <Link href="/docs" className="text-link">
@@ -108,6 +111,7 @@ export default function GradePage() {
               </Link>
               .
             </p>
+            </div>
           </div>
         </section>
       </main>
