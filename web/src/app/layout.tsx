@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans, Newsreader } from "next/font/google";
+import { PALETTE, PALETTE_DARK } from "@/lib/og-palette";
 import { PostHogProvider } from "@/components/posthog-provider";
 import "./globals.css";
 
@@ -48,8 +49,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   colorScheme: "light dark",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f2e8" },
-    { media: "(prefers-color-scheme: dark)", color: "#12151d" },
+    { media: "(prefers-color-scheme: light)", color: PALETTE.desk },
+    { media: "(prefers-color-scheme: dark)", color: PALETTE_DARK.desk },
   ],
 };
 
