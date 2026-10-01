@@ -90,8 +90,10 @@ export default function Home() {
               </div>
               <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
                 Signed-in flows run in the{" "}
-                <Link href="/docs" className="text-link">free, keyless CLI</Link>. Want to see a
-                finished one first?{" "}
+                <Link href="/docs" className="text-link">free, keyless CLI</Link>. 
+                Persona task-success on public flows is part of{" "}
+                <Link href="/pricing" className="text-link">Solo</Link>. Want to see a finished
+                report first?{" "}
                 <Link href="/sample-report" className="text-link">Read a sample client report</Link>.
                 {SOLO_OPEN ? ` Grading is free. The hosted workspace starts at $${PLANS.solo.monthlyUsd} a month.` : null}
               </p>
