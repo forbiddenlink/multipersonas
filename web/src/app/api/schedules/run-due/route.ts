@@ -1,8 +1,16 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { killSwitchEnabled, DAILY_MODEL_CALL_CAP, CALLER_DAILY_CALL_CAP, CALLS_PER_PERSONA } from "@/lib/limits";
 
 export const dynamic = "force-dynamic";
+
+// Hash both sides so timingSafeEqual gets equal-length buffers and the
+// comparison time does not reveal how much of the secret a caller guessed.
+function bearerMatches(authorization: string, secret: string): boolean {
+  const digest = (value: string) => createHash("sha256").update(value).digest();
+  return timingSafeEqual(digest(authorization), digest(`Bearer ${secret}`));
+}
 
 async function runDueSchedules(request: Request) {
   const secret = process.env.CRON_SECRET;
@@ -14,7 +22,7 @@ async function runDueSchedules(request: Request) {
   }
 
   const authorization = request.headers.get("authorization") ?? "";
-  if (authorization !== `Bearer ${secret}`) {
+  if (!bearerMatches(authorization, secret)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
