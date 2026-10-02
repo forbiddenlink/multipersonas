@@ -305,16 +305,18 @@
     border: 1px solid #e5e7eb;
     border-radius: 0.25rem;
   }
+  /* Block, not a two-column grid: cells with several children (severity glyph + text,
+   * multiple locations) wrapped back into the label column as extra grid items. */
   .table[data-stack] td {
-    display: grid;
-    grid-template-columns: 6.5rem minmax(0, 1fr);
-    gap: 0.5rem;
+    display: block;
     padding: 0.25rem 0;
     border: 0;
     white-space: normal !important;
   }
   .table[data-stack] td::before {
     content: attr(data-label);
+    display: block;
+    margin-bottom: 0.125rem;
     font-family: var(--font-mono);
     font-size: 0.6875rem;
     text-transform: uppercase;
