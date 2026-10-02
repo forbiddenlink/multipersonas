@@ -44,6 +44,14 @@ describe("POST /api/schedules/run-due", () => {
     expect(mockRpc).not.toHaveBeenCalled();
   });
 
+  it("rejects a same-length wrong secret and a correct-prefix secret", async () => {
+    for (const secret of ["test-cron-secreX", "test-cron-secret-extra", "test-cron"]) {
+      const res = await POST(request(secret));
+      expect(res.status).toBe(401);
+    }
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
   it("honors the emergency kill switch before queueing scans", async () => {
     vi.stubEnv("AUDIT_KILL_SWITCH", "1");
     const res = await POST(request());
