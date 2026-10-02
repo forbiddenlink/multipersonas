@@ -124,6 +124,10 @@
   vertical-align: top;
 }
 
+.quietRow td {
+  color: #4b5563;
+}
+
 /* Keep a finding's row from splitting across a page break. */
 .table tr {
   break-inside: avoid;
@@ -278,21 +282,79 @@
     grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
   }
 
-  .table {
+  /* Restack each row into a card: label above value, no horizontal scroll. The head row
+   * stays in the accessibility tree (clipped, not display:none) and rows keep explicit
+   * roles in the markup, so table semantics survive display:block. */
+  .table[data-stack] {
+    display: block;
+  }
+  .table[data-stack] thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .table[data-stack] tbody,
+  .table[data-stack] tr {
+    display: block;
+  }
+  .table[data-stack] tr {
+    margin: 0 0 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.25rem;
+  }
+  /* Block, not a two-column grid: cells with several children (severity glyph + text,
+   * multiple locations) wrapped back into the label column as extra grid items. */
+  .table[data-stack] td {
+    display: block;
+    padding: 0.25rem 0;
+    border: 0;
+    white-space: normal !important;
+  }
+  .table[data-stack] td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.125rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6b7280;
+  }
+  /* The common, unremarkable row: one compact line, no label grid. */
+  .table[data-stack] tr.quietRow {
+    padding: 0.35rem 0.75rem;
+    border-color: #f3f4f6;
+    color: #4b5563;
+  }
+  .table[data-stack] tr.quietRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.75rem;
+  }
+  .table[data-stack] tr.quietRow td[data-label="Remarks"] {
+    display: none;
+  }
+  .table[data-stack] tr.quietRow td {
+    display: block;
+  }
+  .table[data-stack] tr.quietRow td[data-label="Level"]::before {
+    content: "Level ";
+  }
+  .table[data-stack] tr.quietRow td::before {
+    content: none;
+  }
+  .table[data-stack] tr.quietRow td[data-label="Conformance"] {
+    font-size: 0.75rem;
+  }
+
+  .table:not([data-stack]) {
     display: block;
     max-width: 100%;
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .table th,
-  .table td {
-    min-width: 8rem;
-  }
-
-  .table th:first-child,
-  .table td:first-child {
-    min-width: 12rem;
   }
 
   .footer {

@@ -22,6 +22,7 @@ import { getProjectSchedule, SCAN_INTERVALS } from "@/lib/schedules";
 import { FINDING_STATUS_LABELS, FINDING_STATUSES } from "@/lib/finding-workflow";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { DeleteProjectForm } from "../delete-project-form";
+import { ExhibitHead } from "@/components/dossier/exhibit-head";
 
 export const metadata: Metadata = {
   title: "Project",
@@ -44,7 +45,7 @@ export default async function ProjectDetailPage({
     "Could not update the project.",
     "Could not delete the project.",
     "Project not found.",
-    "Scheduled scans are a Pro feature.",
+    "Scheduled scans come with the Solo and Agency plans.",
     "Choose a valid scan interval.",
     "Could not save the scan schedule.",
   ]);
@@ -107,7 +108,8 @@ export default async function ProjectDetailPage({
   const saveScheduleWithId = upsertProjectScheduleAction.bind(null, project.id);
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-6xl">
+      <ExhibitHead label="Client file" className="mb-5" />
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="font-mono text-xs text-muted-foreground">
@@ -134,57 +136,29 @@ export default async function ProjectDetailPage({
           </p>
         )}
 
-      <BoxDivider label="task to test" className="my-5" />
-      <form action={saveTask} className="sheet space-y-3 p-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="task-goal">What should a visitor accomplish?</Label>
-          <textarea id="task-goal" name="goal" defaultValue={savedTask?.goal ?? ""} minLength={10} maxLength={1000}
-            placeholder="Find the service that fits a small business and reach the quote request form."
-            className="min-h-24 w-full rounded-sm border border-input bg-background p-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]" />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="task-success-text">Exact visible text expected on the final page</Label>
-          <Input id="task-success-text" name="successText" defaultValue={savedTask?.successText ?? ""} minLength={3} maxLength={240}
-            placeholder="Request a quote" aria-describedby="task-help" />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="task-expected-url">Expected final URL (optional)</Label>
-          <Input id="task-expected-url" name="expectedUrl" type="url" maxLength={2048}
-            defaultValue={savedTask?.version === 2 ? savedTask.expectedUrl ?? "" : ""}
-            placeholder="https://example.com/contact" aria-describedby="task-url-help" />
-          <p id="task-url-help" className="text-xs text-muted-foreground">
-            Use the same protocol, hostname, and port as the project URL. Require this exact destination, including its path, query, and fragment. Leave blank to check text on any reached page.
-          </p>
-        </div>
-        <label className="flex items-start gap-2 text-sm">
-          <input type="checkbox" name="requireNewText" className="mt-1"
-            defaultChecked={savedTask?.version === 2 && savedTask.requireNewText} />
-          <span>Require the expected text to be absent at the start and visible at the end</span>
-        </label>
-        <p id="task-help" className="text-xs text-muted-foreground">
-          Choose distinctive confirmation text. Use the additional checks to reject an old confirmation or the wrong destination. These observations do not prove that a transaction completed. Save before running.
-          Existing safeguards still prevent purchases and destructive actions. Do not include passwords or personal data.
-          Clear the text and URL fields and uncheck the additional check to return to the built-in goals. Past results keep the task they tested.
-        </p>
-        <SubmitButton variant="outline" size="sm">Save task</SubmitButton>
-      </form>
-
+      <div className="mt-2 grid gap-x-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:items-start">
+        <div className="min-w-0">
       <BoxDivider label="new scan for this project" className="my-5" />
 
       {canRunPersonas ? (
         <AuditForm key={`${user?.id}:${JSON.stringify(savedTask)}`} userId={user?.id} projectId={project.id} defaultUrl={project.url} submitLabel={savedTask ? "Test saved task" : "Run audit"} />
       ) : (
-        <p className="text-sm text-muted-foreground">
-          Persona task-success runs are part of Pro.{" "}
-          <Link href="/grade" className="text-link">
-            Run a free grade
-          </Link>{" "}
-          or{" "}
-          <Link href="/for-agencies#early-access" className="text-link">
-            see founding access
-          </Link>
-          .
-        </p>
+        <div>
+          <p className="text-sm text-muted-foreground">
+            Persona task-success runs come with the Solo and Agency plans. The free grade of a public page needs no plan.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+            <Link
+              href="/grade"
+              className="inline-flex h-10 items-center rounded-sm bg-primary px-4 text-sm font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+            >
+              Run a free grade
+            </Link>
+            <Link href="/for-agencies#early-access" className="text-link text-sm">
+              See founding access
+            </Link>
+          </div>
+        </div>
       )}
 
       {latestRun?.task_definition ? (
@@ -199,9 +173,9 @@ export default async function ProjectDetailPage({
 
       <div className="sheet space-y-4 p-4">
         <div className="grid gap-3 lg:grid-cols-[1fr_0.8fr]">
-          <div className="grid gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div>
-              <p className="label-mono">Latest open</p>
+              <p className="label-mono">Open now</p>
               <p className="mt-1 text-2xl font-semibold tabular-nums">{latestOpenCount}</p>
             </div>
             {FINDING_STATUSES.slice(1, 4).map((status) => (
@@ -242,6 +216,64 @@ export default async function ProjectDetailPage({
           </p>
         )}
       </div>
+
+      {regression ? (
+        <>
+          <BoxDivider label="since last run" className="my-5" />
+          <RunDiff diff={regression} />
+        </>
+      ) : null}
+
+      {findingsTrend.length >= 2 ? (
+        <>
+          <BoxDivider label="findings over time" className="my-5" />
+          <p className="mb-3 text-sm text-muted-foreground">
+            Axe findings detected in each of your last {findingsTrend.length} runs, oldest first.
+          </p>
+          <FindingsTrend rows={findingsTrend} />
+        </>
+      ) : null}
+
+      <BoxDivider label="saved runs" className="my-5" />
+
+      <AuditHistory audits={audits} />
+
+        </div>
+        <div className="min-w-0">
+      <BoxDivider label="task to test" className="my-5" />
+      <form action={saveTask} className="sheet space-y-3 p-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="task-goal">What should a visitor accomplish?</Label>
+          <textarea id="task-goal" name="goal" defaultValue={savedTask?.goal ?? ""} minLength={10} maxLength={1000}
+            placeholder="Find the service that fits a small business and reach the quote request form."
+            className="min-h-24 w-full rounded-sm border border-input bg-background p-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="task-success-text">Exact visible text expected on the final page</Label>
+          <Input id="task-success-text" name="successText" defaultValue={savedTask?.successText ?? ""} minLength={3} maxLength={240}
+            placeholder="Request a quote" aria-describedby="task-help" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="task-expected-url">Expected final URL (optional)</Label>
+          <Input id="task-expected-url" name="expectedUrl" type="url" maxLength={2048}
+            defaultValue={savedTask?.version === 2 ? savedTask.expectedUrl ?? "" : ""}
+            placeholder="https://example.com/contact" aria-describedby="task-url-help" />
+          <p id="task-url-help" className="text-xs text-muted-foreground">
+            Use the same protocol, hostname, and port as the project URL. Require this exact destination, including its path, query, and fragment. Leave blank to check text on any reached page.
+          </p>
+        </div>
+        <label className="flex items-start gap-2 text-sm">
+          <input type="checkbox" name="requireNewText" className="mt-1"
+            defaultChecked={savedTask?.version === 2 && savedTask.requireNewText} />
+          <span>Require the expected text to be absent at the start and visible at the end</span>
+        </label>
+        <p id="task-help" className="text-xs text-muted-foreground">
+          Choose distinctive confirmation text. Use the additional checks to reject an old confirmation or the wrong destination. These observations do not prove that a transaction completed. Save before running.
+          Existing safeguards still prevent purchases and destructive actions. Do not include passwords or personal data.
+          Clear the text and URL fields and uncheck the additional check to return to the built-in goals. Past results keep the task they tested.
+        </p>
+        <SubmitButton variant="outline" size="sm">Save task</SubmitButton>
+      </form>
 
       <BoxDivider label="scan schedule" className="my-5" />
 
@@ -290,31 +322,14 @@ export default async function ProjectDetailPage({
         </form>
       ) : (
         <div className="sheet p-4 text-sm text-muted-foreground">
-          Scheduled persona scans are included with Pro projects.
+          Scheduled persona scans come with the Solo and Agency plans.
         </div>
       )}
 
-      {regression ? (
-        <>
-          <BoxDivider label="since last run" className="my-5" />
-          <RunDiff diff={regression} />
-        </>
-      ) : null}
+        </div>
+      </div>
 
-      {findingsTrend.length >= 2 ? (
-        <>
-          <BoxDivider label="findings over time" className="my-5" />
-          <p className="mb-3 text-sm text-muted-foreground">
-            Axe findings detected in each of your last {findingsTrend.length} runs, oldest first.
-          </p>
-          <FindingsTrend rows={findingsTrend} />
-        </>
-      ) : null}
-
-      <BoxDivider label="saved runs" className="my-5" />
-
-      <AuditHistory audits={audits} />
-
+      <div className="max-w-xl">
       <BoxDivider label="edit project" className="my-5" />
 
       <form action={updateWithId} className="space-y-3">
@@ -344,6 +359,7 @@ export default async function ProjectDetailPage({
 
         <SubmitButton variant="outline" size="sm">Save changes</SubmitButton>
       </form>
+      </div>
     </div>
   );
 }

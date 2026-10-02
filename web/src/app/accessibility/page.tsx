@@ -15,6 +15,7 @@ export default function AccessibilityPage() {
       <ContentArticle
         eyebrow="The fine print"
         title="Accessibility statement"
+        mark="statement"
         lastReviewed="20 August 2026"
       >
         <p>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ExhibitHead } from "@/components/dossier/exhibit-head";
 import Link from "next/link";
 import { Suspense } from "react";
 import {
@@ -35,6 +36,7 @@ export default async function PersonasPage({
 
   return (
     <div>
+      <ExhibitHead label="Persona library" className="mb-5" />
       <div className="mb-1 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="display text-2xl leading-tight text-foreground">Personas</h1>
@@ -44,7 +46,7 @@ export default async function PersonasPage({
         </div>
         <Link
           href="/dashboard"
-          className="rounded-sm border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-foreground/25 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+          className="inline-flex h-10 items-center rounded-sm bg-primary px-4 text-sm font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
           Run an audit &rarr;
         </Link>

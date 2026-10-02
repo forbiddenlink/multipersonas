@@ -43,8 +43,9 @@ export function DeleteProjectForm({
   return (
     <Button
       type="button"
-      variant="destructive"
+      variant="outline"
       size="sm"
+      className="text-destructive"
       onClick={() => setConfirming(true)}
     >
       Delete project

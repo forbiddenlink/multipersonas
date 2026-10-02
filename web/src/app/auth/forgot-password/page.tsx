@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AuthShell, AuthCardTab, AuthFormError } from "@/components/dossier/app-auth-shell";
+import { AuthShell, AuthCardTab, AuthFormError, RESET_STEPS } from "@/components/dossier/app-auth-shell";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -41,7 +41,7 @@ export default function ForgotPasswordPage() {
   if (sent) {
     return (
       <main id="main">
-        <AuthShell>
+        <AuthShell reasonsTitle="What happens next" reasons={RESET_STEPS} serial="0009">
           <div className="sheet w-full max-w-sm">
             <AuthCardTab route="reset-password" />
             <div className="px-5 py-6 text-center">
@@ -63,13 +63,13 @@ export default function ForgotPasswordPage() {
 
   return (
     <main id="main">
-      <AuthShell>
+      <AuthShell reasonsTitle="What happens next" reasons={RESET_STEPS} serial="0009">
         <div className="sheet w-full max-w-sm">
           <AuthCardTab route="reset-password" />
           <div className="px-5 py-6">
             <div>
               <p className="label-mono">Locked out</p>
-              <h1 className="display mt-1.5 text-2xl leading-tight text-foreground">Reset your password</h1>
+              <h1 className="display mt-1.5 text-[1.9rem] leading-tight text-foreground">Reset <span className="mark-sweep">your password</span></h1>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 Enter your email and we&apos;ll send you a reset link.
               </p>

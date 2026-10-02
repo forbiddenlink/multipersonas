@@ -1,5 +1,6 @@
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { SAMPLE_VERDICTS } from "@/lib/sample-evidence";
+import { BatesSerial } from "@/components/dossier/exhibit-head";
 
 /**
  * Hero artifact: two stacked sheets from a real SauceDemo case file. The top sheet
@@ -57,15 +58,16 @@ export function EvidenceSheet({ className = "" }: { className?: string }) {
           <p className="max-w-[16rem] font-mono text-[10.5px] leading-relaxed text-muted-foreground">
             axe-core verdicts only. Deterministic, reproducible, no AI opinion on this page.
           </p>
-          <div className="stamp shrink-0 self-end text-[0.7rem] sm:self-auto" aria-label="Verdict: 3 critical findings, 0 on the public page">
+          <div className="stamp stamp-land shrink-0 self-end text-[0.7rem] sm:self-auto" aria-label="Verdict: 3 critical findings, 0 on the public page">
             <span className="text-[1.35rem] leading-none tracking-[0.04em]">3 Critical</span>
             <span className="text-[0.6rem] tracking-[0.14em]">0 on public page</span>
           </div>
         </footer>
       </article>
       </div>
-      <figcaption className="relative mt-4 pl-5 font-mono text-[11px] text-muted-foreground">
-        Real probe of the SauceDemo test store. Not a customer account.
+      <figcaption className="relative mt-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pl-5 font-mono text-[11px] text-muted-foreground">
+        <span>Real probe of the SauceDemo test store. Not a customer account.</span>
+        <BatesSerial n="0001" className="shrink-0" />
       </figcaption>
     </figure>
   );

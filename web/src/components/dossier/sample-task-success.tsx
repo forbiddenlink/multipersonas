@@ -26,14 +26,17 @@ function FrameViewport({ index }: { index: number }) {
         {/* Login form box */}
         <rect x="70" y="44" width="180" height="136" rx="3" fill="var(--card)" stroke="var(--border)" strokeWidth="1" />
         {/* Redline alert banner */}
-        <rect x="82" y="56" width="156" height="24" rx="2" fill="var(--redline)" opacity="0.12" stroke="var(--redline)" strokeWidth="1.5" />
-        <text x="92" y="72" fill="var(--redline)" fontSize="10" fontWeight="bold" fontFamily="monospace">
-          Epic sadface: Username and password do not match
+        <rect x="82" y="54" width="156" height="32" rx="2" fill="var(--redline)" opacity="0.12" stroke="var(--redline)" strokeWidth="1.5" />
+        <text x="90" y="67" fill="var(--redline)" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
+          Epic sadface: Username and
+        </text>
+        <text x="90" y="79" fill="var(--redline)" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
+          password do not match
         </text>
         {/* Form fields */}
-        <rect x="86" y="90" width="148" height="18" rx="2" fill="var(--background)" stroke="var(--border)" strokeWidth="1" />
-        <rect x="86" y="116" width="148" height="18" rx="2" fill="var(--background)" stroke="var(--border)" strokeWidth="1" />
-        <rect x="86" y="142" width="148" height="24" rx="2" fill="var(--primary)" />
+        <rect x="86" y="96" width="148" height="16" rx="2" fill="var(--background)" stroke="var(--border)" strokeWidth="1" />
+        <rect x="86" y="120" width="148" height="16" rx="2" fill="var(--background)" stroke="var(--border)" strokeWidth="1" />
+        <rect x="86" y="144" width="148" height="24" rx="2" fill="var(--primary)" />
       </svg>
     );
   }
@@ -230,7 +233,7 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
                 aria-controls={panelId}
                 tabIndex={active ? 0 : -1}
                 onClick={() => setIndex(i)}
-                className={`relative flex flex-col rounded-xs border p-2.5 text-left transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
+                className={`relative flex min-w-0 flex-col rounded-xs border p-2 text-left sm:p-2.5 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
                   active
                     ? "border-[var(--primary)] bg-muted/60 text-foreground"
                     : "border-border bg-card text-muted-foreground hover:bg-muted/40"
@@ -242,7 +245,7 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
                     {b.label}
                   </span>
                 </div>
-                <span className="mt-1 truncate font-mono text-xs font-medium text-foreground">
+                <span className="mt-1 min-w-0 break-words font-mono text-[11px] font-medium text-foreground sm:text-xs">
                   {f.state}
                 </span>
               </button>
@@ -271,10 +274,10 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
             </button>
           </div>
           <Meter
-            value={reachedGoal ? 0 : 1}
-            total={1}
+            value={index + 1}
+            total={SAMPLE_REPLAY_FRAMES.length}
             label={reachedGoal ? "blocked at checkout" : "in progress"}
-            unit="run status"
+            unit="steps"
             tone={reachedGoal ? "critical" : "serious"}
           />
         </div>

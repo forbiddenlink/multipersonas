@@ -1,4 +1,30 @@
 import styles from "./content-prose.module.css";
+import Link from "next/link";
+import { ExhibitHead } from "@/components/dossier/exhibit-head";
+
+/** A small sheet that points a reader of any guide at the main action. */
+export type TryItProps = { title: string; body: string; href: string; label: string };
+const DEFAULT_TRY_IT: TryItProps = {
+  title: "Try it on a client site",
+  body: "A letter grade and every failing axe rule, free, no signup.",
+  href: "/grade",
+  label: "Grade a site free",
+};
+
+function TryIt({ copy }: { copy: TryItProps }) {
+  return (
+    <div className="sheet p-4">
+      <p className="label-mono">{copy.title}</p>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{copy.body}</p>
+      <Link
+        href={copy.href}
+        className="mt-3 inline-flex h-10 items-center rounded-sm bg-primary px-4 text-sm font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+      >
+        {copy.label}
+      </Link>
+    </div>
+  );
+}
 
 export type ContentTocItem = { id: string; label: string; level?: 2 | 3 };
 
@@ -14,6 +40,8 @@ export type ContentTocItem = { id: string; label: string; level?: 2 | 3 };
 export function ContentArticle({
   eyebrow,
   title,
+  mark,
+  tryIt = false,
   dek,
   lastReviewed,
   toc,
@@ -21,6 +49,10 @@ export function ContentArticle({
 }: {
   eyebrow: string;
   title: string;
+  /** One phrase inside `title` that gets the highlighter pass (signature move 2). */
+  mark?: string;
+  /** Show the free-grade prompt beside the index (wide) and after the article (narrow). */
+  tryIt?: boolean | TryItProps;
   dek?: React.ReactNode;
   /** e.g. "26 September 2026" — rendered next to a "Last reviewed" label. */
   lastReviewed?: string;
@@ -28,11 +60,22 @@ export function ContentArticle({
   children: React.ReactNode;
 }) {
   const hasToc = Boolean(toc && toc.length > 0);
+  const at = mark ? title.indexOf(mark) : -1;
+  const heading =
+    mark && at >= 0 ? (
+      <>
+        {title.slice(0, at)}
+        <span className="mark-sweep">{mark}</span>
+        {title.slice(at + mark.length)}
+      </>
+    ) : (
+      title
+    );
   return (
-    <div className="frame section-y">
+    <div className="exhibits frame section-y">
       <header className="max-w-[65ch]">
-        <p className="label-mono">{eyebrow}</p>
-        <h1 className="display mt-3 text-[clamp(2rem,4.4vw,3rem)] leading-[1.08]">{title}</h1>
+        <ExhibitHead label={eyebrow} />
+        <h1 className="display mt-8 text-[clamp(2rem,4.4vw,3rem)] leading-[1.08]">{heading}</h1>
         {dek ? (
           <p className="mt-5 max-w-[58ch] text-lg leading-relaxed text-muted-foreground">{dek}</p>
         ) : null}
@@ -43,11 +86,29 @@ export function ContentArticle({
         ) : null}
       </header>
 
+      {hasToc ? (
+        <details className="mt-8 border-y border-border py-3 lg:hidden">
+          <summary className="cursor-pointer rounded-sm font-mono text-xs uppercase tracking-[0.09em] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
+            On this page
+          </summary>
+          <ul className="mt-3 space-y-1 text-sm">
+            {toc!.map((item) => (
+              <li key={item.id} className={item.level === 3 ? "pl-3" : undefined}>
+                <a href={`#${item.id}`} className={`${styles.tocLink} inline-block py-1`}>
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+
       <div className={hasToc ? "mt-12 grid gap-12 lg:grid-cols-[minmax(0,1fr)_14rem]" : "mt-12"}>
         <div className={styles.prose}>{children}</div>
 
         {hasToc ? (
           <aside className="hidden min-w-0 lg:block">
+            <div className="sticky top-24 space-y-8">
             <nav aria-label="On this page" className={styles.toc}>
               <p className="label-mono">On this page</p>
               <ul className="mt-3 space-y-0.5 border-l border-border pl-4 text-sm">
@@ -60,9 +121,16 @@ export function ContentArticle({
                 ))}
               </ul>
             </nav>
+            {tryIt ? <TryIt copy={tryIt === true ? DEFAULT_TRY_IT : tryIt} /> : null}
+            </div>
           </aside>
         ) : null}
       </div>
+      {tryIt ? (
+        <div className="mt-12 lg:hidden">
+          <TryIt copy={tryIt === true ? DEFAULT_TRY_IT : tryIt} />
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -11,6 +11,6 @@ test("projects page lists the seeded project", async ({ page }) => {
     page.waitForURL(/\/projects\/[0-9a-f-]+$/),
     project.click(),
   ]);
-  await expect(page.getByText("latest open")).toBeVisible();
+  await expect(page.getByText("open now")).toBeVisible();
   await expect(page.getByText("persona outcome")).toBeVisible();
 });

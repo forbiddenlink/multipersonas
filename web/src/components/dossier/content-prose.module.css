@@ -33,6 +33,48 @@
   margin-top: 0;
 }
 
+/* Signature move 1 in long-form: every section opens as the next exhibit, with the
+ * ink tab on a 2px rule and a Bates-style serial, numbered by the same CSS counter
+ * the page header started (ContentArticle sets the scope). */
+.prose h2:not(:global(.sr-only)) {
+  counter-increment: exhibit;
+  position: relative;
+  margin-top: 4.6em;
+  padding-top: 1.15rem;
+  border-top: 2px solid var(--foreground);
+}
+.prose h2:not(:global(.sr-only)):first-child {
+  margin-top: 1.6em;
+}
+.prose h2:not(:global(.sr-only))::before {
+  content: "Exhibit " counter(exhibit, upper-alpha);
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translateY(-100%);
+  padding: 0.3rem 0.8rem 0.35rem;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--foreground);
+  color: var(--background);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.prose h2:not(:global(.sr-only))::after {
+  content: "PA-0426-" counter(exhibit, decimal-leading-zero);
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translateY(-130%);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  color: var(--muted-foreground);
+}
+
 .prose h3 {
   margin-top: 2.1em;
   margin-bottom: 0.5em;
@@ -170,13 +212,26 @@
   overflow-x: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--card);
+  /* scroll cue: edge shadows appear only where more code lies beyond the edge */
+  background:
+    linear-gradient(to right, var(--card) 30%, transparent) left center / 2rem 100% no-repeat local,
+    linear-gradient(to left, var(--card) 30%, transparent) right center / 2rem 100% no-repeat local,
+    linear-gradient(to right, oklch(0 0 0 / 0.22), transparent) left center / 0.7rem 100% no-repeat scroll,
+    linear-gradient(to left, oklch(0 0 0 / 0.22), transparent) right center / 0.7rem 100% no-repeat scroll,
+    var(--card);
   padding: 1rem;
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 0.8125rem;
   line-height: 1.65;
   color: var(--foreground);
   white-space: pre;
+}
+.codePre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  word-break: normal;
 }
 
 .codeLabel {

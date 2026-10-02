@@ -6,6 +6,8 @@ import { SiteFooter } from "@/components/site-footer";
 import { GradeForm } from "@/components/grade-form";
 import { EvidenceSheet } from "@/components/dossier/evidence-sheet";
 import { SeverityChip } from "@/components/forensic/severity-chip";
+import { FocusGradeLink } from "@/components/focus-grade-link";
+import { ExhibitHead } from "@/components/dossier/exhibit-head";
 import { StateFlowTrail } from "@/components/dossier/state-flow-trail";
 import { SampleTaskSuccess } from "@/components/dossier/sample-task-success";
 import { PROBE_LEDGER } from "@/lib/probe-ledger";
@@ -67,52 +69,34 @@ export default function Home() {
     <div className="flex min-h-dvh flex-col pb-[env(safe-area-inset-bottom)]">
       <SiteHeader />
 
-      <main id="main" className="flex-1">
-        {/* ── Hero: the claim on the left, the finished case file on the right. ── */}
-        <section className="grain relative overflow-hidden border-b border-border">
-          <div className="frame relative z-10 grid gap-14 pt-14 pb-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.02fr)] lg:items-center lg:gap-16 lg:pt-20 lg:pb-24">
+      <main id="main" className="exhibits flex-1">
+        {/* ── Hero: the claim and the free grade on the left, the finished case file on the right. ── */}
+        <section id="scan" aria-labelledby="hero-heading" className="grain relative scroll-mt-20 overflow-hidden border-b border-border">
+          <div className="frame relative z-10 grid gap-12 pt-12 pb-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.02fr)] lg:items-center lg:gap-16 lg:pt-16 lg:pb-20">
             <div className="min-w-0">
               <p className="label-mono">Accessibility evidence for agencies and dev teams</p>
-              {/* LCP element: no entrance animation. */}
-              <h1 className="display mt-5 text-[clamp(2.6rem,5.6vw,4.5rem)] leading-[1]">
-                Scan behind the login. Keep the password.
+              {/* LCP element: the sweep animates a background only, never the text. */}
+              <h1 id="hero-heading" className="display mt-5 text-[clamp(2.5rem,4.6vw,3.9rem)] leading-[1.02]">
+                <span className="block">Scan behind the login.</span>
+                <span className="block"><span className="mark-sweep">Keep the password.</span></span>
               </h1>
-              <p className="mt-7 max-w-[34rem] text-lg leading-relaxed text-muted-foreground">
+              <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-muted-foreground">
                 Personaudit runs <span className="font-medium text-foreground">axe-core</span> at
                 every state a signed-in crawl reaches: carts, checkouts, error screens. The session
                 never leaves your machine, and the report is ready to hand to a client.
               </p>
-              <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-                <Link
-                  href="/grade"
-                  className="inline-flex h-12 items-center justify-center rounded-sm bg-primary px-6 text-[0.9375rem] font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-                >
-                  Grade a site free
-                </Link>
-                <Link href="/sample-report" className="text-link self-start text-[0.9375rem] sm:self-center inline-flex min-h-10 items-center">
-                  Read a sample client report
-                </Link>
+              <div className="mt-8 max-w-[34rem]">
+                <GradeForm />
               </div>
-              {/* Named only when Solo checkout can take payment, like the agency page does. */}
-              {SOLO_OPEN ? (
-                <p className="mt-4 text-sm text-muted-foreground text-balance">
-                  Grading is free. The hosted workspace starts at ${PLANS.solo.monthlyUsd} a month.
-                </p>
-              ) : null}
-              <dl className="mt-12 grid max-w-md grid-cols-3 gap-4 border-t border-border pt-5" aria-label="At a glance">
-                <div>
-                  <dt className="label-mono">Engine</dt>
-                  <dd className="mt-1 font-mono text-sm">axe-core</dd>
-                </div>
-                <div>
-                  <dt className="label-mono">Overlay</dt>
-                  <dd className="mt-1 font-mono text-sm">None</dd>
-                </div>
-                <div>
-                  <dt className="label-mono">Credentials</dt>
-                  <dd className="mt-1 font-mono text-sm">Stay local</dd>
-                </div>
-              </dl>
+              <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
+                Signed-in flows run in the{" "}
+                <Link href="/docs" className="text-link">free, keyless CLI</Link>. 
+                Persona task-success on public flows is part of{" "}
+                <Link href="/pricing" className="text-link">Solo</Link>. Want to see a finished
+                report first?{" "}
+                <Link href="/sample-report" className="text-link">Read a sample client report</Link>.
+                {SOLO_OPEN ? ` Grading is free. The hosted workspace starts at $${PLANS.solo.monthlyUsd} a month.` : null}
+              </p>
             </div>
 
             <EvidenceSheet className="mx-auto w-full max-w-[34rem] lg:mr-0" />
@@ -122,8 +106,9 @@ export default function Home() {
         {/* ── Where scanners stop: the SauceDemo trail, state by state. ── */}
         <section id="behind" aria-labelledby="behind-heading" className="section-y scroll-mt-20">
           <div className="frame">
+            <ExhibitHead label="Where scanners stop" className="mb-8" />
             <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-end">
-              <h2 id="behind-heading" className="display text-[clamp(2rem,4vw,3rem)] leading-[1.05]">
+              <h2 id="behind-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
                 A URL scanner sees one page. Your users see the whole flow.
               </h2>
               <p className="max-w-xl text-[1.0625rem] leading-relaxed text-muted-foreground lg:justify-self-end">
@@ -196,39 +181,14 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── The free entry: a request slip. ── */}
-        <section id="scan" aria-labelledby="scan-heading" className="scroll-mt-20 border-y border-border bg-card">
-          <div className="frame grid gap-10 py-16 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16 lg:py-20">
-            <div>
-              <p className="label-mono">Free grade · no signup</p>
-              <h2 id="scan-heading" className="display mt-3 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
-                Start with the public pages.
-              </h2>
-              <p className="mt-4 max-w-sm leading-relaxed text-muted-foreground">
-                A letter grade, the pages we reached, and every failing axe rule by name, with the
-                WCAG criterion it breaks.
-              </p>
-            </div>
-            <div className="min-w-0 lg:pt-2">
-              <GradeForm />
-              <p className="mt-6 border-t border-border pt-5 text-sm leading-relaxed text-muted-foreground">
-                Need the signed-in flows? That&apos;s the{" "}
-                <Link href="/docs" className="text-link">free, keyless CLI</Link>, run from your own
-                machine. Persona task-success on public flows is part of{" "}
-                <Link href="/pricing" className="text-link">Solo</Link>.
-              </p>
-            </div>
-          </div>
-        </section>
-
         {/* ── Procedure: how a scan runs, with the command at each step. ── */}
         <section aria-labelledby="procedure-heading" className="section-y">
           <div className="frame">
-            <p className="label-mono">Procedure</p>
-            <h2 id="procedure-heading" className="display mt-3 max-w-2xl text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+            <ExhibitHead label="Procedure" />
+            <h2 id="procedure-heading" className="display mt-8 max-w-2xl text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
               Four steps from login to a gated build.
             </h2>
-            <ol className="mt-12 border-t-2 border-foreground">
+            <ol className="mt-10 border-t border-border">
               {PROCEDURE.map((p) => (
                 <li
                   key={p.n}
@@ -262,10 +222,11 @@ export default function Home() {
 
         {/* ── The deliverable: what exists in the app today. ── */}
         <section aria-labelledby="deliverable-heading" className="border-t border-border section-y">
-          <div className="frame grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
+          <div className="frame">
+            <ExhibitHead label="The deliverable" />
+          <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
             <div>
-              <p className="label-mono">The case file</p>
-              <h2 id="deliverable-heading" className="display mt-3 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+              <h2 id="deliverable-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
                 Built for the handoff, not the screenshot.
               </h2>
               <p className="mt-5 max-w-md leading-relaxed text-muted-foreground">
@@ -276,7 +237,7 @@ export default function Home() {
                 Read the sample report
               </Link>
             </div>
-            <dl className="grid min-w-0 gap-x-10 border-t-2 border-foreground sm:grid-cols-2">
+            <dl className="grid min-w-0 gap-x-10 border-t border-border sm:grid-cols-2">
               {DELIVERABLE.map((d) => (
                 <div key={d.term} className="border-b border-border py-5">
                   <dt className="font-semibold">{d.term}</dt>
@@ -285,14 +246,26 @@ export default function Home() {
               ))}
             </dl>
           </div>
+          </div>
         </section>
 
         {/* ── Two kinds of output, kept apart. ── */}
         <section aria-labelledby="honesty-heading" className="border-y border-border bg-card section-y">
           <div className="frame">
-            <h2 id="honesty-heading" className="display max-w-3xl text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
-              A finding and an opinion are different documents.
-            </h2>
+            <ExhibitHead label="Two kinds of output" />
+            <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-end">
+              <h2 id="honesty-heading" className="display max-w-3xl text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+                A finding and an opinion are different documents.
+              </h2>
+            <p className="max-w-sm lg:justify-self-end text-sm leading-relaxed text-muted-foreground">
+              Personaudit does not simulate disabled users, and nothing here replaces testing with
+              them. For that, work with{" "}
+              <a href="https://makeitfable.com/" target="_blank" rel="noopener noreferrer" className="text-link">
+                Fable
+              </a>
+              .
+            </p>
+            </div>
             <div className="mt-12 grid gap-10 md:grid-cols-2 md:gap-14">
               <div className="min-w-0 border-t-2 border-foreground pt-5">
                 <div className="flex items-center justify-between gap-3">
@@ -316,23 +289,17 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <p className="mt-10 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              Personaudit does not simulate disabled users, and nothing here replaces testing with
-              them. For that, work with{" "}
-              <a href="https://makeitfable.com/" target="_blank" rel="noopener noreferrer" className="text-link">
-                Fable
-              </a>
-              .
-            </p>
+
           </div>
         </section>
 
         {/* ── Persona layer: task success, the client story. ── */}
         <section aria-labelledby="persona-heading" className="section-y">
-          <div className="frame grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
+          <div className="frame">
+            <ExhibitHead label="Persona layer · Solo and up" />
+          <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
             <div>
-              <p className="label-mono">Persona layer · Solo and up</p>
-              <h2 id="persona-heading" className="display mt-3 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+              <h2 id="persona-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
                 The report says what broke. The persona shows who it stopped.
               </h2>
               <p className="mt-5 max-w-md leading-relaxed text-muted-foreground">
@@ -344,14 +311,16 @@ export default function Home() {
               <SampleTaskSuccess />
             </div>
           </div>
+          </div>
         </section>
 
         {/* ── Why now: dated, sourced. ── */}
         <section aria-labelledby="deadlines-heading" className="border-t border-border bg-card section-y-sm">
-          <div className="frame grid gap-8 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] md:items-start">
+          <div className="frame">
+            <ExhibitHead label="Why this year" />
+          <div className="mt-8 grid gap-8 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] md:items-start">
             <div>
-              <p className="label-mono">Why this year</p>
-              <h2 id="deadlines-heading" className="display mt-3 text-[clamp(1.7rem,3vw,2.2rem)] leading-[1.1]">
+              <h2 id="deadlines-heading" className="display text-[clamp(1.7rem,3vw,2.2rem)] leading-[1.1]">
                 The deadlines are on the calendar.
               </h2>
             </div>
@@ -371,6 +340,7 @@ export default function Home() {
               </li>
             </ol>
           </div>
+          </div>
         </section>
 
         {/* ── Close. ── */}
@@ -389,12 +359,11 @@ export default function Home() {
               </p>
             </div>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              <Link
-                href="#scan"
+              <FocusGradeLink
                 className="inline-flex h-12 items-center justify-center rounded-sm bg-primary px-6 text-[0.9375rem] font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
               >
                 Grade a site free
-              </Link>
+              </FocusGradeLink>
               <Link href="/for-agencies" className="text-link text-[0.9375rem] inline-flex min-h-10 items-center">
                 Agency plans
               </Link>

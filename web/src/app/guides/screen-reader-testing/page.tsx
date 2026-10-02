@@ -60,8 +60,10 @@ export default function ScreenReaderTestingPage() {
         })}
       />
       <ContentArticle
+        tryIt
         eyebrow="Field guide · manual testing"
         title="Screen reader testing guide"
+        mark="Screen reader"
         dek="Testing with a real screen reader, ideally with disabled testers, is the gold standard for accessibility validation. Nothing automated replaces it. Here's how to run that pass, and where automated tooling clears the deterministic issues first."
         lastReviewed="26 September 2026"
         toc={[

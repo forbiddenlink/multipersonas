@@ -15,6 +15,7 @@ export default function TermsPage() {
       <ContentArticle
         eyebrow="The fine print"
         title="Terms of service"
+        mark="Terms"
         lastReviewed="4 September 2026"
         toc={[
           { id: "what-it-does", label: "What the service does" },

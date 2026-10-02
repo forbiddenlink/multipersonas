@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ExhibitHead } from "@/components/dossier/exhibit-head";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -39,6 +40,7 @@ export default async function SettingsPage({
 
   return (
     <div className="max-w-2xl">
+      <ExhibitHead label="Account" className="mb-5" />
       <h1 className="display text-2xl leading-tight text-foreground">Settings</h1>
 
       {saved === "agency" ? (

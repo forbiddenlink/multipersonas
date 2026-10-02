@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ExhibitHead } from "@/components/dossier/exhibit-head";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -45,12 +46,21 @@ export default function SampleReportPage() {
     <div className="flex min-h-dvh flex-col pb-[env(safe-area-inset-bottom)]">
       <SiteHeader intent="grade" />
 
-      <main id="main" className="flex-1">
+      <main id="main" className="exhibits flex-1">
         <div className="report-print-root frame-narrow py-14 sm:py-20">
-          <p className="label-mono report-print-hide">Sample report · read before you scan</p>
+          <ExhibitHead label="Sample report" className="report-print-hide" />
           <p className="redline-note mt-2 max-w-xl leading-relaxed">
             Sample report. Real probe of the SauceDemo test store, not a customer.
           </p>
+          <div className="report-print-hide mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+            <Link
+              href="/grade"
+              className="inline-flex h-10 items-center rounded-sm bg-primary px-4 text-sm font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+            >
+              Grade your own site free
+            </Link>
+            <span className="text-sm text-muted-foreground">Public pages, no signup.</span>
+          </div>
 
           <div className="sheet mt-6 p-6 sm:p-8">
             <SampleCoverSheet axeVersion={AXE_VERSION} preparedOn={PREPARED_ON} />

@@ -41,7 +41,7 @@ export function AuditHistory({ audits }: { audits: AuditListItem[] }) {
       aria-label="Recent runs table"
       className="min-w-0 overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
     >
-      <table className="w-full min-w-[30rem] border-collapse text-left text-sm">
+      <table className="w-full min-w-[19rem] border-collapse sm:min-w-[30rem] text-left text-sm">
         <caption className="sr-only">Recent audit runs by host, date, and persona task success</caption>
         <thead>
           <tr className="border-b-2 border-foreground">

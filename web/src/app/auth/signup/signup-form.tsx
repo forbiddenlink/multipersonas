@@ -187,7 +187,7 @@ export function SignupForm() {
 
   if (success) {
     return (
-      <AuthShell>
+      <AuthShell reasonsTitle="Why an account" serial="0008">
         <div className="sheet w-full max-w-sm">
           <AuthCardTab route="create-account" />
           <div className="px-5 py-6 text-center">
@@ -209,13 +209,13 @@ export function SignupForm() {
   }
 
   return (
-    <AuthShell>
+    <AuthShell reasonsTitle="Why an account" serial="0008">
       <div className="sheet w-full max-w-sm">
         <AuthCardTab route="create-account" />
         <div className="px-5 py-6">
           <div>
             <p className="label-mono">Free to start</p>
-            <h1 className="display mt-1.5 text-2xl leading-tight text-foreground">Create your account</h1>
+            <h1 className="display mt-1.5 text-[1.9rem] leading-tight text-foreground">Create <span className="mark-sweep">your account</span></h1>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Save every audit you run: axe verdicts and persona task-success, kept in one place.
             </p>
@@ -331,6 +331,18 @@ export function SignupForm() {
             </svg>
             Sign up with GitHub
           </Button>
+
+          <p className="text-center text-xs leading-relaxed text-muted-foreground">
+            By creating an account you accept the{" "}
+            <Link href="/terms" className="text-link">
+              Terms
+            </Link>{" "}
+            and the{" "}
+            <Link href="/privacy" className="text-link whitespace-nowrap">
+              Privacy policy
+            </Link>
+            .
+          </p>
 
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}

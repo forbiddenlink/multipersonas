@@ -1,6 +1,6 @@
 # Personaudit design system: Evidence Dossier
 
-**Canonical, locked 2026-09-26.** Replaces the retired "Forensic Evidence Terminal" system.
+**Canonical, locked 2026-09-26; signature moves added 2026-10-01 (v2 redesign).** Replaces the retired "Forensic Evidence Terminal" system.
 The token layer lives in `src/app/globals.css` and the fonts in `src/app/layout.tsx`. If this
 file and the code disagree, the code wins and this file gets updated.
 
@@ -37,14 +37,15 @@ No gradients, no glow, no glassmorphism, no drop shadows except `.sheet`.
 ## Type
 
 - **Display: Newsreader** (`.display` class, or `font-serif`). Weight 500, tracking −0.022em,
-  upright only. **Never italic headings.** H1 `clamp(2.6rem,5.6vw,4.5rem)`, H2
-  `clamp(1.9rem,3.4vw,2.6rem)`, leading ~1.05.
+  upright only. **Never italic headings.** Home H1 `clamp(2.5rem,4.6vw,3.9rem)`, other H1s
+  `clamp(2.2rem,4.6vw,3.5rem)`, H2 `clamp(1.9rem,3.4vw,2.6rem)`, leading ~1.05.
 - **UI + copy: IBM Plex Sans** (`font-sans`, default). Body 16–18px, `leading-relaxed`,
   measure ≤ 65ch (`max-w-xl`/`max-w-2xl`).
 - **Evidence: IBM Plex Mono** (`font-mono`). Rule IDs, WCAG codes, file numbers, counts,
   commands, tables of numbers (`tabular-nums`).
-- **Eyebrow:** `.label-mono` (11px uppercase mono, muted). At most one per section, stacked
-  above its heading, never beside it.
+- **Section opener:** an exhibit tab (`<ExhibitHead>`, see Signature moves), never a bare
+  `.label-mono` eyebrow. `.label-mono` stays for field labels, table heads, and the one
+  eyebrow above a hero H1.
 - Long-form prose (guides, legal, report body): `font-serif` at 1.0625–1.125rem.
 
 ## Layout
@@ -58,6 +59,24 @@ No gradients, no glow, no glassmorphism, no drop shadows except `.sheet`.
 - Numbered procedures, ledgers (tables with a 2px `border-foreground` head), and document
   sheets are the preferred shapes. Avoid rows of identical rounded cards.
 
+## Signature moves (v2): the three devices that repeat on every page
+
+1. **Exhibit tabs.** `<main className="exhibits">` scopes a CSS counter. Each section opens with
+   `<ExhibitHead label="Procedure" />`: an ink file tab ("EXHIBIT B | PROCEDURE") on a 2px rule,
+   with a Bates-style serial (`PA-0426-02`) at the far end. Letter and serial come from the
+   counter (no JS, cannot misnumber). In long-form prose (`ContentArticle`) every `h2` becomes the
+   next exhibit through `content-prose.module.css`. Source: `components/dossier/exhibit-head.tsx`.
+2. **The highlighter pass.** Each page H1 has exactly one claim phrase wrapped in
+   `.mark-sweep`: the yellow pass sweeps in once (700ms, 250ms delay) and ends in its finished
+   state under `prefers-reduced-motion`. It is applied on marketing, docs, auth and 404 pages, and
+   deliberately NOT inside the signed-in app (motion on every navigation is noise there).
+3. **Bates serials.** Sheet-shaped objects carry a mono serial in the lower margin
+   (`<BatesSerial n="0001" />`): hero sheet, auth pages (each page its own number), 404, footer
+   ("PA-0426 End of file"). Decoration only. It never states a count or an identifier that is real.
+
+The rubber stamp lands once on the hero sheet (`.stamp-land`, 320ms). That is the whole motion
+budget: highlighter sweep, stamp land, 150ms color transitions.
+
 ## Signature primitives (in `globals.css`)
 
 | Class | Use |
@@ -68,6 +87,10 @@ No gradients, no glow, no glassmorphism, no drop shadows except `.sheet`.
 | `.stamp` | verdict stamp; max one per viewport |
 | `.mark` | highlighter over the key evidence phrase |
 | `.redline-note` | annotator voice, mono, redline color |
+| `.exhibits` / `.exhibit-head` / `.exhibit-tab` / `.exhibit-serial` | exhibit tabs (see Signature moves) |
+| `.mark-sweep` | the animated highlighter pass on an H1 claim phrase |
+| `.stamp-land` | one-time stamp landing animation |
+| `.bates` | Bates-style serial text |
 | `.ruled` | faint ledger lines, decorative only |
 | `.text-link` | inline body link (ink blue, underline, instant focus ring) |
 | `.label-mono` | eyebrow / field label |

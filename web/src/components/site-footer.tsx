@@ -87,7 +87,10 @@ export function SiteFooter({
             Accessibility violations come from axe-core and are deterministic. Persona notes are
             written by AI, labeled as opinion, and should be checked by a person.
           </p>
-          <p className="shrink-0 font-mono">
+          <p className="shrink-0 font-mono sm:text-right">
+            <span className="bates block" aria-hidden="true">
+              PA-0426 · End of file
+            </span>
             Built by{" "}
             <a
               href="https://github.com/forbiddenlink"

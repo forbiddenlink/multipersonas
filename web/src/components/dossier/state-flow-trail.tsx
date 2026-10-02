@@ -166,8 +166,41 @@ export function StateFlowTrail() {
       </div>
 
       {/* Connected Trail Grid */}
+      {/* Phone: a compact ledger, one row per state. The full cards return at sm and up. */}
       <ol
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6"
+        className="border-t border-border sm:hidden"
+        aria-label="SauceDemo test store state progression"
+      >
+        {SAUCEDEMO_TRAIL.map((s, i) => (
+          <li
+            key={s.path}
+            className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-x-3 border-b border-border py-3"
+          >
+            <span className="font-mono text-xs font-semibold tabular-nums text-muted-foreground">
+              {String(i + 1).padStart(2, "0")}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold leading-tight">{s.label}</span>
+              <span className="mt-0.5 block font-mono text-[11px] text-muted-foreground">
+                {s.publicUrl ? "Public" : "Session only"}
+              </span>
+              <span className="block break-words font-mono text-[11px] text-muted-foreground">
+                {s.path}
+              </span>
+            </span>
+            {s.findings > 0 ? (
+              <SeverityChip severity="critical" ruleId="4.1.2" />
+            ) : (
+              <span className="font-mono text-[11px] text-muted-foreground">
+                <span aria-hidden="true">✓ </span>Clean
+              </span>
+            )}
+          </li>
+        ))}
+      </ol>
+
+      <ol
+        className="hidden grid-cols-1 gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-6"
         aria-label="SauceDemo test store state progression"
       >
         {SAUCEDEMO_TRAIL.map((s, i) => {

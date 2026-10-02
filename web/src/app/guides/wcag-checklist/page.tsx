@@ -68,8 +68,10 @@ export default function WcagChecklistPage() {
         })}
       />
       <ContentArticle
+        tryIt
         eyebrow="Field guide · reference"
         title="WCAG 2.2 AA checklist"
+        mark="2.2 AA"
         dek="A practical checklist for meeting WCAG 2.2 Level AA: the criteria that show up most in real audits, grouped under the four principles the standard is built on."
         lastReviewed="26 September 2026"
         toc={TOC}
