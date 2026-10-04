@@ -6,6 +6,7 @@ import {
   clearRememberedGradeTokens,
   readRememberedGradeTokens,
 } from "@/lib/grade-tokens";
+import { trackProductEvent } from "@/lib/analytics";
 
 /**
  * After signup/login, attach any public grades this browser ran while signed out.
@@ -37,7 +38,10 @@ export function ClaimGrades() {
             ? body.claimed
             : 0;
         clearRememberedGradeTokens();
-        if (claimed > 0) router.refresh();
+        if (claimed > 0) {
+          trackProductEvent("grades_claimed", { count: claimed });
+          router.refresh();
+        }
       })
       .catch(() => {
         // Claiming is best-effort; the tokens stay until the next signed-in visit.
