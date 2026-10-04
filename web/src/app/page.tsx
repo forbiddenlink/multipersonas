@@ -78,7 +78,7 @@ export default function Home() {
                 <span className="block">Know <span className="mark-sweep">what to fix first.</span></span>
               </h1>
               <p className="mt-4 max-w-[34rem] text-lg leading-relaxed text-muted-foreground sm:mt-6">
-                Paste a web address. In about 20 seconds you get an accessibility grade, what to fix
+                Paste a web address. In under a minute you get an accessibility grade, what to fix
                 first, and a page to show your client. Your first grade is free, with no account.
               </p>
               <div className="mt-6 max-w-[34rem] sm:mt-8">

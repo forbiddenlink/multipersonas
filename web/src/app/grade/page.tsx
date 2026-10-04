@@ -95,8 +95,8 @@ export default function GradePage() {
               What this scan doesn&apos;t see
             </h2>
             <p className="mt-3 max-w-[36rem] leading-relaxed text-muted-foreground">
-              Public pages only. It never sees behind a login, a PDF, or a real checkout flow:
-              the states where most accessibility risk sits. For that, run the{" "}
+              Public pages only. It never sees behind a login, a PDF, or a real checkout flow,
+              where users often get stuck. For those, run the{" "}
               <Link href="/docs" className="text-link">
                 free CLI
               </Link>{" "}
