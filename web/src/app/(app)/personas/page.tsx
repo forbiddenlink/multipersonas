@@ -10,6 +10,8 @@ import { PersonaCard } from "@/components/persona-card";
 import { PersonaFilter } from "@/components/persona-filter";
 import { BoxDivider } from "@/components/forensic/divider";
 import { EmptyPrompt } from "@/components/forensic/empty-prompt";
+import { createClient } from "@/lib/supabase/server";
+import { getSessionPlan, planAllowsPersonas } from "@/lib/entitlements";
 
 export const metadata: Metadata = {
   title: "Personas",
@@ -21,6 +23,13 @@ export default async function PersonasPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { category } = await searchParams;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  // The dashboard has a run form only for plans that can run personas. A Free account
+  // gets the free grade instead, the one hosted scan it can actually start.
+  const canRunPersonas = planAllowsPersonas(await getSessionPlan(supabase, user?.id ?? null));
   const activeCategory =
     typeof category === "string" ? category : undefined;
 
@@ -45,10 +54,10 @@ export default async function PersonasPage({
           </p>
         </div>
         <Link
-          href="/dashboard"
+          href={canRunPersonas ? "/dashboard" : "/grade"}
           className="inline-flex h-10 items-center rounded-sm bg-primary px-4 text-sm font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
         >
-          Run an audit &rarr;
+          {canRunPersonas ? "Run an audit" : "Grade a site free"} &rarr;
         </Link>
       </div>
 

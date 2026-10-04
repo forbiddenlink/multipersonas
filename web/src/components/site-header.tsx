@@ -10,7 +10,7 @@ const NAV = [
   { href: "/for-agencies", label: "Agencies" },
   { href: "/pricing", label: "Pricing" },
   { href: "/docs", label: "CLI docs" },
-  { href: "/guides/wcag-checklist", label: "Guides" },
+  { href: "/guides", label: "Guides" },
 ] as const;
 
 const NAV_LINK =

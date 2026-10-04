@@ -218,7 +218,7 @@ export function SignupForm({ githubEnabled }: { githubEnabled: boolean }) {
             <p className="label-mono">Free to start</p>
             <h1 className="display mt-1.5 text-[1.9rem] leading-tight text-foreground">Create <span className="mark-sweep">your account</span></h1>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Save every audit you run: axe verdicts and persona task-success, kept in one place.
+              Save your free grades and track one site over time. No card needed.
             </p>
           </div>
 
@@ -253,7 +253,7 @@ export function SignupForm({ githubEnabled }: { githubEnabled: boolean }) {
                   ref={passwordRef}
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="At least 8 characters"
+                  placeholder="8+ characters, with a number or symbol"
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); if (fieldErrors.password) setFieldErrors((p) => ({ ...p, password: undefined })); }}
                   onBlur={(e) => handleBlur("password", e.target.value)}

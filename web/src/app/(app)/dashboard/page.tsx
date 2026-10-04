@@ -137,7 +137,7 @@ export default async function DashboardPage() {
         </section>
         <section aria-labelledby="runs-heading" className="min-w-0">
           <ExhibitHead label="Recent runs" className="mb-4" headingId="runs-heading" />
-          <AuditHistory audits={audits} />
+          <AuditHistory audits={audits} canRunHosted={canRunPersonas} />
         </section>
       </div>
     </div>
