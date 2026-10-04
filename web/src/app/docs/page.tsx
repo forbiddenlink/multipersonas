@@ -65,8 +65,7 @@ export default function DocsPage() {
         />
         <p>
           Scanning often? Install the CLI globally instead of re-fetching it through{" "}
-          <code>npx</code> every time. The package installs two names for the same binary:{" "}
-          <code>personaudit</code> and the older <code>mpersonas</code>.
+          <code>npx</code> every time.
         </p>
         <ContentCodeBlock label="global install" code={"npm i -g personaudit\npersonaudit --help"} />
 
@@ -104,7 +103,7 @@ export default function DocsPage() {
             -o, --output &lt;path&gt;
           </dt>
           <dd className="min-w-0 text-[0.9375rem] text-muted-foreground">
-            Where the report is written. Defaults to <code>./mpersonas-report</code>.
+            Where the report is written. Defaults to <code>./personaudit-report</code>.
           </dd>
           <dt className="min-w-0 font-mono text-[0.8125rem] break-words text-foreground">
             --session &lt;file&gt;
@@ -137,13 +136,13 @@ export default function DocsPage() {
         <ContentCodeBlock
           label="once, commit the baseline"
           code={
-            "npx personaudit scan https://app.example.com --session ./session.json \\\n  --baseline mpersonas-baseline.json --update-baseline"
+            "npx personaudit scan https://app.example.com --session ./session.json \\\n  --baseline personaudit-baseline.json --update-baseline"
           }
         />
         <ContentCodeBlock
           label="in CI, exit non-zero only on new defects"
           code={
-            "npx personaudit scan https://app.example.com --session ./session.json \\\n  --baseline mpersonas-baseline.json --fail-on serious"
+            "npx personaudit scan https://app.example.com --session ./session.json \\\n  --baseline personaudit-baseline.json --fail-on serious"
           }
         />
         <p>
