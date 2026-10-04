@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { GradeScanResult } from "personaudit/grader";
 import { describe, expect, it, vi } from "vitest";
-import { persistGradeResult, writeJobState } from "./job-write.js";
+import { persistGradeResult, withRunId, writeJobState } from "./job-write.js";
 
 it("rejects failed queue persistence rather than acknowledging the transition", async () => {
   await expect(writeJobState(Promise.resolve({ error: { message: "database unavailable" } })))
@@ -69,5 +69,16 @@ describe("grade persistence", () => {
   it("rejects failure to retain the engine result rather than reporting success", async () => {
     const { client } = storageFixture(["job write failed"]);
     await expect(persistGradeResult(client, "job-synthetic", grade)).rejects.toThrow("job write failed");
+  });
+});
+
+describe("withRunId", () => {
+  it("adds the saved run id so the browser can link to the run", () => {
+    expect(withRunId({ url: "https://a.example" }, "run-1")).toEqual({ url: "https://a.example", runId: "run-1" });
+  });
+
+  it("leaves anonymous results untouched", () => {
+    const response = { url: "https://a.example" };
+    expect(withRunId(response, null)).toBe(response);
   });
 });

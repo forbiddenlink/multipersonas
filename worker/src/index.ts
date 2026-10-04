@@ -8,7 +8,7 @@ import { type TestResult } from "personaudit/orchestrator";
 import type { gradeScan } from "personaudit/grader";
 import { runJobProcess, ScanCleanupError } from "./job-process.js";
 import { isIntervalDue, positiveEnvInt } from "./config.js";
-import { persistGradeResult, writeJobState } from "./job-write.js";
+import { persistGradeResult, withRunId, writeJobState } from "./job-write.js";
 import { createWorkerClient } from "./database.js";
 import { clampFindingCategory, clampSeverity } from "personaudit/domain/vocab";
 
@@ -403,8 +403,9 @@ async function claimAndRun(): Promise<boolean> {
     );
     const response = toResponse(result);
 
+    let runId: string | null = null;
     if (claimed.user_id) {
-      const runId = await persistHistory(claimed.user_id, response, claimed.project_id);
+      runId = await persistHistory(claimed.user_id, response, claimed.project_id);
       // Replay Theater: persist the walk while the screenshots are still on disk (the
       // finally block wipes tmpDir). Best-effort; `result` carries the per-step records.
       await persistJourney(runId, result);
@@ -412,7 +413,7 @@ async function claimAndRun(): Promise<boolean> {
 
     await writeJobState(supabase
       .from("audit_jobs")
-      .update({ status: "completed", result: response, completed_at: new Date().toISOString() })
+      .update({ status: "completed", result: withRunId(response, runId), completed_at: new Date().toISOString() })
       .eq("id", claimed.id).select("id").single());
     await logWorkerEvent(claimed, "audit_job.completed", {
       personas: result.personas.length,
