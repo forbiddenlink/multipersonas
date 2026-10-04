@@ -104,6 +104,9 @@ that read that page choose where to go next. Public + anonymous is a hostile env
 - [ ] **Supabase backup restore proof.** Confirm Point-in-Time Recovery / backups in the
       Supabase dashboard, then perform a restore into a temporary branch/project and run
       the production smoke checks against it. Do not restore over production as a drill.
+      A disposable local dump/restore passed on 2026-09-29 (14 application tables matched;
+      11 SQL regressions passed after restore). This does not verify hosted backups,
+      point-in-time recovery, or screenshot object-file recovery.
 - [ ] **Railway Config as Code migration.** `railway.toml` still works today, but Railway
       has announced a 2026-12-01 cutoff. `railway config migrate` produced a sparse dry-run,
       so review/apply the generated `.railway/railway.ts` before that date instead of
@@ -192,9 +195,15 @@ Production monitoring should cover both the web app and the async worker path:
 - **Worker runtime:** the Railway worker reports to the `personaudit-worker` Sentry project.
   Job failures notify through Sentry and `WORKER_ALERT_WEBHOOK` when set. The worker now
   also alerts when `reap_stale_audit_jobs` fails or reaps stuck jobs.
+  Apply `20260929125009_count_recovered_audit_jobs.sql` so recovery counts include
+  retried grades as well as terminal failures. Worker database and screenshot-storage
+  requests have a 30-second per-request deadline, including response-body reads;
+  the SDK may retry eligible reads. This is separate from the browser job timeout.
 - **Health endpoint:** monitor `https://personaudit.com/api/health`. It returns `200` only
-  when Supabase is reachable and no job has been running longer than 15 minutes. It returns
-  `503` on missing config, database/queue errors, or stale running jobs.
+  when Supabase is reachable and no job has been queued or running longer than 15 minutes.
+  It returns `503` on missing/invalid config, database/queue errors, stale running jobs,
+  or stale queued jobs (including an offline worker). Database requests share a five-second
+  deadline. An empty queue does not establish that the worker is alive.
 - **Uptime checks:** at minimum, monitor `https://personaudit.com/`,
   `https://personaudit.com/grade`, and `https://personaudit.com/api/health`. The local
   `hq status --json` service check verifies the UptimeRobot integration token, but `hq`

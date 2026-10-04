@@ -3,12 +3,13 @@ import * as path from "node:path";
 import * as fs from "node:fs";
 import * as Sentry from "@sentry/node";
 import { scrubEvent } from "personaudit/security/sentry-scrub";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { type SupabaseClient } from "@supabase/supabase-js";
 import { type TestResult } from "personaudit/orchestrator";
 import type { gradeScan } from "personaudit/grader";
 import { runJobProcess, ScanCleanupError } from "./job-process.js";
 import { isIntervalDue, positiveEnvInt } from "./config.js";
 import { persistGradeResult, writeJobState } from "./job-write.js";
+import { createWorkerClient } from "./database.js";
 import { clampFindingCategory, clampSeverity } from "personaudit/domain/vocab";
 
 // --- config ---------------------------------------------------------------
@@ -60,9 +61,7 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
   process.exit(1);
 }
 
-const supabase: SupabaseClient = createClient(SUPABASE_URL, SERVICE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
+const supabase: SupabaseClient = createWorkerClient(SUPABASE_URL, SERVICE_KEY);
 
 async function logWorkerEvent(
   job: Pick<AuditJob, "id" | "kind" | "project_id" | "user_id">,

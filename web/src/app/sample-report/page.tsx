@@ -206,7 +206,7 @@ export default function SampleReportPage() {
             <section className="report-print-hide mt-8 flex flex-col gap-4 border-t-2 border-foreground pt-6 sm:flex-row sm:items-center sm:justify-between">
               <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
                 Want this for your own site? Grade the public pages free, or see what an agency
-                plan adds behind the login.
+                plan includes. Behind-login scanning runs in the CLI.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link

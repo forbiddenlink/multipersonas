@@ -88,6 +88,7 @@ jobs:
           for test_file in supabase/tests/*.sql; do
             psql -v ON_ERROR_STOP=1 -f "$test_file"
           done
+          PERSONAUDIT_DISPOSABLE_DB=1 python3 supabase/tests/queue-concurrency.py
 
       # run.sh: pulls the local stack's URL + keys from `supabase status`, seeds
       # the test user + owned data, then runs Playwright. The config's webServer
@@ -99,7 +100,7 @@ jobs:
       - name: Stop local Supabase stack
         if: always()
         working-directory: web
-        run: supabase stop || true
+        run: supabase stop --no-backup || true
 
       - name: Upload Playwright report on failure
         if: failure()

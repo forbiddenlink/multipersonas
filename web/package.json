@@ -2,6 +2,9 @@
   "name": "web",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
@@ -16,7 +19,7 @@
     "@marsidev/react-turnstile": "^1.6.1",
     "@sentry/nextjs": "^10.71.0",
     "@supabase/ssr": "^0.12.5",
-    "@supabase/supabase-js": "^2.112.4",
+    "@supabase/supabase-js": "^2.114.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.34.0",
