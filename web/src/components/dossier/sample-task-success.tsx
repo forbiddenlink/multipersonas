@@ -202,7 +202,7 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
               </div>
             ) : (
               <div className="border-t border-border pt-3 font-mono text-xs text-muted-foreground">
-                No compliance violations logged at this state.
+                No axe-core findings logged at this state.
               </div>
             )}
           </div>
@@ -260,7 +260,7 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
               type="button"
               onClick={() => setIndex((i) => Math.max(0, i - 1))}
               disabled={index === 0}
-              className="rounded-xs border border-border px-3 py-1 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xs border border-border px-4 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               Previous
             </button>
@@ -268,7 +268,7 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
               type="button"
               onClick={() => setIndex((i) => Math.min(SAMPLE_REPLAY_FRAMES.length - 1, i + 1))}
               disabled={reachedGoal}
-              className="rounded-xs border border-border px-3 py-1 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xs border border-border px-4 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               Next
             </button>

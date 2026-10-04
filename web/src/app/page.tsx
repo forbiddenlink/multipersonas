@@ -4,6 +4,7 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { GradeForm } from "@/components/grade-form";
+import { ContentCodeBlock } from "@/components/dossier/content-code-block";
 import { EvidenceSheet } from "@/components/dossier/evidence-sheet";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { FocusGradeLink } from "@/components/focus-grade-link";
@@ -55,11 +56,7 @@ const DELIVERABLE = [
   { term: "Your name on it", desc: "Agency plans put your studio's name on the report, not ours." },
 ] as const;
 
-const DEADLINES = [
-  { date: "Jun 28, 2025", what: "European Accessibility Act enforcement began for products and services sold in the EU." },
-  { date: "Apr 26, 2027", what: "ADA Title II web rule applies to US state and local governments serving 50,000 or more people." },
-  { date: "Apr 26, 2028", what: "Title II applies to smaller governments and special districts. The standard is WCAG 2.1 AA." },
-] as const;
+
 
 
 
@@ -72,28 +69,33 @@ export default function Home() {
       <main id="main" className="exhibits flex-1">
         {/* ── Hero: the claim and the free grade on the left, the finished case file on the right. ── */}
         <section id="scan" aria-labelledby="hero-heading" className="grain relative scroll-mt-20 overflow-hidden border-b border-border">
-          <div className="frame relative z-10 grid gap-12 pt-12 pb-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.02fr)] lg:items-center lg:gap-16 lg:pt-16 lg:pb-20">
+          <div className="frame relative z-10 grid gap-12 pt-12 pb-14 lg:grid-cols-[minmax(0,1.18fr)_minmax(0,0.82fr)] lg:items-center lg:gap-14 lg:pt-14 lg:pb-16">
             <div className="min-w-0">
               <p className="label-mono">Accessibility evidence for agencies and dev teams</p>
               {/* LCP element: the sweep animates a background only, never the text. */}
-              <h1 id="hero-heading" className="display mt-5 text-[clamp(2.5rem,4.6vw,3.9rem)] leading-[1.02]">
-                <span className="block">Scan behind the login.</span>
-                <span className="block"><span className="mark-sweep">Keep the password.</span></span>
+              <h1 id="hero-heading" className="display mt-5 text-[clamp(2.4rem,4.4vw,3.6rem)] leading-[1.03]">
+                <span className="block">The homepage passes.</span>
+                <span className="block">The bugs are <span className="mark-sweep">behind the login.</span></span>
               </h1>
               <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-muted-foreground">
                 Personaudit runs <span className="font-medium text-foreground">axe-core</span> at
-                every state a signed-in crawl reaches: carts, checkouts, error screens. The session
-                never leaves your machine, and the report is ready to hand to a client.
+                every state a real visit reaches: carts, checkouts, error screens. Grade any public
+                site free in about 20 seconds. Scan signed-in flows with the free CLI; the session
+                never leaves your machine.
               </p>
               <div className="mt-8 max-w-[34rem]">
                 <GradeForm />
               </div>
-              <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
-                Signed-in flows run in the{" "}
-                <Link href="/docs" className="text-link">free, keyless CLI</Link>. 
-                Persona task-success on public flows is part of{" "}
-                <Link href="/pricing" className="text-link">Solo</Link>. Want to see a finished
-                report first?{" "}
+              <div className="mt-6 max-w-[34rem]">
+                <ContentCodeBlock label="behind the login, on your machine" code="npx personaudit scan https://your.app" />
+              </div>
+              <ul aria-label="Why teams trust it" className="mt-6 flex max-w-[34rem] flex-wrap gap-x-5 gap-y-2 font-mono text-xs uppercase tracking-[0.06em] text-muted-foreground">
+                <li className="whitespace-nowrap before:mr-1.5 before:text-[var(--primary)] before:content-['✓']">axe-core, the engine inside Lighthouse</li>
+                <li className="whitespace-nowrap before:mr-1.5 before:text-[var(--primary)] before:content-['✓']">Open source · MIT</li>
+                <li className="whitespace-nowrap before:mr-1.5 before:text-[var(--primary)] before:content-['✓']">No overlay script</li>
+              </ul>
+              <p className="mt-6 max-w-[34rem] text-sm leading-relaxed text-muted-foreground">
+                Want to see a finished report first?{" "}
                 <Link href="/sample-report" className="text-link">Read a sample client report</Link>.
                 {SOLO_OPEN ? ` Grading is free. The hosted workspace starts at $${PLANS.solo.monthlyUsd} a month.` : null}
               </p>
@@ -153,10 +155,10 @@ export default function Home() {
                   </caption>
                   <thead>
                     <tr className="border-b-2 border-foreground">
-                      <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Target</th>
-                      <th scope="col" className="py-2 pr-4 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Public<span className="hidden sm:inline"> scan</span></th>
-                      <th scope="col" className="hidden py-2 pr-4 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground sm:table-cell">States</th>
-                      <th scope="col" className="py-2 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Net new</th>
+                      <th scope="col" className="py-2 pr-4 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">Target</th>
+                      <th scope="col" className="py-2 pr-4 text-right font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">Public<span className="hidden sm:inline"> scan</span></th>
+                      <th scope="col" className="hidden py-2 pr-4 text-right font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground sm:table-cell">States</th>
+                      <th scope="col" className="py-2 text-right font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">Net new</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -249,50 +251,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Two kinds of output, kept apart. ── */}
-        <section aria-labelledby="honesty-heading" className="border-y border-border bg-card section-y">
-          <div className="frame">
-            <ExhibitHead label="Two kinds of output" />
-            <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-end">
-              <h2 id="honesty-heading" className="display max-w-3xl text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
-                A finding and an opinion are different documents.
-              </h2>
-            <p className="max-w-sm lg:justify-self-end text-sm leading-relaxed text-muted-foreground">
-              Personaudit does not simulate disabled users, and nothing here replaces testing with
-              them. For that, work with{" "}
-              <a href="https://makeitfable.com/" target="_blank" rel="noopener noreferrer" className="text-link">
-                Fable
-              </a>
-              .
-            </p>
-            </div>
-            <div className="mt-12 grid gap-10 md:grid-cols-2 md:gap-14">
-              <div className="min-w-0 border-t-2 border-foreground pt-5">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-semibold">Findings</p>
-                  <SeverityChip severity="critical" ruleId="4.1.2" />
-                </div>
-                <p className="mt-3 leading-relaxed text-muted-foreground">
-                  From axe-core. Deterministic: run it twice, get the same answer. Cited to a WCAG
-                  success criterion. The only output that goes into a compliance report.
-                </p>
-              </div>
-              <div className="min-w-0 border-t-2 border-dashed border-[var(--redline)] pt-5">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-semibold">Persona notes</p>
-                  <span className="redline-note uppercase tracking-[0.1em]">Opinion · AI</span>
-                </div>
-                <p className="mt-3 leading-relaxed text-muted-foreground">
-                  AI browser agents try to finish a task, and a separate check reads the final page.
-                  Useful for the client story. Never a compliance verdict, never mixed into the
-                  findings.
-                </p>
-              </div>
-            </div>
-
-          </div>
-        </section>
-
         {/* ── Persona layer: task success, the client story. ── */}
         <section aria-labelledby="persona-heading" className="section-y">
           <div className="frame">
@@ -306,6 +264,27 @@ export default function Home() {
                 Clients don&apos;t act on a rule ID. They act on &ldquo;a first-time buyer never
                 found pricing.&rdquo; Personas give you that sentence, with the run to back it up.
               </p>
+              <dl className="mt-8 max-w-md space-y-5">
+                <div className="border-t-2 border-foreground pt-4">
+                  <dt className="flex items-center justify-between gap-3 font-semibold">
+                    Findings <SeverityChip severity="critical" ruleId="4.1.2" />
+                  </dt>
+                  <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    From axe-core. Run it twice, get the same answer. Cited to WCAG. The only
+                    thing that goes into the evidence report.
+                  </dd>
+                </div>
+                <div className="border-t-2 border-dashed border-[var(--redline)] pt-4">
+                  <dt className="flex items-center justify-between gap-3 font-semibold">
+                    Persona notes <span className="redline-note uppercase tracking-[0.1em]">Opinion · AI</span>
+                  </dt>
+                  <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    Labeled as AI opinion, never mixed into the findings. Personaudit does not
+                    simulate disabled users; for that, test with real people through{" "}
+                    <a href="https://makeitfable.com/" target="_blank" rel="noopener noreferrer" className="text-link">Fable</a>.
+                  </dd>
+                </div>
+              </dl>
             </div>
             <div className="min-w-0">
               <SampleTaskSuccess />
@@ -314,33 +293,15 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Why now: dated, sourced. ── */}
-        <section aria-labelledby="deadlines-heading" className="border-t border-border bg-card section-y-sm">
-          <div className="frame">
-            <ExhibitHead label="Why this year" />
-          <div className="mt-8 grid gap-8 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] md:items-start">
-            <div>
-              <h2 id="deadlines-heading" className="display text-[clamp(1.7rem,3vw,2.2rem)] leading-[1.1]">
-                The deadlines are on the calendar.
-              </h2>
-            </div>
-            <ol className="min-w-0 divide-y divide-border border-y border-border">
-              {DEADLINES.map((d) => (
-                <li key={d.date} className="grid gap-1 py-4 sm:grid-cols-[9.5rem_minmax(0,1fr)] sm:gap-6">
-                  <p className="font-mono text-sm tabular-nums text-[var(--redline)]">{d.date}</p>
-                  <p className="text-[0.9375rem] leading-relaxed">{d.what}</p>
-                </li>
-              ))}
-              <li className="py-4 text-sm text-muted-foreground">
-                Sources and what to do this quarter:{" "}
-                <Link href="/guides/accessibility-deadlines" className="text-link">
-                  the deadlines guide
-                </Link>
-                . Not legal advice.
-              </li>
-            </ol>
-          </div>
-          </div>
+        {/* ── Why now: one line; the dated table lives on /for-agencies. ── */}
+        <section aria-label="Why this year" className="border-t border-border bg-card">
+          <p className="frame py-6 text-[0.9375rem] leading-relaxed">
+            <span className="font-mono text-sm tabular-nums text-[var(--redline)]">Jun 28, 2025</span>{" "}
+            EU accessibility enforcement began.{" "}
+            <span className="font-mono text-sm tabular-nums text-[var(--redline)]">Apr 26, 2027</span>{" "}
+            the US Title II web rule applies to larger governments.{" "}
+            <Link href="/guides/accessibility-deadlines" className="text-link">All deadlines and sources</Link>. Not legal advice.
+          </p>
         </section>
 
         {/* ── Close. ── */}
@@ -351,7 +312,7 @@ export default function Home() {
                 Open a case file on your next client.
               </h2>
               <p className="mt-4 max-w-lg leading-relaxed text-muted-foreground">
-                Grade the public site now. Run the CLI behind the login tonight. Hand over the
+                Grade the public site now. Run the CLI behind the login, locally, tonight. Hand over the
                 report tomorrow.{" "}
                 {SOLO_OPEN
                   ? `Enterprise platforms sell annual contracts; Solo is $${PLANS.solo.monthlyUsd} a month, and the CLI is free.`

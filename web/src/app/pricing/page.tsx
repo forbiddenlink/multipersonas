@@ -50,7 +50,7 @@ const TIERS: Tier[] = [
       "Hosted grade on up to 10 public pages, no signup",
       `${PROJECT_LIMITS.free} hosted project`,
     ],
-    limits: "No scheduled scans, no persona task-success, no exported compliance report.",
+    limits: "No scheduled scans, no persona task-success, no exported evidence report.",
   },
   {
     id: "solo",
@@ -64,7 +64,7 @@ const TIERS: Tier[] = [
       "Scheduled re-scans on a cron, not a button you remember",
       "Persona task-success on public flows",
       "Compare retests: new, cleared, and still-open findings",
-      "Exportable compliance report (verdicts only)",
+      "Exportable evidence report (axe-core findings only)",
     ],
     limits: "Reports carry the Personaudit header, not your own.",
   },
@@ -91,7 +91,7 @@ const CAPABILITY_LEDGER: { capability: string; today: boolean; detail: string }[
   { capability: "CI gate on new defects only", today: true, detail: "Baseline + fail-on, keyless" },
   { capability: "Scheduled re-scans", today: true, detail: "Solo and agency founding" },
   { capability: "Persona task-success", today: true, detail: "Solo and agency founding, public flows" },
-  { capability: "White-label compliance report", today: true, detail: "Agency founding" },
+  { capability: "White-label evidence report", today: true, detail: "Agency founding" },
   { capability: "Hosted behind-login scan", today: false, detail: "Not built. Agency founding funds it." },
 ];
 
@@ -99,7 +99,7 @@ const PRICING_FAQS = [
   {
     question: "Is the CLI really free?",
     answer:
-      "Yes, and it is the part that does the compliance work. scan runs axe-core with no API key and no account, including behind a login using a session saved on your own machine. Paying is for the hosted workspace around it: history, schedules, and the exported report.",
+      "Yes, and it is the part that does the scanning. scan runs axe-core with no API key and no account, including behind a login using a session saved on your own machine. Paying is for the hosted workspace around it: history, schedules, and the exported report.",
   },
   {
     question: "Do you scan behind a login on your servers?",
@@ -119,17 +119,17 @@ const PRICING_FAQS = [
   {
     question: "Does a persona decide whether my site is accessible?",
     answer:
-      "Never. Only axe-core touches compliance, and it is deterministic and citable. Personas report task success and labeled opinion. We do not simulate disabled users, and nothing here replaces testing with them.",
+      "Never. Only axe-core produces accessibility findings, and it is deterministic and citable. Personas report task success and labeled opinion. We do not simulate disabled users, and nothing here replaces testing with them.",
   },
   {
     question: "How is this different from WAVE, Lighthouse CI, or pa11y-ci?",
     answer:
-      "Those are free and worth using. The difference is what happens after the first run. Framework-generated element ids change on every build, so a plain CI gate built on them gets noisy fast on real codebases and teams stop trusting it. Personaudit keys each defect to a render-stable id, so the same broken component reads as the same finding across builds, and your baseline stays honest.",
+      "Those are free and worth using. The difference we aim at is what happens after the first run. Framework-generated element ids change on every build, so a CI gate that identifies a defect by its raw selector can get noisy on real codebases. Personaudit keys each defect to a render-stable id, so the same broken component reads as the same finding across builds. We have not benchmarked every free tool on this, so test yours against a churning build.",
   },
   {
     question: "Why would I pay $199 a month instead of an enterprise platform?",
     answer:
-      "Enterprise accessibility platforms (the Deque axe, Siteimprove, Level Access, Evinced class) are typically sold on annual contracts that run five figures a year, aimed at organizations with a procurement process. Mid-market tools land lower: Pope Tech around $2,000/year, Silktide around $6,000/year. Agency founding access is a monthly price with no sales call, built for a shop running client sites, not a compliance department.",
+      "Enterprise accessibility platforms (the Deque axe, Siteimprove, Level Access, Evinced class) are generally sold by quote, and we have not verified their current prices. Two we did check, as of Oct 2026: Pope Tech lists Free (25 pages), Team at $25/month, Business Plus at $225/month (which includes scanning behind a login), and Professional at $400/month. Silktide is quote-only with a 12-month minimum. Agency founding access is a $199 monthly price with no sales call, built for a shop running client sites. Pope Tech's Business Plus is the closest comparison; read its pricing page before you decide.",
   },
 ] as const;
 
@@ -152,7 +152,7 @@ export default function PricingPage() {
             <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center lg:gap-16">
               <div className="min-w-0">
                 <h1 className="display max-w-2xl text-[clamp(2.2rem,4.6vw,3.5rem)] leading-[1.05]">
-                  The part that proves compliance <span className="mark-sweep">is free.</span>
+                  The part that produces the evidence <span className="mark-sweep">is free.</span>
                 </h1>
                 <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
                   The CLI runs axe-core at every state it reaches, including behind a login, with
@@ -297,13 +297,13 @@ export default function PricingPage() {
                 <caption className="sr-only">Capabilities available today versus on the roadmap</caption>
                 <thead>
                   <tr className="border-b-2 border-foreground">
-                    <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+                    <th scope="col" className="py-2 pr-4 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">
                       Capability
                     </th>
-                    <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+                    <th scope="col" className="py-2 pr-4 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">
                       Status
                     </th>
-                    <th scope="col" className="py-2 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+                    <th scope="col" className="py-2 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">
                       Where
                     </th>
                   </tr>
@@ -341,19 +341,36 @@ export default function PricingPage() {
               </h2>
               <p className="mt-5 max-w-md leading-relaxed text-muted-foreground">
                 Enterprise accessibility platforms in the class of Deque axe, Siteimprove, Level Access,
-                and Evinced are typically sold on annual contracts running{" "}
-                <span className="font-medium text-foreground">five figures a year</span>. Mid-market
-                tools land lower: Pope Tech around $2,000/year, Silktide around $6,000/year.
-                Agency founding access is $199 a month, no sales call.
+                and Evinced are generally sold by quote; we have not verified their current prices.
+                Two we did check:
+              </p>
+              <ul className="mt-4 max-w-md list-disc space-y-2 pl-5 leading-relaxed text-muted-foreground">
+                <li>
+                  <a href="https://pope.tech/pricing" target="_blank" rel="noopener noreferrer" className="text-link">
+                    Pope Tech
+                  </a>{" "}
+                  lists Free (25 pages), Team at $25/month, Business Plus at $225/month (includes
+                  scanning behind a login), and Professional at $400/month.
+                </li>
+                <li>
+                  <a href="https://silktide.com/pricing/" target="_blank" rel="noopener noreferrer" className="text-link">
+                    Silktide
+                  </a>{" "}
+                  is quote-only with a 12-month minimum.
+                </li>
+              </ul>
+              <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
+                As of Oct 2026, from each vendor&apos;s pricing page; plans change, so check the
+                source. Agency founding access is $199 a month, no sales call.
               </p>
             </div>
             <div className="sheet min-w-0 p-6 sm:p-8">
               <p className="label-mono">Free tools, and where they stop</p>
               <p className="mt-3 max-w-md font-serif text-[1.0625rem] leading-relaxed">
-                WAVE, Lighthouse CI, and pa11y-ci are free and worth running. None of them key a
+                WAVE, Lighthouse CI, and pa11y-ci are free and worth running. Personaudit keys each
                 defect to a <span className="mark">render-stable id</span>, so a framework that
-                regenerates element ids on every build makes their baselines noisy on real
-                codebases. The CI gate starts crying wolf and teams turn it off.
+                regenerates element ids on every build does not make the baseline noisy. We have
+                not benchmarked every free tool on this, so test yours against a churning build.
               </p>
               <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
                 Personaudit&apos;s baseline survives that churn: the same broken component reads

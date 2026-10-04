@@ -133,7 +133,10 @@
   --input: oklch(0.58 0.02 262);   /* 3:1 on the night card (WCAG 1.4.11); 22% alpha was ~1.3:1 */
   --ring: oklch(0.8 0.09 258);
   --redline: oklch(0.72 0.15 28);
-  --highlight: oklch(0.42 0.07 98);
+  /* Warm amber marker, paper-white ink on it at 5.5:1. The old oklch(.42 .07 98) was a
+     green-grey olive that read as mud. Ink stays light so the unhighlighted top of a glyph
+     (the mark covers only the lower 62%) is still legible on the night desk. */
+  --highlight: oklch(0.48 0.12 80);
   --stamp: oklch(0.72 0.15 28);
   --chart-1: oklch(0.8 0.09 258);
   --chart-2: oklch(0.76 0.13 55);
@@ -213,7 +216,7 @@
 }
 .label-mono {
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1rem;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -330,7 +333,7 @@
   border-radius: var(--radius) var(--radius) 0 0;
   background: var(--card);
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-foreground);
@@ -363,7 +366,7 @@
   color: var(--background);
   border-radius: var(--radius) var(--radius) 0 0;
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1rem;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -379,7 +382,7 @@
 .bates,
 .exhibit-serial {
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;

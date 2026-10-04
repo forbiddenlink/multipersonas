@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/for-agencies" },
   title: "For agencies: one case file per client site",
   description:
-    "Run axe-core at every state your client sites reach, including behind the login, without a client password ever leaving your machine. A case file per client, white-labeled, with a retest that proves the fix landed.",
+    "Run axe-core at every state your client sites reach, including behind the login with the CLI, without a client password ever leaving your machine. A case file per client, white-labeled, with a retest that proves the fix landed.",
 };
 
 const FOUNDING_CHECKOUT_OPEN = isFoundingCheckoutOpen();
@@ -33,7 +33,7 @@ const WORKFLOW = [
   {
     n: "2",
     title: "Hand over the case file",
-    body: "The CLI writes a Markdown report from the behind-login run. Add the hosted workspace and it exports a verdicts-only compliance report under your agency's name, not ours.",
+    body: "The CLI writes a Markdown report from the behind-login run. Add the hosted workspace and it exports an evidence report of axe-core findings under your agency's name, not ours.",
     cmd: "→ client-report.md · white-labeled export",
   },
   {
@@ -73,8 +73,8 @@ const AGENCY_FAQS = [
   {
     question: "What does founding access include?",
     answer: FOUNDING_CHECKOUT_OPEN
-      ? "$199 a month for the hosted agency workspace that exists today: multi-site projects, scheduled re-scans, a CI gate, and a verdicts-only compliance report you can white-label. Behind-login stays in the CLI until the hosted pipeline ships. You can cancel any time from the billing portal."
-      : "The hosted agency workspace that exists today: multi-site projects, scheduled re-scans, a CI gate, and a verdicts-only compliance report you can white-label. Behind-login stays in the CLI until the hosted pipeline ships. Founding access is a paid pre-order of that workspace; the price is named when checkout is live.",
+      ? "$199 a month for the hosted agency workspace that exists today: multi-site projects, scheduled re-scans, a CI gate, and an evidence report you can white-label. Behind-login stays in the CLI until the hosted pipeline ships. You can cancel any time from the billing portal."
+      : "The hosted agency workspace that exists today: multi-site projects, scheduled re-scans, a CI gate, and an evidence report you can white-label. Behind-login stays in the CLI until the hosted pipeline ships. Founding access is a paid pre-order of that workspace; the price is named when checkout is live.",
   },
   {
     question: "How is this different from free axe, WAVE, or pa11y?",
@@ -106,7 +106,7 @@ export default function ForAgenciesPage() {
               <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-muted-foreground">
                 Personaudit runs <span className="font-medium text-foreground">axe-core</span> at
                 every state your client&apos;s site reaches, including behind the login and
-                through checkout, then hands you a case file. Authenticated scans run in the
+                through checkout when you scan with the CLI, then hands you a case file. Authenticated scans run in the
                 CLI, so a client password never leaves your machine and never touches our
                 servers. Not a widget bolted to the page. An actual audit.
               </p>
@@ -141,7 +141,7 @@ export default function ForAgenciesPage() {
                   <li key={s.fact} className="grid gap-1 py-4 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:gap-4">
                     <p className="font-mono text-sm tabular-nums text-[var(--redline)]">
                       {s.fact}
-                      <sup className="ml-0.5 text-[11px] text-muted-foreground">{s.cite}</sup>
+                      <sup className="ml-0.5 text-xs text-muted-foreground">{s.cite}</sup>
                     </p>
                     <p className="text-[0.9375rem] leading-relaxed">{s.detail}</p>
                   </li>
@@ -224,10 +224,10 @@ export default function ForAgenciesPage() {
                 </caption>
                 <thead>
                   <tr className="border-b-2 border-foreground">
-                    <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+                    <th scope="col" className="py-2 pr-4 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">
                       Client
                     </th>
-                    <th scope="col" className="py-2 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+                    <th scope="col" className="py-2 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">
                       Last scan
                     </th>
                   </tr>
@@ -277,7 +277,7 @@ export default function ForAgenciesPage() {
             <div className="sheet min-w-0 p-6 sm:p-8">
               <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
                 <p className="label-mono">Client report footer</p>
-                <span className="font-mono text-[11px] text-muted-foreground">sample</span>
+                <span className="font-mono text-xs text-muted-foreground">sample</span>
               </div>
               <p className="mt-4 font-serif text-[1.0625rem] leading-relaxed">
                 &ldquo;3 critical, 1 serious finding, cited to{" "}
@@ -313,7 +313,7 @@ export default function ForAgenciesPage() {
                 can act on, or defend.
               </p>
               <p>
-                We&apos;re honest about the limits too: axe-core renders the compliance verdict,
+                We&apos;re honest about the limits too: axe-core produces the accessibility findings,
                 and personas give usability opinion and task success, clearly marked as AI. We
                 don&apos;t simulate disabled users, and nothing automated replaces testing with
                 them. For that, work with{" "}
@@ -397,8 +397,8 @@ export default function ForAgenciesPage() {
                   </p>
                   <UnlockFoundingAccessButton className={`${buttonVariants({ size: "lg" })} mt-5 w-full`} />
                   <p className="mt-6 border-t border-border pt-5 text-sm text-muted-foreground">
-                    Not ready to commit? Tell us what would change that. A no is as useful to us
-                    as a yes, and more honest than silence.
+                    Not ready? Get notified when something changes, or tell us what would change
+                    your mind. A no is as useful to us as a yes, and more honest than silence.
                   </p>
                   <div className="mt-4">
                     <WaitlistForm variant="feedback" />

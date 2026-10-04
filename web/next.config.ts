@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import path from "path";
 import { withSentryConfig } from "@sentry/nextjs";
+import { AUTH_REDIRECTS } from "./src/lib/auth-redirects";
 
 // Enforce the narrowest policy that supports the application's configured integrations.
 // Inline scripts remain necessary for the pre-paint theme choice and Next's runtime; move
@@ -67,10 +68,7 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     // Natural URL guesses land on the real auth routes instead of 404ing.
-    return [
-      { source: "/signup", destination: "/auth/signup", permanent: true },
-      { source: "/login", destination: "/auth/login", permanent: true },
-    ];
+    return [...AUTH_REDIRECTS];
   },
   webpack: (config, { isServer }) => {
     config.resolve.alias = {
