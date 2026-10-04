@@ -329,7 +329,7 @@ export default function PricingPage() {
       tabIndex={0}
       role="region"
       aria-label="Plan comparison table"
-      className="mt-10 min-w-0 overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+      className="relative mt-10 min-w-0 overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
     >
               <table className="w-full border-collapse text-left text-sm">
                 <caption className="sr-only">What each plan includes today, and what is still the roadmap</caption>
