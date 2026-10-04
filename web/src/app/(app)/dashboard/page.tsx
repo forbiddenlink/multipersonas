@@ -4,7 +4,7 @@ import Link from "next/link";
 import { AuditForm } from "@/components/audit-form";
 import { AuditHistory } from "@/components/audit-history";
 import { SeverityChip } from "@/components/forensic/severity-chip";
-import { EmptyPrompt } from "@/components/forensic/empty-prompt";
+import { FirstRunEmpty } from "@/components/forensic/first-run-empty";
 import { createClient } from "@/lib/supabase/server";
 import { listAudits } from "@/lib/audits";
 import { getSessionPlan, planAllowsPersonas } from "@/lib/entitlements";
@@ -81,10 +81,7 @@ export default async function DashboardPage() {
               <h2 id="latest-heading" className="sr-only">
                 Latest run
               </h2>
-              <EmptyPrompt
-                prompt="Run your first audit to see what needs attention."
-                hint="Point a public URL at the form and its findings land here."
-              />
+              <FirstRunEmpty canRunHosted={canRunPersonas} />
             </>
           )}
         </section>
