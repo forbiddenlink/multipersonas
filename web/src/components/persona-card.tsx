@@ -36,7 +36,7 @@ export function PersonaCard({ persona }: { persona: Persona }) {
         <div className="min-w-0">
           <p className="font-medium text-card-foreground">{persona.name}</p>
           <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
-            {persona.description}
+            {persona.description.charAt(0).toUpperCase() + persona.description.slice(1)}
           </p>
         </div>
       </div>
