@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { resetAnalyticsIdentity } from "@/lib/analytics";
 
 export function SignOutButton() {
   const router = useRouter();
@@ -10,6 +11,7 @@ export function SignOutButton() {
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
+    resetAnalyticsIdentity();
     router.push("/");
     router.refresh();
   }
