@@ -46,6 +46,18 @@ export interface GradeRuleHit {
   wcagAA: boolean;
   /** Up to MAX_RULE_EXAMPLES located elements. Absent on reports stored before examples. */
   examples?: GradeNodeExample[];
+  /** Pages this rule fired on. Set when aggregated; absent on reports stored before this field. */
+  pages?: number;
+  /**
+   * The selector that repeats on the most pages, when one repeats on 2+. It marks a shared
+   * component (nav, footer, header), so one fix clears every page. Aggregated reports only.
+   */
+  sharedTarget?: { target: string; pages: number };
+  /**
+   * Every selector axe flagged on ONE page (capped by the scanner). Input to the
+   * cross-page aggregation; it is never stored on the aggregated report.
+   */
+  targets?: string[];
 }
 
 export interface PageAxe {
@@ -58,6 +70,11 @@ export interface PageAxe {
   wcagAAViolations: number;
   /** Per-rule hits on this page (optional for older fixtures). */
   rules?: GradeRuleHit[];
+  /**
+   * Elements axe could not decide either way ("incomplete"): a person has to look.
+   * Absent on pages scanned before this field.
+   */
+  incompleteNodes?: number;
 }
 
 export interface GradeReport {
@@ -71,6 +88,11 @@ export interface GradeReport {
   wcagAAViolations: number;
   /** Violating nodes from axe best-practice rules (not WCAG success criteria). */
   bestPracticeViolations?: number;
+  /**
+   * Elements axe flagged as needing a human check, summed across pages. Absent on reports
+   * stored before this field, which is not the same as zero.
+   */
+  needsReview?: number;
   /** "wcag-a-aa" when only WCAG A/AA findings drove the score. Absent on older reports. */
   scoring?: "wcag-a-aa";
   perPage: { url: string; score: number; violations: number; wcagViolations?: number }[];
@@ -140,15 +162,29 @@ export function computeGrade(pages: PageAxe[]): GradeReport {
   );
 
   // Merge per-page rule hits by id (sum nodes; keep highest impact / first help).
+  // Side tables count pages and repeating selectors; a repeat across pages points at one
+  // shared component, so the aggregate keeps only the winner, never the whole selector list.
   const byRule = new Map<string, GradeRuleHit>();
+  const targetPages = new Map<string, Map<string, number>>();
   for (const p of pages) {
-    for (const hit of p.rules ?? []) {
+    for (const { targets, ...hit } of p.rules ?? []) {
+      const seenHere = new Set(targets ?? []);
+      if (seenHere.size > 0) {
+        const counts = targetPages.get(hit.id) ?? new Map<string, number>();
+        for (const t of seenHere) counts.set(t, (counts.get(t) ?? 0) + 1);
+        targetPages.set(hit.id, counts);
+      }
       const prev = byRule.get(hit.id);
       if (!prev) {
-        byRule.set(hit.id, { ...hit, ...(hit.examples ? { examples: hit.examples.slice(0, MAX_RULE_EXAMPLES) } : {}) });
+        byRule.set(hit.id, {
+          ...hit,
+          pages: 1,
+          ...(hit.examples ? { examples: hit.examples.slice(0, MAX_RULE_EXAMPLES) } : {}),
+        });
         continue;
       }
       prev.nodes += hit.nodes;
+      prev.pages = (prev.pages ?? 1) + 1;
       if (hit.examples?.length) {
         prev.examples = [...(prev.examples ?? []), ...hit.examples].slice(0, MAX_RULE_EXAMPLES);
       }
@@ -157,6 +193,13 @@ export function computeGrade(pages: PageAxe[]): GradeReport {
         prev.impact = hit.impact;
       }
     }
+  }
+  for (const [id, counts] of targetPages) {
+    let best: { target: string; pages: number } | undefined;
+    for (const [target, n] of counts) {
+      if (n >= 2 && (!best || n > best.pages)) best = { target, pages: n };
+    }
+    if (best) byRule.get(id)!.sharedTarget = best;
   }
   const rules = [...byRule.values()].sort((a, b) => {
     const impactDelta = IMPACTS.indexOf(a.impact) - IMPACTS.indexOf(b.impact);
@@ -167,6 +210,8 @@ export function computeGrade(pages: PageAxe[]): GradeReport {
   const totalViolations = perPage.reduce((s, p) => s + p.violations, 0);
   const wcagAAViolations = pages.reduce((s, p) => s + p.wcagAAViolations, 0);
 
+  const recorded = pages.filter((p) => typeof p.incompleteNodes === "number");
+
   return {
     grade: bandFor(score),
     score,
@@ -175,6 +220,9 @@ export function computeGrade(pages: PageAxe[]): GradeReport {
     byImpact,
     wcagAAViolations,
     bestPracticeViolations: totalViolations - wcagAAViolations,
+    ...(recorded.length > 0
+      ? { needsReview: recorded.reduce((n, p) => n + (p.incompleteNodes ?? 0), 0) }
+      : {}),
     scoring: "wcag-a-aa",
     perPage,
     rules,

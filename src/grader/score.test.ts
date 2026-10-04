@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeGrade, IMPACT_WEIGHT, type PageAxe } from "./score.js";
+import { computeGrade, IMPACT_WEIGHT, type GradeRuleHit, type PageAxe } from "./score.js";
 
 const emptyImpacts = { critical: 0, serious: 0, moderate: 0, minor: 0 };
 
@@ -137,3 +137,70 @@ describe("computeGrade rule examples", () => {
   });
 });
 
+
+describe("computeGrade cross-page rule facts", () => {
+  const hit = (targets: string[], extra: Partial<GradeRuleHit> = {}): GradeRuleHit => ({
+    id: "button-name",
+    impact: "critical",
+    nodes: targets.length,
+    help: "Buttons must have discernible text",
+    wcagAA: true,
+    targets,
+    ...extra,
+  });
+  const page = (url: string, rule: GradeRuleHit): PageAxe => ({
+    url,
+    violationsByImpact: { ...emptyImpacts, critical: rule.nodes },
+    passCount: 10,
+    wcagAAViolations: rule.nodes,
+    rules: [rule],
+  });
+
+  it("counts the pages a rule fired on", () => {
+    const r = computeGrade([page("a", hit(["#x"])), page("b", hit(["#x"])), page("c", hit(["#y"]))]);
+    expect(r.rules[0].pages).toBe(3);
+  });
+
+  it("reports a selector that repeats across pages as the shared target", () => {
+    const r = computeGrade([
+      page("a", hit(["header .menu-btn", "#a1"])),
+      page("b", hit(["header .menu-btn"])),
+      page("c", hit(["header .menu-btn", "#c1"])),
+    ]);
+    expect(r.rules[0].sharedTarget).toEqual({ target: "header .menu-btn", pages: 3 });
+  });
+
+  it("reports no shared target when a selector appears on only one page", () => {
+    const r = computeGrade([page("a", hit(["#a", "#b", "#c"])), page("b", hit(["#d"]))]);
+    expect(r.rules[0].sharedTarget).toBeUndefined();
+  });
+
+  it("does not store the per-page target list on the aggregated report", () => {
+    const r = computeGrade([page("a", hit(["#x"])), page("b", hit(["#x"]))]);
+    expect(r.rules[0]).not.toHaveProperty("targets");
+  });
+
+  it("still aggregates hits from older fixtures that carry no targets", () => {
+    const r = computeGrade([page("a", hit([], { targets: undefined, nodes: 2 })), page("b", hit([], { targets: undefined, nodes: 1 }))]);
+    expect(r.rules[0]).toMatchObject({ nodes: 3, pages: 2 });
+    expect(r.rules[0].sharedTarget).toBeUndefined();
+  });
+});
+
+describe("computeGrade needs-review count", () => {
+  const base = { violationsByImpact: { ...emptyImpacts }, passCount: 10, wcagAAViolations: 0 };
+
+  it("sums axe incomplete elements across pages", () => {
+    const r = computeGrade([{ url: "a", ...base, incompleteNodes: 4 }, { url: "b", ...base, incompleteNodes: 2 }]);
+    expect(r.needsReview).toBe(6);
+  });
+
+  it("leaves the field absent when no page recorded it (old data)", () => {
+    const r = computeGrade([{ url: "a", ...base }]);
+    expect(r).not.toHaveProperty("needsReview");
+  });
+
+  it("keeps a recorded zero", () => {
+    expect(computeGrade([{ url: "a", ...base, incompleteNodes: 0 }]).needsReview).toBe(0);
+  });
+});
