@@ -223,6 +223,7 @@ function GradeReportView({
                 help={rule.help}
                 nodes={rule.nodes}
                 wcagAA={rule.wcagAA}
+                examples={rule.examples}
               />
             ))}
           </ul>

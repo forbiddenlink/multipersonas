@@ -58,3 +58,25 @@ describe("GradeFindingRow WCAG citation", () => {
     expect(screen.getByText("[WCAG 1.4.3]")).toBeTruthy();
   });
 });
+
+describe("GradeFindingRow located elements", () => {
+  const examples = [
+    { url: "https://example.com/pricing", target: "main > img.hero", html: "<img class=\"hero\">" },
+    { url: "https://example.com/", target: "#host >>> img", html: "<img>" },
+  ];
+
+  it("lists each element's page path, selector and HTML as text", () => {
+    render(<ul><GradeFindingRow ruleId="image-alt" severity="critical" help="Alt" nodes={5} wcagAA examples={examples} /></ul>);
+    expect(screen.getByText("Where: 2 of 5 elements")).toBeTruthy();
+    expect(screen.getByText("/pricing")).toBeTruthy();
+    expect(screen.getByText("main > img.hero")).toBeTruthy();
+    // Rendered as text, never as markup.
+    expect(screen.getByText("<img class=\"hero\">").tagName).toBe("CODE");
+  });
+
+  it("renders nothing extra for reports stored before examples existed", () => {
+    render(<ul><GradeFindingRow ruleId="image-alt" severity="critical" help="Alt" nodes={5} wcagAA /></ul>);
+    expect(screen.queryByText(/^Where:/)).toBeNull();
+  });
+});
+
