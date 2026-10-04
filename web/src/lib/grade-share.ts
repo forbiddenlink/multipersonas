@@ -42,7 +42,7 @@ export function dequeRuleUrl(ruleId: string): string {
 }
 
 /** Hostname without a leading "www.", so the apex and www forms count as one site. */
-function siteKey(url: string): string | null {
+export function siteKey(url: string): string | null {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
   } catch {
