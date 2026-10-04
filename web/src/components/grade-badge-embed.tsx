@@ -39,13 +39,16 @@ export function GradeBadgeEmbed({ token, host }: { token: string; host: string }
   return (
     <section className="border-t border-border pt-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="label-mono">Embed Scorecard Badge</p>
-        <span className="font-mono text-[11px] text-muted-foreground">auto-updating · SVG</span>
+        <h2 className="label-mono">Embed scorecard badge</h2>
+        <span className="font-mono text-[11px] text-muted-foreground">SVG · cached up to 24 hours</span>
       </div>
 
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
         Embed this verifiable accessibility grade on your GitHub README, documentation, or
-        client website footer.
+        client website footer. The badge shows the grade from this scan. It does not
+        change on its own: a re-grade makes a new result address, and the badge shows the
+        new letter once you point it there. Browsers and CDNs can hold an old copy for up to
+        a day.
       </p>
 
       {/* Live Badge Preview */}
@@ -73,7 +76,7 @@ export function GradeBadgeEmbed({ token, host }: { token: string; host: string }
             <button
               type="button"
               onClick={() => copy(mdSnippet, "md")}
-              className="font-mono text-[11px] text-foreground underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              className="inline-flex min-h-11 items-center px-2 font-mono text-[11px] text-foreground underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               {copiedFormat === "md" ? "✓ Copied" : "Copy Markdown"}
             </button>
@@ -89,7 +92,7 @@ export function GradeBadgeEmbed({ token, host }: { token: string; host: string }
             <button
               type="button"
               onClick={() => copy(htmlSnippet, "html")}
-              className="font-mono text-[11px] text-foreground underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              className="inline-flex min-h-11 items-center px-2 font-mono text-[11px] text-foreground underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               {copiedFormat === "html" ? "✓ Copied" : "Copy HTML"}
             </button>

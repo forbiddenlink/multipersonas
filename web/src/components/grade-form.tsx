@@ -1,15 +1,25 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import { safeAnalyticsHost, trackProductEvent } from "@/lib/analytics";
 import { rememberGradeToken } from "@/lib/grade-tokens";
+import { normalizeGradeInput, prefillFromSearch } from "@/lib/grade-url";
 
 // Public site key is safe to expose (that's its purpose). When unset (local/preview),
 // the widget is skipped and the server-side gate is a no-op, so the form behaves as before.
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+function WaitSpinner() {
+  return (
+    <svg aria-hidden="true" className="size-3.5 animate-spin motion-reduce:animate-none" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" className="opacity-30" />
+      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 /**
  * Queue a public grade, then land on `/grade/[token]` immediately. That page already
@@ -21,11 +31,20 @@ export function GradeForm() {
   const inputId = useId();
   const hintId = `${inputId}-hint`;
   const errorId = `${inputId}-error`;
+  const waitId = `${inputId}-wait`;
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileInstance | undefined>(undefined);
+
+  // "Re-grade this site" links here with ?url=<entry>. Read it after mount (keeps the
+  // page statically rendered) and only fill an input the visitor has not touched.
+  useEffect(() => {
+    const prefill = prefillFromSearch(window.location.search);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time prefill from the address bar
+    if (prefill) setUrl((current) => (current === "" ? prefill : current));
+  }, []);
 
   function resetTurnstile() {
     setTurnstileToken(null);
@@ -38,12 +57,12 @@ export function GradeForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    const trimmedUrl = url.trim();
+    const trimmedUrl = normalizeGradeInput(url);
     let parsedUrl: URL;
     try {
       parsedUrl = new URL(trimmedUrl);
     } catch {
-      setError("Enter a full URL, like https://example.com.");
+      setError("Enter a website address, like example.com or https://example.com.");
       return;
     }
 
@@ -134,7 +153,7 @@ export function GradeForm() {
               setUrl(e.target.value);
               if (error) setError(null);
             }}
-            placeholder="https://your-client.com"
+            placeholder="your-client.com"
             required
             disabled={loading}
             autoComplete="url"
@@ -142,18 +161,26 @@ export function GradeForm() {
             aria-describedby={error ? `${hintId} ${errorId}` : hintId}
             className="h-12 min-w-0 sm:flex-1 rounded-sm border border-input bg-card px-4 font-mono text-base text-foreground transition-[border-color] duration-150 placeholder:text-muted-foreground hover:border-foreground/70 focus-visible:border-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] aria-invalid:border-[var(--redline)] disabled:cursor-not-allowed disabled:opacity-60"
           />
+          {/* Waiting on the human check is not an inert button: keep full colour, show a
+              spinner, and say why (aria-disabled keeps it focusable and described). */}
           <Button
             type="submit"
             size="lg"
             loading={loading}
-            disabled={!turnstileReady}
-            className="h-12 shrink-0 px-6"
+            aria-disabled={!turnstileReady || undefined}
+            aria-describedby={!turnstileReady ? waitId : undefined}
+            onClick={!turnstileReady ? (e) => e.preventDefault() : undefined}
+            className="h-12 shrink-0 px-6 aria-disabled:cursor-wait"
           >
-            {loading ? "Queuing grade" : "Grade this site"}
+            {!loading && !turnstileReady ? <WaitSpinner /> : null}
+            {loading ? "Queuing grade" : !turnstileReady ? "Checking you\u2019re human\u2026" : "Grade this site"}
           </Button>
         </div>
         <p id={hintId} className="text-sm leading-relaxed text-muted-foreground">
           Up to 10 same-site public pages. Use the CLI for logged-in flows.
+        </p>
+        <p id={waitId} role="status" className="sr-only">
+          {!turnstileReady ? "The Grade button unlocks once the human check below finishes." : ""}
         </p>
         <dl
           aria-label="What your free grade includes"

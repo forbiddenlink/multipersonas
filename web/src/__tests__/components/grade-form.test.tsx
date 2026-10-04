@@ -31,8 +31,27 @@ describe("GradeForm", () => {
     expect(summary).toHaveTextContent("named axe rules");
   });
 
-  it("shows an in-page error for incomplete URLs instead of relying on browser validation", async () => {
+  it("shows an in-page error for unusable input instead of relying on browser validation", async () => {
     const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<GradeForm />);
+
+    fireEvent.change(screen.getByLabelText("Public website URL"), {
+      target: { value: "ftp://example.com" },
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /grade this site/i }));
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Use an http or https URL.");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("adds https:// to a bare host like example.com", async () => {
+    const token = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    const fetchMock = vi.fn(async () => jsonResponse({ token }));
     vi.stubGlobal("fetch", fetchMock);
 
     render(<GradeForm />);
@@ -44,11 +63,18 @@ describe("GradeForm", () => {
       fireEvent.click(screen.getByRole("button", { name: /grade this site/i }));
     });
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "Enter a full URL, like https://example.com.",
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/grade",
+      expect.objectContaining({ body: JSON.stringify({ url: "https://example.com/" }) }),
     );
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(push).not.toHaveBeenCalled();
+    expect(push).toHaveBeenCalledWith(`/grade/${token}`);
+  });
+
+  it("prefills the field from ?url= for a re-grade", async () => {
+    window.history.pushState({}, "", "/grade?url=https%3A%2F%2Fexample.com%2Fa");
+    render(<GradeForm />);
+    expect(await screen.findByDisplayValue("https://example.com/a")).toBeInTheDocument();
+    window.history.pushState({}, "", "/");
   });
 
   it("queues normalized http/https URLs and navigates to the grade page", async () => {
@@ -72,5 +98,29 @@ describe("GradeForm", () => {
     });
     expect(push).toHaveBeenCalledWith(`/grade/${token}`);
     expect(JSON.parse(localStorage.getItem(GRADE_TOKEN_STORAGE_KEY) ?? "[]")).toEqual([token]);
+  });
+});
+
+describe("GradeForm while the human check is pending", () => {
+  afterEach(() => {
+    vi.resetModules();
+    vi.doUnmock("@marsidev/react-turnstile");
+    vi.unstubAllEnvs();
+  });
+
+  it("keeps the button full-colour, focusable, and explains the wait", async () => {
+    vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "test-site-key");
+    vi.resetModules();
+    vi.doMock("@marsidev/react-turnstile", () => ({ Turnstile: () => null }));
+    const { GradeForm: PendingForm } = await import("@/components/grade-form");
+    render(<PendingForm />);
+
+    const button = screen.getByRole("button", { name: /checking you.re human/i });
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).not.toBeDisabled();
+    expect(button.getAttribute("aria-describedby")).toBeTruthy();
+    expect(document.getElementById(button.getAttribute("aria-describedby")!)).toHaveTextContent(
+      /unlocks once the human check/i,
+    );
   });
 });

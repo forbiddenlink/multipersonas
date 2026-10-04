@@ -11,7 +11,7 @@ describe("GradeBadgeEmbed", () => {
   it("renders badge preview and copy buttons", () => {
     render(<GradeBadgeEmbed token="test-token" host="example.com" />);
 
-    expect(screen.getByText("Embed Scorecard Badge")).toBeDefined();
+    expect(screen.getByText("Embed scorecard badge")).toBeDefined();
     expect(screen.getByRole("button", { name: /Copy Markdown/i })).toBeDefined();
     expect(screen.getByRole("button", { name: /Copy HTML/i })).toBeDefined();
   });

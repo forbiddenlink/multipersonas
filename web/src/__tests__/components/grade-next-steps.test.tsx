@@ -23,7 +23,7 @@ describe("GradeNextSteps", () => {
       />,
     );
 
-    const save = screen.getByRole("link", { name: "Save this grade" });
+    const save = screen.getByRole("link", { name: "Save and track this site" });
     expect(save).toHaveAttribute(
       "href",
       "/auth/signup?returnTo=%2Fprojects%3Furl%3Dhttps%253A%252F%252Fexample.com%252Fpricing",
@@ -54,7 +54,7 @@ describe("GradeNextSteps", () => {
       "href",
       "/dashboard",
     );
-    expect(screen.queryByRole("link", { name: "Save this grade" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Save and track this site" })).not.toBeInTheDocument();
     expect(screen.getByText(/1 public page only/)).toBeInTheDocument();
   });
 });
@@ -67,7 +67,7 @@ describe("GradeNextSteps print behaviour", () => {
     const hidden = Array.from(container.querySelectorAll(".grade-print-hide"));
     const checklist = screen.getByText(/Keyboard-only navigation/);
     expect(hidden.some((el) => el.contains(checklist))).toBe(false);
-    expect(hidden.some((el) => el.contains(screen.getByRole("link", { name: "Save this grade" })))).toBe(true);
+    expect(hidden.some((el) => el.contains(screen.getByRole("link", { name: "Save and track this site" })))).toBe(true);
     expect(hidden.some((el) => el.contains(screen.getByRole("link", { name: /founding access/i })))).toBe(true);
     expect(hidden.some((el) => el.contains(screen.getByText(/Create an account and this grade/)))).toBe(true);
   });

@@ -36,11 +36,15 @@ export function GradeCopyLink({ token }: { token: string }) {
       <button
         type="button"
         onClick={copy}
-        className="inline-flex h-9 items-center gap-2 rounded-sm border border-border bg-card px-3.5 text-sm text-foreground transition-colors duration-150 hover:border-foreground/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+        className="inline-flex min-h-11 items-center gap-2 rounded-sm border border-border bg-card px-4 text-sm text-foreground transition-colors duration-150 hover:border-foreground/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
       >
         <span aria-hidden="true" className="font-mono text-xs">⧉</span>
         {copied ? "Link copied" : "Copy share link"}
       </button>
+      {/* Polite status so the copy is confirmed to screen readers, not only by the label swap. */}
+      <span role="status" className="sr-only">
+        {copied ? "Share link copied to clipboard" : ""}
+      </span>
       {error ? (
         <p role="alert" className="mt-1.5 text-xs text-[var(--redline)]">
           {error}
