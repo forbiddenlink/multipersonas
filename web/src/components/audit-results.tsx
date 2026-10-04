@@ -2,7 +2,8 @@
 
 import { TaskEvidencePanel } from "@/components/task-evidence";
 import type { TaskDefinition, TaskOutcome } from "@engine/tasks/definition";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { PERSONA_DATA } from "@/lib/personas";
 import { formatLocation } from "@/lib/format-location";
 import { SEVERITY_ORDER } from "@/components/forensic/severity";
@@ -10,6 +11,9 @@ import { SeverityChip } from "@/components/forensic/severity-chip";
 import { Meter } from "@/components/forensic/meter";
 
 export interface AuditResponse {
+  /** The saved run (test_runs.id). Set by the worker for signed-in runs; absent for anonymous
+   * runs and for jobs finished before this field existed, so every reader treats it as optional. */
+  runId?: string;
   task?: TaskDefinition | null;
   taskOutcomes?: TaskOutcome[];
   url: string;
@@ -231,8 +235,18 @@ export function AuditResults({
         Accessibility violations come from axe-core and are deterministic.
       </p>
 
-      <div className={compact ? "" : "flex justify-center"}>
-        <Button variant="outline" onClick={onReset}>
+      <div className={`flex flex-wrap items-center gap-3 ${compact ? "" : "justify-center"}`}>
+        {results.runId ? (
+          <>
+            <Link href={`/audits/${results.runId}`} className={buttonVariants({ variant: "default" })}>
+              Open the full run
+            </Link>
+            <Link href={`/audits/${results.runId}/report`} className={buttonVariants({ variant: "outline" })}>
+              Open the report
+            </Link>
+          </>
+        ) : null}
+        <Button variant={results.runId ? "link" : "outline"} onClick={onReset}>
           Run another audit
         </Button>
       </div>

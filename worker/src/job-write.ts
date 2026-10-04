@@ -26,3 +26,9 @@ export async function persistGradeResult(
     .update({ status: "completed", error: null, completed_at: new Date().toISOString() })
     .eq("id", jobId).select("id").single());
 }
+
+/** Tag a finished job's result with the saved run it produced (signed-in runs only), so the
+ * browser can link to /audits/<id> without a second lookup. Anonymous runs persist no run. */
+export function withRunId<T extends object>(response: T, runId: string | null): T | (T & { runId: string }) {
+  return runId ? { ...response, runId } : response;
+}

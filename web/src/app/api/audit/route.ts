@@ -4,7 +4,9 @@ import { isBuiltinPersonaId } from "@engine/personas/library";
 import { assertUrlAllowed, BlockedUrlError } from "@engine/security/url-guard";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getSessionPlan, planAllowsPersonas } from "@/lib/entitlements";
+import { getExactPlan, getSessionPlan, planAllowsPersonas, projectLimitFor } from "@/lib/entitlements";
+import { createProject } from "@/lib/projects";
+import { findProjectForUrl, siteHost } from "@/lib/project-match";
 import { DEFAULT_PERSONA_IDS, MAX_PERSONAS } from "@/lib/personas";
 import { killSwitchEnabled, estimatedCallsFor } from "@/lib/limits";
 import { consumeRateLimit } from "@/lib/rate-limit";
@@ -29,7 +31,7 @@ export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  let body: { url?: string; personaIds?: unknown; projectId?: unknown };
+  let body: { url?: string; personaIds?: unknown; projectId?: unknown; newProject?: unknown };
   try {
     const parsed: unknown = await request.json();
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -120,6 +122,31 @@ export async function POST(request: Request) {
     }
   }
 
+  // Optional "save this run to a project for this site" (the dashboard form). Resolved here,
+  // before any rate-limit slot or spend, so the plan's project cap refuses a run for free.
+  // An existing project for the same site is reused rather than duplicated (the client's list
+  // can be stale). The project row itself is only created later, once spend is reserved.
+  let projectToCreate: { name: string; url: string } | null = null;
+  if (user && !projectId && body.newProject === true) {
+    const { data: owned } = await supabase.from("projects").select("id,url");
+    const match = findProjectForUrl(owned ?? [], parsedUrl.href);
+    if (match) {
+      projectId = match.id;
+    } else {
+      const limit = projectLimitFor(await getExactPlan(supabase, user.id));
+      if (limit !== null && (owned?.length ?? 0) >= limit) {
+        return NextResponse.json(
+          {
+            error: `Your plan includes ${limit} project${limit === 1 ? "" : "s"}. See pricing to add more.`,
+            code: "project_limit",
+          },
+          { status: 409 },
+        );
+      }
+      projectToCreate = { name: siteHost(parsedUrl.href) ?? parsedUrl.hostname, url: parsedUrl.origin };
+    }
+  }
+
   // Rate limit only after the request is known-valid AND the environment can
   // actually enqueue — a missing service key must not burn the anon 1/hour slot.
   const admin = createAdminClient();
@@ -168,6 +195,24 @@ export async function POST(request: Request) {
     );
   }
 
+  let createdProjectId: string | null = null;
+  if (projectToCreate && user) {
+    try {
+      const created = await createProject(supabase, user.id, projectToCreate);
+      createdProjectId = created?.id ?? null;
+    } catch {
+      createdProjectId = null;
+    }
+    if (!createdProjectId) {
+      await releaseSpend(chosenIds.length, rateLimitKey);
+      return NextResponse.json(
+        { error: "Could not create the project. Please try again." },
+        { status: 500 },
+      );
+    }
+    projectId = createdProjectId;
+  }
+
   const { id: jobId, error: enqueueError } = await enqueueAuditJob(admin, {
     userId: user?.id ?? null,
     url: parsedUrl.href,
@@ -188,6 +233,8 @@ export async function POST(request: Request) {
     // The reservation went through but no job will run — refund global + caller
     // sub-cap now rather than letting either sit until UTC midnight.
     await releaseSpend(chosenIds.length, rateLimitKey);
+    // A project made only for this run would otherwise be left behind, empty.
+    if (createdProjectId) await supabase.from("projects").delete().eq("id", createdProjectId);
     return NextResponse.json(
       { error: "Could not queue the audit. Please try again." },
       { status: 500 },

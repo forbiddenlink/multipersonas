@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getSessionPlan, planAllowsPersonas } from "@/lib/entitlements";
+import { RetestButton } from "@/components/retest-button";
 import { buttonVariants } from "@/components/ui/button";
 import { PERSONA_DATA } from "@/lib/personas";
 import { formatLocation } from "@/lib/format-location";
@@ -118,6 +120,13 @@ export default async function AuditDetailPage({
     .single();
 
   if (!run) notFound();
+
+  // Retest goes through the normal audit route, so this only decides whether to offer it.
+  // The route re-checks the plan, rate limit and spend cap on every click.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const canRetest = planAllowsPersonas(await getSessionPlan(supabase, user?.id ?? null));
 
   const { data: findingRows } = await supabase
     .from("findings")
@@ -316,12 +325,17 @@ export default async function AuditDetailPage({
                 </div>
               ) : null}
             </div>
-            <Link
-              href={`/audits/${run.id}/report`}
-              className={buttonVariants({ variant: "outline", size: "lg", className: "shrink-0" })}
-            >
-              Export accessibility report
-            </Link>
+            <div className="flex shrink-0 flex-col items-start gap-3 sm:items-end">
+              <Link
+                href={`/audits/${run.id}/report`}
+                className={buttonVariants({ variant: "outline", size: "lg" })}
+              >
+                Export accessibility report
+              </Link>
+              {canRetest ? (
+                <RetestButton url={run.url} personaIds={run.persona_ids ?? []} projectId={run.project_id} />
+              ) : null}
+            </div>
           </div>
         </div>
         <Meter

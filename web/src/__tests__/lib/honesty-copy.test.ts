@@ -337,3 +337,38 @@ describe("W5 messaging: one meaning of persona, legal facts carry the disclaimer
     expect(read("src/app/page.tsx")).toMatch(/sends an AI agent to try a task/);
   });
 });
+
+describe("W6 paid loop copy (run links, Retest, project picker, diff) stays honest", () => {
+  const files = [
+    "src/components/audit-results.tsx",
+    "src/components/retest-button.tsx",
+    "src/components/run-diff.tsx",
+    "src/components/audit-form.tsx",
+  ];
+
+  // Code comments may use any punctuation; the ban is on what a visitor reads.
+  const stripComments = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\/\/.*$/gm, "");
+
+  it.each(files)("%s has no em dash in UI copy", (file) => {
+    expect(stripComments(read(file))).not.toMatch(/—|&mdash;/);
+  });
+
+  it.each(files)("%s makes no compliance claim, no disabled-user framing, no hosted behind-login claim", (file) => {
+    const src = read(file);
+    expect(src).not.toMatch(/\bcompliant\b|\bcertif|guarantee|\bWCAG-compliant/i);
+    expect(src).not.toMatch(/disabled (user|people|person)|simulat\w* (a )?(disab|blind|low-vision)/i);
+    expect(src).not.toMatch(/hosted behind-login (is |now )?(ready|live|available)|behind[- ]login (scans?|scanning) (in|from) the (browser|dashboard)/i);
+    expect(src).not.toMatch(/Get started|rounded-xl|bg-gradient/);
+  });
+
+  it("names Retest on the diff only when the viewer has it, and the retest copy states what it reruns", () => {
+    expect(read("src/components/run-diff.tsx")).toMatch(/canRetest/);
+    expect(read("src/components/retest-button.tsx")).toMatch(/the run is saved to your history/);
+  });
+
+  it("states the project cap from the plan, never a literal, in the picker", () => {
+    const src = read("src/components/audit-form.tsx");
+    expect(src).toMatch(/Your plan includes \{projectLimit\}/);
+    expect(src).not.toMatch(/\b5 projects\b/);
+  });
+});

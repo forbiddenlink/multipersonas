@@ -118,6 +118,16 @@ test("save a task, record a keyboard barrier, fix it, and compare the retest", a
     await expect(page.getByRole("heading", { name: "Task tested", exact: true })).toBeVisible();
     await expect(page.getByText(/Expected text observed/)).toBeVisible();
 
+    // Retest re-queues the run's URL, personas and project through the normal audit route
+    // (same plan, rate-limit and spend guards). No worker runs here, so it stays queued.
+    await page.goto(`/audits/${runIds[1]}`);
+    const retestQueued = page.waitForResponse((res) => res.request().method() === "POST" && new URL(res.url()).pathname === "/api/audit");
+    await page.getByRole("button", { name: "Retest", exact: true }).click();
+    const retestResponse = await retestQueued;
+    expect(retestResponse.status()).toBe(202);
+    jobIds.push((await retestResponse.json()).jobId);
+    await expect(page.getByRole("status").filter({ hasText: "Retest queued" })).toBeVisible();
+
     await page.goto(`/projects/${projectId}`);
     await page.getByLabel("Expected final URL (optional)").fill("https://example.com/quote");
     await page.getByLabel("Require the expected text to be absent at the start and visible at the end").check();
