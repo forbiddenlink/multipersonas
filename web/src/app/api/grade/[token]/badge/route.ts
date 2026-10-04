@@ -1,5 +1,11 @@
 import { PALETTE } from "@/lib/og-palette";
 import { getGraderScan } from "@/lib/grade";
+import {
+  BADGE_LABEL_BG,
+  BADGE_LABEL_TEXT,
+  BADGE_TEXT_ON_GRADE,
+  badgeGradeColor,
+} from "@/lib/grade-badge";
 import type { GradeReport } from "@engine/grader/score";
 
 // Returns a lightweight, high-contrast SVG badge for GitHub READMEs, docs, and footers.
@@ -25,16 +31,9 @@ export async function GET(
   const report = scan.report as unknown as GradeReport;
   const grade = report.grade;
   const score = report.score;
-  const color =
-    grade === "A" || grade === "B"
-      ? PALETTE.primary
-      : grade === "C"
-        ? PALETTE.moderate
-        : grade === "D"
-          ? PALETTE.serious
-          : PALETTE.redline;
+  const color = badgeGradeColor(grade);
 
-  const svg = renderSvg("accessibility", `${grade} (${score}/100)`, color, PALETTE.ink);
+  const svg = renderSvg("accessibility", `${grade} (${score}/100)`, color, BADGE_LABEL_BG);
 
   return new Response(svg, {
     headers: {
@@ -64,9 +63,9 @@ function renderSvg(
     <rect width="${leftWidth}" height="${height}" fill="${leftBg}"/>
     <rect x="${leftWidth}" width="${rightWidth}" height="${height}" fill="${rightBg}"/>
   </g>
-  <g fill="#f4f1ec" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11" font-weight="600" text-anchor="middle">
-    <text x="${leftWidth / 2}" y="15" fill="#a39e95">${left}</text>
-    <text x="${leftWidth + rightWidth / 2}" y="15" fill="#f4f1ec">${right}</text>
+  <g fill="${BADGE_TEXT_ON_GRADE}" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11" font-weight="600" text-anchor="middle">
+    <text x="${leftWidth / 2}" y="15" fill="${BADGE_LABEL_TEXT}">${left}</text>
+    <text x="${leftWidth + rightWidth / 2}" y="15" fill="${BADGE_TEXT_ON_GRADE}">${right}</text>
   </g>
 </svg>`;
 }

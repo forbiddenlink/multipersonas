@@ -40,7 +40,7 @@ describe("marketing copy stays honest about hosted vs CLI", () => {
     const src = read("src/components/grade-next-steps.tsx");
     expect(src).toMatch(/CLI/);
     expect(src).not.toMatch(/hosted behind-login is (ready|live|available)/i);
-    expect(src).toMatch(/Save this grade/);
+    expect(src).toMatch(/Save and track this site/);
   });
 
   it("does not name $199 on the agency page unless checkout can actually take payment", () => {

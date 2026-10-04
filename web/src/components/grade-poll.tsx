@@ -24,7 +24,13 @@ const POLL_DEADLINE_MS = 10 * 60 * 1000;
  * The parent only renders this while status is queued/running, so once the grade
  * completes the component unmounts and the interval clears itself.
  */
-export function GradePoll({ token }: { token: string }) {
+export function GradePoll({
+  token,
+  status = "queued",
+}: {
+  token: string;
+  status?: "queued" | "running";
+}) {
   const router = useRouter();
   const [paused, setPaused] = useState(false);
   const [stale, setStale] = useState(false);
@@ -61,27 +67,66 @@ export function GradePoll({ token }: { token: string }) {
     );
   }
 
+  const running = status === "running";
+  const stages: { label: string; state: "done" | "current" | "todo" }[] = [
+    { label: "Queued", state: running ? "done" : "current" },
+    { label: "Crawling pages and running axe-core", state: running ? "current" : "todo" },
+    { label: "Writing the grade", state: "todo" },
+  ];
+
   return (
-    <div role="status" aria-live="polite">
+    <div>
       <p className="label-mono">Scanning</p>
-      <div className="mt-3 flex flex-wrap items-center gap-3 border-t-2 border-foreground pt-5">
-        <span
-          className="size-1.5 shrink-0 rounded-full bg-[var(--primary)] motion-safe:animate-pulse"
-          aria-hidden
-        />
-        <p className="font-mono text-sm text-muted-foreground">
-          {paused ? "auto-refresh paused" : "updates automatically"}, or{" "}
-          <Link href={`/grade/${token}`} className="text-link">
-            refresh now
-          </Link>
+      <div className="mt-3 border-t-2 border-foreground pt-5">
+        {/* Only the sentence that changes with real job state is a live region. */}
+        <p role="status" aria-live="polite" className="font-mono text-sm">
+          {running
+            ? "Your scan is running: crawling public pages and running axe-core on each."
+            : "Your scan is queued and will start as soon as a worker is free."}
         </p>
-        <button
-          type="button"
-          onClick={() => setPaused((p) => !p)}
-          className="ml-auto rounded-sm px-2 py-1 font-mono text-xs text-muted-foreground underline decoration-dotted underline-offset-4 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-        >
-          {paused ? "Resume auto-refresh" : "Pause auto-refresh"}
-        </button>
+        <ol className="mt-4 space-y-2 font-mono text-sm">
+          {stages.map((stage) => (
+            <li
+              key={stage.label}
+              aria-current={stage.state === "current" ? "step" : undefined}
+              className={`flex items-center gap-2.5 ${stage.state === "todo" ? "text-muted-foreground" : "text-foreground"}`}
+            >
+              <span
+                aria-hidden
+                className={`size-2 shrink-0 rounded-full ${
+                  stage.state === "current"
+                    ? "bg-[var(--primary)] motion-safe:animate-pulse"
+                    : stage.state === "done"
+                      ? "bg-foreground"
+                      : "border border-muted-foreground"
+                }`}
+              />
+              <span>{stage.label}</span>
+              <span className="sr-only">
+                {stage.state === "done" ? "(done)" : stage.state === "current" ? "(in progress)" : "(not started)"}
+              </span>
+            </li>
+          ))}
+        </ol>
+        <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
+          Up to 10 public pages are scanned. This page keeps its address, so you can leave
+          and come back to the result.
+        </p>
+        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-4">
+          <p className="font-mono text-sm text-muted-foreground">
+            {paused ? "Auto-refresh paused" : "Updates automatically"}, or{" "}
+            <Link href={`/grade/${token}`} className="text-link">
+              refresh now
+            </Link>
+          </p>
+          <button
+            type="button"
+            onClick={() => setPaused((p) => !p)}
+            className="ml-auto inline-flex min-h-11 items-center rounded-sm px-3 font-mono text-xs text-muted-foreground underline decoration-dotted underline-offset-4 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+          >
+            {paused ? "Resume auto-refresh" : "Pause auto-refresh"}
+          </button>
+        </div>
       </div>
     </div>
   );

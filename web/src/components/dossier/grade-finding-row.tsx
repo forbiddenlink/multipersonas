@@ -1,6 +1,7 @@
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { WcagCitation } from "@/components/forensic/wcag-citation";
 import { ruleFix } from "@/components/dossier/grade-remediation";
+import { dequeRuleUrl } from "@/lib/grade-share";
 import type { Severity } from "@/components/forensic/severity";
 
 /**
@@ -60,6 +61,17 @@ export function GradeFindingRow({
           {fix.fix}
         </p>
       ) : null}
+      <p className="mt-1.5 text-sm">
+        <a
+          href={dequeRuleUrl(ruleId)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-link inline-flex min-h-11 items-center sm:min-h-0"
+        >
+          Learn more{" "}
+          <span className="sr-only">about {ruleId} on Deque University (opens in a new tab)</span>
+        </a>
+      </p>
       {location ? (
         <p className="mt-1.5 font-mono text-[11px] text-muted-foreground">found at {location}</p>
       ) : null}

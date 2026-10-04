@@ -12,10 +12,14 @@ import { GradePoll } from "@/components/grade-poll";
 import { GradeBadgeEmbed } from "@/components/grade-badge-embed";
 import { GradeVerdictStamp } from "@/components/dossier/grade-verdict-stamp";
 import { GradeFindingRow } from "@/components/dossier/grade-finding-row";
-import { GradeCopyLink } from "@/components/dossier/grade-copy-link";
+import { GradeShare } from "@/components/grade-share";
+import { GradeArrival, GRADE_HEADING_ID } from "@/components/grade-arrival";
+import { hostOf, regradePath } from "@/lib/grade-share";
 import { EmptyPrompt } from "@/components/forensic/empty-prompt";
 import { createClient } from "@/lib/supabase/server";
 import type { GradeReport } from "@engine/grader/score";
+
+type GradeScanStatus = "queued" | "running" | "completed" | "failed";
 
 // Rules arrive sorted by weight, so the first few critical or serious ones are where to start.
 const FIX_FIRST_COUNT = 3;
@@ -73,58 +77,77 @@ export default async function GradeResultPage({
   if (!scan) notFound();
   const signedIn = Boolean(auth.user);
 
-  const host = (() => {
-    try {
-      return new URL(scan.entry_url).host;
-    } catch {
-      return scan.entry_url;
-    }
-  })();
+  const host = hostOf(scan.entry_url);
+  const completedReport =
+    scan.status === "completed" && scan.report ? (scan.report as unknown as GradeReport) : null;
 
   return (
     <div className="grade-print-root flex min-h-dvh flex-col pb-[env(safe-area-inset-bottom)]">
       <SiteHeader intent="grade" />
 
       <main id="main" className="flex-1">
-        <div className="frame-narrow py-14 sm:py-20">
-          <p className="grade-print-meta font-mono text-sm">
-            Graded {scan.entry_url} on {gradedOn(scan.created_at)}
-          </p>
-          <div className="file-tab">
-            <span>Case file</span>
-            <span className="text-foreground/40">·</span>
-            <span className="max-w-[16rem] truncate">{host}</span>
-          </div>
+        <div className="frame py-14 sm:py-20">
+          <div className="mx-auto max-w-4xl">
+            <p className="grade-print-meta font-mono text-sm">
+              Graded {scan.entry_url} on {gradedOn(scan.created_at)}
+            </p>
+            <div className="file-tab">
+              <span>Case file</span>
+              <span className="text-foreground/40">·</span>
+              <span className="max-w-[16rem] truncate">{host}</span>
+            </div>
 
-          <article className="sheet relative -mt-px p-6 sm:p-8">
-            {(scan.status === "queued" || scan.status === "running") && (
-              // Soft-refreshes in place (router.refresh) instead of a <meta refresh>
-              // full-page reload, which reset reading position every 5s (WCAG 2.2.1 F5).
-              <GradePoll token={token} />
-            )}
+            <article className="sheet relative -mt-px p-6 sm:p-8 lg:p-10">
+              {/* One h1 for every state. Focus moves here when a polled grade finishes. */}
+              <h1
+                id={GRADE_HEADING_ID}
+                tabIndex={-1}
+                className="display break-words text-[clamp(1.6rem,3.4vw,2.3rem)] leading-tight focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ring)]"
+              >
+                {host} <span className="text-muted-foreground">accessibility grade</span>
+              </h1>
+              <p className="grade-print-hide mt-2 font-mono text-sm text-muted-foreground">
+                Graded <time dateTime={scan.created_at}>{gradedOn(scan.created_at)}</time>
+                <span aria-hidden="true"> · </span>
+                <span className="break-all">{scan.entry_url}</span>
+              </p>
 
-            {scan.status === "failed" && (
-              <div className="border-t-2 border-dashed border-[var(--redline)] pt-5">
-                <p className="redline-note uppercase tracking-[0.1em]">Grade failed</p>
-                <p className="mt-2 leading-relaxed text-muted-foreground">
-                  {scan.error || "Something went wrong while scanning this URL."}
-                </p>
-                <Link href="/grade" className={buttonVariants({ variant: "outline", size: "sm", className: "mt-5" })}>
-                  Try another URL
-                </Link>
+              <GradeArrival status={scan.status as GradeScanStatus} host={host} grade={completedReport?.grade} />
+
+              <div className="mt-6">
+                {(scan.status === "queued" || scan.status === "running") && (
+                  // Soft-refreshes in place (router.refresh) instead of a <meta refresh>
+                  // full-page reload, which reset reading position every 5s (WCAG 2.2.1 F5).
+                  <GradePoll token={token} status={scan.status} />
+                )}
+
+                {scan.status === "failed" && (
+                  <div className="border-t-2 border-dashed border-[var(--redline)] pt-5">
+                    <h2 className="redline-note uppercase tracking-[0.1em]">Grade failed</h2>
+                    <p className="mt-2 leading-relaxed text-muted-foreground">
+                      {scan.error || "Something went wrong while scanning this URL."}
+                    </p>
+                    <Link
+                      href={regradePath(scan.entry_url)}
+                      className={buttonVariants({ variant: "outline", size: "lg", className: "mt-5" })}
+                    >
+                      Try this URL again
+                    </Link>
+                  </div>
+                )}
+
+                {completedReport && (
+                  <GradeReportView
+                    token={token}
+                    host={host}
+                    signedIn={signedIn}
+                    entryUrl={scan.entry_url}
+                    report={completedReport}
+                  />
+                )}
               </div>
-            )}
-
-            {scan.status === "completed" && scan.report && (
-              <GradeReportView
-                token={token}
-                host={host}
-                signedIn={signedIn}
-                entryUrl={scan.entry_url}
-                report={scan.report as unknown as GradeReport}
-              />
-            )}
-          </article>
+            </article>
+          </div>
         </div>
       </main>
       <SiteFooter />
@@ -159,18 +182,28 @@ function GradeReportView({
   return (
     <div className="space-y-8">
       {/* The verdict: letter grade as the stamp, score as the fraction beside it. */}
-      <header className="flex flex-wrap items-center gap-6 border-b-2 border-foreground pb-6">
-        <GradeVerdictStamp grade={report.grade} score={report.score} />
-        <div className="min-w-0">
-          <p className="label-mono">Accessibility evidence · WCAG 2.2 AA</p>
-          <p className="mt-1.5 font-mono text-sm text-muted-foreground">
-            {plural(report.wcagAAViolations, "WCAG A/AA failure")} ·{" "}
-            {plural(report.totalViolations - report.wcagAAViolations, "best-practice issue")} ·{" "}
-            {plural(report.pagesScanned, "page")}
-          </p>
+      <header className="space-y-6 border-y-2 border-foreground py-6">
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-5">
+          <GradeVerdictStamp grade={report.grade} score={report.score} animate />
+          <div className="min-w-0">
+            <p className="label-mono">Accessibility evidence · WCAG 2.2 AA</p>
+            <p className="mt-1.5 font-mono text-sm text-muted-foreground">
+              {plural(report.wcagAAViolations, "WCAG A/AA failure")} ·{" "}
+              {plural(report.totalViolations - report.wcagAAViolations, "best-practice issue")} ·{" "}
+              {plural(report.pagesScanned, "page")}
+            </p>
+          </div>
         </div>
-        <div className="grade-print-hide ml-auto shrink-0">
-          <GradeCopyLink token={token} />
+        <div className="grade-print-hide flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+          <GradeShare token={token} host={host} grade={report.grade} />
+          <nav aria-label="After this grade" className="flex flex-wrap gap-x-5">
+            <Link href={regradePath(entryUrl)} className="text-link inline-flex min-h-11 items-center text-sm">
+              Re-grade this site
+            </Link>
+            <Link href="/grade" className="text-link inline-flex min-h-11 items-center text-sm">
+              Grade another site
+            </Link>
+          </nav>
         </div>
       </header>
 
@@ -178,7 +211,7 @@ function GradeReportView({
           may omit this (pre-rules field); skip gracefully. */}
       {report.rules && report.rules.length > 0 ? (
         <section>
-          <p className="label-mono">Findings</p>
+          <h2 className="label-mono">Findings</h2>
           <ul className="mt-4 border-t border-border">
             {report.rules.map((rule, i) => (
               <GradeFindingRow
@@ -208,7 +241,7 @@ function GradeReportView({
       {/* Per-page list */}
       {(report.perPage?.length ?? 0) > 0 && (
         <section>
-          <p className="label-mono">Pages scanned</p>
+          <h2 className="label-mono">Pages scanned</h2>
           <div className="mt-4 divide-y divide-border border-t border-border font-mono text-sm">
             {report.perPage.map((p) => (
               <div key={p.url} className="flex items-center gap-3 py-2.5">

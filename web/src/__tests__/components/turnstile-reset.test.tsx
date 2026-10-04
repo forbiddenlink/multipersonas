@@ -65,7 +65,7 @@ describe("Turnstile-backed forms", () => {
     fireEvent.click(screen.getByRole("button", { name: /grade this site/i }));
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Could not queue the grade"));
     expect(resetTurnstile).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole("button", { name: /grade this site/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /checking you.re human/i })).toHaveAttribute("aria-disabled", "true");
     expect(push).not.toHaveBeenCalled();
   });
 
