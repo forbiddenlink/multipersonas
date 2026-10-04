@@ -4,6 +4,10 @@
 // fabricated composite. A prior 0-100 composite was removed because it always
 // floored to 0 on real sites; this one derives from axe's own pass/fail counts
 // and is reported beside a traceable per-impact table so nothing is invented.
+//
+// Only WCAG 2.x A/AA findings move the letter. axe best-practice rules are real
+// defects and stay listed, but counting them graded sparse, conformant pages a D
+// (example.com: 0 WCAG failures, 3 best-practice rules, 53/100).
 
 import { SEVERITIES, type Severity } from "../domain/vocab.js";
 
@@ -50,7 +54,11 @@ export interface GradeReport {
   totalViolations: number;
   byImpact: Record<Impact, number>;
   wcagAAViolations: number;
-  perPage: { url: string; score: number; violations: number }[];
+  /** Violating nodes from axe best-practice rules (not WCAG success criteria). */
+  bestPracticeViolations?: number;
+  /** "wcag-a-aa" when only WCAG A/AA findings drove the score. Absent on older reports. */
+  scoring?: "wcag-a-aa";
+  perPage: { url: string; score: number; violations: number; wcagViolations?: number }[];
   /** Aggregated rule hits, most nodes first. Empty on older stored reports. */
   rules: GradeRuleHit[];
 }
@@ -65,11 +73,21 @@ function bandFor(score: number): GradeReport["grade"] {
   return "F";
 }
 
+/**
+ * Weight of the WCAG A/AA violations on a page. Uses per-rule hits when present;
+ * older fixtures without rules fall back to every violation (the prior behaviour).
+ */
+function wcagViolationWeight(p: PageAxe): number {
+  if (p.rules) {
+    return p.rules
+      .filter((r) => r.wcagAA)
+      .reduce((sum, r) => sum + r.nodes * IMPACT_WEIGHT[r.impact], 0);
+  }
+  return IMPACTS.reduce((sum, i) => sum + p.violationsByImpact[i] * IMPACT_WEIGHT[i], 0);
+}
+
 function pageScore(p: PageAxe): number {
-  const violationWeight = IMPACTS.reduce(
-    (sum, i) => sum + p.violationsByImpact[i] * IMPACT_WEIGHT[i],
-    0,
-  );
+  const violationWeight = wcagViolationWeight(p);
   const passWeight = p.passCount; // each passed check weighs 1
   const denom = passWeight + violationWeight;
   if (denom === 0) return 100; // nothing testable on the page -> neutral, don't penalise
@@ -94,6 +112,7 @@ export function computeGrade(pages: PageAxe[]): GradeReport {
     url: p.url,
     score: pageScore(p),
     violations: IMPACTS.reduce((s, i) => s + p.violationsByImpact[i], 0),
+    wcagViolations: p.wcagAAViolations,
   }));
 
   const score = Math.round(
@@ -127,13 +146,18 @@ export function computeGrade(pages: PageAxe[]): GradeReport {
     return b.nodes - a.nodes;
   });
 
+  const totalViolations = perPage.reduce((s, p) => s + p.violations, 0);
+  const wcagAAViolations = pages.reduce((s, p) => s + p.wcagAAViolations, 0);
+
   return {
     grade: bandFor(score),
     score,
     pagesScanned: pages.length,
-    totalViolations: perPage.reduce((s, p) => s + p.violations, 0),
+    totalViolations,
     byImpact,
-    wcagAAViolations: pages.reduce((s, p) => s + p.wcagAAViolations, 0),
+    wcagAAViolations,
+    bestPracticeViolations: totalViolations - wcagAAViolations,
+    scoring: "wcag-a-aa",
     perPage,
     rules,
   };

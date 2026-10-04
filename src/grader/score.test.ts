@@ -50,6 +50,49 @@ describe("computeGrade", () => {
     expect(r.rules).toEqual([]);
   });
 
+  it("best-practice-only findings do not lower the letter (example.com regression)", () => {
+    // A sparse page: few passing checks, three best-practice rules, zero WCAG A/AA.
+    // The old composite counted every node and graded this D 53.
+    const r = computeGrade([
+      {
+        url: "https://example.com/",
+        violationsByImpact: { ...emptyImpacts, moderate: 9 },
+        passCount: 10,
+        wcagAAViolations: 0,
+        rules: [
+          { id: "landmark-one-main", impact: "moderate", nodes: 1, help: "Document should have one main landmark", wcagAA: false },
+          { id: "page-has-heading-one", impact: "moderate", nodes: 1, help: "Page should contain a level-one heading", wcagAA: false },
+          { id: "region", impact: "moderate", nodes: 7, help: "All page content should be contained by landmarks", wcagAA: false },
+        ],
+      },
+    ]);
+    expect(r.grade).toBe("A");
+    expect(r.score).toBe(100);
+    expect(r.scoring).toBe("wcag-a-aa");
+    expect(r.totalViolations).toBe(9);
+    expect(r.bestPracticeViolations).toBe(9);
+    expect(r.wcagAAViolations).toBe(0);
+  });
+
+  it("WCAG A/AA findings still drive the score with impact weights", () => {
+    // 10 passes, one serious WCAG node (weight 2) plus 5 best-practice nodes that must not count.
+    const r = computeGrade([
+      {
+        url: "a",
+        violationsByImpact: { ...emptyImpacts, serious: 1, moderate: 5 },
+        passCount: 10,
+        wcagAAViolations: 1,
+        rules: [
+          { id: "color-contrast", impact: "serious", nodes: 1, help: "Elements must meet minimum color contrast", wcagAA: true },
+          { id: "region", impact: "moderate", nodes: 5, help: "All page content should be contained by landmarks", wcagAA: false },
+        ],
+      },
+    ]);
+    expect(r.score).toBe(83); // 10 / (10 + 2)
+    expect(r.grade).toBe("C");
+    expect(r.perPage[0]).toMatchObject({ violations: 6, wcagViolations: 1, score: 83 });
+  });
+
   it("aggregates per-page rule hits by id", () => {
     const r = computeGrade([
       {

@@ -41,7 +41,7 @@ export default async function Image({
   const hasResult = report?.grade != null;
   const grade = report?.grade ?? "";
   const score = report?.score ?? 0;
-  const violations = report?.totalViolations ?? 0;
+  const wcagFailures = report?.wcagAAViolations ?? 0;
   const color = gradeColor(grade);
 
   return new ImageResponse(
@@ -128,7 +128,7 @@ export default async function Image({
                 </span>
                 <span>·</span>
                 <span>
-                  Violations: <strong style={{ color: INK }}>{violations}</strong>
+                  WCAG A/AA failures: <strong style={{ color: INK }}>{wcagFailures}</strong>
                 </span>
                 <span>·</span>
                 <span>axe-core</span>
