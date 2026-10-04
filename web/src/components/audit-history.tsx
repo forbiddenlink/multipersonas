@@ -17,12 +17,23 @@ function successTone(
   return "critical";
 }
 
-export function AuditHistory({ audits }: { audits: AuditListItem[] }) {
+export function AuditHistory({
+  audits,
+  canRunHosted = true,
+}: {
+  audits: AuditListItem[];
+  /** Free accounts have no run form, so the empty hint must not point at one. */
+  canRunHosted?: boolean;
+}) {
   if (audits.length === 0) {
     return (
       <EmptyPrompt
         prompt="No saved runs yet."
-        hint="Point a URL at the form above and your first scan lands here, so you can track what you've cleared over time."
+        hint={
+          canRunHosted
+            ? "Point a URL at the form above and your first scan lands here, so you can track what you've cleared over time."
+            : "Hosted persona runs come with Solo and up. Your free grades are listed on their own."
+        }
       />
     );
   }
