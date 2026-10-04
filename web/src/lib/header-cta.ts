@@ -12,7 +12,7 @@ export function headerCta(intent: HeaderIntent, foundingCheckoutOpen: boolean): 
   switch (intent) {
     case "waitlist":
       return foundingCheckoutOpen
-        ? { href: "#early-access", label: "Start founding access", shortLabel: "Start access" }
+        ? { href: "#early-access", label: "Join founding access", shortLabel: "Join" }
         : { href: "#early-access", label: "Request founding access", shortLabel: "Request access" };
     case "grade":
       return { href: "/grade", label: "Grade a site free", shortLabel: "Grade a site" };
