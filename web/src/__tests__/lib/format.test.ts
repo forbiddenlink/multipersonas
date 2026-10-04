@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatShortDate, hostname } from "@/lib/format";
+import { displayPath, formatShortDate, hostname } from "@/lib/format";
 
 describe("hostname", () => {
   it("returns the hostname of a full URL", () => {
@@ -18,3 +18,16 @@ describe("formatShortDate", () => {
     expect(formatShortDate("not a date")).toBe("");
   });
 });
+
+describe("displayPath", () => {
+  it("keeps path and query, drops scheme and host", () => {
+    expect(displayPath("https://example.com/pricing?plan=solo")).toBe("/pricing?plan=solo");
+  });
+  it("renders the root as a slash", () => {
+    expect(displayPath("https://example.com")).toBe("/");
+  });
+  it("returns unparseable input unchanged", () => {
+    expect(displayPath("example.com/about")).toBe("example.com/about");
+  });
+});
+
