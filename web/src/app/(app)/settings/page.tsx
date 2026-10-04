@@ -10,6 +10,7 @@ import { updateAgencyNameAction } from "./actions";
 import { planAllowsReportBranding, planDisplayName, planUpgradeSummary } from "@/lib/entitlements";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ManageBillingButton } from "@/components/manage-billing-button";
+import { CheckoutPlanWatcher } from "@/components/checkout-plan-watcher";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -68,11 +69,7 @@ export default async function SettingsPage({
         </div>
 
         {checkout === "success" ? (
-          <p role="status" className="mt-3 text-sm text-muted-foreground">
-            {profile?.plan === "pro" || profile?.plan === "team"
-              ? "Your account has paid access."
-              : "Your plan has not been updated yet. Refresh this page shortly. If you completed payment and access is still missing, contact billing support below before trying another checkout."}
-          </p>
+          <CheckoutPlanWatcher paid={profile?.plan === "pro" || profile?.plan === "team"} />
         ) : null}
 
         {(profile?.plan ?? "free") === "free" && (
