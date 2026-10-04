@@ -194,3 +194,33 @@ describe("auth copy matches what a Free account gets", () => {
     expect(signup).toMatch(/placeholder="8\+ characters, with a number or symbol"/);
   });
 });
+
+describe("docs match the CLI", () => {
+  it("states the CLI's real default output directory", () => {
+    const cli = fs.readFileSync(path.join(process.cwd(), "..", "src/cli.ts"), "utf-8");
+    const defaults = [...cli.matchAll(/"-o, --output <path>", "Output directory", "([^"]+)"/g)].map((m) => m[1]);
+    expect(defaults.length).toBeGreaterThan(0);
+    const docs = read("src/app/docs/page.tsx");
+    for (const d of new Set(defaults)) expect(docs).toContain(d);
+    expect(docs).not.toMatch(/mpersonas-report/);
+  });
+
+  it("does not show the legacy mpersonas binary name in the docs copy", () => {
+    expect(read("src/app/docs/page.tsx")).not.toMatch(/mpersonas/);
+  });
+});
+
+describe("nav and pricing details", () => {
+  it("points the Guides nav link at the guides index, which exists", () => {
+    expect(read("src/components/site-header.tsx")).toMatch(/href: "\/guides", label: "Guides"/);
+    expect(fs.existsSync(path.join(process.cwd(), "src/app/guides/page.tsx"))).toBe(true);
+  });
+
+  it("lists the guides index in the sitemap", () => {
+    expect(read("src/app/sitemap.ts")).toMatch(/\/guides`/);
+  });
+
+  it("gives the Free plan CTA a visible solid border, not a faint one", () => {
+    expect(read("src/app/pricing/page.tsx")).toMatch(/OUTLINE_CTA = buttonVariants\(\{[^}]*border-foreground[^/]/);
+  });
+});
