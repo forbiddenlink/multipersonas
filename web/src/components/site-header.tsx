@@ -1,16 +1,10 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { MobileNav } from "@/components/mobile-nav";
+import { HeaderActions } from "@/components/header-actions";
 import { Wordmark } from "@/components/forensic/wordmark";
+import { isFoundingCheckoutOpen } from "@/lib/founding-checkout";
+import { headerCta, type HeaderIntent } from "@/lib/header-cta";
 
-export type HeaderIntent = "audit" | "waitlist" | "grade";
-
-const CTA: Record<HeaderIntent, { href: string; label: string; shortLabel: string }> = {
-  audit: { href: "/#scan", label: "Grade a site free", shortLabel: "Grade a site" },
-  waitlist: { href: "#early-access", label: "Request founding access", shortLabel: "Request access" },
-  grade: { href: "/grade", label: "Grade a site free", shortLabel: "Grade a site" },
-};
+export type { HeaderIntent };
 
 const NAV = [
   { href: "/for-agencies", label: "Agencies" },
@@ -22,19 +16,12 @@ const NAV = [
 const NAV_LINK =
   "rounded-sm px-2.5 py-2 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
 
-const CTA_LINK =
-  "inline-flex h-11 items-center whitespace-nowrap sm:h-9 rounded-sm bg-primary px-3.5 text-sm font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
-
 /**
  * Marketing masthead. A thin file line above the nav names what the product is in
  * one breath; `intent` locks one primary job per surface so CTAs never compete.
  */
-export async function SiteHeader({ intent = "audit" }: { intent?: HeaderIntent } = {}) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const cta = CTA[intent];
+export function SiteHeader({ intent = "audit" }: { intent?: HeaderIntent } = {}) {
+  const cta = headerCta(intent, intent === "waitlist" && isFoundingCheckoutOpen());
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/92 backdrop-blur-[6px] supports-[backdrop-filter]:bg-background/85">
@@ -54,25 +41,7 @@ export async function SiteHeader({ intent = "audit" }: { intent?: HeaderIntent }
           ))}
         </nav>
 
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <ThemeToggle />
-          {user ? (
-            <Link href="/dashboard" className={CTA_LINK}>
-              Dashboard
-            </Link>
-          ) : (
-            <>
-              <Link href="/auth/login" className={`${NAV_LINK} hidden sm:inline-flex`}>
-                Sign in
-              </Link>
-              <Link href={cta.href} className={CTA_LINK}>
-                <span className="sm:hidden">{cta.shortLabel}</span>
-                <span className="hidden sm:inline">{cta.label}</span>
-              </Link>
-            </>
-          )}
-          <MobileNav items={NAV} showSignIn={!user} />
-        </div>
+        <HeaderActions cta={cta} items={NAV} />
       </div>
     </header>
   );
