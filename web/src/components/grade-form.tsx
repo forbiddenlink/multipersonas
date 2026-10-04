@@ -12,6 +12,9 @@ import { normalizeGradeInput, prefillFromSearch } from "@/lib/grade-url";
 // the widget is skipped and the server-side gate is a no-op, so the form behaves as before.
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
+// How long the human check may stay unresolved before we say so and offer a retry.
+const CHALLENGE_STALL_MS = 12_000;
+
 function WaitSpinner() {
   return (
     <svg aria-hidden="true" className="size-3.5 animate-spin motion-reduce:animate-none" viewBox="0 0 24 24" fill="none">
@@ -37,6 +40,16 @@ export function GradeForm() {
   const [error, setError] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileInstance | undefined>(undefined);
+  // The check can hang (blocked script, network) or report an error. Either way the
+  // visitor gets a message and a Retry instead of a button that waits forever.
+  const [challengeStalled, setChallengeStalled] = useState(false);
+  const [challengeAttempt, setChallengeAttempt] = useState(0);
+
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY || turnstileToken !== null) return;
+    const timer = setTimeout(() => setChallengeStalled(true), CHALLENGE_STALL_MS);
+    return () => clearTimeout(timer);
+  }, [turnstileToken, challengeAttempt]);
 
   // "Re-grade this site" links here with ?url=<entry>. Read it after mount (keeps the
   // page statically rendered) and only fill an input the visitor has not touched.
@@ -51,8 +64,15 @@ export function GradeForm() {
     turnstileRef.current?.reset();
   }
 
+  function retryChallenge() {
+    setChallengeStalled(false);
+    setChallengeAttempt((n) => n + 1);
+    resetTurnstile();
+  }
+
   // Only require a solved challenge when the widget is actually configured.
   const turnstileReady = !TURNSTILE_SITE_KEY || turnstileToken !== null;
+  const showStalled = !turnstileReady && challengeStalled;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -172,8 +192,8 @@ export function GradeForm() {
             onClick={!turnstileReady ? (e) => e.preventDefault() : undefined}
             className="h-12 shrink-0 px-6 aria-disabled:cursor-wait"
           >
-            {!loading && !turnstileReady ? <WaitSpinner /> : null}
-            {loading ? "Queuing grade" : !turnstileReady ? "Checking you\u2019re human\u2026" : "Grade this site"}
+            {!loading && !turnstileReady && !showStalled ? <WaitSpinner /> : null}
+            {loading ? "Queuing grade" : !turnstileReady && !showStalled ? "Checking you\u2019re human\u2026" : "Grade this site"}
           </Button>
         </div>
         <p id={hintId} className="text-sm leading-relaxed text-muted-foreground">
@@ -197,14 +217,38 @@ export function GradeForm() {
             </div>
           ))}
         </dl>
+        {showStalled && (
+          <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--redline)]">
+            <p>
+              <span aria-hidden="true" className="font-mono">■ </span>
+              The human check did not finish. If it keeps failing, turn off script blockers for this page.
+            </p>
+            <button
+              type="button"
+              onClick={retryChallenge}
+              className="text-link rounded-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+            >
+              Retry the human check
+            </button>
+          </div>
+        )}
         {TURNSTILE_SITE_KEY && (
           <Turnstile
             ref={turnstileRef}
             siteKey={TURNSTILE_SITE_KEY}
             options={{ theme: "auto", size: "flexible" }}
-            onSuccess={(token) => setTurnstileToken(token)}
-            onError={() => setTurnstileToken(null)}
-            onExpire={() => setTurnstileToken(null)}
+            onSuccess={(token) => {
+              setTurnstileToken(token);
+              setChallengeStalled(false);
+            }}
+            onError={() => {
+              setTurnstileToken(null);
+              setChallengeStalled(true);
+            }}
+            onExpire={() => {
+              setTurnstileToken(null);
+              setChallengeStalled(false);
+            }}
           />
         )}
       </form>

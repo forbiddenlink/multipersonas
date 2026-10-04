@@ -67,13 +67,13 @@ export default function CiGateGuidePage() {
         <ContentCodeBlock
           label="once, snapshot today's defects"
           code={
-            "npx personaudit scan https://app.example.com --session ./session.json \\\n  --baseline mpersonas-baseline.json --update-baseline"
+            "npx personaudit scan https://app.example.com --session ./session.json \\\n  --baseline personaudit-baseline.json --update-baseline"
           }
         />
         <ContentCodeBlock
           label="in ci, fail only on new defects at or above serious"
           code={
-            "npx personaudit scan https://app.example.com --session ./session.json \\\n  --baseline mpersonas-baseline.json --fail-on serious"
+            "npx personaudit scan https://app.example.com --session ./session.json \\\n  --baseline personaudit-baseline.json --fail-on serious"
           }
         />
 
@@ -119,7 +119,7 @@ jobs:
         run: |
           personaudit scan "\${{ vars.MPERSONAS_TARGET_URL }}" \\
             \${{ secrets.MPERSONAS_SESSION != '' && '--session session.json' || '' }} \\
-            --baseline mpersonas-baseline.json \\
+            --baseline personaudit-baseline.json \\
             --fail-on serious
 
       - name: Upload report
@@ -127,7 +127,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: accessibility-report
-          path: mpersonas-report/scan.md`}
+          path: personaudit-report/scan.md`}
         />
 
         <h2 id="honesty">What the gate is (and isn&apos;t)</h2>

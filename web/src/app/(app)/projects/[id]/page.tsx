@@ -252,7 +252,7 @@ export default async function ProjectDetailPage({
 
       <BoxDivider label="saved runs" className="my-5" />
 
-      <AuditHistory audits={audits} />
+      <AuditHistory audits={audits} canRunHosted={canRunPersonas} />
 
         </div>
         <div className="min-w-0">

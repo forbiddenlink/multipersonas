@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { trackProductEvent } from "@/lib/analytics";
 
 export interface CsvVerdict {
   ruleId: string | null;
@@ -61,7 +62,10 @@ export function ExportButton({
 }) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row">
-      <Button type="button" size="lg" onClick={() => window.print()}>
+      <Button type="button" size="lg" onClick={() => {
+          trackProductEvent("report_exported", { format: "print" });
+          window.print();
+        }}>
         Print / Save as PDF
       </Button>
       <Button
@@ -69,7 +73,10 @@ export function ExportButton({
         variant="outline"
         size="lg"
         disabled={csvRows.length === 0}
-        onClick={() => downloadCsv(filename, csvRows)}
+        onClick={() => {
+          trackProductEvent("report_exported", { format: "csv" });
+          downloadCsv(filename, csvRows);
+        }}
       >
         Download CSV
       </Button>

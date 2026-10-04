@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { AppNav } from "@/components/app-nav";
 import { ClaimGrades } from "@/components/claim-grades";
+import { PostHogIdentify } from "@/components/posthog-identify";
 import { createClient } from "@/lib/supabase/server";
+import { getExactPlan } from "@/lib/entitlements";
 import { isAdminEmail } from "@/lib/admin-access";
 import { redirect } from "next/navigation";
 
@@ -25,8 +27,11 @@ export default async function AppLayout({
     redirect("/auth/login?returnTo=/dashboard");
   }
 
+  const plan = await getExactPlan(supabase, user.id);
+
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
+      <PostHogIdentify userId={user.id} plan={plan} />
       <AppNav userEmail={user.email ?? null} isAdmin={isAdminEmail(user.email)} />
       <main id="main" className="exhibits flex-1 p-6 md:p-8">
         <ClaimGrades />

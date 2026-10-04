@@ -40,7 +40,7 @@ client-facing report.
 - axe-core for accessibility scanning (automated WCAG rule checks)
 - Playwright for real-browser crawling behind a saved session
 - Anthropic Claude for the UX personas (navigation + task-success judgment)
-- CLI (`mpersonas`) and web app
+- CLI (`personaudit`) and web app
 
 ## Links
 

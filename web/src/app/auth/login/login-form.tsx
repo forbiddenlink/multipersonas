@@ -12,6 +12,7 @@ import { GitHubAuthButton } from "@/components/github-auth-button";
 import { Eye, EyeOff } from "lucide-react";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 import { AuthShell, AuthCardTab, AuthFormError } from "@/components/dossier/app-auth-shell";
+import { trackProductEvent } from "@/lib/analytics";
 
 // Callers redirect here with either ?next= (server guards: settings, projects actions)
 // or ?returnTo= (middleware). Read both; safeRedirectPath blocks open redirects.
@@ -72,6 +73,7 @@ export function LoginForm({ githubEnabled }: { githubEnabled: boolean }) {
         return;
       }
 
+      trackProductEvent("login_completed", { method: "email" });
       router.refresh();
       router.push(returnTo);
     } catch {

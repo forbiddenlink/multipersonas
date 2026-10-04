@@ -8,6 +8,7 @@ import { PERSONA_DATA } from "@/lib/personas";
 import { buildReport, type Severity } from "@/lib/report";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { severityMeta, SEVERITY_ORDER } from "@/components/forensic/severity";
+import { TrackOnMount } from "@/components/track-on-mount";
 import { ExportButton } from "./export-button";
 import styles from "./report.module.css";
 import { ConformanceTable } from "./conformance-table";
@@ -86,6 +87,7 @@ export default async function ReportPage({
 
   return (
     <div>
+      <TrackOnMount event="report_opened" properties={{ findings: totalViolations }} />
       {/* On-screen frame — a console-toolbar header, entirely hidden in print
           (report-print-hide). The report paper below is a fixed white/black
           preview independent of the app theme, so themed components (SeverityChip)
