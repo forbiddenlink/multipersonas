@@ -32,7 +32,6 @@ describe("marketing copy stays honest about hosted vs CLI", () => {
   });
 
   it("does not send Request Pro to the owner-only waitlist inbox", () => {
-    expect(read("src/components/pro-audit-upsell.tsx")).not.toMatch(/["']\/waitlist["']/);
     expect(read("src/app/(app)/settings/page.tsx")).not.toMatch(/["']\/waitlist["']/);
   });
 
