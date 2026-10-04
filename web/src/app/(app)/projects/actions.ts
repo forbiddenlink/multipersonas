@@ -5,6 +5,7 @@ import { parseTaskDefinition } from "@engine/tasks/definition";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { captureServerEvent } from "@/lib/analytics-server";
 import { createProject, updateProject, deleteProject, getProject } from "@/lib/projects";
 import { getExactPlan, getSessionPlan, planAllowsPersonas, projectLimitFor } from "@/lib/entitlements";
 import { isScanInterval, upsertProjectSchedule } from "@/lib/schedules";
@@ -78,6 +79,7 @@ export async function createProjectAction(formData: FormData): Promise<void> {
     redirect(`/projects?error=${encodeURIComponent("Could not create the project.")}`);
   }
 
+  await captureServerEvent(user.id, "project_created", { plan });
   revalidatePath("/projects");
   redirect(`/projects/${project.id}`);
 }

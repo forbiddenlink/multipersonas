@@ -113,7 +113,15 @@ export default async function GradeResultPage({
                 <span className="break-all">{scan.entry_url}</span>
               </p>
 
-              <GradeArrival status={scan.status as GradeScanStatus} host={host} grade={completedReport?.grade} />
+              <GradeArrival
+                status={scan.status as GradeScanStatus}
+                host={host}
+                grade={completedReport?.grade}
+                token={token}
+                pagesScanned={completedReport?.pagesScanned}
+                createdAt={scan.created_at}
+                error={scan.error}
+              />
 
               <div className="mt-6">
                 {(scan.status === "queued" || scan.status === "running") && (

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { safeRedirectPath } from "@/lib/safe-redirect";
+import { captureServerEvent } from "@/lib/analytics-server";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -10,8 +11,13 @@ export async function GET(request: Request) {
   if (code) {
     try {
       const supabase = await createClient();
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
       if (!error) {
+        // OAuth lands here with the browser mid-redirect, so only the server can see it
+        // succeed. Email-confirm and password-reset codes share this route; skip those.
+        if (data?.user && data.user.app_metadata?.provider === "github") {
+          await captureServerEvent(data.user.id, "login_completed", { method: "github" });
+        }
         return NextResponse.redirect(`${origin}${redirectPath}`);
       }
     } catch {
