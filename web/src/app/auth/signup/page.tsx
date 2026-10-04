@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { githubSignInEnabled } from "@/lib/auth-providers";
 import { Suspense } from "react";
 import { SignupForm } from "./signup-form";
 
@@ -9,7 +10,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function SignupPage() {
+export default async function SignupPage() {
+  const githubEnabled = await githubSignInEnabled();
   return (
     <main id="main">
       <Suspense
@@ -19,7 +21,7 @@ export default function SignupPage() {
           </div>
         }
       >
-        <SignupForm />
+        <SignupForm githubEnabled={githubEnabled} />
       </Suspense>
     </main>
   );
