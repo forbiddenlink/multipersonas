@@ -30,13 +30,14 @@ test("project creation, plan-limit feedback, edits, and deletion survive reload"
     await page.reload();
     await expect(page.getByRole("heading", { name: "Lifecycle fixture", exact: true })).toBeVisible();
 
+    // At the Free cap the page says so up front and offers no create form that would fail.
     await page.goto("/projects");
-    await page.getByLabel("Name", { exact: true }).fill("Over the allowance");
-    await page.getByLabel("URL", { exact: true }).fill("https://example.org");
-    await page.getByRole("button", { name: "Create project", exact: true }).click();
-    await expect(page.getByRole("alert").filter({ hasText: "Your plan includes" }))
-      .toHaveText("Your plan includes 1 project. See pricing to add more.");
-    await expect(page.getByRole("link", { name: "Over the allowance", exact: true })).toHaveCount(0);
+    await expect(page.getByText("Free plan includes 1 project.", { exact: false })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Create project", exact: true })).toHaveCount(0);
+    // A prefilled URL at the cap explains the limit and links the existing project.
+    await page.goto("/projects?url=https%3A%2F%2Fexample.org");
+    await expect(page.getByRole("heading", { name: /plan is at its project limit/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Create project", exact: true })).toHaveCount(0);
 
     await page.goto(projectUrl);
     await page.getByLabel("Name", { exact: true }).fill("Renamed fixture");

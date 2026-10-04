@@ -11,6 +11,8 @@ test("projects page lists the seeded project", async ({ page }) => {
     page.waitForURL(/\/projects\/[0-9a-f-]+$/),
     project.click(),
   ]);
-  await expect(page.getByText("open now")).toBeVisible();
-  await expect(page.getByText("persona outcome")).toBeVisible();
+  // The seeded owner is on Free: the page keeps the free grades and names paid features once,
+  // instead of showing paid-only panels it cannot use.
+  await expect(page.getByText("Free grades of this site")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "On Solo and up" })).toBeVisible();
 });
