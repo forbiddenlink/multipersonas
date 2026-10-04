@@ -1,4 +1,4 @@
-import { act, cleanup, render } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ClaimGrades } from "@/components/claim-grades";
 import { GRADE_TOKEN_STORAGE_KEY } from "@/lib/grade-tokens";
@@ -58,5 +58,42 @@ describe("ClaimGrades", () => {
 
     expect(JSON.parse(localStorage.getItem(GRADE_TOKEN_STORAGE_KEY) ?? "[]")).toEqual([TOKEN]);
     expect(refresh).not.toHaveBeenCalled();
+  });
+  it("confirms once, in a status region, how many grades were saved", async () => {
+    localStorage.setItem(GRADE_TOKEN_STORAGE_KEY, JSON.stringify([TOKEN]));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ claimed: 1 }) })),
+    );
+
+    await act(async () => {
+      render(<ClaimGrades />);
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent("1 grade saved to your account.");
+  });
+
+  it("pluralizes, and says nothing when no grade attached", async () => {
+    const other = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    localStorage.setItem(GRADE_TOKEN_STORAGE_KEY, JSON.stringify([TOKEN, other]));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ claimed: 2 }) })),
+    );
+    await act(async () => {
+      render(<ClaimGrades />);
+    });
+    expect(screen.getByRole("status")).toHaveTextContent("2 grades saved to your account.");
+    cleanup();
+
+    localStorage.setItem(GRADE_TOKEN_STORAGE_KEY, JSON.stringify([TOKEN]));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ claimed: 0 }) })),
+    );
+    await act(async () => {
+      render(<ClaimGrades />);
+    });
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
   });
 });

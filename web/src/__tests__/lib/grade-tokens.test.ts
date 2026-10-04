@@ -3,6 +3,7 @@ import {
   GRADE_TOKEN_STORAGE_KEY,
   MAX_GRADE_TOKENS,
   clearRememberedGradeTokens,
+  gradeTokenFromInput,
   parseGradeTokens,
   readRememberedGradeTokens,
   rememberGradeToken,
@@ -49,5 +50,24 @@ describe("remembered grade tokens", () => {
     rememberGradeToken(TOKEN_A);
     clearRememberedGradeTokens();
     expect(readRememberedGradeTokens()).toEqual([]);
+  });
+});
+
+describe("gradeTokenFromInput", () => {
+  it("reads the token out of a pasted result link, with or without the host", () => {
+    expect(gradeTokenFromInput(`https://personaudit.com/grade/${TOKEN_A}`)).toBe(TOKEN_A);
+    expect(gradeTokenFromInput(`  http://localhost:3000/grade/${TOKEN_A.toUpperCase()}?x=1#top `)).toBe(TOKEN_A);
+    expect(gradeTokenFromInput(`personaudit.com/grade/${TOKEN_A}`)).toBe(TOKEN_A);
+  });
+
+  it("accepts a bare token", () => {
+    expect(gradeTokenFromInput(TOKEN_B)).toBe(TOKEN_B);
+  });
+
+  it("rejects anything else", () => {
+    expect(gradeTokenFromInput("")).toBeNull();
+    expect(gradeTokenFromInput("hello")).toBeNull();
+    expect(gradeTokenFromInput("https://example.com/grade/not-a-token")).toBeNull();
+    expect(gradeTokenFromInput(`https://example.com/other/${TOKEN_A}`)).toBeNull();
   });
 });
