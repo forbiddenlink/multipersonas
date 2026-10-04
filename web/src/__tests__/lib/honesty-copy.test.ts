@@ -139,3 +139,46 @@ describe("pricing competitor claims are sourced and dated", () => {
     expect(src).not.toMatch(/None of them key/);
   });
 });
+
+describe("grade result page: fix-first and coverage copy stays honest", () => {
+  const FILES = [
+    "src/components/grade-fix-first.tsx",
+    "src/components/grade-coverage.tsx",
+    "src/components/grade-next-steps.tsx",
+    "src/lib/grade-fix-first.ts",
+  ];
+
+  it.each(FILES)("%s makes no compliance, lawsuit, or simulated-user claim", (file) => {
+    const src = read(file);
+    expect(src).not.toMatch(/compliant|compliance (verdict|report)|proves compliance/i);
+    expect(src).not.toMatch(/protects? (you )?from (lawsuits|legal)/i);
+    expect(src).not.toMatch(/simulat(e|es|ed|ion) (a |the )?(disabled|blind|deaf|low-vision|screen[- ]reader) (user|person|people)/i);
+    expect(src).not.toMatch(/hosted behind-login is (ready|live|available)/i);
+  });
+
+  it("says who a fix-first item blocks is inferred from the rule, not simulated", () => {
+    const src = read("src/components/grade-fix-first.tsx");
+    expect(src).toMatch(/inferred from the rule, not simulated/);
+  });
+
+  it("states the grade is automated checks only and cites the Deque study with its link", () => {
+    const src = read("src/components/grade-coverage.tsx");
+    expect(src).toMatch(/automated checks only: a person has to check the rest/);
+    expect(src).toMatch(/Automated tools\s+find about 57% of issues by volume/);
+    expect(src).toMatch(/https:\/\/www\.deque\.com\/blog\/automated-testing-study-identifies-57-percent-of-digital-accessibility-issues\//);
+    expect(src).toMatch(/Deque, 2021 study/);
+  });
+
+  it("keeps the save-and-re-grade bridge, the CLI path, and no hosted behind-login claim", () => {
+    const src = read("src/components/grade-next-steps.tsx");
+    expect(src).toMatch(/Save this site and re-grade after you fix it\./);
+    expect(src).toMatch(/Save and track this site/);
+    expect(src).toMatch(/CLI/);
+  });
+
+  it("puts the coverage line and Fix these first on the result page", () => {
+    const src = read("src/app/grade/[token]/page.tsx");
+    expect(src).toMatch(/<GradeCoverageNote needsReview=\{report\.needsReview\} \/>/);
+    expect(src).toMatch(/<GradeFixFirst /);
+  });
+});

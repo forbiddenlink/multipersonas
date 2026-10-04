@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { GradeCoverage } from "@/components/grade-coverage";
+import { GradeCoverage, GradeCoverageNote } from "@/components/grade-coverage";
+import { GradeFixFirst } from "@/components/grade-fix-first";
+import { rankFixFirst } from "@/lib/grade-fix-first";
 import { GradeNextSteps } from "@/components/grade-next-steps";
 import { ClaimGrades } from "@/components/claim-grades";
 import { SiteFooter } from "@/components/site-footer";
@@ -21,9 +23,6 @@ import { createClient } from "@/lib/supabase/server";
 import type { GradeReport } from "@engine/grader/score";
 
 type GradeScanStatus = "queued" | "running" | "completed" | "failed";
-
-// Rules arrive sorted by weight, so the first few critical or serious ones are where to start.
-const FIX_FIRST_COUNT = 3;
 
 // Dynamic per-scan metadata so a shared grade link previews the real domain + grade in
 // Slack/iMessage/Twitter. Always noindex: the URL is an unguessable capability token, not
@@ -180,6 +179,8 @@ function GradeReportView({
   entryUrl: string;
   report: GradeReport;
 }) {
+  const fixFirstIds = new Set(rankFixFirst(report.rules).map((i) => i.ruleId));
+
   return (
     <div className="space-y-8">
       {/* The verdict: letter grade as the stamp, score as the fraction beside it. */}
@@ -195,6 +196,7 @@ function GradeReportView({
             </p>
           </div>
         </div>
+        <GradeCoverageNote needsReview={report.needsReview} />
         <div className="grade-print-hide flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
           <GradeShare token={token} host={host} grade={report.grade} />
           <nav aria-label="After this grade" className="flex flex-wrap gap-x-5">
@@ -208,16 +210,19 @@ function GradeReportView({
         </div>
       </header>
 
+      {/* The short answer to "what do I do first", before the full list. */}
+      <GradeFixFirst rules={report.rules} pagesScanned={report.pagesScanned} />
+
       {/* Named rules — the traceable table behind the composite. Older stored reports
           may omit this (pre-rules field); skip gracefully. */}
       {report.rules && report.rules.length > 0 ? (
         <section>
           <h2 className="label-mono">Findings</h2>
           <ul className="mt-4 border-t border-border">
-            {report.rules.map((rule, i) => (
+            {report.rules.map((rule) => (
               <GradeFindingRow
                 key={rule.id}
-                fixFirst={i < FIX_FIRST_COUNT && (rule.impact === "critical" || rule.impact === "serious")}
+                fixFirst={fixFirstIds.has(rule.id)}
                 ruleId={rule.id}
                 severity={rule.impact}
                 help={rule.help}
@@ -239,6 +244,14 @@ function GradeReportView({
       ) : (
         <EmptyPrompt prompt="No violations on the pages we reached." hint="Zero findings from axe-core across every evaluated public page." />
       )}
+
+      {/* Next steps + the actual conversion ask. Never a compliance claim. */}
+      {/* The checklist prints; the conversion buttons inside it carry grade-print-hide. */}
+      <GradeNextSteps
+        signedIn={signedIn}
+        pagesScanned={report.pagesScanned}
+        entryUrl={entryUrl}
+      />
 
       {/* Per-page list */}
       {(report.perPage?.length ?? 0) > 0 && (
@@ -269,14 +282,6 @@ function GradeReportView({
       <div className="grade-print-hide">
         <GradeBadgeEmbed token={token} host={host} />
       </div>
-
-      {/* Next steps + the actual conversion ask. Never a compliance claim. */}
-      {/* The checklist prints; the conversion buttons inside it carry grade-print-hide. */}
-      <GradeNextSteps
-        signedIn={signedIn}
-        pagesScanned={report.pagesScanned}
-        entryUrl={entryUrl}
-      />
     </div>
   );
 }

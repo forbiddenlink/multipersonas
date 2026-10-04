@@ -37,7 +37,7 @@ export function GradeFindingRow({
   const fix = ruleFix(ruleId);
 
   return (
-    <li className="border-b border-border py-5">
+    <li id={`finding-${ruleId}`} className="scroll-mt-6 border-b border-border py-5">
       <div className="flex flex-wrap items-center gap-2">
         {fixFirst ? <span className="redline-note uppercase tracking-[0.1em]">Fix first</span> : null}
         <SeverityChip severity={severity} />

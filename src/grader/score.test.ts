@@ -158,7 +158,7 @@ describe("computeGrade cross-page rule facts", () => {
 
   it("counts the pages a rule fired on", () => {
     const r = computeGrade([page("a", hit(["#x"])), page("b", hit(["#x"])), page("c", hit(["#y"]))]);
-    expect(r.rules[0].pages).toBe(3);
+    expect(r.rules[0]?.pages).toBe(3);
   });
 
   it("reports a selector that repeats across pages as the shared target", () => {
@@ -167,12 +167,12 @@ describe("computeGrade cross-page rule facts", () => {
       page("b", hit(["header .menu-btn"])),
       page("c", hit(["header .menu-btn", "#c1"])),
     ]);
-    expect(r.rules[0].sharedTarget).toEqual({ target: "header .menu-btn", pages: 3 });
+    expect(r.rules[0]?.sharedTarget).toEqual({ target: "header .menu-btn", pages: 3 });
   });
 
   it("reports no shared target when a selector appears on only one page", () => {
     const r = computeGrade([page("a", hit(["#a", "#b", "#c"])), page("b", hit(["#d"]))]);
-    expect(r.rules[0].sharedTarget).toBeUndefined();
+    expect(r.rules[0]?.sharedTarget).toBeUndefined();
   });
 
   it("does not store the per-page target list on the aggregated report", () => {
@@ -183,7 +183,7 @@ describe("computeGrade cross-page rule facts", () => {
   it("still aggregates hits from older fixtures that carry no targets", () => {
     const r = computeGrade([page("a", hit([], { targets: undefined, nodes: 2 })), page("b", hit([], { targets: undefined, nodes: 1 }))]);
     expect(r.rules[0]).toMatchObject({ nodes: 3, pages: 2 });
-    expect(r.rules[0].sharedTarget).toBeUndefined();
+    expect(r.rules[0]?.sharedTarget).toBeUndefined();
   });
 });
 

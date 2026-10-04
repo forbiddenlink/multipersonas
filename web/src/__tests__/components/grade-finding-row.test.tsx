@@ -80,3 +80,10 @@ describe("GradeFindingRow located elements", () => {
   });
 });
 
+
+describe("GradeFindingRow anchor", () => {
+  it("carries an id the Fix these first list can link to", () => {
+    const { container } = render(<ul><GradeFindingRow ruleId="image-alt" severity="critical" help="Alt" nodes={1} wcagAA /></ul>);
+    expect(container.querySelector("li")).toHaveAttribute("id", "finding-image-alt");
+  });
+});

@@ -72,3 +72,22 @@ describe("GradeNextSteps print behaviour", () => {
     expect(hidden.some((el) => el.contains(screen.getByText(/Create an account and this grade/)))).toBe(true);
   });
 });
+
+describe("GradeNextSteps bridge to fixing and tracking", () => {
+  afterEach(cleanup);
+
+  it("tells a signed-out visitor to save the site and re-grade after fixing, with one filled primary", () => {
+    const { container } = render(<GradeNextSteps signedIn={false} pagesScanned={3} entryUrl="https://example.com" />);
+    expect(screen.getByText("Save this site and re-grade after you fix it.")).toBeInTheDocument();
+    expect(screen.getByText(/lists each saved grade/)).toBeInTheDocument();
+    // One filled primary: the save link. Every other link is a text link.
+    const filled = Array.from(container.querySelectorAll("a")).filter((a) => /bg-primary/.test(a.className));
+    expect(filled).toHaveLength(1);
+    expect(filled[0]).toHaveTextContent("Save and track this site");
+  });
+
+  it("tells a signed-in visitor to re-grade after fixing", () => {
+    render(<GradeNextSteps signedIn pagesScanned={3} entryUrl="https://example.com" />);
+    expect(screen.getByText("Re-grade after you fix it.")).toBeInTheDocument();
+  });
+});
