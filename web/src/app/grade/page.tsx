@@ -10,14 +10,14 @@ export const metadata: Metadata = {
   alternates: { canonical: "/grade" },
   title: "Free accessibility grade",
   description:
-    "Get a free, honest letter grade on any public page: real axe-core violation weights, no signup, no paywall on the score.",
+    "Get a free, honest letter grade on any public page: graded on WCAG A/AA axe-core findings, no signup, no paywall on the score.",
 };
 
 const WHAT_YOU_GET = [
   {
     n: "1",
     title: "A letter grade you can trace",
-    body: "A/B/C/D/F from the ratio of passed axe-core checks to violation weight. Not a fabricated composite.",
+    body: "A/B/C/D/F from the ratio of passed axe-core checks to WCAG A/AA violation weight. Best-practice issues are listed but never lower the letter.",
   },
   {
     n: "2",

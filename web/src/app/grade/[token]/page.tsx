@@ -54,7 +54,7 @@ export async function generateMetadata({
   return {
     ...base,
     title: `${host} scored ${grade} on accessibility`,
-    description: `Personaudit graded ${host} a ${grade} using real axe-core violation weights. A free, honest letter grade on any public page.`,
+    description: `Personaudit graded ${host} a ${grade} on its WCAG A/AA axe-core findings. A free, honest letter grade on any public page.`,
   };
 }
 
@@ -133,6 +133,10 @@ export default async function GradeResultPage({
   );
 }
 
+function plural(n: number, noun: string): string {
+  return `${n} ${noun}${n === 1 ? "" : "s"}`;
+}
+
 // UTC calendar date, so the printed line does not depend on the server's timezone.
 function gradedOn(createdAt: string): string {
   const d = new Date(createdAt);
@@ -160,8 +164,9 @@ function GradeReportView({
         <div className="min-w-0">
           <p className="label-mono">Accessibility evidence · WCAG 2.2 AA</p>
           <p className="mt-1.5 font-mono text-sm text-muted-foreground">
-            {report.totalViolations} violation{report.totalViolations === 1 ? "" : "s"} across{" "}
-            {report.pagesScanned} page{report.pagesScanned === 1 ? "" : "s"}
+            {plural(report.wcagAAViolations, "WCAG A/AA failure")} ·{" "}
+            {plural(report.totalViolations - report.wcagAAViolations, "best-practice issue")} ·{" "}
+            {plural(report.pagesScanned, "page")}
           </p>
         </div>
         <div className="grade-print-hide ml-auto shrink-0">
@@ -187,12 +192,14 @@ function GradeReportView({
               />
             ))}
           </ul>
-          {report.totalViolations > report.wcagAAViolations ? (
-            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-              {report.wcagAAViolations} of these are tagged WCAG 2.x A/AA. The rest are axe
-              best-practice rules: real defects, but not success criteria.
-            </p>
-          ) : null}
+          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+            Counts are affected elements. {plural(report.wcagAAViolations, "element")} fail
+            a rule tagged WCAG 2.x A/AA
+            {report.scoring === "wcag-a-aa" ? ", and only those set the grade" : ""}.
+            {report.totalViolations > report.wcagAAViolations
+              ? " The rest are axe best-practice rules: worth fixing, but not success criteria."
+              : ""}
+          </p>
         </section>
       ) : (
         <EmptyPrompt prompt="No violations on the pages we reached." hint="Zero findings from axe-core across every evaluated public page." />
@@ -207,9 +214,13 @@ function GradeReportView({
               <div key={p.url} className="flex items-center gap-3 py-2.5">
                 <span className="min-w-0 flex-1 truncate">{p.url}</span>
                 <span className="shrink-0 tabular-nums text-muted-foreground">
-                  {p.violations} violation{p.violations === 1 ? "" : "s"}
+                  {plural(p.violations, "affected element")}
                 </span>
-                <span className="shrink-0 tabular-nums">{p.score}</span>
+                <span className="shrink-0 tabular-nums">
+                  <span className="sr-only">Score </span>
+                  {p.score}
+                  <span className="text-muted-foreground">/100</span>
+                </span>
               </div>
             ))}
           </div>

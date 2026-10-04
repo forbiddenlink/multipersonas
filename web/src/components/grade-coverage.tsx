@@ -10,8 +10,13 @@ export function GradeCoverage({ report }: { report: GradeReport }) {
       <p className="redline-note uppercase tracking-[0.1em]">What this grade doesn&apos;t cover</p>
       {report.coverage ? (
         <p className="mt-2 text-[0.9375rem] leading-relaxed">
-          {report.pagesScanned} pages evaluated with a {report.coverage.pageLimit}-page limit.
-          {" "}{report.coverage.skippedPages} discovered URLs were not evaluated because they could not be scanned or were outside the page limit.
+          {report.pagesScanned} page{report.pagesScanned === 1 ? "" : "s"} evaluated with a{" "}
+          {report.coverage.pageLimit}-page limit.
+          {report.coverage.skippedPages > 0
+            ? report.coverage.skippedPages === 1
+              ? " 1 discovered URL was not evaluated because it could not be scanned or was outside the page limit."
+              : ` ${report.coverage.skippedPages} discovered URLs were not evaluated because they could not be scanned or were outside the page limit.`
+            : ""}
         </p>
       ) : (
         <p className="mt-2 text-[0.9375rem] leading-relaxed">
@@ -21,7 +26,8 @@ export function GradeCoverage({ report }: { report: GradeReport }) {
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
         The grade covers only evaluated public pages and automated axe checks. It does not
         cover every site page, signed-in content, interactive state, or accessibility
-        requirement: one public page, no behind-login.
+        requirement. Automated checks catch a portion of WCAG issues; keyboard and
+        screen-reader testing still need a person. Behind-login pages need the CLI.
       </p>
     </section>
   );

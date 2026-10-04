@@ -13,3 +13,7 @@ it("does not invent complete coverage for older reports", () => {
   render(<GradeCoverage report={computeGrade([])} />);
   expect(screen.getByText(/older report does not include/)).toBeInTheDocument();
 });
+it("uses singular copy for a one-page grade with nothing skipped", () => {
+  render(<GradeCoverage report={{ ...computeGrade([]), pagesScanned: 1, coverage: { pageLimit: 10, skippedPages: 0 } }} />);
+  expect(screen.getByText(/1 page evaluated with a 10-page limit\./)).not.toHaveTextContent("discovered URL");
+});

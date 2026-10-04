@@ -110,7 +110,7 @@ program
     }
 
     console.log("");
-    console.log(chalk.bold(`  MultiPersonas v${pkg.version}`));
+    console.log(chalk.bold(`  Personaudit v${pkg.version}`));
     console.log(chalk.dim(`  Scanning: ${url}`));
     if (options.session) console.log(chalk.dim(`  Signed in via: ${options.session}`));
     console.log("");
@@ -191,7 +191,7 @@ program
 
 program
   .command("grade")
-  .description("Crawl and grade a public site with Deque-weighted axe scores (fast, deterministic, keyless)")
+  .description("Crawl and grade a public site on WCAG A/AA axe-core findings (fast, deterministic, keyless)")
   .argument("<url>", "Public URL to grade")
   .option("--max-pages <n>", "How many pages to crawl and grade", "10")
   .option("--json", "Output raw JSON report")
@@ -209,7 +209,7 @@ program
     }
 
     console.log("");
-    console.log(chalk.bold(`  MultiPersonas v${pkg.version}`));
+    console.log(chalk.bold(`  Personaudit v${pkg.version}`));
     console.log(chalk.dim(`  Grading public site: ${url}`));
     console.log("");
 
@@ -252,7 +252,7 @@ program
       console.log(chalk.bold("  Top Rules Found:"));
       for (const r of rules.slice(0, 6)) {
         const flag = r.wcagAA ? "" : chalk.dim(" (best-practice)");
-        console.log(`    [${r.impact}] ${chalk.cyan(r.id)}${flag} — ${r.help} (${r.nodes} nodes)`);
+        console.log(`    [${r.impact}] ${chalk.cyan(r.id)}${flag} — ${r.help} (${r.nodes} node${r.nodes === 1 ? "" : "s"})`);
       }
     }
 
@@ -272,7 +272,7 @@ program
   )
   .action(async (url: string, options: { save: string; allowPrivate?: boolean }) => {
     console.log("");
-    console.log(chalk.bold(`  MultiPersonas v${pkg.version}`));
+    console.log(chalk.bold(`  Personaudit v${pkg.version}`));
     console.log(chalk.dim(`  Opening ${url} in a browser.`));
     console.log("");
     console.log("  Sign in yourself, however you normally do — password, SSO, 2FA, a magic link.");
@@ -387,7 +387,7 @@ program
     }
 
     console.log("");
-    console.log(chalk.bold(`  MultiPersonas v${pkg.version}`));
+    console.log(chalk.bold(`  Personaudit v${pkg.version}`));
     console.log(chalk.dim(`  Testing: ${url}`));
     if (options.session) console.log(chalk.dim(`  Signed in via: ${options.session}`));
     console.log("");
