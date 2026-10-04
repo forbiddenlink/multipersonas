@@ -1,5 +1,21 @@
 import { chromium, type Browser, type LaunchOptions } from "playwright";
 
+/** Raised when Playwright's Chromium is not installed. The message is the whole fix. */
+export class BrowserMissingError extends Error {
+  constructor(options?: { cause?: unknown }) {
+    super("Chromium is not installed. Run: npx playwright install chromium", options);
+    this.name = "BrowserMissingError";
+  }
+}
+
+/** True when a Playwright launch error means the browser binary is absent. */
+export function isBrowserMissingError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /Executable doesn't exist|browserType\.launch: Executable|Please run the following command to download new browsers/i.test(
+    message,
+  );
+}
+
 /**
  * Launch Chromium for an audit.
  *
@@ -36,8 +52,12 @@ export function launchAuditBrowser(options: LaunchOptions = {}): Promise<Browser
     );
   }
 
-  return chromium.launch({
-    ...options,
-    ...(proxyServer ? { proxy: { server: proxyServer } } : {}),
-  });
+  return chromium
+    .launch({
+      ...options,
+      ...(proxyServer ? { proxy: { server: proxyServer } } : {}),
+    })
+    .catch((error: unknown) => {
+      throw isBrowserMissingError(error) ? new BrowserMissingError({ cause: error }) : error;
+    });
 }

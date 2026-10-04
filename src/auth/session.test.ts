@@ -42,7 +42,7 @@ describe("resolveSessionFile", () => {
   });
 
   it("names the fix when the file is missing", () => {
-    expect(() => resolveSessionFile(path.join(dir, "nope.json"))).toThrow(/mpersonas auth/);
+    expect(() => resolveSessionFile(path.join(dir, "nope.json"))).toThrow(/personaudit auth/);
   });
 
   it("refuses an empty session rather than running logged out", () => {

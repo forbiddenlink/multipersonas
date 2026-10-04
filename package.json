@@ -5,6 +5,11 @@
   "type": "module",
   "main": "./dist/agent/orchestrator.js",
   "exports": {
+    ".": {
+      "types": "./dist/agent/orchestrator.d.ts",
+      "default": "./dist/agent/orchestrator.js"
+    },
+    "./package.json": "./package.json",
     "./orchestrator": {
       "types": "./dist/agent/orchestrator.d.ts",
       "default": "./dist/agent/orchestrator.js"
@@ -74,11 +79,16 @@
     "a11y",
     "axe-core",
     "wcag",
-    "testing",
-    "ci",
+    "wcag-2.2",
+    "accessibility-testing",
+    "accessibility-audit",
+    "crawler",
     "playwright",
-    "personas",
-    "ux"
+    "ci",
+    "github-action",
+    "baseline",
+    "cli",
+    "personas"
   ],
   "author": "Elizabeth Stein",
   "license": "MIT",

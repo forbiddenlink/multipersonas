@@ -19,6 +19,7 @@ import { SEVERITIES } from "./domain/vocab.js";
 import type { Persona } from "./personas/types.js";
 import { getAllPersonas, saveCustomPersona, deleteCustomPersona, isCustomPersona, personaSource, hasProjectPersonas, PROJECT_DIR } from "./personas/custom.js";
 import { generateSystemPrompt } from "./personas/types.js";
+import { BrowserMissingError } from "./security/browser.js";
 import { assertUrlAllowed, BlockedUrlError } from "./security/url-guard.js";
 import { captureSession, resolveSessionFile, sessionIsLive, SessionError } from "./auth/session.js";
 import * as readline from "node:readline/promises";
@@ -56,9 +57,30 @@ const importedPersonaSchema = z.object({
 const program = new Command();
 
 program
-  .name("mpersonas")
-  .description("AI persona-based website testing")
-  .version(pkg.version);
+  .name("personaudit")
+  .description(
+    "Accessibility scanner: crawls every reachable state (behind the login too) and runs axe-core. Keyless CI gate.",
+  )
+  .version(pkg.version)
+  .addHelpText(
+    "after",
+    `
+Examples:
+  $ npx personaudit scan https://your-site.com
+  $ npx personaudit auth https://your-site.com/login --save session.json
+  $ npx personaudit scan https://your-site.com --session session.json --baseline personaudit-baseline.json --update-baseline
+  $ npx personaudit scan https://your-site.com --session session.json --baseline personaudit-baseline.json --fail-on serious
+  $ npx personaudit grade https://example.com
+
+Exit codes:
+  0  clean (scan finished; gate passed or no --fail-on)
+  1  error (bad input, blocked URL, missing browser, crash)
+  2  gate failed: new defects at/above --fail-on
+
+\`scan\` and \`grade\` are deterministic and need no API key.
+\`run\` and \`generate\` call Anthropic and need ANTHROPIC_API_KEY.
+Docs: https://personaudit.com`,
+  );
 
 // --- Scan command ---
 
@@ -66,13 +88,13 @@ program
   .command("scan")
   .description("Crawl a site and check every page for accessibility defects (no AI personas — deterministic and free)")
   .argument("<url>", "URL to scan")
-  .option("-o, --output <path>", "Output directory", "./mpersonas-report")
-  .option("--session <file>", "Saved session from `mpersonas auth`, to scan behind a login")
+  .option("-o, --output <path>", "Output directory", "./personaudit-report")
+  .option("--session <file>", "Saved session from `personaudit auth`, to scan behind a login")
   .option("--max-pages <n>", "How many states to crawl", "40")
   .option("--allow-private", "Allow localhost / private-network targets. For your own app or staging box.")
   .option("--fail-on <severity>", "Exit non-zero if a NEW defect at/above this severity is found (critical|serious|moderate|minor). For CI.")
   .option("--baseline <file>", "Compare against this baseline; only defects not in it count as new")
-  .option("--update-baseline", "Write the current defects to --baseline (or ./mpersonas-baseline.json) and exit 0")
+  .option("--update-baseline", "Write the current defects to --baseline (or ./personaudit-baseline.json) and exit 0")
   .action(async (url: string, options: { output: string; session?: string; maxPages: string; allowPrivate?: boolean; failOn?: string; baseline?: string; updateBaseline?: boolean }) => {
     if (options.failOn && !SEVERITIES.includes(options.failOn as (typeof SEVERITIES)[number])) {
       console.error(chalk.red(`  --fail-on must be one of: ${SEVERITIES.join(", ")}`));
@@ -143,7 +165,7 @@ program
 
     // --update-baseline: snapshot current defects, exit clean.
     if (options.updateBaseline) {
-      const baselinePath = options.baseline ?? "./mpersonas-baseline.json";
+      const baselinePath = options.baseline ?? "./personaudit-baseline.json";
       fs.writeFileSync(
         baselinePath,
         JSON.stringify(baselineFromFindings(result.findings, { url, createdAt: new Date().toISOString() }), null, 2),
@@ -265,7 +287,7 @@ program
   .command("auth")
   .description("Log in to a site once and save the session, so personas can test past the login wall")
   .argument("<url>", "URL of the site's login page")
-  .option("-s, --save <file>", "Where to save the session", "./.mpersonas-session.json")
+  .option("-s, --save <file>", "Where to save the session", "./.personaudit-session.json")
   .option(
     "--allow-private",
     "Allow localhost / private-network targets. For your own app or staging box."
@@ -296,7 +318,7 @@ program
     console.log("");
     console.log(chalk.green(`  Session saved to ${options.save}`));
     console.log(chalk.yellow("  Treat that file like a password — anyone who has it is signed in as you."));
-    console.log(chalk.dim(`  Use it:  mpersonas run ${url} --session ${options.save}`));
+    console.log(chalk.dim(`  Use it:  personaudit run ${url} --session ${options.save}`));
     console.log("");
   });
 
@@ -311,7 +333,7 @@ program
     "Comma-separated persona IDs (default: all)",
     "all"
   )
-  .option("-o, --output <path>", "Output directory", "./mpersonas-report")
+  .option("-o, --output <path>", "Output directory", "./personaudit-report")
   .option("--no-axe", "Skip axe-core accessibility scan")
   .option("--parallel", "Run personas concurrently (default)", true)
   .option("--sequential", "Run personas one at a time")
@@ -323,7 +345,7 @@ program
   )
   .option(
     "--session <file>",
-    "Saved session from `mpersonas auth`, so personas test the app itself instead of its login page."
+    "Saved session from `personaudit auth`, so personas test the app itself instead of its login page."
   )
   .option(
     "--block-destructive-actions",
@@ -379,7 +401,7 @@ program
       if (!live) {
         console.error("");
         console.error(chalk.red("  That session no longer signs you in — it has probably expired."));
-        console.error(chalk.dim(`  Refresh it with:  mpersonas auth ${url} --save ${options.session}`));
+        console.error(chalk.dim(`  Refresh it with:  personaudit auth ${url} --save ${options.session}`));
         console.error(chalk.dim("  Continuing would audit the login page and report its issues as your app's."));
         console.error("");
         process.exit(1);
@@ -579,7 +601,7 @@ program
   .option("--count <n>", "Number of personas to generate", "4")
   .option("--describe <text>", "Generate personas from a text description instead of URL analysis")
   .option("--allow-private", "Allow localhost / private-network targets. For your own app or staging box.")
-  .option("--session <file>", "Saved session from `mpersonas auth`, so personas are derived from the signed-in app.")
+  .option("--session <file>", "Saved session from `personaudit auth`, so personas are derived from the signed-in app.")
   .option("--save", "Write the personas into ./mpersonas/ so you can edit and commit them")
   .action(async (url: string, options: { count: string; describe?: string; allowPrivate?: boolean; session?: string; save?: boolean }) => {
     const count = parseInt(options.count, 10);
@@ -618,7 +640,7 @@ program
       if (options.save) {
         console.log(chalk.green(`  Saved ${saved.length} personas to ./${PROJECT_DIR}/`));
         console.log(chalk.dim("  Edit their goals to match what you actually care about, then commit them."));
-        console.log(chalk.dim(`  They are picked up automatically by:  mpersonas run ${url}`));
+        console.log(chalk.dim(`  They are picked up automatically by:  personaudit run ${url}`));
       } else {
         console.log(chalk.dim(`  Re-run with --save to write these into ./${PROJECT_DIR}/ so you can edit and commit them.`));
       }
@@ -845,4 +867,10 @@ program
     console.log(chalk.green(`Deleted custom persona: ${id}`));
   });
 
-program.parse();
+program.parseAsync().catch((error: unknown) => {
+  if (error instanceof BrowserMissingError) {
+    console.error(chalk.red(`  ${error.message}`));
+    process.exit(1);
+  }
+  throw error;
+});
