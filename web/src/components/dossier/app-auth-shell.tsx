@@ -6,23 +6,23 @@ import { Wordmark } from "@/components/forensic/wordmark";
 const REASONS = [
   {
     n: "1",
-    title: "Every audit, kept",
-    body: "Axe verdicts and persona runs land in your history automatically. Nothing to export by hand.",
+    title: "Free grades, saved",
+    body: "Grades you run while signed in are kept on your account, so you can find them again.",
   },
   {
     n: "2",
-    title: "Projects, not one-off scans",
-    body: "Group runs by client site so a scan history and re-runs stay together.",
+    title: "1 project to track a site",
+    body: "Free includes 1 project. Its grades sit together so you can watch one site over time.",
   },
   {
     n: "3",
-    title: "Compare a retest",
-    body: "Run it again after a fix ships and see exactly what cleared, side by side.",
+    title: "The CLI and CI gate",
+    body: "Scan behind a login on your own machine and fail builds only on new defects. Free, account or not.",
   },
   {
     n: "4",
-    title: "A report to hand over",
-    body: "Findings and persona notes, kept apart, ready to put in front of a client.",
+    title: "More, on Solo and up",
+    body: "Solo and up add scans inside projects, persona task-success runs, retest compare and report export.",
   },
 ] as const;
 

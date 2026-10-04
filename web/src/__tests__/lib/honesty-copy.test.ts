@@ -139,3 +139,58 @@ describe("pricing competitor claims are sourced and dated", () => {
     expect(src).not.toMatch(/None of them key/);
   });
 });
+
+describe("auth copy matches what a Free account gets", () => {
+  const signup = read("src/app/auth/signup/signup-form.tsx");
+  const shell = read("src/components/dossier/app-auth-shell.tsx");
+
+  it("does not promise Free accounts persona runs, history of every audit, retest compare or reports", () => {
+    for (const src of [signup, shell]) {
+      expect(src).not.toMatch(/Save every audit/i);
+      expect(src).not.toMatch(/persona runs land in your history/i);
+      expect(src).not.toMatch(/Every audit, kept/);
+      expect(src).not.toMatch(/Axe verdicts and persona (runs|task-success)/i);
+    }
+  });
+
+  it("states what Free does include: saved grades, one project, the free CLI with the CI gate", () => {
+    expect(shell).toMatch(/free grades/i);
+    expect(shell).toMatch(/1 project/);
+    expect(shell).toMatch(/CLI/);
+    expect(shell).toMatch(/CI gate/);
+    expect(signup).toMatch(/free grades/i);
+  });
+
+  it("labels every paid-only item as Solo and up", () => {
+    // Each paid feature may appear only in a reason that also names the plan that sells it.
+    const paid = /(persona task-success|retest|report export|exportable report)/i;
+    const reasonBodies = shell.match(/body: "[^"]*"/g) ?? [];
+    for (const body of reasonBodies) {
+      if (paid.test(body)) expect(body).toMatch(/Solo and up/);
+    }
+    expect(shell).toMatch(/Solo and up/);
+  });
+
+  it("says no card is needed only because Free signup collects no payment details", () => {
+    expect(signup).toMatch(/No card needed/);
+    // The signup form must stay card-free for that line to be true.
+    expect(signup).not.toMatch(/stripe|checkout|cardNumber|card-number/i);
+    expect(read("src/app/pricing/page.tsx")).toMatch(/cadence: "forever"/);
+  });
+
+  it("keeps compliance wording and em dashes out of auth copy", () => {
+    for (const src of [signup, shell]) {
+      expect(src).not.toMatch(/compliance (verdict|report)/i);
+      expect(src).not.toMatch(/proves compliance/i);
+    }
+    const strings = (signup + shell).match(/(?:body|title): "[^"]*"|>[^<>{}]*</g) ?? [];
+    for (const s of strings) expect(s).not.toMatch(/—/);
+  });
+
+  it("states the password rule the validator enforces in the placeholder", () => {
+    expect(signup).toMatch(/length < 8/);
+    expect(signup).toMatch(/a number or symbol/);
+    expect(signup).not.toMatch(/placeholder="At least 8 characters"/);
+    expect(signup).toMatch(/placeholder="8\+ characters, with a number or symbol"/);
+  });
+});
