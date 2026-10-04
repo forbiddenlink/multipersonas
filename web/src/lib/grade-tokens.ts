@@ -19,6 +19,23 @@ export function parseGradeTokens(raw: unknown): string[] {
   return tokens;
 }
 
+/**
+ * The grade token in what a user pasted: a /grade/<token> link (any host, scheme optional)
+ * or the bare token. Null when it is neither, so the form can say so before any request.
+ */
+export function gradeTokenFromInput(raw: string): string | null {
+  const text = raw.trim();
+  if (!text) return null;
+  const fromLink = /\/grade\/([^/?#\s]+)/i.exec(text);
+  const candidate = (fromLink?.[1] ?? text).toLowerCase();
+  return UUID_RE.test(candidate) ? candidate : null;
+}
+
+/** Confirmation shown after grades attach to the account. */
+export function claimedMessage(count: number): string {
+  return `${count} grade${count === 1 ? "" : "s"} saved to your account.`;
+}
+
 function readStore(): string[] {
   if (typeof window === "undefined") return [];
   try {

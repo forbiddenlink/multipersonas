@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  claimedMessage,
   clearRememberedGradeTokens,
   readRememberedGradeTokens,
 } from "@/lib/grade-tokens";
@@ -11,11 +12,12 @@ import { trackProductEvent } from "@/lib/analytics";
 /**
  * After signup/login, attach any public grades this browser ran while signed out.
  * Possession of the share token is the authorization; the API refuses to steal a
- * grade another account already claimed.
+ * grade another account already claimed. Says so once when grades attached.
  */
 export function ClaimGrades() {
   const router = useRouter();
   const ran = useRef(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (ran.current) return;
@@ -40,6 +42,7 @@ export function ClaimGrades() {
         clearRememberedGradeTokens();
         if (claimed > 0) {
           trackProductEvent("grades_claimed", { count: claimed });
+          setMessage(claimedMessage(claimed));
           router.refresh();
         }
       })
@@ -48,5 +51,16 @@ export function ClaimGrades() {
       });
   }, [router]);
 
-  return null;
+  // Brief confirmation, once: the grades appear in the lists below without any other cue.
+  useEffect(() => {
+    if (!message) return;
+    const timer = setTimeout(() => setMessage(null), 8000);
+    return () => clearTimeout(timer);
+  }, [message]);
+
+  return (
+    <div role="status" aria-live="polite">
+      {message ? <p className="mb-4 border-l-2 border-primary pl-3 text-sm">{message}</p> : null}
+    </div>
+  );
 }

@@ -5,6 +5,10 @@ import { AuditForm } from "@/components/audit-form";
 import { AuditHistory } from "@/components/audit-history";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { FirstRunEmpty } from "@/components/forensic/first-run-empty";
+import { FirstRunChecklist } from "@/components/forensic/first-run-checklist";
+import { ClaimGradeForm } from "@/components/claim-grade-form";
+import { firstRunSteps } from "@/lib/first-run-steps";
+import { listProjects } from "@/lib/projects";
 import { createClient } from "@/lib/supabase/server";
 import { listAudits } from "@/lib/audits";
 import { getSessionPlan, planAllowsPersonas } from "@/lib/entitlements";
@@ -22,10 +26,11 @@ export default async function DashboardPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const [audits, plan, grades] = await Promise.all([
+  const [audits, plan, grades, projects] = await Promise.all([
     listAudits(supabase, 20),
     getSessionPlan(supabase, user?.id ?? null),
     user ? listGraderScansForUser(user.id) : Promise.resolve([]),
+    listProjects(supabase),
   ]);
   const canRunPersonas = planAllowsPersonas(plan);
 
@@ -51,8 +56,9 @@ export default async function DashboardPage() {
   const totalVerdicts = SEVERITY_ORDER.reduce((n, s) => n + counts[s], 0);
   const latestRun = audits[0] ?? null;
 
+  // Outline, not filled: the first-run checklist above carries the view's one primary.
   const btn =
-    "inline-flex h-10 items-center justify-center rounded-sm bg-primary px-4 text-sm font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
+    "inline-flex h-10 items-center justify-center rounded-sm border border-foreground/60 bg-card px-4 text-sm font-medium text-foreground transition-colors duration-150 hover:border-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
 
   return (
     <div className="max-w-6xl">
@@ -77,7 +83,11 @@ export default async function DashboardPage() {
               </div>
             </div>
           ) : (
-            <FirstRunEmpty canRunHosted={canRunPersonas} />
+            canRunPersonas ? (
+              <FirstRunEmpty canRunHosted />
+            ) : (
+              <FirstRunChecklist steps={firstRunSteps({ grades, projects })} />
+            )
           )}
         </section>
 
@@ -134,6 +144,9 @@ export default async function DashboardPage() {
         <section aria-labelledby="grades-heading" className="min-w-0">
           <ExhibitHead label="Saved grades" className="mb-4" headingId="grades-heading" />
           <GradeHistory grades={grades} />
+          <div className="mt-6">
+            <ClaimGradeForm />
+          </div>
         </section>
         <section aria-labelledby="runs-heading" className="min-w-0">
           <ExhibitHead label="Recent runs" className="mb-4" headingId="runs-heading" />

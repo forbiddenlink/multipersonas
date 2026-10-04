@@ -9,9 +9,10 @@ import { BoxDivider } from "@/components/forensic/divider";
 import { EmptyPrompt } from "@/components/forensic/empty-prompt";
 import { createProjectAction } from "./actions";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { projectPrefill } from "@/lib/project-prefill";
+import { projectOffer, projectPrefill } from "@/lib/project-prefill";
+import { ProjectOffer } from "@/components/project-offer";
 import { formatShortDate, hostname } from "@/lib/format";
-import { PROJECT_LIMITS } from "@/lib/entitlements";
+import { getExactPlan, planDisplayName, PROJECT_LIMITS, projectLimitFor } from "@/lib/entitlements";
 
 export const metadata: Metadata = {
   title: "Projects",
@@ -40,6 +41,14 @@ export default async function ProjectsPage({
 
   const supabase = await createClient();
   const projects = await listProjects(supabase);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const plan = await getExactPlan(supabase, user?.id ?? null);
+  const limit = projectLimitFor(plan);
+  const offer = projectOffer(prefill, projects, limit);
+  // A create would be refused at the cap, so the form is hidden rather than offered and then failed.
+  const atLimit = limit !== null && projects.length >= limit;
 
   return (
     <div className="max-w-2xl">
@@ -49,7 +58,25 @@ export default async function ProjectsPage({
         Group your saved audits by site so a scan history and re-runs stay together.
       </p>
 
-      <BoxDivider label="new project" className="my-5" />
+      {offer.kind !== "none" ? (
+        <div className="mt-5">
+          <ProjectOffer offer={offer} planName={planDisplayName(plan)} action={createProjectAction} />
+        </div>
+      ) : null}
+
+      {atLimit ? (
+        offer.kind === "none" ? (
+          <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
+            Your {planDisplayName(plan)} plan includes {limit} project{limit === 1 ? "" : "s"}. See{" "}
+            <Link href="/pricing" className="text-link">
+              pricing
+            </Link>{" "}
+            to add more.
+          </p>
+        ) : null
+      ) : (
+        <>
+      <BoxDivider label={offer.kind === "create" ? "or change the details first" : "new project"} className="my-5" />
 
       <form action={createProjectAction} className="space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
@@ -91,8 +118,12 @@ export default async function ProjectsPage({
             {errorMessage}
           </p>
         )}
-        <SubmitButton size="sm">Create project</SubmitButton>
+        <SubmitButton size="sm" variant={offer.kind === "create" ? "outline" : "default"}>
+          Create project
+        </SubmitButton>
       </form>
+        </>
+      )}
 
       <BoxDivider label="all projects" className="my-5" />
 

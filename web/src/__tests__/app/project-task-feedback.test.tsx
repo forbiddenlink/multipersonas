@@ -5,7 +5,8 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ auth: { g
 vi.mock("@/lib/projects", () => ({ getProject: async () => ({ id: "project-1", name: "Synthetic project", url: "https://example.invalid", task_definition: null }) }));
 vi.mock("@/lib/audits", () => ({ listAudits: async () => [] }));
 vi.mock("@/lib/baseline", () => ({ compareProjectRuns: async () => null }));
-vi.mock("@/lib/entitlements", () => ({ getSessionPlan: async () => "free", planAllowsPersonas: () => false }));
+vi.mock("@/lib/entitlements", () => ({ getSessionPlan: async () => "pro", planAllowsPersonas: () => true, PROJECT_LIMITS: { free: 1, pro: 5, team: null } }));
+vi.mock("@/lib/schedules", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/lib/schedules")>()), getProjectSchedule: async () => null }));
 vi.mock("@/app/(app)/projects/actions", () => ({ saveProjectTaskAction: vi.fn(), updateProjectAction: vi.fn(), deleteProjectAction: vi.fn(), upsertProjectScheduleAction: vi.fn() }));
 vi.mock("@/components/audit-form", () => ({ AuditForm: () => null }));
 vi.mock("@/components/audit-history", () => ({ AuditHistory: () => null }));

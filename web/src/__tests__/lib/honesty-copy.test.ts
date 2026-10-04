@@ -268,6 +268,52 @@ describe("nav and pricing details", () => {
   });
 });
 
+describe("free first-run copy (W3) stays honest", () => {
+  const FILES = [
+    "src/components/project-offer.tsx",
+    "src/components/paid-panels-note.tsx",
+    "src/components/project-fix-first.tsx",
+    "src/components/claim-grade-form.tsx",
+    "src/components/claim-grades.tsx",
+    "src/components/forensic/first-run-checklist.tsx",
+    "src/lib/first-run-steps.ts",
+  ];
+
+  it.each(FILES)("%s makes no compliance, lawsuit, or hosted behind-login claim", (file) => {
+    const src = read(file);
+    expect(src).not.toMatch(/compliant|compliance (verdict|report)|proves compliance/i);
+    expect(src).not.toMatch(/protects? (you )?from (lawsuits|legal)/i);
+    expect(src).not.toMatch(/get started/i);
+    expect(src).not.toMatch(/hosted behind-login is (ready|live|available)/i);
+    expect(src).not.toMatch(/behind[- ]the[- ]login[^.]*\bhosted\b/i);
+  });
+
+  it("collapses the Free project page's paid panels into one 'On Solo and up' note", () => {
+    const page = read("src/app/(app)/projects/[id]/page.tsx");
+    expect(page).toMatch(/<PaidPanelsNote \/>/);
+    // Issue work, the task form and the schedule form only render for plans that can use them.
+    expect(page).toMatch(/\{canRunPersonas \? \(\s*<>\s*<BoxDivider label="issue work"/);
+    expect(page).toMatch(/\{canRunPersonas \? \(\s*<div className="min-w-0">\s*<BoxDivider label="task to test"/);
+    expect(page).not.toMatch(/Assign owners on audit findings[\s\S]{0,40}Free/);
+    const note = read("src/components/paid-panels-note.tsx");
+    expect(note).toMatch(/On Solo and up/);
+    expect(note).toMatch(/PROJECT_LIMITS\.pro/);
+    expect(note).toMatch(/href="\/pricing"/);
+  });
+
+  it("states the project cap from PROJECT_LIMITS, never a literal", () => {
+    const page = read("src/app/(app)/projects/page.tsx");
+    expect(page).toMatch(/projectLimitFor\(plan\)/);
+    expect(read("src/components/project-offer.tsx")).not.toMatch(/\b1 project\b/);
+  });
+
+  it("the checklist says hosted persona runs belong to the paid plans and behind-login is CLI-only", () => {
+    const src = read("src/components/forensic/first-run-checklist.tsx");
+    expect(src).toMatch(/Hosted persona runs come with the Solo and Agency founding plans/);
+    expect(src).toMatch(/behind-login scans run in the CLI on your machine/);
+  });
+});
+
 describe("W5 messaging: one meaning of persona, legal facts carry the disclaimer", () => {
   it("does not use the confusing persona costume line on /grade", () => {
     expect(read("src/app/grade/page.tsx")).not.toMatch(/persona costume/);
