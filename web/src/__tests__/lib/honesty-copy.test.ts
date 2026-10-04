@@ -8,8 +8,8 @@ describe("marketing copy stays honest about hosted vs CLI", () => {
   it("does not call behind-login a Pro layer on the homepage", () => {
     const src = read("src/app/page.tsx");
     expect(src).not.toMatch(/Behind-login crawls and persona task-success are the/);
-    expect(src).toMatch(/keyless CLI/);
-    expect(src).toMatch(/Persona task-success/);
+    expect(src).toMatch(/Scan signed-in flows with the free CLI; the session\s+never leaves your machine/);
+    expect(src).toMatch(/Persona layer · Solo and up/);
   });
 
   it("does not promise that signup records persona task-success for free accounts", () => {
@@ -107,7 +107,9 @@ describe("marketing copy avoids compliance claims and qualifies behind-login", (
 
   it("qualifies behind-login in the footer and hero body as CLI/local", () => {
     expect(read("src/components/site-footer.tsx")).toMatch(/behind the login with the CLI/);
-    expect(read("src/app/page.tsx")).toMatch(/With the free CLI, Personaudit runs/);
+    const home = read("src/app/page.tsx");
+    expect(home).toMatch(/with the free CLI/);
+    expect(home).toMatch(/label="behind the login, on your machine"/);
   });
 });
 
