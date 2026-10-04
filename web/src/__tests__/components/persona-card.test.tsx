@@ -9,7 +9,13 @@ describe("PersonaCard", () => {
   it("shows the description as written, not forced into Title Case", () => {
     const persona = elderlyUser;
     render(<PersonaCard persona={persona} />);
-    const description = screen.getByText(persona.description);
+    const sentence = persona.description.charAt(0).toUpperCase() + persona.description.slice(1);
+    const description = screen.getByText(sentence);
     expect(description.className).not.toMatch(/capitalize/);
+  });
+
+  it("starts the description with a capital letter, as a sentence", () => {
+    render(<PersonaCard persona={elderlyUser} />);
+    expect(screen.getByText(/^A 74-year-old/)).toBeTruthy();
   });
 });
