@@ -315,9 +315,12 @@ export default async function ProjectDetailPage({
               Last run: {schedule?.last_run_at ? new Date(schedule.last_run_at).toLocaleString() : "not yet"}
             </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Runner: {scheduleRunnerConfigured ? "configured" : "needs CRON_SECRET and a scheduled runner"}
-          </p>
+          {!scheduleRunnerConfigured ? (
+            <p className="text-xs text-muted-foreground">
+              Scheduled scans are not running on this deployment yet. Your schedule is saved and
+              starts once scheduling is switched on.
+            </p>
+          ) : null}
           <SubmitButton variant="outline" size="sm">Save schedule</SubmitButton>
         </form>
       ) : (
