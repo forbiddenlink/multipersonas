@@ -372,3 +372,33 @@ describe("W6 paid loop copy (run links, Retest, project picker, diff) stays hone
     expect(src).not.toMatch(/\b5 projects\b/);
   });
 });
+
+describe("W7 signed-in QA copy", () => {
+  it("the projects page takes its intro and empty state from plan-aware copy, not audit wording", () => {
+    const page = read("src/app/(app)/projects/page.tsx");
+    expect(page).toMatch(/projectsIntro\(canRunPersonas\)/);
+    expect(page).toMatch(/projectsEmptyHint\(canRunPersonas\)/);
+    expect(page).not.toMatch(/saved audits/);
+    const copy = read("src/lib/project-copy.ts");
+    expect(copy).toMatch(/free grades/);
+    expect(copy).toMatch(/re-grade after a fix/);
+  });
+
+  it.each(["src/lib/finding-display.ts", "src/lib/priority-groups.ts", "src/lib/project-copy.ts"])(
+    "%s makes no compliance or lawsuit claim",
+    (file) => {
+      const src = read(file);
+      expect(src).not.toMatch(/compliant|compliance (verdict|report)|proves compliance/i);
+      expect(src).not.toMatch(/protects? (you )?from (lawsuits|legal)/i);
+    },
+  );
+
+  it("the run page and report show plain finding text and a short Learn more link, never the raw url sentence", () => {
+    for (const file of ["src/app/(app)/audits/[id]/page.tsx", "src/app/(app)/audits/[id]/report/page.tsx"]) {
+      const src = read(file);
+      expect(src).toMatch(/displayFinding\(/);
+      expect(src).toMatch(/Learn more/);
+      expect(src).not.toMatch(/\{f\.recommendation\}|\{v\.recommendation\}/);
+    }
+  });
+});

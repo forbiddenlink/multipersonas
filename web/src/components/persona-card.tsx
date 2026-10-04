@@ -35,7 +35,7 @@ export function PersonaCard({ persona }: { persona: Persona }) {
         <Monogram name={persona.name} size={40} />
         <div className="min-w-0">
           <p className="font-medium text-card-foreground">{persona.name}</p>
-          <p className="mt-0.5 line-clamp-2 text-sm capitalize text-muted-foreground">
+          <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
             {persona.description}
           </p>
         </div>

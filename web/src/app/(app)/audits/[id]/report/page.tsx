@@ -8,6 +8,8 @@ import { PERSONA_DATA } from "@/lib/personas";
 import { buildReport, type Severity } from "@/lib/report";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { severityMeta, SEVERITY_ORDER } from "@/components/forensic/severity";
+import { displayFinding } from "@/lib/finding-display";
+import { groupPriority } from "@/lib/priority-groups";
 import { TrackOnMount } from "@/components/track-on-mount";
 import { ExportButton } from "./export-button";
 import styles from "./report.module.css";
@@ -81,9 +83,19 @@ export default async function ReportPage({
     locations: v.locations,
     recommendation: v.recommendation,
   }));
-  const priorityVerdicts = [...report.verdicts]
-    .sort((a, b) => b.priorityScore - a.priorityScore)
-    .slice(0, 5);
+  // One row per rule, so the top five are five different problems.
+  const priorityVerdicts = groupPriority(
+    report.verdicts.map((v) => ({
+      id: v.id,
+      ruleId: v.ruleId,
+      title: v.title,
+      severity: v.severity,
+      priorityScore: v.priorityScore,
+      priorityReason: v.priorityReason,
+      locations: v.locations,
+    })),
+    5,
+  );
 
   return (
     <div>
@@ -263,9 +275,16 @@ export default async function ReportPage({
                 {priorityVerdicts.map((v) => {
                   const meta = SEVERITY_META[v.severity as Severity] ?? SEVERITY_META.minor;
                   return (
-                    <tr role="row" key={v.id}>
+                    <tr role="row" key={v.key}>
                       <td role="cell" className={styles.sev} data-label="Score">{v.priorityScore}</td>
-                      <td role="cell" data-label="Issue">{v.title}</td>
+                      <td role="cell" data-label="Issue">
+                        {displayFinding({ ruleId: v.ruleId, title: v.title, description: null, recommendation: null }).title}
+                        {v.pages > 0 ? (
+                          <div className={styles.ruleId}>
+                            {v.issues} {v.issues === 1 ? "issue" : "issues"} on {v.pages} {v.pages === 1 ? "page or state" : "pages or states"}
+                          </div>
+                        ) : null}
+                      </td>
                       <td role="cell" data-label="Severity" style={{ color: meta.color }}>{meta.label}</td>
                       <td role="cell" data-label="Why first">{v.priorityReason}</td>
                     </tr>
@@ -348,14 +367,15 @@ export default async function ReportPage({
                   const meta =
                     SEVERITY_META[v.severity as Severity] ?? SEVERITY_META.minor;
                   const glyph = severityMeta(v.severity).glyph;
+                  const shown = displayFinding(v);
                   return (
                     <tr role="row" key={v.id}>
                       <td role="cell" data-label="Rule">
-                        <div className={styles.ruleTitle}>{v.title}</div>
+                        <div className={styles.ruleTitle}>{shown.title}</div>
                         {v.ruleId && (
                           <div className={styles.ruleId}>Rule: {v.ruleId}</div>
                         )}
-                        <div className={styles.desc}>{v.description}</div>
+                        {shown.why ? <div className={styles.desc}>{shown.why}</div> : null}
                       </td>
                       <td role="cell" className={styles.sc} data-label="WCAG SC">
                         {v.criteria.length > 0 ? (
@@ -385,7 +405,15 @@ export default async function ReportPage({
                           <span className={styles.scDash}>–</span>
                         )}
                       </td>
-                      <td role="cell" className={styles.rec} data-label="Fix">{v.recommendation}</td>
+                      <td role="cell" className={styles.rec} data-label="Fix">
+                        {shown.fix}
+                        {shown.fix && shown.learnMore ? " " : null}
+                        {shown.learnMore ? (
+                          <a href={shown.learnMore} target="_blank" rel="noopener noreferrer" className={styles.learnMore}>
+                            Learn more<span className="sr-only"> about {shown.title} (opens in a new tab)</span>
+                          </a>
+                        ) : null}
+                      </td>
                     </tr>
                   );
                 })}

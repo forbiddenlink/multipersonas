@@ -15,6 +15,8 @@ import { EmptyPrompt } from "@/components/forensic/empty-prompt";
 import { SEVERITY_ORDER, type Severity } from "@/components/forensic/severity";
 import { loadJourney } from "@/lib/journey";
 import { groupFindingsByRule } from "@/lib/audit-rules";
+import { displayFinding } from "@/lib/finding-display";
+import { groupPriority } from "@/lib/priority-groups";
 import { ReplayTheater, type ReplayFinding } from "@/components/replay-theater";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -214,7 +216,7 @@ export default async function AuditDetailPage({
       pageUrl: step.pageUrl,
     })),
   );
-  const priorityFindings = sortedAxeFindings
+  const scoredFindings = sortedAxeFindings
     .map((f) => {
       const impacted = new Set<string>();
       const blocked = new Set<string>();
@@ -234,9 +236,20 @@ export default async function AuditDetailPage({
               ? `${impacted.size} persona${impacted.size === 1 ? "" : "s"} reached this state`
               : "Prioritized by axe severity",
       };
-    })
-    .sort((a, b) => b.priorityScore - a.priorityScore)
-    .slice(0, 3);
+    });
+  // One card per rule, so the top three are three different problems.
+  const priorityFindings = groupPriority(
+    scoredFindings.map((f) => ({
+      id: f.id,
+      ruleId: f.rule_id,
+      title: f.title,
+      severity: f.severity,
+      priorityScore: f.priorityScore,
+      priorityReason: f.priorityReason,
+      locations: splitLocations(f.page_url),
+    })),
+    3,
+  );
 
   const severityCounts = Object.fromEntries(
     SEVERITY_ORDER.map((sev) => [sev, axeFindings.filter((f) => f.severity === sev).length]),
@@ -370,12 +383,19 @@ export default async function AuditDetailPage({
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             {priorityFindings.map((f) => (
-              <div key={f.id} className="sheet p-4">
+              <div key={f.key} className="sheet p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <SeverityChip severity={f.severity} />
+                  <SeverityChip severity={f.severity as Severity} />
                   <span className="font-mono text-lg font-semibold tabular-nums">{f.priorityScore}</span>
                 </div>
-                <p className="mt-3 text-sm font-medium">{f.title}</p>
+                <p className="mt-3 text-sm font-medium">
+                  {displayFinding({ ruleId: f.ruleId, title: f.title, description: null, recommendation: null }).title}
+                </p>
+                {f.pages > 0 ? (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {f.issues} {f.issues === 1 ? "issue" : "issues"} on {f.pages} {f.pages === 1 ? "page or state" : "pages or states"}
+                  </p>
+                ) : null}
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{f.priorityReason}</p>
               </div>
             ))}
@@ -494,24 +514,49 @@ export default async function AuditDetailPage({
                   No issues match those filters.
                 </div>
               )}
-              {filteredAxeFindings.map((f) => (
+              {filteredAxeFindings.map((f) => {
+                const shown = displayFinding({
+                  ruleId: f.rule_id,
+                  title: f.title,
+                  description: f.description,
+                  recommendation: f.recommendation,
+                });
+                return (
                 <div key={f.id} className="px-4 py-4 sm:px-5">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                     <SeverityChip severity={f.severity} />
                     <span className="text-sm font-medium text-card-foreground">
-                      {f.title}
+                      {shown.title}
                     </span>
+                    {shown.ruleId ? (
+                      <code className="font-mono text-xs text-muted-foreground">{shown.ruleId}</code>
+                    ) : null}
                     <span className="rounded-sm border border-border px-2 py-0.5 label-mono">
                       {FINDING_STATUS_LABELS[f.status as keyof typeof FINDING_STATUS_LABELS] ??
                         "Open"}
                     </span>
                   </div>
-                  <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted-foreground">
-                    {f.description}
-                  </p>
-                  <p className="mt-1 max-w-prose text-xs text-muted-foreground">
-                    {f.recommendation}
-                  </p>
+                  {shown.why ? (
+                    <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted-foreground">
+                      {shown.why}
+                    </p>
+                  ) : null}
+                  {shown.fix || shown.learnMore ? (
+                    <p className="mt-1 max-w-prose text-xs text-muted-foreground">
+                      {shown.fix}
+                      {shown.fix && shown.learnMore ? " " : null}
+                      {shown.learnMore ? (
+                        <a
+                          href={shown.learnMore}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-link"
+                        >
+                          Learn more<span className="sr-only"> about {shown.title} (opens in a new tab)</span>
+                        </a>
+                      ) : null}
+                    </p>
+                  ) : null}
                   {formatLocation(f.page_url) && (
                     <p className="mt-2 font-mono text-xs text-muted-foreground">
                       <span className="select-none">found at&nbsp;</span>
@@ -588,7 +633,8 @@ export default async function AuditDetailPage({
                     </form>
                   </details>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
