@@ -38,9 +38,14 @@ export default function Error({
               Unreadable
             </span>
           </div>
-          <p className="mt-4 max-w-sm break-words leading-relaxed text-muted-foreground">
-            {error.message || "Try again. If this keeps happening, reload the page."}
+          <p role="alert" className="mt-4 max-w-sm leading-relaxed text-muted-foreground">
+            Try again. If this keeps happening, reload the page or contact support.
           </p>
+          {error.digest ? (
+            <p className="mt-2 break-all font-mono text-xs text-muted-foreground">
+              Reference: {error.digest}
+            </p>
+          ) : null}
           <div className="mt-7 border-t border-border pt-6">
             <button
               onClick={reset}
