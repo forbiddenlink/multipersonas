@@ -11,6 +11,7 @@ import { compareProjectRuns } from "@/lib/baseline";
 import { AuditForm } from "@/components/audit-form";
 import { AuditHistory } from "@/components/audit-history";
 import { RunDiff } from "@/components/run-diff";
+import { RetestButton } from "@/components/retest-button";
 import { FindingsTrend } from "@/components/findings-trend";
 import { buildFindingsTrend } from "@/lib/findings-trend";
 import { Input } from "@/components/ui/input";
@@ -268,7 +269,12 @@ export default async function ProjectDetailPage({
       {regression ? (
         <>
           <BoxDivider label="since last run" className="my-5" />
-          <RunDiff diff={regression} />
+          <RunDiff diff={regression} canRetest={canRunPersonas && latestRun !== null} />
+          {canRunPersonas && latestRun ? (
+            <div className="mt-3">
+              <RetestButton url={latestRun.url} personaIds={latestRun.persona_ids} projectId={project.id} />
+            </div>
+          ) : null}
         </>
       ) : null}
 

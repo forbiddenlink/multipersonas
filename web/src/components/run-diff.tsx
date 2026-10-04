@@ -6,7 +6,14 @@ import { formatShortDate } from "@/lib/format";
  * Project regression panel — newest run vs previous, axe verdicts only.
  * Same identity as the CLI gate (ruleId + normalized selector).
  */
-export function RunDiff({ diff }: { diff: RunRegression }) {
+export function RunDiff({
+  diff,
+  canRetest = false,
+}: {
+  diff: RunRegression;
+  /** True when the Retest action is on the page for this viewer (paid plans). */
+  canRetest?: boolean;
+}) {
   const hasPrevious = diff.previous != null;
 
   return (
@@ -69,8 +76,10 @@ export function RunDiff({ diff }: { diff: RunRegression }) {
 
       {!hasPrevious ? (
         <p className="px-4 py-4 text-xs leading-relaxed text-muted-foreground">
-          Run another scan on this project to see new versus fixed defects, using the
-          same identity the CI gate uses. Builds only fail on regressions.
+          {canRetest
+            ? "Press Retest to run this site again and see new versus fixed defects"
+            : "Run another scan on this project to see new versus fixed defects"}
+          , using the same identity the CI gate uses. Builds only fail on regressions.
         </p>
       ) : (
         <div className="divide-y divide-border">
