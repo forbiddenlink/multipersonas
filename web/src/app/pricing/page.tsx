@@ -50,7 +50,7 @@ const TIERS: Tier[] = [
       "Hosted grade on up to 10 public pages, no signup",
       `${PROJECT_LIMITS.free} hosted project`,
     ],
-    limits: "No scheduled scans, no persona task-success, no exported evidence report.",
+    limits: "No scheduled scans, no hosted persona runs (AI agents that try a task on your site), no exported evidence report.",
   },
   {
     id: "solo",
@@ -62,7 +62,7 @@ const TIERS: Tier[] = [
       "Everything in Free",
       `${PROJECT_LIMITS.pro} hosted projects with scan history`,
       "Scheduled re-scans on a cron, not a button you remember",
-      "Persona task-success on public flows",
+      "Persona task-success runs on public flows",
       "Compare retests: new, cleared, and still-open findings",
       "Exportable evidence report (axe-core findings only)",
     ],
@@ -193,7 +193,8 @@ export default function PricingPage() {
                   The part that produces the evidence <span className="mark-sweep">is free.</span>
                 </h1>
                 <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-                  The CLI runs axe-core at every state it reaches, including behind a login, with
+                  The CLI runs axe-core, a widely used open-source accessibility engine that Google
+                  Lighthouse also uses, at every state it reaches, including behind a login, with
                   no API key and no account. You pay when you want that evidence kept, scheduled,
                   and exportable for a client, not for the scan itself.
                 </p>
@@ -258,7 +259,7 @@ export default function PricingPage() {
                     <div className="mt-5">
                       {tier.id === "free" ? (
                         <Link href="/grade" className={OUTLINE_CTA}>
-                          Run a free grade
+                          Grade a site free
                         </Link>
                       ) : null}
                       {tier.id === "solo" ? (
@@ -266,13 +267,13 @@ export default function PricingPage() {
                           <StartSoloPlanButton className={PRIMARY_CTA} />
                         ) : (
                           <Link href="/for-agencies#early-access" className={OUTLINE_CTA}>
-                            Request access
+                            Request Solo access
                           </Link>
                         )
                       ) : null}
                       {tier.id === "agency" ? (
                         foundingOpen ? (
-                          <UnlockFoundingAccessButton className={PRIMARY_CTA} label="Unlock founding access" />
+                          <UnlockFoundingAccessButton className={PRIMARY_CTA} label="Join founding access" />
                         ) : (
                           <Link href="/for-agencies#early-access" className={PRIMARY_CTA}>
                             Request founding access
@@ -282,9 +283,9 @@ export default function PricingPage() {
                     </div>
 
                     {tier.id !== "free" && openFor[tier.id] && trialDays > 0 ? (
-                      <p className="mt-3 max-w-[13rem] text-xs leading-relaxed text-muted-foreground">
-                        Starts with a {trialDays}-day free trial. A card is collected up front;
-                        cancel from Settings before it ends and you are not charged.
+                      <p className="mt-4 max-w-[14rem] text-sm leading-relaxed text-foreground">
+                        Starts with a {trialDays}-day free trial. We take a card up front. Cancel
+                        from Settings before the trial ends and you are not charged.
                       </p>
                     ) : null}
                   </div>

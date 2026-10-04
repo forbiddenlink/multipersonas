@@ -267,3 +267,27 @@ describe("nav and pricing details", () => {
     expect(read("src/app/pricing/page.tsx")).toMatch(/OUTLINE_CTA = buttonVariants\(\{[^}]*border-foreground[^/]/);
   });
 });
+
+describe("W5 messaging: one meaning of persona, legal facts carry the disclaimer", () => {
+  it("does not use the confusing persona costume line on /grade", () => {
+    expect(read("src/app/grade/page.tsx")).not.toMatch(/persona costume/);
+  });
+
+  it("puts the not-legal-advice line beside the legal claims on /for-agencies", () => {
+    const src = read("src/app/for-agencies/page.tsx");
+    expect(src).toMatch(/Not legal advice: ask a lawyer/);
+    expect(src).not.toMatch(/liability/i);
+    expect(src).not.toMatch(/isn&apos;t a defense/);
+  });
+
+  it("states hosted behind-login as not built in the agencies Available now list", () => {
+    const src = read("src/app/for-agencies/page.tsx");
+    expect(src).toMatch(/Available now/);
+    expect(src).toMatch(/What founding access funds/);
+    expect(src).toMatch(/Not built yet/);
+  });
+
+  it("explains persona as an AI agent that tries a task, on home", () => {
+    expect(read("src/app/page.tsx")).toMatch(/sends an AI agent to try a task/);
+  });
+});

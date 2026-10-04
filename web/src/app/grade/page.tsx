@@ -3,7 +3,6 @@ import { ExhibitHead } from "@/components/dossier/exhibit-head";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { EvidenceSheet } from "@/components/dossier/evidence-sheet";
 import { GradeForm } from "@/components/grade-form";
 
 export const metadata: Metadata = {
@@ -17,7 +16,7 @@ const WHAT_YOU_GET = [
   {
     n: "1",
     title: "A letter grade you can trace",
-    body: "A/B/C/D/F from the ratio of passed axe-core checks to WCAG A/AA violation weight. Best-practice issues are listed but never lower the letter.",
+    body: "A to F, from how many automated checks pass and how serious the failures are. The checks come from axe-core, a widely used open-source accessibility engine, and test against WCAG 2.2 A and AA. Best-practice issues are listed but never lower the letter.",
   },
   {
     n: "2",
@@ -27,7 +26,7 @@ const WHAT_YOU_GET = [
   {
     n: "3",
     title: "Failing rules, cited",
-    body: "Each rule's name, node count, and the WCAG 2.2 success criterion it breaks, with a plain-language fix.",
+    body: "Each failing rule, how many places it fails, and the WCAG 2.2 success criterion it breaks, with a plain-language fix.",
   },
 ] as const;
 
@@ -38,32 +37,28 @@ export default function GradePage() {
 
       <main id="main" className="exhibits flex-1">
         <section className="border-b border-border">
-          <div className="frame grid gap-14 py-14 sm:py-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)] lg:items-center lg:gap-16">
-            <div className="min-w-0 max-w-[40rem]">
-              <ExhibitHead label="Free · public pages · no signup" />
-              <h1 className="display mt-8 text-[clamp(2.2rem,5vw,3.5rem)] leading-[1.05]">
-                Grade any public site <span className="mark-sweep">in one pass.</span>
-              </h1>
-              <p className="mt-5 max-w-[36rem] text-lg leading-relaxed text-muted-foreground">
-                Enter a URL. We crawl what a stranger can reach without logging in, run{" "}
-                <span className="font-medium text-foreground">axe-core</span> on every page, and
-                hand back a letter grade with the evidence behind it, never a fabricated score,
-                never a persona costume.
-              </p>
+          <div className="frame-narrow py-12 sm:py-16">
+            <ExhibitHead label="Free · public pages · no signup" />
+            <h1 className="display mt-8 text-[clamp(2.2rem,5vw,3.5rem)] leading-[1.05]">
+              Grade any public site <span className="mark-sweep">in one pass.</span>
+            </h1>
+            <p className="mt-5 max-w-[36rem] text-lg leading-relaxed text-muted-foreground">
+              Enter a web address. We check up to 10 public pages on the site and hand back a letter
+              grade, what to fix first, and the evidence behind each finding. The grade comes from
+              automated checks only, with no AI opinion in it.
+            </p>
 
-              <div className="sheet mt-10 p-6 sm:p-8">
-                <GradeForm />
-              </div>
-
-              <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
-                Not ready to hand over a real URL yet?{" "}
-                <Link href="/sample-report" className="text-link">
-                  See a finished sample report
-                </Link>{" "}
-                from a public test store first.
-              </p>
+            <div className="sheet mt-8 p-6 sm:p-8">
+              <GradeForm />
             </div>
-            <EvidenceSheet className="mx-auto w-full max-w-[32rem] lg:mr-0" />
+
+            <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
+              Not ready to hand over a real URL yet?{" "}
+              <Link href="/sample-report" className="text-link">
+                See a finished sample report
+              </Link>{" "}
+              from a public test store first.
+            </p>
           </div>
         </section>
 
