@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  gradesForSite,
   AXE_DOCS_VERSION,
   dequeRuleUrl,
   hostOf,
@@ -45,5 +46,20 @@ describe("grade share helpers", () => {
     const axePkg = createRequire(playwrightEntry).resolve("axe-core/package.json");
     const [major, minor] = (JSON.parse(readFileSync(axePkg, "utf8")) as { version: string }).version.split(".");
     expect(AXE_DOCS_VERSION).toBe(`${major}.${minor}`);
+  });
+});
+
+describe("gradesForSite", () => {
+  const g = (entry_url: string, token: string) => ({ token, entry_url, status: "complete", letter: "B", created_at: "2026-10-01T00:00:00Z" });
+
+  it("keeps grades of the same site, treating www and apex as one site", () => {
+    const grades = [g("https://www.acme.test/pricing", "a"), g("https://acme.test/", "b"), g("https://other.test/", "c")];
+    expect(gradesForSite(grades, "https://acme.test").map((x) => x.token)).toEqual(["a", "b"]);
+  });
+
+  it("does not match a different subdomain or an unparseable project URL", () => {
+    const grades = [g("https://shop.acme.test/", "a")];
+    expect(gradesForSite(grades, "https://acme.test")).toEqual([]);
+    expect(gradesForSite(grades, "not a url")).toEqual([]);
   });
 });
