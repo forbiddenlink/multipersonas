@@ -30,7 +30,7 @@ type FieldErrors = {
   confirmPassword?: string;
 };
 
-export function SignupForm() {
+export function SignupForm({ githubEnabled }: { githubEnabled: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = safeReturnTo(searchParams);
@@ -315,13 +315,16 @@ export function SignupForm() {
             </Button>
           </form>
 
-          <div className="flex items-center gap-3">
-            <Separator className="flex-1" />
-            <span className="font-mono text-xs text-muted-foreground">or</span>
-            <Separator className="flex-1" />
-          </div>
-
-          <GitHubAuthButton onClick={handleGitHubSignup} loading={loading} label="Sign up with GitHub" />
+          {githubEnabled ? (
+            <>
+              <div className="flex items-center gap-3">
+                <Separator className="flex-1" />
+                <span className="font-mono text-xs text-muted-foreground">or</span>
+                <Separator className="flex-1" />
+              </div>
+              <GitHubAuthButton onClick={handleGitHubSignup} loading={loading} label="Sign up with GitHub" />
+            </>
+          ) : null}
 
           <p className="text-center text-xs leading-relaxed text-muted-foreground">
             By creating an account you accept the{" "}

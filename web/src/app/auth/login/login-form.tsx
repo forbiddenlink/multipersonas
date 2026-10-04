@@ -19,7 +19,7 @@ function safeReturnTo(params: URLSearchParams): string {
   return safeRedirectPath(params.get("next") ?? params.get("returnTo"));
 }
 
-export function LoginForm() {
+export function LoginForm({ githubEnabled }: { githubEnabled: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = safeReturnTo(searchParams);
@@ -33,7 +33,11 @@ export function LoginForm() {
     // must not show as "Authentication failed".
     if (err === "reset_expired")
       return "That password reset link has expired or was already used. Request a new one from “Forgot password?” below.";
-    if (err === "auth") return "Authentication failed. Check your email and password, or try GitHub.";
+    if (err === "auth") {
+      return githubEnabled
+        ? "Authentication failed. Check your email and password, or try GitHub."
+        : "Authentication failed. Check your email and password.";
+    }
     return "";
   });
   const [loading, setLoading] = useState(false);
@@ -166,13 +170,16 @@ export function LoginForm() {
             </Button>
           </form>
 
-          <div className="flex items-center gap-3">
-            <Separator className="flex-1" />
-            <span className="font-mono text-xs text-muted-foreground">or</span>
-            <Separator className="flex-1" />
-          </div>
-
-          <GitHubAuthButton onClick={handleGitHubLogin} loading={loading} label="Sign in with GitHub" />
+          {githubEnabled ? (
+            <>
+              <div className="flex items-center gap-3">
+                <Separator className="flex-1" />
+                <span className="font-mono text-xs text-muted-foreground">or</span>
+                <Separator className="flex-1" />
+              </div>
+              <GitHubAuthButton onClick={handleGitHubLogin} loading={loading} label="Sign in with GitHub" />
+            </>
+          ) : null}
 
           <p className="text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
