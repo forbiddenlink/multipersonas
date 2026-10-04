@@ -23,6 +23,9 @@ import { FINDING_STATUS_LABELS, FINDING_STATUSES } from "@/lib/finding-workflow"
 import { SubmitButton } from "@/components/ui/submit-button";
 import { DeleteProjectForm } from "../delete-project-form";
 import { ExhibitHead } from "@/components/dossier/exhibit-head";
+import { GradeHistory } from "@/components/grade-history";
+import { listGraderScansForUser } from "@/lib/grade";
+import { gradesForSite, regradePath } from "@/lib/grade-share";
 
 export const metadata: Metadata = {
   title: "Project",
@@ -101,6 +104,9 @@ export default async function ProjectDetailPage({
   } = await supabase.auth.getUser();
   const canRunPersonas = planAllowsPersonas(await getSessionPlan(supabase, user?.id ?? null));
   const schedule = canRunPersonas ? await getProjectSchedule(supabase, project.id) : null;
+  // The free grade is the hosted scan every plan can run. Show the owner's grades of this
+  // site here so a Free project is not a dead end that sends results somewhere else.
+  const siteGrades = user ? gradesForSite(await listGraderScansForUser(user.id), project.url) : [];
   const scheduleRunnerConfigured = Boolean(process.env.CRON_SECRET);
 
   const updateWithId = updateProjectAction.bind(null, project.id);
@@ -145,14 +151,15 @@ export default async function ProjectDetailPage({
       ) : (
         <div>
           <p className="text-sm text-muted-foreground">
-            Persona task-success runs come with the Solo and Agency plans. The free grade of a public page needs no plan.
+            Persona task-success runs come with the Solo and Agency plans. The free axe-core grade
+            runs on any plan: grade this site and the result shows up here.
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
             <Link
-              href="/grade"
+              href={regradePath(project.url)}
               className="inline-flex h-10 items-center rounded-sm bg-primary px-4 text-sm font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
-              Run a free grade
+              Grade this site free
             </Link>
             <Link href="/for-agencies#early-access" className="text-link text-sm">
               See founding access
@@ -160,6 +167,15 @@ export default async function ProjectDetailPage({
           </div>
         </div>
       )}
+
+      {siteGrades.length > 0 ? (
+        <section aria-labelledby="site-grades-heading" className="mt-6">
+          <h2 id="site-grades-heading" className="label-mono mb-3">
+            Free grades of this site
+          </h2>
+          <GradeHistory grades={siteGrades} />
+        </section>
+      ) : null}
 
       {latestRun?.task_definition ? (
         <div className="mt-5 space-y-3">

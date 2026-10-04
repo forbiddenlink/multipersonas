@@ -1,4 +1,5 @@
 import type { GradeReport } from "@engine/grader/score";
+import type { ClaimedGrade } from "@/lib/grade";
 
 export const SHARE_FALLBACK_ORIGIN = "https://personaudit.com";
 
@@ -38,4 +39,23 @@ export const AXE_DOCS_VERSION = "4.13";
 
 export function dequeRuleUrl(ruleId: string): string {
   return `https://dequeuniversity.com/rules/axe/${AXE_DOCS_VERSION}/${encodeURIComponent(ruleId)}`;
+}
+
+/** Hostname without a leading "www.", so the apex and www forms count as one site. */
+function siteKey(url: string): string | null {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Saved grades whose entry URL is on the same site as a project, so a project can show
+ * the free grades its owner ran against it. Other subdomains are different sites.
+ */
+export function gradesForSite(grades: ClaimedGrade[], siteUrl: string): ClaimedGrade[] {
+  const key = siteKey(siteUrl);
+  if (!key) return [];
+  return grades.filter((grade) => siteKey(grade.entry_url) === key);
 }
