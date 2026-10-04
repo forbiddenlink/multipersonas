@@ -3,7 +3,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { launchAuditBrowser } from "../security/browser.js";
 import { Persona, generateSystemPrompt } from "./types.js";
-import { DEFAULT_MODEL } from "../agent/engine.js";
+import { resolveModel } from "../agent/engine.js";
 import { assertUrlAllowed, assertRequestAllowed } from "../security/url-guard.js";
 
 export class PersonaGenerationError extends Error {
@@ -217,7 +217,7 @@ export async function generatePersonasFromUrl(
     const prompt = buildPromptFromSignals(signals, count);
 
     const { object } = await generateObject({
-      model: anthropic(process.env.MULTIPERSONAS_MODEL || DEFAULT_MODEL),
+      model: anthropic(resolveModel()),
       schema: personaSchema,
       prompt,
       maxOutputTokens: 4096,
@@ -268,7 +268,7 @@ is both inaccurate and harmful. Do not mention screen readers, blindness, colour
 blindness, or motor impairment.`;
 
     const { object } = await generateObject({
-      model: anthropic(process.env.MULTIPERSONAS_MODEL || DEFAULT_MODEL),
+      model: anthropic(resolveModel()),
       schema: personaSchema,
       prompt,
       maxOutputTokens: 4096,

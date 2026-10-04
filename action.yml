@@ -14,11 +14,11 @@ inputs:
     required: false
     default: "serious"
   baseline:
-    description: "Path (in the consumer repo) to a baseline JSON. Only defects NOT in it count as new. Omit to treat every current defect as new. Create one with `mpersonas scan <url> --update-baseline`."
+    description: "Path (in the consumer repo) to a baseline JSON. Only defects NOT in it count as new. Omit to treat every current defect as new. Create one with `npx personaudit scan <url> --baseline <file> --update-baseline`."
     required: false
     default: ""
   session:
-    description: "Path to a saved `mpersonas auth` session file, to scan authenticated pages."
+    description: "Path to a saved `personaudit auth` session file, to scan authenticated pages."
     required: false
     default: ""
   max-pages:
@@ -28,7 +28,15 @@ inputs:
   report:
     description: "Directory to write the report into (uploaded as an artifact by your workflow if you add an upload step)."
     required: false
-    default: "mpersonas-report"
+    default: "personaudit-report"
+
+outputs:
+  new-defects:
+    description: "Number of NEW defects at or above `fail-on` (0 when the gate passed). Parsed from the CLI gate line."
+    value: ${{ steps.gate.outputs.new-defects }}
+  report-path:
+    description: "Path to the Markdown report (scan.md inside the `report` directory)."
+    value: ${{ steps.gate.outputs.report-path }}
 
 runs:
   using: "composite"
@@ -49,6 +57,7 @@ runs:
         pnpm build
         pnpm exec playwright install --with-deps chromium
     - name: Run the accessibility gate
+      id: gate
       shell: bash
       # Inputs are passed through env (never interpolated into the command) so a crafted
       # URL/baseline cannot inject shell — args are built as a quoted bash array.
@@ -64,4 +73,16 @@ runs:
         args=( scan "$MP_URL" --fail-on "$MP_FAIL_ON" --max-pages "$MP_MAX_PAGES" --output "$MP_REPORT" )
         if [ -n "$MP_BASELINE" ]; then args+=( --baseline "$MP_BASELINE" ); fi
         if [ -n "$MP_SESSION" ]; then args+=( --session "$MP_SESSION" ); fi
-        node "$MP_ACTION_PATH/dist/cli.js" "${args[@]}"
+        # Keep the CLI's exit code (0 clean, 1 error, 2 new defects) while capturing its
+        # output, so the step can publish `new-defects` before it fails the job.
+        export NO_COLOR=1
+        set +e
+        node "$MP_ACTION_PATH/dist/cli.js" "${args[@]}" 2>&1 | tee "${RUNNER_TEMP:-/tmp}/personaudit-gate.log"
+        code=${PIPESTATUS[0]}
+        set -e
+        count=$(sed -n 's/.*Gate FAILED: \([0-9][0-9]*\) new defect.*/\1/p' "${RUNNER_TEMP:-/tmp}/personaudit-gate.log" | head -n1)
+        {
+          echo "new-defects=${count:-0}"
+          echo "report-path=${MP_REPORT}/scan.md"
+        } >> "$GITHUB_OUTPUT"
+        exit "$code"

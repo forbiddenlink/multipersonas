@@ -24,7 +24,7 @@ jobs:
         with:
           url: https://staging.your-site.com
           fail-on: serious                 # critical | serious | moderate | minor
-          baseline: .mpersonas-baseline.json
+          baseline: personaudit-baseline.json
 ```
 
 The step exits non-zero (failing the check) when there is any new defect at or above
@@ -37,13 +37,13 @@ Run once locally to snapshot today's known issues, then commit the file so only
 **regressions** fail the build:
 
 ```bash
-npx mpersonas scan https://staging.your-site.com --update-baseline --baseline .mpersonas-baseline.json
-git add .mpersonas-baseline.json && git commit -m "chore: accessibility baseline"
+npx personaudit scan https://staging.your-site.com --update-baseline --baseline personaudit-baseline.json
+git add personaudit-baseline.json && git commit -m "chore: accessibility baseline"
 ```
 
 ## Scanning behind a login
 
-Save a session locally (`mpersonas auth <url> --save session.json`), commit it as an
+Save a session locally (`npx personaudit auth <url> --save session.json`), commit it as an
 **encrypted** secret or reconstruct it in CI, then pass `session:` to the action. Credentials
 never leave the runner.
 
@@ -56,16 +56,26 @@ never leave the runner.
 | `baseline`  | _(none)_            | Baseline JSON path; only defects not in it count as new.           |
 | `session`   | _(none)_            | Saved session file for authenticated scans.                        |
 | `max-pages` | `20`                | Max pages to crawl.                                                |
-| `report`    | `mpersonas-report`  | Output directory (add your own upload-artifact step to keep it).   |
+| `report`    | `personaudit-report`| Output directory (add your own upload-artifact step to keep it).   |
+
+## Outputs
+
+| Output        | Description                                                                 |
+| ------------- | --------------------------------------------------------------------------- |
+| `new-defects` | New defects at or above `fail-on` (0 when the gate passed).                 |
+| `report-path` | Path to the Markdown report (`<report>/scan.md`).                           |
+
+Give the step an `id` to read them, for example `${{ steps.a11y.outputs.new-defects }}`.
+The step still fails the job when the gate fails; use `if: always()` on later steps.
 
 ## Upload the report (optional)
 
 ```yaml
       - uses: forbiddenlink/multipersonas@v1
-        with: { url: https://staging.your-site.com, baseline: .mpersonas-baseline.json }
+        with: { url: https://staging.your-site.com, baseline: personaudit-baseline.json }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: accessibility-report
-          path: mpersonas-report
+          path: personaudit-report
 ```

@@ -1,51 +1,66 @@
 # Accessibility gate for pull requests.
 #
-# Crawls your app behind its login and fails the build on NEW accessibility
-# defects — not your existing backlog. Deterministic and keyless: `scan` runs
-# with no ANTHROPIC_API_KEY, so nothing secret is needed for the gate itself.
+# Fails the build on NEW accessibility defects, not your existing backlog.
+# Deterministic and keyless: `scan` needs no ANTHROPIC_API_KEY, so nothing
+# secret is needed for the gate itself.
 #
 # Setup:
 #   1. Commit a baseline once, against your deployed app or a preview:
-#        npx personaudit scan "$URL" --session session.json --baseline mpersonas-baseline.json --update-baseline
-#      Commit mpersonas-baseline.json.
-#   2. Provide a session for behind-login scanning. Capture it locally with
+#        npx personaudit scan "$URL" --baseline personaudit-baseline.json --update-baseline
+#      Commit personaudit-baseline.json.
+#   2. Set the repository variable PERSONAUDIT_TARGET_URL to the URL to scan.
+#   3. Behind a login (optional): capture a session locally with
 #        npx personaudit auth "$URL" --save session.json
-#      then store its CONTENTS as the MPERSONAS_SESSION secret. It holds live
-#      cookies — treat it like a password, and rotate it when it expires.
+#      then store its CONTENTS as the PERSONAUDIT_SESSION secret. It holds live
+#      cookies: treat it like a password and rotate it when it expires.
+#      Delete the "Restore session" step and the --session line for a public site.
 #
-# For a public site with no login, drop the session steps entirely.
+# Prefer the packaged action for a one-step setup: see docs/github-action.md.
 
 name: Accessibility gate
 on: pull_request
 
+permissions:
+  contents: read
+
 jobs:
   a11y:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TARGET_URL: ${{ vars.PERSONAUDIT_TARGET_URL }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
-      - run: npm install -g personaudit
-      - run: npx playwright install --with-deps chromium
-
-      # Session is optional — omit for a public site.
-      - name: Restore session
-        if: ${{ secrets.MPERSONAS_SESSION != '' }}
-        run: printf '%s' "$MPERSONAS_SESSION" > session.json && chmod 600 session.json
-        env:
-          MPERSONAS_SESSION: ${{ secrets.MPERSONAS_SESSION }}
-
-      - name: Scan and gate on new critical/serious defects
+      - name: Install Personaudit and Chromium
         run: |
-          personaudit scan "${{ vars.MPERSONAS_TARGET_URL }}" \
-            ${{ secrets.MPERSONAS_SESSION != '' && '--session session.json' || '' }} \
-            --baseline mpersonas-baseline.json \
-            --fail-on serious
+          npm install -g personaudit
+          npx playwright install --with-deps chromium
+
+      # Secrets cannot be tested in `if:`, so the step always runs and writes
+      # an empty file when the secret is unset. Remove it for a public site.
+      - name: Restore session
+        env:
+          SESSION_JSON: ${{ secrets.PERSONAUDIT_SESSION }}
+        run: |
+          if [ -n "$SESSION_JSON" ]; then
+            printf '%s' "$SESSION_JSON" > session.json
+            chmod 600 session.json
+          fi
+
+      - name: Scan and gate on new serious defects
+        run: |
+          args=( scan "$TARGET_URL" --baseline personaudit-baseline.json --fail-on serious )
+          if [ -s session.json ]; then args+=( --session session.json ); fi
+          personaudit "${args[@]}"
 
       - name: Upload report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: accessibility-report
-          path: mpersonas-report/scan.md
+          path: personaudit-report/scan.md

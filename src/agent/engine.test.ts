@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { Page } from "playwright";
-import { trimToWindow, HISTORY_WINDOW, executeAction } from "./engine.js";
+import { trimToWindow, HISTORY_WINDOW, executeAction, resolveModel, DEFAULT_MODEL } from "./engine.js";
 
 /**
  * Minimal fake Page for the click path. `resolveElement` tries an aria-ref
@@ -401,5 +401,17 @@ describe("saved-task confirmation cannot be typed into existence", () => {
     const { page, state } = fakePage({ innerText: "Note" });
     await executeAction(page, "type", { selector: "Note", text: "Request received" });
     expect(state.filled).toBe(true);
+  });
+});
+
+describe("resolveModel", () => {
+  it("prefers PERSONAUDIT_MODEL over the legacy MULTIPERSONAS_MODEL", () => {
+    expect(resolveModel({ PERSONAUDIT_MODEL: "new", MULTIPERSONAS_MODEL: "old" })).toBe("new");
+  });
+
+  it("falls back to MULTIPERSONAS_MODEL, then the default", () => {
+    expect(resolveModel({ MULTIPERSONAS_MODEL: "old" })).toBe("old");
+    expect(resolveModel({})).toBe(DEFAULT_MODEL);
+    expect(resolveModel({ PERSONAUDIT_MODEL: "" , MULTIPERSONAS_MODEL: "old" })).toBe("old");
   });
 });

@@ -1,123 +1,103 @@
 # Personaudit
 
-Point it at a URL, including one behind a login. It crawls the site and checks
-every state it reaches for accessibility defects.
+[![npm version](https://img.shields.io/npm/v/personaudit)](https://www.npmjs.com/package/personaudit)
+[![CI](https://github.com/forbiddenlink/multipersonas/actions/workflows/ci.yml/badge.svg)](https://github.com/forbiddenlink/multipersonas/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Two commands, and the split reflects what the evidence actually supports:
-
-- **`scan`** is the core. It crawls the site (with a saved session, behind the login
-  wall) and runs **axe-core** at every state, reporting deterministic, citable rule
-  violations. This is the part nothing free replaces: the `axe` CLI does not crawl and
-  does not hold a session.
-- **`run`** adds LLM **UX personas** (a first-time visitor, a mobile user on slow 3G)
-  that browse toward a goal. Its unique output is **task success** (did a real-shaped
-  user actually complete the flow?), which a crawler cannot produce at all. Its finding
-  output is *opinion*: jargon, buried pricing, tap targets. Useful, never compliance.
-
-**Honest status of the persona layer:** we tested whether personas find accessibility
-defects a scripted crawler misses. They do not: a head-to-head on a real app
-(`experiments/personas-vs-crawler/`) found the crawler reached 4x more states for zero
-model cost. So personas are **not** pitched as an accessibility tool. Their surviving,
-distinct value is task-success: a crawler cannot tell you whether a real-shaped user
-completed a flow. It is **validated**: on a labelled probe set
-(`experiments/task-success-validity/`) the verdict never once claimed success on a
-genuinely impossible task (0% false-success, 90% agreement, holding across both runs).
-n=2 targets so far (Metabase, then SauceDemo, an interaction-heavy checkout), each goal
-run once, so the next step is more targets and repeated runs per goal, not a launch.
-
-- **Accessibility violations** come from **axe-core**: deterministic, citable, and
-  the only thing here that touches compliance.
-- **Usability friction and task success** come from **UX personas**. Opinion and
-  outcome, never compliance.
-
-**We do not simulate disabled users.** There is no "blind user" persona and there
-will not be one. An LLM roleplaying a disability is inaccurate (LLM accessibility
-judgments measure ~71% precision) and it is harmful; see
-[Ashlee Boyer](https://ashleemboyer.com/blog/how-to-dehumanize-accessibility-with-ai/)
-on why synthetic disabled characters don't represent anyone. What we keep is the
-*procedure*: the `keyboard-traversal` profile drives the site keyboard-only to reach
-states a page-level scan never sees, and axe renders the verdict there. A mechanical
-input constraint is a WCAG 2.1.1 test. A costume is not.
-
-**This does not replace testing with disabled people.** Nothing automated does. If
-you need that, use [Fable](https://makeitfable.com/), who pay disabled testers.
-
-**Status: prototype. The core bet is measured; the product shape changed because of
-it.** Deep states behind auth *do* hold violations a front-page scan misses (78% of
-them on the test app, `experiments/net-new-violations/`), and `scan` is built around
-that. Personas do *not* beat a crawler at finding them
-(`experiments/personas-vs-crawler/`), so the pitch shifted from "AI personas find what
-crawlers can't" to "authenticated accessibility scanning, plus a persona task-success
-layer." The web app now uses a queue + persistent worker architecture; see
-[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the remaining public-launch checklist.
-
-## Install
+Accessibility scanner that crawls every reachable state of your site, behind the login too, and runs axe-core at each one.
 
 ```bash
-pnpm install
-cp .env.example .env                    # ANTHROPIC_API_KEY only for `run`/`generate`; `scan` needs no key
-pnpm exec playwright install chromium
+npx personaudit scan https://your-site.com
 ```
 
-## Use
+![Terminal recording: personaudit grade and scan against a public page](docs/demo/scan.gif)
 
-### Scan (the core: deterministic, free, no AI)
+- **Crawls every state, including behind a login.** You sign in once in a local browser; the saved session stays on your machine.
+- **Gates CI on new defects only.** Commit a baseline, then fail a build only when a change adds a defect at or above the severity you choose.
+- **Keyless, nothing uploaded.** `scan` is deterministic axe-core: no API key, no model calls, no data leaves your machine.
+- **Free hosted grade for public pages.** [personaudit.com/grade](https://personaudit.com/grade) gives a letter grade for any public URL. Hosted behind-login scanning does not exist; behind-login scanning is the local CLI.
+
+`mpersonas` still works as an alias for `personaudit`.
+
+## Usage
+
+### Scan a site
 
 ```bash
-# Crawl a public site and check every page for accessibility defects
-pnpm dev -- scan https://example.com
-
-# Scan behind a login: authenticate once, then scan with the saved session
-pnpm dev -- auth https://app.example.com --save ./session.json
-pnpm dev -- scan https://app.example.com --session ./session.json --max-pages 60
+npx personaudit scan https://your-site.com
 ```
 
-`scan` writes a Markdown report of axe-core rule violations, grouped by rule, each
-listing its elements and every state it appeared in. No model calls.
+`scan` writes a Markdown report of axe-core violations, grouped by rule, each listing its elements and every state it appeared in. Use `--max-pages <n>` to widen the crawl and `-o <dir>` to choose the report directory (default `./personaudit-report`). Scanning `localhost` or a private network needs `--allow-private`.
 
-**Gate a build on it.** `scan` is deterministic and needs no `ANTHROPIC_API_KEY`, so it
-drops into CI. Baseline your current defects once, then fail only on new regressions:
+### Scan behind a login
+
+```bash
+# Sign in yourself (password, SSO, 2FA, magic link). Only the session is saved.
+npx personaudit auth https://app.example.com/login --save session.json
+npx personaudit scan https://app.example.com --session session.json --max-pages 60
+```
+
+The session file holds live cookies. Treat it like a password and keep it out of git (`.personaudit-session.json` is in this repo's `.gitignore`).
+
+### Baseline and CI gate
 
 ```bash
 # One time: snapshot today's defects as the accepted baseline, and commit it
-mpersonas scan https://app.example.com --session ./session.json \
-  --baseline mpersonas-baseline.json --update-baseline
+npx personaudit scan https://app.example.com --session session.json \
+  --baseline personaudit-baseline.json --update-baseline
 
-# In CI: exit non-zero only on NEW defects at/above a severity (existing backlog ignored)
-mpersonas scan https://app.example.com --session ./session.json \
-  --baseline mpersonas-baseline.json --fail-on serious
+# In CI: exit 2 only on NEW defects at or above a severity (existing backlog ignored)
+npx personaudit scan https://app.example.com --session session.json \
+  --baseline personaudit-baseline.json --fail-on serious
 ```
 
-The baseline keys defects by a render-stable id, so framework-generated element ids
-(`#mantine-…`) don't read as regressions. A ready-to-use GitHub Action is in
-[`examples/github-actions/`](examples/github-actions/accessibility-gate.yml). Exit codes:
-`0` pass, `2` gate failed, `1` usage/runtime error.
+The baseline keys defects by a render-stable id, so framework-generated element ids (`#mantine-...`) do not read as regressions.
 
-### Run (personas: task success + usability opinion)
+Exit codes: `0` clean, `1` error (bad input, blocked URL, missing browser), `2` gate failed.
+
+### Grade a public page
 
 ```bash
-# Personas tailored to the site browse toward a goal
-pnpm dev -- run https://app.example.com --session ./session.json --count 4
-
-# Author personas your team owns: generate a draft, edit it, commit it
-pnpm dev -- generate https://app.example.com --session ./session.json --count 4 --save
-$EDITOR mpersonas/*.json        # edit goals to match users you care about
-pnpm dev -- run https://app.example.com --session ./session.json   # picks up ./mpersonas/
-
-# Manage personas
-pnpm dev -- list
-pnpm dev -- create --from-json ./persona.json
-pnpm dev -- delete <id>
+npx personaudit grade https://example.com
 ```
 
-`run` reports task success (how many personas achieved their goal), usability
-observations, and the same axe defects `scan` produces. Personas live in `./mpersonas/`
-in your repo, so they are diffable, reviewable, and picked up automatically.
+`grade` crawls a public site and returns a letter grade from WCAG A/AA axe-core findings only. Add `--json` for the raw report.
 
-The npm package is **`personaudit`**. It installs two names for the same binary:
-`personaudit` and the older `mpersonas`, so existing scripts keep working.
-After `npm install -g personaudit` (or `pnpm build` locally) the same commands work as
-`personaudit scan <url>`.
+### Run UX personas (optional, needs `ANTHROPIC_API_KEY`)
+
+```bash
+npx personaudit run https://app.example.com --session session.json --count 4
+
+# Author personas your team owns: generate a draft, edit it, commit it
+npx personaudit generate https://app.example.com --session session.json --count 4 --save
+npx personaudit list
+```
+
+`run` reports task success (how many personas achieved their goal), usability observations, and the same axe defects `scan` produces. Personas live in `./mpersonas/` in your repo (the directory name predates the rename), so they are diffable and reviewable. Set the model with `PERSONAUDIT_MODEL` (`MULTIPERSONAS_MODEL` still works as a fallback).
+
+If Chromium is missing, run `npx playwright install chromium`.
+
+## GitHub Action
+
+```yaml
+- uses: forbiddenlink/multipersonas@v1
+  with:
+    url: https://staging.your-site.com
+    fail-on: serious
+    baseline: personaudit-baseline.json
+```
+
+Inputs, outputs (`new-defects`, `report-path`), and the behind-login setup are in [docs/github-action.md](docs/github-action.md). A copy-paste workflow is in [`examples/github-actions/`](examples/github-actions/accessibility-gate.yml).
+
+## What this is and is not
+
+- **Accessibility violations** come from axe-core: deterministic and citable. Automated checks find a subset of WCAG failures. Passing `scan` does not mean a site is accessible or compliant.
+- **Personas are not an accessibility tool.** A head-to-head on a real app (`experiments/personas-vs-crawler/`) found the crawler reached 4x more states for zero model cost. The persona layer's distinct value is task success. On a labelled probe set (`experiments/task-success-validity/`) the verdict never claimed success on a genuinely impossible task (0% false-success, 90% agreement; n=2 targets, so more targets and repeated runs come next).
+- **Deep states behind auth hold violations a front-page scan misses**: 78% of them on the test app (`experiments/net-new-violations/`). `scan` is built around that.
+- **We do not simulate disabled users.** There is no "blind user" persona and there will not be one. LLM accessibility judgments measure about 71% precision, and synthetic disabled characters do not represent anyone ([Ashlee Boyer](https://ashleemboyer.com/blog/how-to-dehumanize-accessibility-with-ai/)). The `keyboard-traversal` profile drives the site keyboard-only to reach states a page-level scan never sees, and axe renders the verdict there.
+- **This does not replace testing with disabled people.** If you need that, use [Fable](https://makeitfable.com/), who pay disabled testers.
+
+Status: prototype. The web app uses a queue and persistent worker; see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the public-launch checklist.
 
 ## How it works
 
@@ -177,13 +157,19 @@ transcript (`HISTORY_WINDOW` in `src/agent/engine.ts`), which keeps input tokens
 across a run instead of growing with every step. Hosted runs reserve against the daily
 model-call cap before enqueueing.
 
-## Development
+## Develop locally
 
 ```bash
-pnpm test          # CLI/engine tests (vitest)
+pnpm install
+cp .env.example .env                    # ANTHROPIC_API_KEY only for `run`/`generate`
+pnpm exec playwright install chromium
+pnpm dev -- scan https://example.com    # run the CLI from source
+pnpm test                               # CLI/engine tests (vitest)
 pnpm exec tsc --noEmit
 cd web && pnpm test && pnpm lint
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full pre-PR check and [SECURITY.md](SECURITY.md) to report a vulnerability.
 
 ## License
 

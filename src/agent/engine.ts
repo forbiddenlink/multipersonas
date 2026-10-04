@@ -162,8 +162,13 @@ function truncateSnapshot(snapshot: string, maxChars: number = 4000): string {
 
 // --- Model ---
 
-/** Override with MULTIPERSONAS_MODEL. */
+/** Override with PERSONAUDIT_MODEL (MULTIPERSONAS_MODEL still works as a fallback). */
 export const DEFAULT_MODEL = "claude-sonnet-5";
+
+/** Model id from the environment: PERSONAUDIT_MODEL, then legacy MULTIPERSONAS_MODEL, then the default. */
+export function resolveModel(env: NodeJS.ProcessEnv = process.env): string {
+  return env.PERSONAUDIT_MODEL || env.MULTIPERSONAS_MODEL || DEFAULT_MODEL;
+}
 
 // --- Conversation window ---
 
@@ -861,7 +866,7 @@ export async function runPersonaAgent(
       const windowed = trimToWindow(messages, HISTORY_WINDOW);
 
       const result = await generateText({
-        model: anthropic(process.env.MULTIPERSONAS_MODEL || DEFAULT_MODEL),
+        model: anthropic(resolveModel()),
         system: persona.systemPrompt,
         messages: windowed,
         tools: persona.inputModality === "keyboard" ? keyboardTools : agentTools,

@@ -1,0 +1,25 @@
+name: Feature request
+description: Suggest an improvement to scanning, the CI gate, or the CLI.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do, and what gets in the way?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you tried
+  - type: markdown
+    attributes:
+      value: |
+        Out of scope by design: simulating disabled users, compliance or certification claims, and hosted behind-login scanning.

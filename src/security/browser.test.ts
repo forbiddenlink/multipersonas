@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { launchAuditBrowser } from "./browser.js";
+import { launchAuditBrowser, isBrowserMissingError, BrowserMissingError } from "./browser.js";
 
 /**
  * The fail-closed egress gate must refuse to launch when the hosted worker demands an
@@ -30,5 +30,27 @@ describe("launchAuditBrowser egress-proxy enforcement", () => {
     process.env.AUDIT_REQUIRE_EGRESS_PROXY = "1";
     process.env.AUDIT_BROWSER_PROXY = "   ";
     expect(() => launchAuditBrowser()).toThrow(/egress proxy/i);
+  });
+});
+
+describe("browser-missing error mapping", () => {
+  it("recognises Playwright's missing-executable launch error", () => {
+    const raw = new Error(
+      "browserType.launch: Executable doesn't exist at /root/.cache/ms-playwright/chromium-1234/chrome\n" +
+        "Looks like Playwright was just installed or updated. Please run the following command to download new browsers:",
+    );
+    expect(isBrowserMissingError(raw)).toBe(true);
+  });
+
+  it("does not claim unrelated launch failures are a missing browser", () => {
+    expect(isBrowserMissingError(new Error("Target page, context or browser has been closed"))).toBe(false);
+    expect(isBrowserMissingError("boom")).toBe(false);
+  });
+
+  it("gives one friendly line with the fix and keeps the original cause", () => {
+    const cause = new Error("Executable doesn't exist at /x");
+    const err = new BrowserMissingError({ cause });
+    expect(err.message).toBe("Chromium is not installed. Run: npx playwright install chromium");
+    expect(err.cause).toBe(cause);
   });
 });

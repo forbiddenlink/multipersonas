@@ -97,7 +97,7 @@ async function defaultWaitForEnter(): Promise<void> {
 export function resolveSessionFile(file: string): string {
   if (!fs.existsSync(file)) {
     throw new SessionError(
-      `No session file at "${file}". Create one with:  mpersonas auth <url> --save ${file}`,
+      `No session file at "${file}". Create one with:  personaudit auth <url> --save ${file}`,
     );
   }
 
@@ -112,12 +112,12 @@ export function resolveSessionFile(file: string): string {
   try {
     parsed = JSON.parse(fs.readFileSync(file, "utf8"));
   } catch {
-    throw new SessionError(`Session file "${file}" is not valid JSON. Re-create it with: mpersonas auth`);
+    throw new SessionError(`Session file "${file}" is not valid JSON. Re-create it with: personaudit auth`);
   }
 
   const state = parsed as { cookies?: unknown[]; origins?: unknown[] };
   if (!Array.isArray(state.cookies) || !Array.isArray(state.origins)) {
-    throw new SessionError(`Session file "${file}" is not a session. Re-create it with: mpersonas auth`);
+    throw new SessionError(`Session file "${file}" is not a session. Re-create it with: personaudit auth`);
   }
   if (state.cookies.length === 0 && state.origins.length === 0) {
     throw new SessionError(`Session file "${file}" is empty — no login was captured.`);

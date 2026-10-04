@@ -1,11 +1,11 @@
 # Contributing
 
-`multipersonas` is currently solo-maintained (Elizabeth Stein). Issues and PRs are
+Personaudit is currently solo-maintained (Elizabeth Stein). Issues and PRs are
 welcome; there is no formal process yet, so open an issue first for anything non-trivial.
 
 ## Layout
 
-- `src/` — the `mpersonas` CLI (TypeScript, published as the `multipersonas` npm package).
+- `src/` — the `personaudit` CLI (TypeScript, published as the `personaudit` npm package).
 - `web/` — the Next.js web app (a separate workspace; own `package.json`).
 - `worker/` — the persistent job runner that executes browser audits.
 - `experiments/` — kept on purpose: the evidence behind the product's claims (do not delete).
@@ -21,8 +21,8 @@ pnpm dev -- scan https://example.com
 pnpm dev -- run https://example.com --count 3
 ```
 
-Two entry points: `pnpm dev -- <cmd>` runs from source; after `npm i -g multipersonas`
-the installed binary is `mpersonas <cmd>`.
+Two entry points: `pnpm dev -- <cmd>` runs from source; after `npm i -g personaudit`
+the installed binary is `personaudit <cmd>` (the legacy alias `mpersonas` also works).
 
 ## Before opening a PR
 
@@ -43,3 +43,11 @@ violation — an accessibility tool that ships accessibility defects is off-bran
 `package.json` exposes subpath exports (`./orchestrator`, `./engine`, `./personas/*`,
 `./grader`). They are used internally by `web/` + `worker/`; treat them as unstable until
 documented.
+
+## Honesty constraints
+
+These are product rules, not style. A PR that breaks one will not merge.
+
+- No compliance claims. Automated checks find a subset of WCAG failures; never write "compliant".
+- No disability simulation. Personas never role-play a disabled user (`src/personas/framing.test.ts` enforces it).
+- No hosted behind-login claims. Behind-login scanning is the local CLI only.
