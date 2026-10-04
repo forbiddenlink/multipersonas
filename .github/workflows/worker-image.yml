@@ -27,4 +27,14 @@ jobs:
         run: bash scripts/test-docker-context.sh
 
       - name: Build worker image
-        run: docker build -f worker/Dockerfile .
+        run: docker build -t personaudit-worker:test -f worker/Dockerfile .
+
+      - name: Verify worker runtime imports
+        run: >-
+          docker run --rm --network none --entrypoint pnpm personaudit-worker:test
+          --filter worker exec tsx --eval
+          'void (async () => {
+          await import("personaudit/orchestrator");
+          await import("personaudit/grader");
+          await import("./src/job-process.ts");
+          })();'
