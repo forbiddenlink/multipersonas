@@ -8,7 +8,7 @@
 
 Personaudit has two modes, and the split reflects what the evidence actually supports:
 
-- **Scan (the core).** Crawls the site with a saved session — behind the login wall — and
+- **Scan (the core, CLI).** Crawls the site locally with a saved session, behind the login, and
   runs **axe-core** at every state reached, reporting deterministic, citable WCAG rule
   violations. This is the part nothing free replaces: the `axe` CLI does not crawl and
   does not hold a session. Gate-able in CI on newly-introduced defects. The hosted grader
@@ -16,8 +16,8 @@ Personaudit has two modes, and the split reflects what the evidence actually sup
 - **Run (UX personas).** Adds LLM personas (a first-time visitor, a mobile user on slow
   3G) that browse toward a goal. Their unique output is **task success** — did a
   real-shaped user actually complete the flow? — which a crawler cannot produce. Their
-  finding output is *opinion* (jargon, buried pricing, tap targets): useful, never a
-  compliance verdict.
+  finding output is *opinion* (jargon, buried pricing, tap targets): useful, never an
+  accessibility verdict.
 
 ## What it is NOT
 
@@ -37,7 +37,7 @@ client-facing report.
 
 ## Tech
 
-- axe-core for accessibility scanning (the compliance verdict)
+- axe-core for accessibility scanning (automated WCAG rule checks)
 - Playwright for real-browser crawling behind a saved session
 - Anthropic Claude for the UX personas (navigation + task-success judgment)
 - CLI (`mpersonas`) and web app
