@@ -16,6 +16,8 @@ FROM mcr.microsoft.com/playwright:v1.62.1-jammy@sha256:b3251f7ff1a9fa559a28d1c67
 WORKDIR /app
 # Process containment needs Linux subreaper support and process-tree inspection.
 RUN apt-get update && apt-get install -y --no-install-recommends python3 procps && rm -rf /var/lib/apt/lists/*
+# Build and runtime users must share the pinned package-manager download.
+ENV COREPACK_HOME=/opt/corepack
 RUN corepack enable
 
 # Install deps against the lockfile first for layer caching.
@@ -26,7 +28,7 @@ RUN pnpm install --frozen-lockfile
 
 # Build the engine (root package -> dist), which the worker imports.
 COPY . .
-RUN pnpm --filter multipersonas build
+RUN pnpm --filter personaudit --fail-if-no-match build
 
 # SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (and ANTHROPIC_API_KEY for the persona runs)
 # are provided by the host environment, never baked into the image.
