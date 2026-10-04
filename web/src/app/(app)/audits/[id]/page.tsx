@@ -12,6 +12,7 @@ import { Meter } from "@/components/forensic/meter";
 import { EmptyPrompt } from "@/components/forensic/empty-prompt";
 import { SEVERITY_ORDER, type Severity } from "@/components/forensic/severity";
 import { loadJourney } from "@/lib/journey";
+import { groupFindingsByRule } from "@/lib/audit-rules";
 import { ReplayTheater, type ReplayFinding } from "@/components/replay-theater";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -159,6 +160,8 @@ export default async function AuditDetailPage({
     return matchesStatus && matchesOwner;
   });
 
+  const ruleGroups = groupFindingsByRule(axeFindings);
+
   const total = run.task_success_total ?? 0;
   const achieved = run.task_success_achieved ?? 0;
 
@@ -251,10 +254,6 @@ export default async function AuditDetailPage({
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-10">
-      <TaskEvidencePanel task={run.task_definition} outcomes={run.task_outcomes} runId={run.id} />
-      {evidence === "task" && verificationIndex < 0 ? (
-        <p role="status" className="text-sm text-muted-foreground">The verification frame is unavailable. The saved text-check result is shown above.</p>
-      ) : null}
       {/* Header */}
       <div className="space-y-4">
         <nav aria-label="Breadcrumb" className="font-mono text-xs text-muted-foreground">
@@ -340,26 +339,10 @@ export default async function AuditDetailPage({
         )}
       </div>
 
-      {/* Persona Replay Theater — the scrubbable walk a real user took */}
-      {journeys.length > 0 && (
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <p className="label-mono">Evidence walk</p>
-            <h2 className="display text-2xl leading-tight">Replay</h2>
-            <p className="max-w-2xl text-sm text-muted-foreground">
-              What a persona saw, thought, and hit, step by step.
-            </p>
-          </div>
-          <ReplayTheater
-            journeys={journeys}
-            personaMeta={personaMeta}
-            findingsByUrl={findingsByUrl}
-            initialPersona={personaParam}
-            initialStep={initialStep}
-            taskCheck={Boolean(run.task_definition)}
-          />
-        </div>
-      )}
+      <TaskEvidencePanel task={run.task_definition} outcomes={run.task_outcomes} runId={run.id} />
+      {evidence === "task" && verificationIndex < 0 ? (
+        <p role="status" className="text-sm text-muted-foreground">The verification frame is unavailable. The saved text-check result is shown above.</p>
+      ) : null}
 
       {/* Fix first — what to remediate before the full evidence wall. */}
       {priorityFindings.length > 0 && (
@@ -386,118 +369,12 @@ export default async function AuditDetailPage({
         </div>
       )}
 
-      {/* Persona impact — the client story before the raw evidence. */}
-      {personaImpact.length > 0 && (
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <p className="label-mono">Client story</p>
-            <h2 className="display text-2xl leading-tight">Persona impact</h2>
-            <p className="max-w-2xl text-sm text-muted-foreground">
-              {run.task_definition
-                ? "Which profiles matched the text check, and where evidence was captured."
-                : "Who got through, who got blocked, and where proof appeared."}
-            </p>
-          </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            {personaImpact.map((persona) => (
-              <Link
-                key={persona.personaId}
-                href={`/audits/${run.id}?persona=${encodeURIComponent(persona.personaId)}&step=0`}
-                className="sheet p-4 transition-colors hover:border-foreground/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-medium">{persona.name}</p>
-                    <p className="text-xs text-muted-foreground">{persona.role}</p>
-                  </div>
-                  <span className={`rounded-sm border px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide ${persona.goalCompleted ? "border-[var(--severity-minor)] text-[var(--severity-minor)]" : "border-[var(--severity-critical)] text-[var(--severity-critical)]"}`}>
-                    {run.task_definition ? (persona.goalCompleted ? "text observed" : "not verified") : (persona.goalCompleted ? "reached" : "blocked")}
-                  </span>
-                </div>
-                <div className="mt-4 grid grid-cols-3 gap-2 font-mono text-xs text-muted-foreground">
-                  <div>
-                    <p className="text-lg font-semibold tabular-nums text-foreground">{persona.steps}</p>
-                    <p>steps</p>
-                  </div>
-                  <div>
-                    <p className="text-lg font-semibold tabular-nums text-foreground">{persona.verdictStates}</p>
-                    <p>states</p>
-                  </div>
-                  <div>
-                    <p className="text-lg font-semibold tabular-nums text-foreground">{persona.maxFrustration}</p>
-                    <p>friction</p>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Persona findings */}
-      {byPersona.size > 0 && (
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <span className="redline-note uppercase tracking-[0.1em]">Opinion · AI</span>
-            <h2 className="display text-2xl leading-tight">Persona findings</h2>
-            <p className="max-w-2xl text-sm text-muted-foreground">
-              Usability notes from AI browser personas trying to finish a real task, never a
-              compliance verdict and never mixed into the axe verdicts below.
-            </p>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-3">
-            {[...byPersona.entries()].map(([personaId, list]) => {
-              const meta = PERSONA_DATA[personaId as keyof typeof PERSONA_DATA];
-              return (
-                <div
-                  key={personaId}
-                  className="sheet space-y-3 p-4"
-                >
-                  <div>
-                    <p className="text-sm font-medium">{meta?.name ?? personaId}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {meta?.role ?? ""}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    {list.map((f) => (
-                      <div
-                        key={f.id}
-                        className="space-y-1.5 rounded-sm border border-border p-3"
-                      >
-                        <div className="flex flex-wrap items-center gap-2">
-                          {/* Opinion tier — never SeverityChip (axe severity vocab). */}
-                          <span className="inline-flex items-center rounded-sm border border-border px-2 py-0.5 label-mono">
-                            AI observation
-                          </span>
-                          <span className="text-xs font-medium truncate">
-                            {f.title}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {f.description}
-                        </p>
-                        {formatLocation(f.page_url) && (
-                          <p className="font-mono text-xs text-muted-foreground">
-                            found at {formatLocation(f.page_url)}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* Axe findings */}
       {axeFindings.length > 0 && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="space-y-1.5">
-              <p className="label-mono">Axe-core verdicts</p>
+              <p className="label-mono">Axe-core verdicts · deterministic</p>
               <h2 className="display text-2xl leading-tight">Accessibility issues</h2>
               <p className="max-w-2xl text-sm text-muted-foreground">
                 Deterministic, cited to WCAG.
@@ -517,6 +394,38 @@ export default async function AuditDetailPage({
               </div>
             ))}
           </div>
+          {ruleGroups.length > 0 && (
+            <div
+              tabIndex={0}
+              role="region"
+              aria-label="Findings by rule table"
+              className="min-w-0 overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+            >
+              <table className="w-full min-w-[22rem] border-collapse text-left text-sm">
+                <caption className="sr-only">Axe findings grouped by rule, with issue and page counts</caption>
+                <thead>
+                  <tr className="border-b-2 border-foreground">
+                    <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Rule</th>
+                    <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Severity</th>
+                    <th scope="col" className="py-2 pr-4 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Issues</th>
+                    <th scope="col" className="py-2 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Pages</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ruleGroups.map((g) => (
+                    <tr key={g.key} className="border-b border-border">
+                      <th scope="row" className="py-2.5 pr-4 font-normal">
+                        <span className="font-mono text-xs">{g.key}</span>
+                      </th>
+                      <td className="py-2.5 pr-4"><SeverityChip severity={g.severity as Severity} /></td>
+                      <td className="py-2.5 pr-4 text-right font-mono tabular-nums">{g.count}</td>
+                      <td className="py-2.5 text-right font-mono tabular-nums">{g.pages}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
           <form className="flex flex-wrap items-end gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="status-filter" className="label-mono">
@@ -669,6 +578,148 @@ export default async function AuditDetailPage({
             </div>
           </div>
         </div>
+      )}
+
+
+      {/* AI opinion: everything from persona runs. Kept after, and apart from, the axe verdicts. */}
+      {(journeys.length > 0 || personaImpact.length > 0 || byPersona.size > 0) && (
+        <section aria-labelledby="ai-opinion-heading" className="space-y-8 border-t-2 border-foreground pt-6">
+          <div className="space-y-1.5">
+            <span className="redline-note uppercase tracking-[0.1em]">Opinion · AI</span>
+            <h2 id="ai-opinion-heading" className="display text-2xl leading-tight">AI persona opinion</h2>
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              What AI browser personas did while trying to finish a task. This is usability
+              opinion and task evidence, not an accessibility verdict. The axe-core findings
+              above are the deterministic record.
+            </p>
+          </div>
+      {/* Persona Replay Theater — the scrubbable walk a real user took */}
+      {journeys.length > 0 && (
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <p className="label-mono">Evidence walk</p>
+            <h3 className="display text-xl leading-tight">Replay</h3>
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              What a persona saw, thought, and hit, step by step.
+            </p>
+          </div>
+          <ReplayTheater
+            journeys={journeys}
+            personaMeta={personaMeta}
+            findingsByUrl={findingsByUrl}
+            initialPersona={personaParam}
+            initialStep={initialStep}
+            taskCheck={Boolean(run.task_definition)}
+          />
+        </div>
+      )}
+
+      {/* Persona impact — the client story before the raw evidence. */}
+      {personaImpact.length > 0 && (
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <p className="label-mono">Client story</p>
+            <h3 className="display text-xl leading-tight">Persona impact</h3>
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              {run.task_definition
+                ? "Which profiles matched the text check, and where evidence was captured."
+                : "Who got through, who got blocked, and where proof appeared."}
+            </p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {personaImpact.map((persona) => (
+              <Link
+                key={persona.personaId}
+                href={`/audits/${run.id}?persona=${encodeURIComponent(persona.personaId)}&step=0`}
+                className="sheet p-4 transition-colors hover:border-foreground/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium">{persona.name}</p>
+                    <p className="text-xs text-muted-foreground">{persona.role}</p>
+                  </div>
+                  <span className={`rounded-sm border px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide ${persona.goalCompleted ? "border-[var(--severity-minor)] text-[var(--severity-minor)]" : "border-[var(--severity-critical)] text-[var(--severity-critical)]"}`}>
+                    {run.task_definition ? (persona.goalCompleted ? "text observed" : "not verified") : (persona.goalCompleted ? "reached" : "blocked")}
+                  </span>
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2 font-mono text-xs text-muted-foreground">
+                  <div>
+                    <p className="text-lg font-semibold tabular-nums text-foreground">{persona.steps}</p>
+                    <p>steps</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold tabular-nums text-foreground">{persona.verdictStates}</p>
+                    <p>states</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold tabular-nums text-foreground">{persona.maxFrustration}</p>
+                    <p>friction</p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Persona findings */}
+      {byPersona.size > 0 && (
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+                        <h3 className="display text-xl leading-tight">Persona findings</h3>
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              Usability notes from AI browser personas trying to finish a real task, never a
+              compliance verdict and never mixed into the axe verdicts above.
+            </p>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-3">
+            {[...byPersona.entries()].map(([personaId, list]) => {
+              const meta = PERSONA_DATA[personaId as keyof typeof PERSONA_DATA];
+              return (
+                <div
+                  key={personaId}
+                  className="sheet space-y-3 p-4"
+                >
+                  <div>
+                    <p className="text-sm font-medium">{meta?.name ?? personaId}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {meta?.role ?? ""}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    {list.map((f) => (
+                      <div
+                        key={f.id}
+                        className="space-y-1.5 rounded-sm border border-border p-3"
+                      >
+                        <div className="flex flex-wrap items-center gap-2">
+                          {/* Opinion tier — never SeverityChip (axe severity vocab). */}
+                          <span className="inline-flex items-center rounded-sm border border-border px-2 py-0.5 label-mono">
+                            AI observation
+                          </span>
+                          <span className="text-xs font-medium truncate">
+                            {f.title}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {f.description}
+                        </p>
+                        {formatLocation(f.page_url) && (
+                          <p className="font-mono text-xs text-muted-foreground">
+                            found at {formatLocation(f.page_url)}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      </section>
       )}
 
       {findings.length === 0 && (
