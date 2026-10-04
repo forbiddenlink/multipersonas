@@ -37,3 +37,24 @@ describe("GradeFindingRow fix-first label", () => {
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
   });
 });
+
+describe("GradeFindingRow WCAG citation", () => {
+  it("labels a best-practice rule as best-practice even when remediation cites a criterion", () => {
+    // axe tags `region` best-practice; the remediation entry still names 1.3.1. Citing it
+    // beside "0 WCAG A/AA failures" contradicts the headline count.
+    render(<ul><GradeFindingRow ruleId="region" severity="moderate" help="Regions" nodes={1} wcagAA={false} /></ul>);
+    expect(screen.getByText("best-practice")).toBeTruthy();
+    expect(screen.queryByText(/\[WCAG /)).toBeNull();
+  });
+
+  it("cites the criterion for a WCAG A/AA rule", () => {
+    render(<ul><GradeFindingRow ruleId="color-contrast" severity="serious" help="Contrast" nodes={2} wcagAA /></ul>);
+    expect(screen.getByText("[WCAG 1.4.3]")).toBeTruthy();
+    expect(screen.queryByText("best-practice")).toBeNull();
+  });
+
+  it("keeps citations for older reports that predate the wcagAA field", () => {
+    render(<ul><GradeFindingRow ruleId="color-contrast" severity="serious" help="Contrast" nodes={2} /></ul>);
+    expect(screen.getByText("[WCAG 1.4.3]")).toBeTruthy();
+  });
+});
