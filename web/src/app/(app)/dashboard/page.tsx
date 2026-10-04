@@ -11,7 +11,7 @@ import { firstRunSteps } from "@/lib/first-run-steps";
 import { listProjects } from "@/lib/projects";
 import { createClient } from "@/lib/supabase/server";
 import { listAudits } from "@/lib/audits";
-import { getSessionPlan, planAllowsPersonas } from "@/lib/entitlements";
+import { getSessionPlan, planAllowsPersonas, projectLimitFor } from "@/lib/entitlements";
 import { listGraderScansForUser } from "@/lib/grade";
 import { GradeHistory } from "@/components/grade-history";
 import { formatShortDate, hostname } from "@/lib/format";
@@ -94,7 +94,7 @@ export default async function DashboardPage() {
         <section aria-labelledby="scan-heading" className="min-w-0">
           <ExhibitHead label="New scan" className="mb-4" headingId="scan-heading" />
           {canRunPersonas ? (
-            <AuditForm key={user?.id} userId={user?.id} submitLabel="Run audit" />
+            <AuditForm key={user?.id} userId={user?.id} submitLabel="Run audit" projects={projects} projectLimit={projectLimitFor(plan)} />
           ) : (
             <div className="sheet flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
               <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { AuditResults, type AuditResponse } from "@/components/audit-results";
 import { pollAuditJob, type JobStatus, type PollOutcome } from "@/lib/audit-client";
+import { findProjectForUrl, siteHost } from "@/lib/project-match";
 import {
   PERSONA_DATA,
   PERSONA_IDS,
@@ -96,6 +97,8 @@ export function AuditForm({
   projectId,
   defaultUrl,
   submitLabel,
+  projects,
+  projectLimit = null,
 }: {
   /** Scopes cached jobs and results to the signed-in account. */
   userId?: string;
@@ -106,6 +109,11 @@ export function AuditForm({
   defaultUrl?: string;
   /** Button label. Defaults to marketing "Run free audit"; app pages pass "Run audit". */
   submitLabel?: string;
+  /** The caller's projects. When given (and no `projectId`), the form shows a "Save to project"
+   * picker so a run from the dashboard is attached to a project instead of floating free. */
+  projects?: Array<{ id: string; name: string; url: string }>;
+  /** The plan's project cap (null = unlimited). Decides whether "New project" is offered. */
+  projectLimit?: number | null;
 } = {}) {
   const router = useRouter();
   const resultsStorageKey = userId ? `${STORAGE_KEY}:${userId}` : STORAGE_KEY;
@@ -113,6 +121,16 @@ export function AuditForm({
   const activeJobStorageKey = projectId ? `${accountJobKey}:${projectId}` : accountJobKey;
   const abortRef = useRef<AbortController | null>(null);
   const [url, setUrl] = useState(defaultUrl ?? "");
+  // Project picker (dashboard only). `projectChoice` is null until the user picks, so the
+  // default keeps following the URL: the project for that site, else a new one if the plan
+  // has room, else none.
+  const [projectChoice, setProjectChoice] = useState<string | null>(null);
+  const showProjectPicker = !projectId && projects !== undefined;
+  const canCreateProject = projectLimit === null || (projects?.length ?? 0) < projectLimit;
+  const typedHost = siteHost(url);
+  const matchedProject = projects ? findProjectForUrl(projects, url) : undefined;
+  const autoChoice = matchedProject ? matchedProject.id : canCreateProject ? "new" : "none";
+  const selectedProject = showProjectPicker ? (projectChoice ?? autoChoice) : null;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Distinct from `error`: a 402 from the audit route means hosted runs need a paid plan, which
@@ -274,6 +292,11 @@ export function AuditForm({
           url,
           personaIds,
           ...(projectId ? { projectId } : {}),
+          ...(selectedProject === "new"
+            ? { newProject: true }
+            : selectedProject && selectedProject !== "none"
+              ? { projectId: selectedProject }
+              : {}),
         }),
       });
 
@@ -397,6 +420,49 @@ export function AuditForm({
           })}
         </div>
       </fieldset>
+
+      {showProjectPicker && selectedProject ? (
+        <div className="mt-4">
+          <label htmlFor="audit-project" className="mb-2 block font-mono text-xs uppercase tracking-wide text-muted-foreground">
+            Save to project
+          </label>
+          <select
+            id="audit-project"
+            value={selectedProject}
+            onChange={(e) => setProjectChoice(e.target.value)}
+            disabled={loading || !!pendingJobId}
+            className="h-11 w-full rounded-sm border border-border bg-card px-3 text-base text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] disabled:opacity-50 md:text-sm"
+          >
+            {projects!.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+            {canCreateProject ? (
+              <option value="new">{typedHost ? `New project for ${typedHost}` : "New project for this site"}</option>
+            ) : (
+              <option value="none">No project</option>
+            )}
+          </select>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            {selectedProject === "new"
+              ? "This run is saved to a new project for the site, so later runs can be compared with it."
+              : selectedProject === "none"
+                ? null
+                : "This run is saved to this project, so it can be compared with earlier runs."}
+            {!canCreateProject && selectedProject === "none" ? (
+              <>
+                Your plan includes {projectLimit} project{projectLimit === 1 ? "" : "s"}, and they are all in use. This run is saved
+                without a project, so it cannot be compared with later runs.{" "}
+                <Link href="/pricing" className="text-link">
+                  See pricing
+                </Link>{" "}
+                to add more.
+              </>
+            ) : null}
+          </p>
+        </div>
+      ) : null}
 
       {upgrade && (
         <div
