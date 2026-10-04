@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json, TablesInsert, TablesUpdate } from "@/lib/supabase/types";
 import { removeProjectReplayFiles } from "@/lib/replay-files";
+import { toProjectLimitError } from "@/lib/project-limit";
 
 type SB = SupabaseClient<Database>;
 
@@ -50,7 +51,10 @@ export interface CreateProjectInput {
   description?: string | null;
 }
 
-/** Create a project owned by `userId`. Caller must supply the authenticated user's id. */
+/**
+ * Create a project owned by `userId`. Caller must supply the authenticated user's id.
+ * Throws ProjectLimitError when the database refuses the insert at the plan cap.
+ */
 export async function createProject(
   supabase: SB,
   userId: string,
@@ -67,7 +71,7 @@ export async function createProject(
     .insert(row)
     .select(DETAIL_COLUMNS)
     .single();
-  if (error) throw new Error(error.message);
+  if (error) throw toProjectLimitError(error) ?? new Error(error.message);
   return data ?? null;
 }
 

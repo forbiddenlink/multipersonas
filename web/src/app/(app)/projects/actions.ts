@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { captureServerEvent } from "@/lib/analytics-server";
 import { createProject, updateProject, deleteProject, getProject } from "@/lib/projects";
 import { getExactPlan, getSessionPlan, planAllowsPersonas, projectLimitFor } from "@/lib/entitlements";
+import { ProjectLimitError, projectLimitMessage } from "@/lib/project-limit";
 import { isScanInterval, upsertProjectSchedule } from "@/lib/schedules";
 
 function readProjectFields(formData: FormData) {
@@ -60,8 +61,7 @@ export async function createProjectAction(formData: FormData): Promise<void> {
       redirect(`/projects?error=${encodeURIComponent("Could not check your project allowance. Please try again.")}`);
     }
     if (count >= limit) {
-      const message = `Your plan includes ${limit} project${limit === 1 ? "" : "s"}. See pricing to add more.`;
-      redirect(`/projects?error=${encodeURIComponent(message)}`);
+      redirect(`/projects?error=${encodeURIComponent(projectLimitMessage(limit))}`);
     }
   }
 
@@ -72,7 +72,11 @@ export async function createProjectAction(formData: FormData): Promise<void> {
       url: normalizedUrl,
       description,
     });
-  } catch {
+  } catch (error) {
+    // A concurrent create can slip past the count above; the database trigger is the backstop.
+    if (error instanceof ProjectLimitError) {
+      redirect(`/projects?error=${encodeURIComponent(projectLimitMessage(error.limit ?? limit))}`);
+    }
     redirect(`/projects?error=${encodeURIComponent("Could not create the project.")}`);
   }
   if (!project) {
