@@ -37,7 +37,11 @@ export function GradeFindingRow({
         {fixFirst ? <span className="redline-note uppercase tracking-[0.1em]">Fix first</span> : null}
         <SeverityChip severity={severity} />
         <span className="font-mono text-xs text-muted-foreground">{ruleId}</span>
-        {fix ? (
+        {/* axe's own tags win over the remediation map: a rule axe files as best-practice
+            (region, landmark-one-main) gets no criterion citation even where the fix text
+            relates it to one, or the row contradicts the "0 WCAG A/AA failures" count.
+            `wcagAA` undefined = report predates the field; keep the citations there. */}
+        {fix && wcagAA !== false ? (
           <span className="flex flex-wrap items-center gap-1.5">
             {fix.wcag.map((code) => (
               <WcagCitation key={code} code={code} />

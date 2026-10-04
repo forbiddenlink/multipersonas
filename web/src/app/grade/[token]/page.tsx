@@ -15,6 +15,7 @@ import { GradeFindingRow } from "@/components/dossier/grade-finding-row";
 import { GradeShare } from "@/components/grade-share";
 import { GradeArrival, GRADE_HEADING_ID } from "@/components/grade-arrival";
 import { hostOf, regradePath } from "@/lib/grade-share";
+import { displayPath } from "@/lib/format";
 import { EmptyPrompt } from "@/components/forensic/empty-prompt";
 import { createClient } from "@/lib/supabase/server";
 import type { GradeReport } from "@engine/grader/score";
@@ -245,7 +246,7 @@ function GradeReportView({
           <div className="mt-4 divide-y divide-border border-t border-border font-mono text-sm">
             {report.perPage.map((p) => (
               <div key={p.url} className="flex items-center gap-3 py-2.5">
-                <span className="min-w-0 flex-1 truncate">{p.url}</span>
+                <span className="min-w-0 flex-1 truncate" title={p.url}>{displayPath(p.url)}</span>
                 <span className="shrink-0 tabular-nums text-muted-foreground">
                   {plural(p.violations, "affected element")}
                 </span>
