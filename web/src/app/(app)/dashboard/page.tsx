@@ -4,25 +4,18 @@ import Link from "next/link";
 import { AuditForm } from "@/components/audit-form";
 import { AuditHistory } from "@/components/audit-history";
 import { SeverityChip } from "@/components/forensic/severity-chip";
-import { EmptyPrompt } from "@/components/forensic/empty-prompt";
+import { FirstRunEmpty } from "@/components/forensic/first-run-empty";
 import { createClient } from "@/lib/supabase/server";
 import { listAudits } from "@/lib/audits";
 import { getSessionPlan, planAllowsPersonas } from "@/lib/entitlements";
 import { listGraderScansForUser } from "@/lib/grade";
 import { GradeHistory } from "@/components/grade-history";
+import { formatShortDate, hostname } from "@/lib/format";
 import { SEVERITY_ORDER, type Severity } from "@/components/forensic/severity";
 
 export const metadata: Metadata = {
   title: "Dashboard",
 };
-
-function hostname(url: string): string {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return url;
-  }
-}
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -75,11 +68,7 @@ export default async function DashboardPage() {
                 {hostname(latestRun.url)}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {new Date(latestRun.created_at).toLocaleDateString(undefined, {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })}
+                {formatShortDate(latestRun.created_at)}
               </p>
               <div className="mt-5 border-t border-border pt-4">
                 <Link href={`/audits/${latestRun.id}`} className="text-link text-sm font-medium">
@@ -92,10 +81,7 @@ export default async function DashboardPage() {
               <h2 id="latest-heading" className="sr-only">
                 Latest run
               </h2>
-              <EmptyPrompt
-                prompt="Run your first audit to see what needs attention."
-                hint="Point a public URL at the form and its findings land here."
-              />
+              <FirstRunEmpty canRunHosted={canRunPersonas} />
             </>
           )}
         </section>

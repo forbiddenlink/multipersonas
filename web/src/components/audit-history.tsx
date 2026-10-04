@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { AuditListItem } from "@/lib/audits";
 import { EmptyPrompt } from "@/components/forensic/empty-prompt";
+import { formatShortDate, hostname } from "@/lib/format";
 
 // Task-success is a fraction of real-shaped users, not a compliance verdict — this
 // borrows the same red/amber/green ramp the shared Meter component uses for the same
@@ -14,14 +15,6 @@ function successTone(
   if (pct >= 0.8) return "minor";
   if (pct >= 0.5) return "moderate";
   return "critical";
-}
-
-function hostname(url: string): string {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return url;
-  }
 }
 
 export function AuditHistory({ audits }: { audits: AuditListItem[] }) {
@@ -68,20 +61,16 @@ export function AuditHistory({ audits }: { audits: AuditListItem[] }) {
                 <th scope="row" className="py-3 pr-4 font-normal">
                   <Link
                     href={`/audits/${a.id}`}
-                    aria-label={`View details for the audit of ${hostname(a.url)} on ${new Date(
+                    aria-label={`View details for the audit of ${hostname(a.url)} on ${formatShortDate(
                       a.created_at,
-                    ).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}, ${a.task_success_achieved ?? 0} of ${a.task_success_total ?? 0} ${a.task_definition ? "profiles matched the text check" : "personas reached their goal"}`}
+                    )}, ${a.task_success_achieved ?? 0} of ${a.task_success_total ?? 0} ${a.task_definition ? "profiles matched the text check" : "personas reached their goal"}`}
                     className="text-link truncate"
                   >
                     {hostname(a.url)}
                   </Link>
                 </th>
                 <td className="py-3 pr-4 text-muted-foreground">
-                  {new Date(a.created_at).toLocaleDateString(undefined, {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })}
+                  {formatShortDate(a.created_at)}
                 </td>
                 <td className="hidden py-3 pr-4 text-right font-mono tabular-nums text-muted-foreground sm:table-cell">
                   {a.persona_ids.length}

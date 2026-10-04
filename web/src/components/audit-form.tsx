@@ -17,7 +17,14 @@ const STORAGE_KEY = "personaudit-last-audit";
 const ACTIVE_JOB_KEY = "personaudit-active-job";
 const JOB_QUERY_PARAM = "job";
 
-type PersonaStatus = "pending" | "running" | "complete";
+/** What the worker has reported for the job. `null` means we have not heard back yet. */
+type JobStatus = "queued" | "running";
+
+function jobStatusLabel(status: JobStatus | null): string {
+  if (status === "queued") return "queued";
+  if (status === "running") return "scanning";
+  return "checking status";
+}
 
 interface ActiveJob {
   jobId: string;
@@ -95,7 +102,11 @@ type PollOutcome =
  * passes. The run happens in a worker, not the request, so the browser can take as
  * long as it needs — a "timeout" outcome means we stopped watching, not that the job
  * died, so the caller decides whether to keep the jobId around for a manual re-check. */
-async function pollAuditJob(jobId: string, signal?: AbortSignal): Promise<PollOutcome> {
+async function pollAuditJob(
+  jobId: string,
+  signal?: AbortSignal,
+  onStatus?: (status: JobStatus) => void,
+): Promise<PollOutcome> {
   // A real multi-persona run (browser + axe + LLM per persona) routinely runs several
   // minutes; the old 3-minute deadline made the timeout branch the *default* outcome for
   // genuine scans. Ten minutes covers the worst case, and the worker keeps running past
@@ -123,6 +134,9 @@ async function pollAuditJob(jobId: string, signal?: AbortSignal): Promise<PollOu
       // Transient network error (offline blip, dropped connection). The job is still
       // running server-side, so keep polling rather than throwing and freezing the UI.
       continue;
+    }
+    if (data.status === "queued" || data.status === "running") {
+      onStatus?.(data.status);
     }
     if (data.status === "completed" && data.result) {
       return { status: "completed", result: data.result };
@@ -161,7 +175,7 @@ export function AuditForm({
   const [url, setUrl] = useState(defaultUrl ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Distinct from `error`: a 402 from the audit route means personas are a Pro feature, which
+  // Distinct from `error`: a 402 from the audit route means hosted runs need a paid plan, which
   // we surface as an upgrade prompt (with the free grade alternative), not a failure.
   const [upgrade, setUpgrade] = useState(false);
   // Lazy initializer reads sessionStorage once on mount without an effect, avoiding
@@ -181,9 +195,8 @@ export function AuditForm({
     return new Set<string>(personaIds);
   });
   const [results, setResults] = useState<AuditResponse | null>(() => init.storedResults);
-  const [personaStatuses, setPersonaStatuses] = useState<
-    Record<string, PersonaStatus>
-  >({});
+  // Reported by the polled job; never inferred from elapsed time.
+  const [jobStatus, setJobStatus] = useState<JobStatus | null>(null);
   // Set once a job is enqueued (or resumed after a refresh) and cleared on a
   // terminal state. A non-null value lets "Check status" re-poll the SAME job
   // instead of re-submitting, which matters because anon audits are capped at 1/hour.
@@ -210,24 +223,9 @@ export function AuditForm({
     });
   }
 
-  /** Animate persona cards: all start pending, then stagger into "running". */
-  function animatePersonaStatuses(personaIds: string[]) {
-    const statuses: Record<string, PersonaStatus> = {};
-    for (const id of personaIds) {
-      statuses[id] = "pending";
-    }
-    setPersonaStatuses(statuses);
-
-    personaIds.forEach((id, i) => {
-      setTimeout(() => {
-        setPersonaStatuses((prev) => ({ ...prev, [id]: "running" }));
-      }, i * 600);
-    });
-  }
-
   /** Poll `jobId` to completion. Shared by a fresh submit, a mount-time resume, and
    * a manual "Check status" click so none of those paths can ever re-submit. */
-  async function watchJob(jobId: string, personaIds: string[]) {
+  async function watchJob(jobId: string) {
     // Abort any in-flight poll before starting a new one.
     abortRef.current?.abort();
     const ctrl = new AbortController();
@@ -236,11 +234,13 @@ export function AuditForm({
     setLoading(true);
     setTimedOut(false);
     setError(null);
-    animatePersonaStatuses(personaIds);
+    setJobStatus(null);
 
     let outcome: PollOutcome;
     try {
-      outcome = await pollAuditJob(jobId, ctrl.signal);
+      outcome = await pollAuditJob(jobId, ctrl.signal, (status) => {
+        if (!ctrl.signal.aborted) setJobStatus(status);
+      });
     } catch {
       if (ctrl.signal.aborted) return;
       // Safety net: pollAuditJob already swallows transient network errors, but any
@@ -274,12 +274,6 @@ export function AuditForm({
       return;
     }
 
-    const completed: Record<string, PersonaStatus> = {};
-    for (const id of personaIds) {
-      completed[id] = "complete";
-    }
-    setPersonaStatuses(completed);
-
     setResults(outcome.result);
 
     // Persist to sessionStorage so results survive refresh
@@ -307,9 +301,7 @@ export function AuditForm({
     // into its own callback, matching the rule's "setState in a callback" escape hatch.
     queueMicrotask(() => {
       if (cancelled || !init.activeJob) return;
-      const { jobId, personaIds: storedPersonaIds } = init.activeJob;
-      const personaIds = storedPersonaIds.length ? storedPersonaIds : [...DEFAULT_PERSONA_IDS];
-      void watchJob(jobId, personaIds);
+      void watchJob(init.activeJob.jobId);
     });
     // Abort the poll if the component unmounts before the scan completes.
     return () => {
@@ -322,10 +314,7 @@ export function AuditForm({
 
   function handleCheckStatus() {
     if (!pendingJobId) return;
-    void watchJob(
-      pendingJobId,
-      selectedPersonas.map((p) => p.id),
-    );
+    void watchJob(pendingJobId);
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -374,7 +363,7 @@ export function AuditForm({
       persistActiveJob({ jobId, personaIds }, activeJobStorageKey);
 
       // The audit runs in a worker; poll until it finishes.
-      await watchJob(jobId, personaIds);
+      await watchJob(jobId);
     } catch (err) {
       setLoading(false);
       setError(
@@ -389,7 +378,7 @@ export function AuditForm({
     setUrl(defaultUrl ?? "");
     setResults(null);
     setError(null);
-    setPersonaStatuses({});
+    setJobStatus(null);
     setPendingJobId(null);
     setTimedOut(false);
     persistActiveJob(null, activeJobStorageKey);
@@ -474,14 +463,15 @@ export function AuditForm({
           role="status"
           className="mt-4 rounded-sm border border-border bg-card px-4 py-3 text-sm"
         >
-          <p className="font-medium">Task-success personas are a Pro feature.</p>
+          <p className="font-medium">Hosted runs come with the Solo and Agency founding plans.</p>
           <p className="mt-1 text-muted-foreground">
-            Free accounts get the deterministic accessibility scan. Run a free grade on any
-            public page, or ask about Pro to unlock persona task-success runs.
+            Free accounts can run the free grade on any public page, or scan behind a login with
+            the CLI on their own machine.
           </p>
           <div className="mt-3 flex flex-wrap gap-3">
             <Link href="/grade" className="underline underline-offset-4">Run a free grade</Link>
-            <Link href="/settings" className="underline underline-offset-4">About Pro</Link>
+            <Link href="/docs" className="underline underline-offset-4">Scan with the CLI</Link>
+            <Link href="/pricing" className="underline underline-offset-4">See plans</Link>
           </div>
         </div>
       )}
@@ -532,44 +522,19 @@ export function AuditForm({
                 className="size-1.5 rounded-full bg-[var(--primary)] motion-safe:animate-pulse"
                 aria-hidden
               />
-              scanning
+              {jobStatusLabel(jobStatus)}
             </span>
           </div>
           <ul className="divide-y divide-border">
-            {selectedPersonas.map((persona) => {
-              const status = personaStatuses[persona.id] || "pending";
-              const statusLabel =
-                status === "pending"
-                  ? "queued"
-                  : status === "running"
-                    ? "browsing…"
-                    : "done";
-              return (
-                <li
-                  key={persona.id}
-                  className={`flex items-baseline justify-between gap-3 px-4 py-2.5 transition-colors duration-300 ${
-                    status === "pending" ? "text-muted-foreground" : "text-card-foreground"
-                  }`}
-                >
-                  <span className="min-w-0 truncate">
-                    <span className="select-none text-[var(--primary)]">›&nbsp;</span>
-                    <span className="text-muted-foreground">[persona:{persona.id}]</span>{" "}
-                    {persona.name}
-                  </span>
-                  <span
-                    className={`shrink-0 text-xs tabular-nums ${
-                      status === "running"
-                        ? "text-[var(--primary)]"
-                        : status === "complete"
-                          ? "text-foreground"
-                          : "text-muted-foreground"
-                    }`}
-                  >
-                    {statusLabel}
-                  </span>
-                </li>
-              );
-            })}
+            {selectedPersonas.map((persona) => (
+              <li key={persona.id} className="px-4 py-2.5 text-card-foreground">
+                <span className="min-w-0 truncate">
+                  <span className="select-none text-[var(--primary)]">›&nbsp;</span>
+                  <span className="text-muted-foreground">[persona:{persona.id}]</span>{" "}
+                  {persona.name}
+                </span>
+              </li>
+            ))}
           </ul>
         </div>
       )}

@@ -12,6 +12,28 @@ export function planAllowsPersonas(plan: string | null | undefined): boolean {
 }
 
 /**
+ * Customer-facing plan name. `profiles.plan` stores the entitlement tier ("pro", "team"),
+ * which is not what /pricing sells: Solo grants "pro", agency founding grants "team"
+ * (lib/plans.ts). Never render the raw slug. Unknown/null reads as Free (fail closed).
+ */
+export function planDisplayName(plan: string | null | undefined): string {
+  if (plan === "pro") return "Solo";
+  if (plan === "team") return "Agency founding";
+  return "Free";
+}
+
+/**
+ * One sentence on what the paid plans add over Free, derived from the same limits the app
+ * enforces so the copy cannot drift from them. Shown to Free accounts only.
+ */
+export function planUpgradeSummary(): string {
+  return (
+    `Solo adds hosted persona task-success runs, scheduled re-scans and up to ${PROJECT_LIMITS.pro} projects. ` +
+    "Agency founding adds unlimited projects and white-label report headers."
+  );
+}
+
+/**
  * Read the caller's plan from profiles via the RLS-scoped server client. Anonymous callers,
  * a missing row, or any read error resolve to "free" so the gate fails closed (a pro user
  * briefly seeing the paywall is safe; the inverse would leak the paid layer). Never uses the

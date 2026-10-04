@@ -293,3 +293,45 @@ describe("AuditForm — saved project task retests", () => {
     expect(sessionStorage.getItem(`${ACTIVE_JOB_KEY}:project-1`)).toBeNull();
   });
 });
+
+describe("AuditForm — honest progress", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  it("shows only the status the job reported, never a timed per-persona 'browsing' state", async () => {
+    sessionStorage.setItem(
+      ACTIVE_JOB_KEY,
+      JSON.stringify({ jobId: "j1", personaIds: ["first-time-visitor", "keyboard-only"] }),
+    );
+    const statuses = ["queued", "queued", "running"];
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ status: statuses.shift() ?? "running" })));
+    render(<AuditForm />);
+    await act(async () => {});
+    expect(screen.getByText("checking status")).toBeInTheDocument();
+    await advance(2500);
+    expect(screen.getByText("queued")).toBeInTheDocument();
+    await advance(5000);
+    expect(screen.getByText("scanning")).toBeInTheDocument();
+    expect(screen.queryByText(/browsing/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("done")).not.toBeInTheDocument();
+  });
+});
+
+describe("AuditForm — free account upgrade copy", () => {
+  it("tells a 402 caller only what is true and names the real plans", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 402, json: async () => ({}) }) as Response));
+    render(<AuditForm />);
+    fireEvent.change(screen.getByLabelText("Website URL to audit"), { target: { value: "https://example.com" } });
+    await act(async () => {
+      fireEvent.submit(screen.getByLabelText("Website URL to audit").closest("form")!);
+    });
+    const note = await screen.findByText(/hosted runs come with the solo and agency founding plans/i);
+    const box = note.closest('[role="status"]')!;
+    expect(box.textContent).not.toMatch(/\bPro\b/);
+    expect(box.textContent).not.toMatch(/deterministic accessibility scan/i);
+    expect(screen.getByRole("link", { name: "Scan with the CLI" })).toHaveAttribute("href", "/docs");
+    expect(screen.getByRole("link", { name: "See plans" })).toHaveAttribute("href", "/pricing");
+    expect(screen.getByRole("link", { name: "Run a free grade" })).toHaveAttribute("href", "/grade");
+  });
+});

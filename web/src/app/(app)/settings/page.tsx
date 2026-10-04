@@ -3,14 +3,14 @@ import { ExhibitHead } from "@/components/dossier/exhibit-head";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { isFoundingCheckoutOpen } from "@/lib/founding-checkout";
 import { SignOutButton } from "@/components/sign-out-button";
 import { Badge } from "@/components/ui/badge";
 import { BoxDivider } from "@/components/forensic/divider";
 import { updateAgencyNameAction } from "./actions";
-import { planAllowsReportBranding } from "@/lib/entitlements";
+import { planAllowsReportBranding, planDisplayName, planUpgradeSummary } from "@/lib/entitlements";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ManageBillingButton } from "@/components/manage-billing-button";
+import { CheckoutPlanWatcher } from "@/components/checkout-plan-watcher";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -34,7 +34,6 @@ export default async function SettingsPage({
     .select("plan,agency_name,stripe_customer_id")
     .eq("id", user.id)
     .single();
-  const foundingAccessOpen = isFoundingCheckoutOpen();
   const reportBrandingAllowed = planAllowsReportBranding(profile?.plan);
   const hasBillingCustomer = Boolean(profile?.stripe_customer_id?.trim());
 
@@ -64,26 +63,20 @@ export default async function SettingsPage({
       <div className="sheet p-4">
         <div className="flex items-center justify-between gap-4">
           <p className="label-mono">Current plan</p>
-          <Badge variant="secondary" className="rounded-sm capitalize">
-            {profile?.plan ?? "free"}
+          <Badge variant="secondary" className="rounded-sm">
+            {planDisplayName(profile?.plan)}
           </Badge>
         </div>
 
         {checkout === "success" ? (
-          <p role="status" className="mt-3 text-sm text-muted-foreground">
-            {profile?.plan === "pro" || profile?.plan === "team"
-              ? "Your account has paid access."
-              : "Your plan has not been updated yet. Refresh this page shortly. If you completed payment and access is still missing, contact billing support below before trying another checkout."}
-          </p>
+          <CheckoutPlanWatcher paid={profile?.plan === "pro" || profile?.plan === "team"} />
         ) : null}
 
         {(profile?.plan ?? "free") === "free" && (
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            {foundingAccessOpen
-              ? "Founding access unlocks persona task-success runs. The free plan keeps the deterministic accessibility scan."
-              : "Founding access is opening soon. The free plan keeps the deterministic accessibility scan; founding access adds persona task-success runs."}{" "}
-            <Link href="/for-agencies#early-access" className="text-link">
-              See founding access
+            Free keeps the public grade, the CLI and one hosted project. {planUpgradeSummary()}{" "}
+            <Link href="/pricing" className="text-link">
+              See pricing
             </Link>
             .
           </p>
