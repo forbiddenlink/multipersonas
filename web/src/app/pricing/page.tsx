@@ -85,15 +85,53 @@ const TIERS: Tier[] = [
   },
 ];
 
-const CAPABILITY_LEDGER: { capability: string; today: boolean; detail: string }[] = [
-  { capability: "Public-page axe-core scan", today: true, detail: "Hosted, free, no signup" },
-  { capability: "Behind-login axe-core scan", today: true, detail: "Free CLI only; the session stays on your machine" },
-  { capability: "CI gate on new defects only", today: true, detail: "Baseline + fail-on, keyless" },
-  { capability: "Scheduled re-scans", today: true, detail: "Solo and agency founding" },
-  { capability: "Persona task-success", today: true, detail: "Solo and agency founding, public flows" },
-  { capability: "White-label evidence report", today: true, detail: "Agency founding" },
-  { capability: "Hosted behind-login scan", today: false, detail: "Not built. Agency founding funds it." },
+/** "yes" = included today, "no" = not on this plan, "roadmap" = not built on any plan yet. */
+type Availability = "yes" | "no" | "roadmap" | string;
+
+/**
+ * One row per capability, one column per plan, so a buyer can scan across instead of
+ * reading three lists. Every cell must match an enforced gate in lib/entitlements.ts
+ * (project caps, persona + schedule gate, report branding). A plan cell that says "yes"
+ * with no gate behind it is the same defect as a gate the page does not mention.
+ */
+const CAPABILITY_LEDGER: { capability: string; note?: string; plans: Record<Tier["id"], Availability> }[] = [
+  { capability: "Public-page axe-core grade", note: "Hosted, no signup", plans: { free: "yes", solo: "yes", agency: "yes" } },
+  { capability: "Behind-login axe-core scan", note: "CLI only; the session stays on your machine", plans: { free: "yes", solo: "yes", agency: "yes" } },
+  { capability: "CI gate on new defects only", note: "Baseline + fail-on, keyless", plans: { free: "yes", solo: "yes", agency: "yes" } },
+  {
+    capability: "Hosted projects",
+    plans: {
+      free: String(PROJECT_LIMITS.free),
+      solo: String(PROJECT_LIMITS.pro),
+      agency: PROJECT_LIMITS.team === null ? "Unlimited" : String(PROJECT_LIMITS.team),
+    },
+  },
+  { capability: "Scheduled re-scans", plans: { free: "no", solo: "yes", agency: "yes" } },
+  { capability: "Persona task-success", note: "Public flows", plans: { free: "no", solo: "yes", agency: "yes" } },
+  { capability: "White-label evidence report", plans: { free: "no", solo: "no", agency: "yes" } },
+  { capability: "Hosted behind-login scan", note: "Not built. Agency founding funds it.", plans: { free: "roadmap", solo: "roadmap", agency: "roadmap" } },
 ];
+
+function AvailabilityCell({ value }: { value: Availability }) {
+  if (value === "yes") {
+    return (
+      <>
+        <span aria-hidden="true">&#10003;</span>
+        <span className="sr-only">Included</span>
+      </>
+    );
+  }
+  if (value === "no") {
+    return (
+      <>
+        <span aria-hidden="true" className="text-muted-foreground">&mdash;</span>
+        <span className="sr-only">Not included</span>
+      </>
+    );
+  }
+  if (value === "roadmap") return <span className="text-[var(--redline)]">Roadmap</span>;
+  return <span className="tabular-nums">{value}</span>;
+}
 
 const PRICING_FAQS = [
   {
@@ -276,36 +314,42 @@ export default function PricingPage() {
         {/* ── What runs today vs the roadmap, in the open ── */}
         <section aria-labelledby="capability-heading" className="border-y border-border bg-card section-y">
           <div className="frame">
-            <ExhibitHead label="Capability ledger" className="mb-8" />
+            <ExhibitHead label="Compare plans" className="mb-8" />
             <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-end">
               <h2 id="capability-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
-                What runs today. What&apos;s still the roadmap.
+                Every plan, side by side.
               </h2>
               <p className="max-w-xl text-[1.0625rem] leading-relaxed text-muted-foreground lg:justify-self-end">
-                No plan page should need a footnote to be honest. Here is the whole list, with
-                the one gap named plainly: hosted behind-login scanning does not exist yet.
+                One row per capability, one column per plan. The one gap is named plainly:
+                hosted behind-login scanning does not exist yet on any plan.
               </p>
             </div>
 
             <div
       tabIndex={0}
       role="region"
-      aria-label="Capabilities by status table"
+      aria-label="Plan comparison table"
       className="mt-10 min-w-0 overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
     >
-              <table className="w-full sm:min-w-[32rem] border-collapse text-left text-sm">
-                <caption className="sr-only">Capabilities available today versus on the roadmap</caption>
+              <table className="w-full border-collapse text-left text-sm">
+                <caption className="sr-only">What each plan includes today, and what is still the roadmap</caption>
                 <thead>
                   <tr className="border-b-2 border-foreground">
                     <th scope="col" className="py-2 pr-4 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">
                       Capability
                     </th>
-                    <th scope="col" className="py-2 pr-4 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">
-                      Status
-                    </th>
-                    <th scope="col" className="py-2 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">
-                      Where
-                    </th>
+                    {TIERS.map((tier) => (
+                      <th
+                        key={tier.id}
+                        scope="col"
+                        className="w-[4.5rem] px-1 py-2 text-center align-bottom font-mono text-[10px] font-normal uppercase tracking-[0.06em] text-muted-foreground sm:w-[18%] sm:px-2 sm:text-xs sm:tracking-[0.08em]"
+                      >
+                        {tier.name}
+                        <span className="mt-0.5 block font-sans text-[10px] normal-case tracking-normal sm:text-[11px]">
+                          {tier.price} {tier.cadence}
+                        </span>
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -313,15 +357,15 @@ export default function PricingPage() {
                     <tr key={row.capability} className="border-b border-border">
                       <th scope="row" className="py-3 pr-4 font-normal">
                         {row.capability}
+                        {row.note ? (
+                          <span className="mt-0.5 block text-xs text-muted-foreground">{row.note}</span>
+                        ) : null}
                       </th>
-                      <td className="py-3 pr-4 font-mono text-xs uppercase tracking-[0.08em]">
-                        {row.today ? (
-                          <span>Today</span>
-                        ) : (
-                          <span className="text-[var(--redline)]">Roadmap</span>
-                        )}
-                      </td>
-                      <td className="py-3 text-muted-foreground">{row.detail}</td>
+                      {TIERS.map((tier) => (
+                        <td key={tier.id} className="px-1 py-3 text-center font-mono text-[11px] uppercase tracking-[0.04em] sm:px-2 sm:text-xs sm:tracking-[0.08em]">
+                          <AvailabilityCell value={row.plans[tier.id]} />
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
