@@ -12,7 +12,8 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { projectOffer, projectPrefill } from "@/lib/project-prefill";
 import { ProjectOffer } from "@/components/project-offer";
 import { formatShortDate, hostname } from "@/lib/format";
-import { getExactPlan, planDisplayName, PROJECT_LIMITS, projectLimitFor } from "@/lib/entitlements";
+import { getExactPlan, planAllowsPersonas, planDisplayName, PROJECT_LIMITS, projectLimitFor } from "@/lib/entitlements";
+import { projectsEmptyHint, projectsIntro } from "@/lib/project-copy";
 
 export const metadata: Metadata = {
   title: "Projects",
@@ -46,6 +47,7 @@ export default async function ProjectsPage({
   } = await supabase.auth.getUser();
   const plan = await getExactPlan(supabase, user?.id ?? null);
   const limit = projectLimitFor(plan);
+  const canRunPersonas = planAllowsPersonas(plan);
   const offer = projectOffer(prefill, projects, limit);
   // A create would be refused at the cap, so the form is hidden rather than offered and then failed.
   const atLimit = limit !== null && projects.length >= limit;
@@ -55,7 +57,7 @@ export default async function ProjectsPage({
       <ExhibitHead label="Client files" className="mb-5" />
       <h1 className="display text-2xl leading-tight text-foreground">Projects</h1>
       <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-        Group your saved audits by site so a scan history and re-runs stay together.
+        {projectsIntro(canRunPersonas)}
       </p>
 
       {offer.kind !== "none" ? (
@@ -130,7 +132,7 @@ export default async function ProjectsPage({
       {projects.length === 0 ? (
         <EmptyPrompt
           prompt="No projects yet."
-          hint="Create one above to group saved audits by client site, so history and re-runs stay together."
+          hint={projectsEmptyHint(canRunPersonas)}
         />
       ) : (
         <div
