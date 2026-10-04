@@ -1,8 +1,25 @@
 import { launchAuditBrowser } from "../security/browser.js";
 import { AxeBuilder } from "@axe-core/playwright";
 import { assertUrlAllowed, isUrlAllowed, assertRequestAllowed } from "../security/url-guard.js";
-import { computeGrade, type PageAxe, type Impact, type GradeReport, type GradeRuleHit } from "./score.js";
+import { computeGrade, MAX_RULE_EXAMPLES, type PageAxe, type Impact, type GradeReport, type GradeRuleHit } from "./score.js";
 import { SEVERITIES } from "../domain/vocab.js";
+
+/** Same cap the CLI scan uses for node HTML (src/agent/axe-scan.ts). */
+const EXAMPLE_HTML_MAX = 200;
+
+/**
+ * axe targets are a list of selectors, one per frame/shadow-root hop, where a hop can
+ * itself be a list. Render the whole path readably. Deliberately not shared with the CLI's
+ * `target.join(" > ")`: that string feeds stable defect keys, so changing it would rotate
+ * every CI baseline.
+ */
+function selectorPath(target: readonly (string | readonly string[])[]): string {
+  return target.map((hop) => (Array.isArray(hop) ? hop.join(" >>> ") : String(hop))).join(" >>> ");
+}
+
+function capHtml(html: string): string {
+  return html.length > EXAMPLE_HTML_MAX ? `${html.slice(0, EXAMPLE_HTML_MAX)}\u2026` : html;
+}
 
 // Public-only accessibility grader scan — the free teaser wedge.
 //
@@ -130,6 +147,11 @@ export async function gradeScan(
           nodes: v.nodes.length,
           help: v.help,
           wcagAA,
+          examples: v.nodes.slice(0, MAX_RULE_EXAMPLES).map((n) => ({
+            url: page.url(),
+            target: selectorPath(n.target),
+            html: capHtml(n.html),
+          })),
         });
       }
 

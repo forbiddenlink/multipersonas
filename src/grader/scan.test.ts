@@ -143,3 +143,45 @@ describe("grader evidence failures", () => {
     expect(result.skipped).toEqual([]);
   });
 });
+
+describe("grader finding examples", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.currentUrl = "https://public.example/";
+    mocks.allowed.mockResolvedValue(true);
+    mocks.goto.mockImplementation(async (url: string) => {
+      mocks.currentUrl = url;
+      return { ok: () => true };
+    });
+    mocks.links.mockResolvedValue([]);
+  });
+
+  it("keeps up to three located elements per rule with selector, page and capped HTML", async () => {
+    const long = `<img src="/a.png" class="${"x".repeat(400)}">`;
+    mocks.analyze.mockResolvedValue({
+      passes: [{ id: "html-has-lang" }],
+      violations: [{
+        id: "image-alt", impact: "critical", help: "Images must have alternate text", tags: ["wcag2a"],
+        nodes: [
+          { target: ["main > img:nth-child(1)"], html: long },
+          { target: [["#host", "img.inner"]], html: "<img>" },
+          { target: ["img.c"], html: "<img class=\"c\">" },
+          { target: ["img.d"], html: "<img class=\"d\">" },
+        ],
+      }],
+    });
+    const { report } = await gradeScan(mocks.currentUrl);
+    expect(report.rules).toMatchObject([{ id: "image-alt", nodes: 4 }]);
+    const examples = report.rules.at(0)?.examples ?? [];
+    expect(examples).toMatchObject([
+      { target: "main > img:nth-child(1)", url: "https://public.example/" },
+      // Shadow-DOM targets are nested arrays; flatten them into one readable path.
+      { target: "#host >>> img.inner" },
+      { target: "img.c" },
+    ]);
+    const firstHtml = examples.at(0)?.html ?? "";
+    expect(firstHtml.length).toBeLessThanOrEqual(240);
+    expect(firstHtml.endsWith("\u2026")).toBe(true);
+  });
+});
+
