@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getExactPlan, getSessionPlan, planAllowsPersonas, projectLimitFor } from "@/lib/entitlements";
 import { createProject } from "@/lib/projects";
+import { PROJECT_LIMIT_CODE, ProjectLimitError, projectLimitMessage } from "@/lib/project-limit";
 import { findProjectForUrl, siteHost } from "@/lib/project-match";
 import { DEFAULT_PERSONA_IDS, MAX_PERSONAS } from "@/lib/personas";
 import { killSwitchEnabled, estimatedCallsFor } from "@/lib/limits";
@@ -137,8 +138,8 @@ export async function POST(request: Request) {
       if (limit !== null && (owned?.length ?? 0) >= limit) {
         return NextResponse.json(
           {
-            error: `Your plan includes ${limit} project${limit === 1 ? "" : "s"}. See pricing to add more.`,
-            code: "project_limit",
+            error: projectLimitMessage(limit),
+            code: PROJECT_LIMIT_CODE,
           },
           { status: 409 },
         );
@@ -200,8 +201,16 @@ export async function POST(request: Request) {
     try {
       const created = await createProject(supabase, user.id, projectToCreate);
       createdProjectId = created?.id ?? null;
-    } catch {
+    } catch (error) {
       createdProjectId = null;
+      // A concurrent create can slip past the pre-check; the database trigger is the backstop.
+      if (error instanceof ProjectLimitError) {
+        await releaseSpend(chosenIds.length, rateLimitKey);
+        return NextResponse.json(
+          { error: projectLimitMessage(error.limit), code: PROJECT_LIMIT_CODE },
+          { status: 409 },
+        );
+      }
     }
     if (!createdProjectId) {
       await releaseSpend(chosenIds.length, rateLimitKey);

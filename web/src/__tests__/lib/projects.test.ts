@@ -132,6 +132,16 @@ describe("createProject", () => {
       createProject(supabase as never, "u1", { name: "Acme", url: "https://acme.com" }),
     ).rejects.toThrow("insert failed");
   });
+
+  it("throws ProjectLimitError when the database refuses the insert at the plan cap", async () => {
+    const supabase = makeSupabase({
+      data: null,
+      error: { code: "PA001", message: "project_limit", details: "limit=5" } as never,
+    });
+    await expect(
+      createProject(supabase as never, "u1", { name: "Acme", url: "https://acme.com" }),
+    ).rejects.toMatchObject({ name: "ProjectLimitError", limit: 5 });
+  });
 });
 
 describe("updateProject", () => {

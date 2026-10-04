@@ -8,7 +8,7 @@ const state = vi.hoisted(() => ({
   deleted: [] as string[],
   enqueued: [] as { projectId?: string | null }[],
   released: 0,
-  createFails: false,
+  createFails: false as boolean | "limit",
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -70,6 +70,7 @@ vi.mock("@/lib/audit-jobs", () => ({
 }));
 vi.mock("@/lib/projects", () => ({
   createProject: async (_c: unknown, _u: string, input: { name: string; url: string }) => {
+    if (state.createFails === "limit") throw new ProjectLimitError(1);
     if (state.createFails) throw new Error("boom");
     state.created.push(input);
     return { id: "new-proj", ...input };
@@ -78,6 +79,7 @@ vi.mock("@/lib/projects", () => ({
 vi.mock("@sentry/nextjs", () => ({ captureException: () => {} }));
 
 import { POST } from "@/app/api/audit/route";
+import { ProjectLimitError } from "@/lib/project-limit";
 
 function call(body: Record<string, unknown>) {
   return POST(
@@ -148,6 +150,18 @@ describe("POST /api/audit with newProject", () => {
     state.createFails = true;
     const res = await call({ url: "https://acme.test/", newProject: true });
     expect(res.status).toBe(500);
+    expect(state.enqueued).toEqual([]);
+    expect(state.released).toBe(1);
+  });
+
+  it("shows the plan-limit message when the database refuses a racing create", async () => {
+    state.createFails = "limit";
+    const res = await call({ url: "https://acme.test/", newProject: true });
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({
+      error: "Your plan includes 1 project. See pricing to add more.",
+      code: "project_limit",
+    });
     expect(state.enqueued).toEqual([]);
     expect(state.released).toBe(1);
   });

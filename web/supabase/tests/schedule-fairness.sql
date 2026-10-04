@@ -2,7 +2,7 @@ begin;
 insert into auth.users(id,email) values
  ('10000000-0000-4000-8000-000000000005','busy-caller@example.invalid'),
  ('10000000-0000-4000-8000-000000000006','eligible-caller@example.invalid');
-update public.profiles set plan = 'pro' where id in ('10000000-0000-4000-8000-000000000005','10000000-0000-4000-8000-000000000006');
+update public.profiles set plan = 'team' where id in ('10000000-0000-4000-8000-000000000005','10000000-0000-4000-8000-000000000006');
 insert into public.projects(user_id,name,url)
  select '10000000-0000-4000-8000-000000000005','Synthetic ' || n,'https://example.invalid' from generate_series(1,25) n;
 insert into public.projects(user_id,name,url) values ('10000000-0000-4000-8000-000000000006','Eligible','https://example.invalid');
