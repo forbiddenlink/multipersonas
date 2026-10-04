@@ -54,9 +54,21 @@ const CLIENT_LEDGER = [
 ] as const;
 
 const STAKES = [
-  { fact: "$1,000,000", detail: "FTC settlement against an overlay vendor for claiming a script makes a site compliant.", cite: "1" },
+  { fact: "$1,000,000", detail: "FTC settlement with an overlay vendor over claims that a script could make any website meet accessibility standards.", cite: "1" },
   { fact: "Jun 28, 2025", detail: "European Accessibility Act enforcement began for products and services sold in the EU.", cite: "2" },
   { fact: "Apr 26, 2027", detail: "ADA Title II web rule applies to US state and local governments serving 50,000 or more people.", cite: "3" },
+] as const;
+
+// Must match the pricing page's capability ledger row for row. Hosted behind-login is the
+// one thing that is not built; it is what founding access funds.
+const AVAILABLE_NOW = [
+  "Grade any public site, hosted, with no signup",
+  "Scan behind a login with the free CLI, on your own machine",
+  "CI gate that fails only on new defects",
+  "Unlimited client projects with scan history",
+  "Scheduled re-scans and retest compare",
+  "Persona task-success runs on public flows",
+  "White-label evidence report under your agency name",
 ] as const;
 
 const AGENCY_FAQS = [
@@ -101,18 +113,23 @@ export default function ForAgenciesPage() {
             <div className="min-w-0">
               <p className="label-mono">For agencies and freelance studios</p>
               <h1 className="display mt-5 text-[clamp(2.3rem,4.8vw,3.8rem)] leading-[1.03]">
-                Every client site is <span className="mark-sweep">your liability</span> now.
+                Show every client <span className="mark-sweep">what to fix first.</span>
               </h1>
               <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-muted-foreground">
-                Personaudit runs <span className="font-medium text-foreground">axe-core</span> at
-                every state your client&apos;s site reaches, including behind the login and
-                through checkout when you scan with the CLI, then hands you a case file. Authenticated scans run in the
-                CLI, so a client password never leaves your machine and never touches our
-                servers. Not a widget bolted to the page. An actual audit.
+                A client forwards a demand letter. An RFP asks for accessibility evidence. A customer
+                mentions the European Accessibility Act (EAA). Personaudit checks the site with{" "}
+                <span className="font-medium text-foreground">axe-core</span>, a widely used
+                open-source accessibility engine that Google Lighthouse also uses, lists what to fix
+                first, and gives you a report to send back.
+              </p>
+              <p className="mt-4 max-w-[34rem] leading-relaxed text-muted-foreground">
+                The free CLI also scans behind the login, such as a checkout or dashboard, on your
+                own machine. A client password never leaves your laptop. Hosting those scans is not
+                built yet.
               </p>
               <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
                 <Link href="#early-access" className={buttonVariants({ size: "lg" })}>
-                  Start founding access
+                  {FOUNDING_CHECKOUT_OPEN ? "Join founding access" : "Request founding access"}
                 </Link>
                 <Link href="/sample-report" className="text-link self-start text-[0.9375rem] sm:self-center">
                   Read a sample client report
@@ -135,7 +152,7 @@ export default function ForAgenciesPage() {
             </div>
 
             <div className="sheet min-w-0 p-6 sm:p-8">
-              <p className="label-mono">Why this year</p>
+              <p className="label-mono">Dates and cases clients ask about</p>
               <ol className="mt-4 divide-y divide-border border-t border-border">
                 {STAKES.map((s) => (
                   <li key={s.fact} className="grid gap-1 py-4 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:gap-4">
@@ -148,7 +165,8 @@ export default function ForAgenciesPage() {
                 ))}
               </ol>
               <p className="mt-4 border-t border-border pt-4 text-sm leading-relaxed text-muted-foreground">
-                The widget a client already paid for isn&apos;t a defense. Sources below.
+                Public facts, with sources below. Not legal advice: ask a lawyer what applies to your
+                client.
               </p>
             </div>
           </div>
@@ -310,7 +328,7 @@ export default function ForAgenciesPage() {
                 audit the real DOM with axe-core, on public pages in the hosted product and
                 behind login through the CLI, where credentials never leave your machine, and
                 hand you exactly what&apos;s broken and where. Your client gets a report they
-                can act on, or defend.
+                can act on.
               </p>
               <p>
                 We&apos;re honest about the limits too: axe-core produces the accessibility findings,
@@ -366,13 +384,28 @@ export default function ForAgenciesPage() {
                 Schedule re-scans, review new and cleared findings, and export the report under
                 your own name.
               </p>
-              <div className="mt-6 border-t border-border pt-5">
-                <p className="label-mono">What is and isn&apos;t built</p>
-                <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-                  Behind-login scanning runs in the CLI today; your client&apos;s password never
-                  leaves your machine. Running those scans hosted is not built yet. It is what
-                  founding access funds. You can cancel any time from the billing portal.
-                </p>
+              <div className="mt-6 grid gap-6 border-t border-border pt-5 sm:grid-cols-2">
+                <div className="min-w-0">
+                  <p className="label-mono">Available now</p>
+                  <ul className="mt-3 space-y-2 text-sm leading-relaxed">
+                    {AVAILABLE_NOW.map((item) => (
+                      <li key={item} className="flex gap-2">
+                        <span aria-hidden="true" className="mt-0.5 text-muted-foreground">+</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="min-w-0">
+                  <p className="label-mono">What founding access funds</p>
+                  <p className="mt-3 text-sm font-medium leading-relaxed">Hosted behind-login scanning</p>
+                  <p className="redline-note mt-1">Not built yet.</p>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                    Until it ships, you scan behind a login with the free CLI. Founding access is a
+                    pre-order that pays for building the hosted version. Cancel any time from the
+                    billing portal.
+                  </p>
+                </div>
               </div>
               <p className="mt-6 max-w-md leading-relaxed text-muted-foreground">
                 {FOUNDING_CHECKOUT_OPEN
@@ -390,12 +423,12 @@ export default function ForAgenciesPage() {
             <div className="min-w-0">
               {FOUNDING_CHECKOUT_OPEN ? (
                 <div className="sheet p-6 sm:p-8">
-                  <p className="display text-[1.5rem] leading-tight">Start founding access</p>
+                  <p className="display text-[1.5rem] leading-tight">Join founding access</p>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                     $199 a month, cancel any time. Sign in or create an account first, then
                     checkout takes about a minute.
                   </p>
-                  <UnlockFoundingAccessButton className={`${buttonVariants({ size: "lg" })} mt-5 w-full`} />
+                  <UnlockFoundingAccessButton label="Join founding access · $199/mo" className={`${buttonVariants({ size: "lg" })} mt-5 w-full`} />
                   <p className="mt-6 border-t border-border pt-5 text-sm text-muted-foreground">
                     Not ready? Get notified when something changes, or tell us what would change
                     your mind. A no is as useful to us as a yes, and more honest than silence.

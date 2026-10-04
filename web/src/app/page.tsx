@@ -71,37 +71,34 @@ export default function Home() {
         <section id="scan" aria-labelledby="hero-heading" className="grain relative scroll-mt-20 overflow-hidden border-b border-border">
           <div className="frame relative z-10 grid gap-12 pt-12 pb-14 lg:grid-cols-[minmax(0,1.18fr)_minmax(0,0.82fr)] lg:items-center lg:gap-14 lg:pt-14 lg:pb-16">
             <div className="min-w-0">
-              <p className="label-mono">Accessibility evidence for agencies and dev teams</p>
+              <p className="label-mono">For agencies, freelancers, and dev teams</p>
               {/* LCP element: the sweep animates a background only, never the text. */}
-              <h1 id="hero-heading" className="display mt-5 text-[clamp(2.4rem,4.4vw,3.6rem)] leading-[1.03]">
-                <span className="block">The homepage passes.</span>
-                <span className="block">The bugs are <span className="mark-sweep">behind the login.</span></span>
+              <h1 id="hero-heading" className="display mt-4 text-[clamp(2.2rem,4.4vw,3.6rem)] leading-[1.03] sm:mt-5">
+                <span className="block">Grade your client&apos;s website.</span>
+                <span className="block">Know <span className="mark-sweep">what to fix first.</span></span>
               </h1>
-              <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-muted-foreground">
-                Personaudit runs <span className="font-medium text-foreground">axe-core</span> at
-                every state a real visit reaches: carts, checkouts, error screens. Grade any public
-                site free in about 20 seconds. Scan signed-in flows with the free CLI; the session
-                never leaves your machine.
+              <p className="mt-4 max-w-[34rem] text-lg leading-relaxed text-muted-foreground sm:mt-6">
+                Paste a web address. In under a minute you get an accessibility grade, what to fix
+                first, and a page to show your client. Your first grade is free, with no account.
               </p>
-              <div className="mt-8 max-w-[34rem]">
+              <div className="mt-6 max-w-[34rem] sm:mt-8">
                 <GradeForm />
               </div>
-              <div className="mt-6 max-w-[34rem]">
-                <ContentCodeBlock label="behind the login, on your machine" code="npx personaudit scan https://your.app" />
-              </div>
-              <ul aria-label="Why teams trust it" className="mt-6 flex max-w-[34rem] flex-wrap gap-x-5 gap-y-2 font-mono text-xs uppercase tracking-[0.06em] text-muted-foreground">
-                <li className="whitespace-nowrap before:mr-1.5 before:text-[var(--primary)] before:content-['✓']">axe-core, the engine inside Lighthouse</li>
-                <li className="whitespace-nowrap before:mr-1.5 before:text-[var(--primary)] before:content-['✓']">Open source · MIT</li>
-                <li className="whitespace-nowrap before:mr-1.5 before:text-[var(--primary)] before:content-['✓']">No overlay script</li>
-              </ul>
               <p className="mt-6 max-w-[34rem] text-sm leading-relaxed text-muted-foreground">
+                Pages are checked with <span className="font-medium text-foreground">axe-core</span>,
+                a widely used open-source accessibility engine that Google Lighthouse also uses,
+                against WCAG 2.2 A and AA, the web accessibility standard that laws and RFPs
+                commonly point to. Automated checks find part of the problems; a person still has to
+                review the rest.
+              </p>
+              <p className="mt-4 max-w-[34rem] text-sm leading-relaxed text-muted-foreground">
                 Want to see a finished report first?{" "}
                 <Link href="/sample-report" className="text-link">Read a sample client report</Link>.
                 {SOLO_OPEN ? ` Grading is free. The hosted workspace starts at $${PLANS.solo.monthlyUsd} a month.` : null}
               </p>
             </div>
 
-            <EvidenceSheet className="mx-auto w-full max-w-[34rem] lg:mr-0" />
+            <EvidenceSheet className="mx-auto hidden w-full max-w-[34rem] md:block lg:mr-0" />
           </div>
         </section>
 
@@ -111,10 +108,11 @@ export default function Home() {
             <ExhibitHead label="Where scanners stop" className="mb-8" />
             <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-end">
               <h2 id="behind-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
-                A URL scanner sees one page. Your users see the whole flow.
+                The homepage passes. The bugs are <span className="mark-sweep">behind the login.</span>
               </h2>
               <p className="max-w-xl text-[1.0625rem] leading-relaxed text-muted-foreground lg:justify-self-end">
-                We ran both on the SauceDemo test store. The public login page scanned clean. Three
+                A scanner that takes one URL sees one page; your users see the whole flow. We ran
+                both on the SauceDemo test store. The public login page scanned clean. Three
                 critical defects were waiting in states that only exist after you sign in, add to
                 cart, or get something wrong.
               </p>
@@ -190,6 +188,14 @@ export default function Home() {
             <h2 id="procedure-heading" className="display mt-8 max-w-2xl text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
               Four steps from login to a gated build.
             </h2>
+            <div className="mt-6 grid max-w-3xl gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
+              <p className="leading-relaxed text-muted-foreground">
+                For developers. Scan signed-in flows with the free CLI; the session
+                never leaves your machine. Open source, MIT licensed, and no overlay script on your
+                site.
+              </p>
+              <ContentCodeBlock label="behind the login, on your machine" code="npx personaudit scan https://your.app" />
+            </div>
             <ol className="mt-10 border-t border-border">
               {PROCEDURE.map((p) => (
                 <li
@@ -258,11 +264,13 @@ export default function Home() {
           <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
             <div>
               <h2 id="persona-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
-                The report says what broke. The persona shows who it stopped.
+                The grade says what broke. A persona run says whether the job got done.
               </h2>
               <p className="mt-5 max-w-md leading-relaxed text-muted-foreground">
-                Clients don&apos;t act on a rule ID. They act on &ldquo;a first-time buyer never
-                found pricing.&rdquo; Personas give you that sentence, with the run to back it up.
+                A persona task-success run sends an AI agent to try a task on your site, like
+                finding the pricing page, and records whether it got there. Clients don&apos;t act
+                on a rule ID. They act on &ldquo;the agent never found pricing.&rdquo; You get that
+                sentence, with the run to back it up.
               </p>
               <dl className="mt-8 max-w-md space-y-5">
                 <div className="border-t-2 border-foreground pt-4">
@@ -279,8 +287,9 @@ export default function Home() {
                     Persona notes <span className="redline-note uppercase tracking-[0.1em]">Opinion · AI</span>
                   </dt>
                   <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    Labeled as AI opinion, never mixed into the findings. Personaudit does not
-                    simulate disabled users; for that, test with real people through{" "}
+                    Labeled as AI opinion, never mixed into the findings. A persona is an AI agent,
+                    not a stand-in for a person with a disability. For that, test with real people
+                    through{" "}
                     <a href="https://makeitfable.com/" target="_blank" rel="noopener noreferrer" className="text-link">Fable</a>.
                   </dd>
                 </div>

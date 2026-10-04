@@ -37,8 +37,8 @@ export function GradeNextSteps({
           </span>
         </p>
         <p className="mt-3 max-w-lg leading-relaxed text-muted-foreground">
-          Scanned {pageLabel} only. It does not see behind login, PDFs, or a real checkout:
-          the states where most accessibility risk sits.
+          Scanned {pageLabel} only. It does not see behind login, PDFs, or a real checkout,
+          where users often get stuck.
         </p>
       </div>
       <ul className="space-y-1.5 border-t border-border pt-4 text-sm leading-relaxed text-muted-foreground">
