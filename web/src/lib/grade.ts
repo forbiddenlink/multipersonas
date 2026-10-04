@@ -68,16 +68,17 @@ export async function getGraderScan(token: string) {
 export async function listGraderScansForUser(userId: string): Promise<ClaimedGrade[]> {
   const admin = createAdminClient();
   if (!admin) return [];
-  const { data } = await admin
+  const { data, error } = await admin
     .from("grader_scans")
-    .select("token, entry_url, status, report, created_at")
+    .select("token, entry_url, status, report, created_at, audit_jobs(status)")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(20);
+  if (error) throw new Error("Could not load saved grades.");
   return (data ?? []).map((row) => ({
     token: row.token,
     entry_url: row.entry_url,
-    status: row.status,
+    status: gradeStatusFromJob({ scanStatus: row.status, jobStatus: row.audit_jobs?.status ?? null }),
     letter: gradeLetterFromReport(row.report),
     created_at: row.created_at,
   }));

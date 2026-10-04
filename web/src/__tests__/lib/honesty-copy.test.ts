@@ -5,6 +5,12 @@ import * as path from "node:path";
 const read = (p: string) => fs.readFileSync(path.join(process.cwd(), p), "utf-8");
 
 describe("marketing copy stays honest about hosted vs CLI", () => {
+  it("does not sell behind-login scanning as part of the hosted sample-report upgrade", () => {
+    const src = read("src/app/sample-report/page.tsx");
+    expect(src).not.toMatch(/plan adds behind the login/);
+    expect(src).toMatch(/Behind-login scanning runs in the CLI/);
+  });
+
   it("does not call behind-login a Pro layer on the homepage", () => {
     const src = read("src/app/page.tsx");
     expect(src).not.toMatch(/Behind-login crawls and persona task-success are the/);

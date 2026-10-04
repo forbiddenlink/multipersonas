@@ -2,6 +2,9 @@
   "name": "worker",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "type": "module",
   "description": "Audit worker: claims queued audit_jobs, runs the browser + engine, writes results back. Host-agnostic (Railway / Browserbase / any container).",
   "scripts": {
@@ -11,7 +14,7 @@
   },
   "dependencies": {
     "@sentry/node": "^10.71.0",
-    "@supabase/supabase-js": "^2.112.4",
+    "@supabase/supabase-js": "^2.114.0",
     "personaudit": "workspace:*",
     "tsx": "^4.23.12"
   },

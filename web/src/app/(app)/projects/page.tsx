@@ -11,6 +11,7 @@ import { createProjectAction } from "./actions";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { projectPrefill } from "@/lib/project-prefill";
 import { formatShortDate, hostname } from "@/lib/format";
+import { PROJECT_LIMITS } from "@/lib/entitlements";
 
 export const metadata: Metadata = {
   title: "Projects",
@@ -29,6 +30,10 @@ export default async function ProjectsPage({
     "Give the project a name.",
     "Enter a valid http(s) URL.",
     "Could not create the project.",
+    "Could not check your project allowance. Please try again.",
+    ...Object.values(PROJECT_LIMITS)
+      .filter((limit) => limit !== null)
+      .map((limit) => `Your plan includes ${limit} project${limit === 1 ? "" : "s"}. See pricing to add more.`),
   ]);
   const errorMessage =
     typeof error === "string" && KNOWN_PROJECT_ERRORS.has(error) ? error : null;
