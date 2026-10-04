@@ -61,7 +61,7 @@ export default async function DashboardPage() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
         <section aria-labelledby="latest-heading" className="min-w-0">
-          <ExhibitHead label="Latest run" className="mb-4" />
+          <ExhibitHead label="Latest run" className="mb-4" headingId={latestRun ? undefined : "latest-heading"} />
           {latestRun ? (
             <div className="sheet px-5 py-5">
               <h2 id="latest-heading" className="display text-xl leading-snug text-foreground">
@@ -77,20 +77,12 @@ export default async function DashboardPage() {
               </div>
             </div>
           ) : (
-            <>
-              <h2 id="latest-heading" className="sr-only">
-                Latest run
-              </h2>
-              <FirstRunEmpty canRunHosted={canRunPersonas} />
-            </>
+            <FirstRunEmpty canRunHosted={canRunPersonas} />
           )}
         </section>
 
         <section aria-labelledby="scan-heading" className="min-w-0">
-          <ExhibitHead label="New scan" className="mb-4" />
-          <h2 id="scan-heading" className="sr-only">
-            New scan
-          </h2>
+          <ExhibitHead label="New scan" className="mb-4" headingId="scan-heading" />
           {canRunPersonas ? (
             <AuditForm key={user?.id} userId={user?.id} submitLabel="Run audit" />
           ) : (
@@ -112,10 +104,7 @@ export default async function DashboardPage() {
       </div>
 
       <section aria-labelledby="findings-heading" className="mt-10">
-        <ExhibitHead label="Open findings" className="mb-4" />
-        <h2 id="findings-heading" className="sr-only">
-          Open findings by severity
-        </h2>
+        <ExhibitHead label="Open findings" className="mb-4" headingId="findings-heading" />
         {audits.length === 0 ? (
           <p className="text-sm text-muted-foreground">Findings appear here after your first run.</p>
         ) : (
@@ -143,17 +132,11 @@ export default async function DashboardPage() {
 
       <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <section aria-labelledby="grades-heading" className="min-w-0">
-          <ExhibitHead label="Saved grades" className="mb-4" />
-          <h2 id="grades-heading" className="sr-only">
-            Saved grades
-          </h2>
+          <ExhibitHead label="Saved grades" className="mb-4" headingId="grades-heading" />
           <GradeHistory grades={grades} />
         </section>
         <section aria-labelledby="runs-heading" className="min-w-0">
-          <ExhibitHead label="Recent runs" className="mb-4" />
-          <h2 id="runs-heading" className="sr-only">
-            Recent runs
-          </h2>
+          <ExhibitHead label="Recent runs" className="mb-4" headingId="runs-heading" />
           <AuditHistory audits={audits} />
         </section>
       </div>
