@@ -4,6 +4,9 @@ import { assertUrlAllowed, isUrlAllowed, assertRequestAllowed } from "../securit
 import { computeGrade, MAX_RULE_EXAMPLES, type PageAxe, type Impact, type GradeReport, type GradeRuleHit } from "./score.js";
 import { SEVERITIES } from "../domain/vocab.js";
 
+/** Selectors kept per rule per page, only to spot a selector repeating across pages. */
+const TARGETS_PER_RULE_MAX = 50;
+
 /** Same cap the CLI scan uses for node HTML (src/agent/axe-scan.ts). */
 const EXAMPLE_HTML_MAX = 200;
 
@@ -147,6 +150,7 @@ export async function gradeScan(
           nodes: v.nodes.length,
           help: v.help,
           wcagAA,
+          targets: v.nodes.slice(0, TARGETS_PER_RULE_MAX).map((n) => selectorPath(n.target)),
           examples: v.nodes.slice(0, MAX_RULE_EXAMPLES).map((n) => ({
             url: page.url(),
             target: selectorPath(n.target),
@@ -161,6 +165,10 @@ export async function gradeScan(
         passCount: results.passes.length,
         wcagAAViolations: aa,
         rules,
+        // Present only when axe returned the list, so "not recorded" stays distinct from zero.
+        ...(Array.isArray(results.incomplete)
+          ? { incompleteNodes: results.incomplete.reduce((n, i) => n + (i.nodes?.length ?? 0), 0) }
+          : {}),
       });
       onPage?.(page.url(), visited.length);
       visited.push(page.url());

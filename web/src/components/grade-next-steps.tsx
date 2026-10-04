@@ -28,7 +28,15 @@ export function GradeNextSteps({
     <div className="sheet margin-rule space-y-5 p-6 pl-12 sm:p-7 sm:pl-14">
       <div>
         <h2 className="label-mono">Next steps</h2>
-        <p className="mt-2 max-w-lg leading-relaxed text-muted-foreground">
+        <p className="mt-2 max-w-lg font-medium leading-relaxed">
+          {signedIn ? "Re-grade after you fix it." : "Save this site and re-grade after you fix it."}{" "}
+          <span className="font-normal text-muted-foreground">
+            {signedIn
+              ? "Your dashboard lists your saved grades."
+              : "Your dashboard lists each saved grade, so you can compare the next one to this."}
+          </span>
+        </p>
+        <p className="mt-3 max-w-lg leading-relaxed text-muted-foreground">
           Scanned {pageLabel} only. It does not see behind login, PDFs, or a real checkout:
           the states where most accessibility risk sits.
         </p>

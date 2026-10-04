@@ -185,3 +185,49 @@ describe("grader finding examples", () => {
   });
 });
 
+describe("grader cross-page evidence", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.currentUrl = "https://public.example/";
+    mocks.allowed.mockResolvedValue(true);
+    mocks.goto.mockImplementation(async (url: string) => {
+      mocks.currentUrl = url;
+      return { ok: () => true };
+    });
+    mocks.links.mockResolvedValue([]);
+  });
+
+  it("records a selector repeated on two pages as a shared target and counts the pages", async () => {
+    const root = mocks.currentUrl;
+    mocks.links.mockResolvedValueOnce([`${root}about`]);
+    mocks.analyze.mockResolvedValue({
+      passes: [{ id: "html-has-lang" }],
+      violations: [{
+        id: "button-name", impact: "critical", help: "Buttons must have discernible text", tags: ["wcag2a"],
+        nodes: [{ target: ["header .menu-btn"], html: "<button>" }, { target: ["#only-here"], html: "<button>" }],
+      }],
+    });
+    const { report } = await gradeScan(root);
+    expect(report.rules[0]).toMatchObject({ pages: 2, sharedTarget: { target: "header .menu-btn", pages: 2 } });
+    expect(report.rules[0]).not.toHaveProperty("targets");
+  });
+
+  it("sums axe incomplete elements into needsReview", async () => {
+    mocks.analyze.mockResolvedValue({
+      passes: [{ id: "html-has-lang" }],
+      violations: [],
+      incomplete: [
+        { id: "color-contrast", nodes: [{}, {}, {}] },
+        { id: "aria-valid-attr-value", nodes: [{}] },
+      ],
+    });
+    const { report } = await gradeScan(mocks.currentUrl);
+    expect(report.needsReview).toBe(4);
+  });
+
+  it("records zero when axe returned an empty incomplete list", async () => {
+    mocks.analyze.mockResolvedValue({ passes: [{ id: "x" }], violations: [], incomplete: [] });
+    const { report } = await gradeScan(mocks.currentUrl);
+    expect(report.needsReview).toBe(0);
+  });
+});
