@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 const PRIMARY_CTA = buttonVariants({ size: "lg", className: "w-full sm:w-auto" });
-const OUTLINE_CTA = buttonVariants({ variant: "outline", size: "lg", className: "w-full sm:w-auto" });
+const OUTLINE_CTA = buttonVariants({ variant: "outline", size: "lg", className: "w-full border-foreground sm:w-auto" });
 
 type Tier = {
   id: "free" | "solo" | "agency";
