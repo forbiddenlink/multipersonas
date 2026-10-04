@@ -10,18 +10,11 @@ import { EmptyPrompt } from "@/components/forensic/empty-prompt";
 import { createProjectAction } from "./actions";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { projectPrefill } from "@/lib/project-prefill";
+import { formatShortDate, hostname } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Projects",
 };
-
-function hostname(url: string): string {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return url;
-  }
-}
 
 export default async function ProjectsPage({
   searchParams,
@@ -140,11 +133,7 @@ export default async function ProjectsPage({
                     {hostname(project.url)}
                   </td>
                   <td className="py-3 text-right text-xs text-muted-foreground">
-                    {new Date(project.created_at).toLocaleDateString(undefined, {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
+                    {formatShortDate(project.created_at)}
                   </td>
                 </tr>
               ))}

@@ -10,19 +10,12 @@ import { listAudits } from "@/lib/audits";
 import { getSessionPlan, planAllowsPersonas } from "@/lib/entitlements";
 import { listGraderScansForUser } from "@/lib/grade";
 import { GradeHistory } from "@/components/grade-history";
+import { formatShortDate, hostname } from "@/lib/format";
 import { SEVERITY_ORDER, type Severity } from "@/components/forensic/severity";
 
 export const metadata: Metadata = {
   title: "Dashboard",
 };
-
-function hostname(url: string): string {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return url;
-  }
-}
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -75,11 +68,7 @@ export default async function DashboardPage() {
                 {hostname(latestRun.url)}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {new Date(latestRun.created_at).toLocaleDateString(undefined, {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })}
+                {formatShortDate(latestRun.created_at)}
               </p>
               <div className="mt-5 border-t border-border pt-4">
                 <Link href={`/audits/${latestRun.id}`} className="text-link text-sm font-medium">

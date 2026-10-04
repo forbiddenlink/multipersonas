@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { buttonVariants } from "@/components/ui/button";
 import { PERSONA_DATA } from "@/lib/personas";
 import { formatLocation } from "@/lib/format-location";
+import { formatShortDate } from "@/lib/format";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { Meter } from "@/components/forensic/meter";
 import { EmptyPrompt } from "@/components/forensic/empty-prompt";
@@ -234,11 +235,7 @@ export default async function AuditDetailPage({
   } catch {
     // run.url may be a bare host on older rows — keep it as-is.
   }
-  const caseDate = new Date(run.created_at).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  const caseDate = formatShortDate(run.created_at);
   const caseStatus =
     openWorkflowCount === 0 && axeFindings.length > 0
       ? "All clear"

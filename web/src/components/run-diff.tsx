@@ -1,13 +1,6 @@
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import type { RunRegression } from "@/lib/baseline";
-
-function shortDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
+import { formatShortDate } from "@/lib/format";
 
 /**
  * Project regression panel — newest run vs previous, axe verdicts only.
@@ -22,9 +15,9 @@ export function RunDiff({ diff }: { diff: RunRegression }) {
         <span>Retest</span>
         {hasPrevious ? (
           <span className="ml-2 normal-case">
-            {shortDate(diff.previous!.created_at)}
+            {formatShortDate(diff.previous!.created_at)}
             <span className="mx-1.5">→</span>
-            {shortDate(diff.current.created_at)}
+            {formatShortDate(diff.current.created_at)}
           </span>
         ) : (
           <span className="ml-2 normal-case">first run, establishing baseline</span>
