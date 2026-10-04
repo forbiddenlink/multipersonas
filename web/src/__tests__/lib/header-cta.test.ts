@@ -5,7 +5,7 @@ import { headerCta } from "@/lib/header-cta";
 
 describe("headerCta", () => {
   it("is the checkout CTA on the agency page when founding checkout is open", () => {
-    expect(headerCta("waitlist", true).label).toBe("Start founding access");
+    expect(headerCta("waitlist", true).label).toBe("Join founding access");
   });
 
   it("is the waitlist CTA when founding checkout is closed", () => {
