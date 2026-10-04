@@ -81,9 +81,9 @@ export default function Home() {
                 <span className="block"><span className="mark-sweep">Keep the password.</span></span>
               </h1>
               <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-muted-foreground">
-                Personaudit runs <span className="font-medium text-foreground">axe-core</span> at
+                With the free CLI, Personaudit runs <span className="font-medium text-foreground">axe-core</span> at
                 every state a signed-in crawl reaches: carts, checkouts, error screens. The session
-                never leaves your machine, and the report is ready to hand to a client.
+                stays on your machine, and the evidence report is ready to hand to a client.
               </p>
               <div className="mt-8 max-w-[34rem]">
                 <GradeForm />
@@ -153,10 +153,10 @@ export default function Home() {
                   </caption>
                   <thead>
                     <tr className="border-b-2 border-foreground">
-                      <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Target</th>
-                      <th scope="col" className="py-2 pr-4 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Public<span className="hidden sm:inline"> scan</span></th>
-                      <th scope="col" className="hidden py-2 pr-4 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground sm:table-cell">States</th>
-                      <th scope="col" className="py-2 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Net new</th>
+                      <th scope="col" className="py-2 pr-4 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">Target</th>
+                      <th scope="col" className="py-2 pr-4 text-right font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">Public<span className="hidden sm:inline"> scan</span></th>
+                      <th scope="col" className="hidden py-2 pr-4 text-right font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground sm:table-cell">States</th>
+                      <th scope="col" className="py-2 text-right font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">Net new</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -274,7 +274,7 @@ export default function Home() {
                 </div>
                 <p className="mt-3 leading-relaxed text-muted-foreground">
                   From axe-core. Deterministic: run it twice, get the same answer. Cited to a WCAG
-                  success criterion. The only output that goes into a compliance report.
+                  success criterion. The only output that goes into an evidence report.
                 </p>
               </div>
               <div className="min-w-0 border-t-2 border-dashed border-[var(--redline)] pt-5">
@@ -284,8 +284,8 @@ export default function Home() {
                 </div>
                 <p className="mt-3 leading-relaxed text-muted-foreground">
                   AI browser agents try to finish a task, and a separate check reads the final page.
-                  Useful for the client story. Never a compliance verdict, never mixed into the
-                  findings.
+                  Useful for the client story. Never an accessibility finding, never mixed into the
+                  axe-core results.
                 </p>
               </div>
             </div>
@@ -351,7 +351,7 @@ export default function Home() {
                 Open a case file on your next client.
               </h2>
               <p className="mt-4 max-w-lg leading-relaxed text-muted-foreground">
-                Grade the public site now. Run the CLI behind the login tonight. Hand over the
+                Grade the public site now. Run the CLI behind the login, locally, tonight. Hand over the
                 report tomorrow.{" "}
                 {SOLO_OPEN
                   ? `Enterprise platforms sell annual contracts; Solo is $${PLANS.solo.monthlyUsd} a month, and the CLI is free.`

@@ -272,7 +272,7 @@ export function WaitlistForm({ variant = "waitlist" }: { variant?: "waitlist" | 
         {status === "submitting"
           ? "Sending…"
           : variant === "feedback"
-            ? "Send this instead"
+            ? "Get notified"
             : "Request founding access"}
       </button>
 

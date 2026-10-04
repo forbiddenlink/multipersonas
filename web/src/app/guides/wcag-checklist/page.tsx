@@ -97,7 +97,7 @@ export default function WcagChecklistPage() {
         <p>
           Personaudit crawls your site and runs <strong>axe-core</strong> at every state it
           reaches, deterministic and citable checks against these criteria. Persona notes
-          measure task success; they never render the compliance verdict.
+          measure task success; they never produce an accessibility finding.
         </p>
 
         <h2 className="sr-only">Related guides</h2>

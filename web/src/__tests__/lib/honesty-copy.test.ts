@@ -79,3 +79,56 @@ describe("pricing page states what each tier really gets", () => {
     expect(src).toMatch(/PROJECT_LIMITS\.pro/);
   });
 });
+
+describe("marketing copy avoids compliance claims and qualifies behind-login", () => {
+  const FILES = [
+    "src/app/layout.tsx",
+    "src/app/page.tsx",
+    "src/app/pricing/page.tsx",
+    "src/app/for-agencies/page.tsx",
+    "src/app/docs/page.tsx",
+    "src/app/guides/wcag-checklist/page.tsx",
+    "src/components/site-footer.tsx",
+  ];
+
+  it.each(FILES)("%s never says compliance verdict or compliance report", (file) => {
+    const src = read(file);
+    expect(src).not.toMatch(/compliance (verdict|report)/i);
+    expect(src).not.toMatch(/proves compliance/i);
+    expect(src).not.toMatch(/protects? (you )?from lawsuits/i);
+  });
+
+  it("does not title the site as hosted behind-the-login scanning", () => {
+    const src = read("src/app/layout.tsx");
+    expect(src).not.toMatch(/evidence behind the login/i);
+    expect(src).not.toMatch(/authenticated accessibility scanner/i);
+    expect(src).toMatch(/behind-login scanning runs locally with the CLI/);
+  });
+
+  it("qualifies behind-login in the footer and hero body as CLI/local", () => {
+    expect(read("src/components/site-footer.tsx")).toMatch(/behind the login with the CLI/);
+    expect(read("src/app/page.tsx")).toMatch(/With the free CLI, Personaudit runs/);
+  });
+});
+
+describe("pricing competitor claims are sourced and dated", () => {
+  const src = read("src/app/pricing/page.tsx");
+
+  it("does not repeat the unsourced yearly price guesses", () => {
+    expect(src).not.toMatch(/around \$2,000\/year/);
+    expect(src).not.toMatch(/around \$6,000\/year/);
+    expect(src).not.toMatch(/five figures a year/);
+  });
+
+  it("states Pope Tech and Silktide pricing with links and an as-of date", () => {
+    expect(src).toMatch(/https:\/\/pope\.tech\/pricing/);
+    expect(src).toMatch(/https:\/\/silktide\.com\/pricing\//);
+    expect(src).toMatch(/Business Plus at \$225\/month/);
+    expect(src).toMatch(/12-month minimum/);
+    expect(src).toMatch(/As of Oct 2026/);
+  });
+
+  it("does not claim that no other tool keys defects to a stable id", () => {
+    expect(src).not.toMatch(/None of them key/);
+  });
+});

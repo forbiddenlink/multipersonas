@@ -45,7 +45,7 @@ export default function DocsPage() {
         eyebrow="Documentation"
         title="Install and run your first scan"
         mark="first scan"
-        dek="The CLI is the whole compliance path. It needs no API key and no account: scan drives a real Chromium, crawls every same-origin state it can reach, and runs axe-core at each one."
+        dek="The CLI is the whole scanning path. It needs no API key and no account: scan drives a real Chromium, crawls every same-origin state it can reach, and runs axe-core at each one."
         lastReviewed="26 September 2026"
         toc={[...TOC]}
       >
@@ -176,9 +176,9 @@ export default function DocsPage() {
           label="persona run"
           code={"export ANTHROPIC_API_KEY=sk-ant-…\nnpx personaudit run https://example.com"}
         />
-        <ContentCallout variant="highlight" label="Opinion, not compliance">
+        <ContentCallout variant="highlight" label="Opinion, not an accessibility finding">
           Persona notes are task success plus a written opinion, not an accessibility verdict.
-          axe-core findings are the only output that goes into a compliance report, and no
+          axe-core findings are the only output that goes into an evidence report, and no
           persona ever claims a disability. That is a permanent product rule, not a current
           limitation.
         </ContentCallout>

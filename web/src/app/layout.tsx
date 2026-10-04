@@ -30,10 +30,10 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL || "https://personaudit.com"
   ),
   title: {
-    default: "Personaudit: accessibility evidence behind the login",
+    default: "Personaudit: axe-core accessibility evidence for agencies and dev teams",
     template: "%s | Personaudit",
   },
-  description: "Personaudit runs axe-core at every state a signed-in crawl reaches (carts, checkouts, error screens) and turns it into a report an agency can hand a client. Free public grade, free CLI for behind-login scans. The password never leaves your machine. Not an overlay.",
+  description: "Free public accessibility grade from axe-core. The free CLI scans behind a login locally, at every state a signed-in crawl reaches (carts, checkouts, error screens), and writes an evidence report an agency can hand a client. The password never leaves your machine. Not an overlay.",
   openGraph: {
     type: "website",
     siteName: "Personaudit",
@@ -63,7 +63,7 @@ const jsonLd = {
   operatingSystem: "Web, macOS, Linux, Windows",
   url: "https://personaudit.com",
   description:
-    "An authenticated accessibility scanner: axe-core at every crawled state (the compliance verdict), plus UX personas that measure task success. Not a disability simulator.",
+    "An accessibility scanner: a free public grade from axe-core, and a local CLI that runs axe-core at every state a signed-in crawl reaches (behind-login scanning runs locally with the CLI, not on the hosted site). Automated findings, plus UX personas that measure task success. Not a disability simulator.",
 };
 
 export default function RootLayout({

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Wordmark } from "@/components/forensic/wordmark";
 
 const FOOTER_LINK =
-  "inline-block rounded-sm py-1 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
+  "inline-flex min-h-11 items-center rounded-sm py-1 text-sm sm:min-h-0 text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
 
 const GROUPS: { title: string; links: { href: string; label: string; external?: boolean }[] }[] = [
   {
@@ -56,14 +56,14 @@ export function SiteFooter({
             <Wordmark className="text-lg text-foreground" />
             <p className="mt-4 font-serif text-[1.0625rem] leading-relaxed text-muted-foreground">
               Accessibility evidence you can put in front of a client: axe-core at every state a
-              crawl reaches, including behind the login.
+              crawl reaches, including behind the login with the CLI, run locally.
             </p>
           </div>
           <nav aria-label="Footer" className="grid grid-cols-2 gap-8 sm:grid-cols-3">
             {GROUPS.map((g) => (
               <div key={g.title} className="min-w-0">
                 <p className="label-mono">{g.title}</p>
-                <ul className="mt-3 space-y-1.5">
+                <ul className="mt-2 space-y-0 sm:mt-3 sm:space-y-1.5">
                   {g.links.map((l) => (
                     <li key={l.href}>
                       {l.external ? (
@@ -96,7 +96,7 @@ export function SiteFooter({
               href="https://github.com/forbiddenlink"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-link text-muted-foreground"
+              className="text-link inline-flex min-h-11 items-center text-muted-foreground sm:min-h-0"
             >
               Elizabeth Stein
             </a>
