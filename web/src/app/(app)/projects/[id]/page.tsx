@@ -24,8 +24,12 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { DeleteProjectForm } from "../delete-project-form";
 import { ExhibitHead } from "@/components/dossier/exhibit-head";
 import { GradeHistory } from "@/components/grade-history";
-import { listGraderScansForUser } from "@/lib/grade";
-import { gradesForSite, regradePath } from "@/lib/grade-share";
+import { getGraderScan, listGraderScansForUser } from "@/lib/grade";
+import { gradesForSite, hostOf, regradePath } from "@/lib/grade-share";
+import { rankFixFirst } from "@/lib/grade-fix-first";
+import { PaidPanelsNote } from "@/components/paid-panels-note";
+import { ProjectFixFirst } from "@/components/project-fix-first";
+import type { GradeReport } from "@engine/grader/score";
 
 export const metadata: Metadata = {
   title: "Project",
@@ -107,6 +111,19 @@ export default async function ProjectDetailPage({
   // The free grade is the hosted scan every plan can run. Show the owner's grades of this
   // site here so a Free project is not a dead end that sends results somewhere else.
   const siteGrades = user ? gradesForSite(await listGraderScansForUser(user.id), project.url) : [];
+  // Free accounts see the top fixes from the latest finished grade of this site. A read
+  // failure only drops the list: the grades table above still links every result.
+  const latestFinishedGrade = siteGrades.find((g) => g.status === "completed") ?? null;
+  let fixFirst: { items: ReturnType<typeof rankFixFirst>; pagesScanned: number } | null = null;
+  if (!canRunPersonas && latestFinishedGrade) {
+    try {
+      const scan = await getGraderScan(latestFinishedGrade.token);
+      const report = scan?.report as unknown as GradeReport | null | undefined;
+      fixFirst = { items: rankFixFirst(report?.rules), pagesScanned: report?.pagesScanned ?? 0 };
+    } catch {
+      fixFirst = { items: [], pagesScanned: 0 };
+    }
+  }
   const scheduleRunnerConfigured = Boolean(process.env.CRON_SECRET);
 
   const updateWithId = updateProjectAction.bind(null, project.id);
@@ -142,27 +159,23 @@ export default async function ProjectDetailPage({
           </p>
         )}
 
-      <div className="mt-2 grid gap-x-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:items-start">
+      <div className={`mt-2 grid gap-x-10 ${canRunPersonas ? "lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:items-start" : "max-w-3xl"}`}>
         <div className="min-w-0">
-      <BoxDivider label="new scan for this project" className="my-5" />
+      <BoxDivider label={canRunPersonas ? "new scan for this project" : "free grade"} className="my-5" />
 
       {canRunPersonas ? (
         <AuditForm key={`${user?.id}:${JSON.stringify(savedTask)}`} userId={user?.id} projectId={project.id} defaultUrl={project.url} submitLabel={savedTask ? "Test saved task" : "Run audit"} />
       ) : (
         <div>
           <p className="text-sm text-muted-foreground">
-            Persona task-success runs come with the Solo and Agency plans. The free axe-core grade
-            runs on any plan: grade this site and the result shows up here.
+            Run the free axe-core grade on this site again after a fix and the result is listed below.
           </p>
-          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+          <div className="mt-3">
             <Link
               href={regradePath(project.url)}
               className="inline-flex h-10 items-center rounded-sm bg-primary px-4 text-sm font-medium text-primary-foreground shadow-[inset_0_-2px_0_oklch(0_0_0/0.18)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--primary)_86%,black)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               Grade this site free
-            </Link>
-            <Link href="/for-agencies#early-access" className="text-link text-sm">
-              See founding access
             </Link>
           </div>
         </div>
@@ -177,6 +190,17 @@ export default async function ProjectDetailPage({
         </section>
       ) : null}
 
+      {fixFirst && latestFinishedGrade ? (
+        <div className="mt-6">
+          <ProjectFixFirst
+            host={hostOf(latestFinishedGrade.entry_url)}
+            token={latestFinishedGrade.token}
+            items={fixFirst.items}
+            pagesScanned={fixFirst.pagesScanned}
+          />
+        </div>
+      ) : null}
+
       {latestRun?.task_definition ? (
         <div className="mt-5 space-y-3">
           <TaskEvidencePanel task={latestRun.task_definition} outcomes={latestRun.task_outcomes} runId={latestRun.id} />
@@ -185,6 +209,8 @@ export default async function ProjectDetailPage({
         </div>
       ) : null}
 
+      {canRunPersonas ? (
+        <>
       <BoxDivider label="issue work" className="my-5" />
 
       <div className="sheet space-y-4 p-4">
@@ -232,6 +258,12 @@ export default async function ProjectDetailPage({
           </p>
         )}
       </div>
+        </>
+      ) : (
+        <div className="mt-6">
+          <PaidPanelsNote />
+        </div>
+      )}
 
       {regression ? (
         <>
@@ -250,11 +282,16 @@ export default async function ProjectDetailPage({
         </>
       ) : null}
 
+      {canRunPersonas || audits.length > 0 ? (
+        <>
       <BoxDivider label="saved runs" className="my-5" />
 
       <AuditHistory audits={audits} canRunHosted={canRunPersonas} />
+        </>
+      ) : null}
 
         </div>
+        {canRunPersonas ? (
         <div className="min-w-0">
       <BoxDivider label="task to test" className="my-5" />
       <form action={saveTask} className="sheet space-y-3 p-4">
@@ -293,7 +330,6 @@ export default async function ProjectDetailPage({
 
       <BoxDivider label="scan schedule" className="my-5" />
 
-      {canRunPersonas ? (
         <form action={saveScheduleWithId} className="sheet space-y-3 p-4">
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
             <div className="space-y-1.5">
@@ -339,13 +375,9 @@ export default async function ProjectDetailPage({
           ) : null}
           <SubmitButton variant="outline" size="sm">Save schedule</SubmitButton>
         </form>
-      ) : (
-        <div className="sheet p-4 text-sm text-muted-foreground">
-          Scheduled persona scans come with the Solo and Agency plans.
-        </div>
-      )}
 
         </div>
+        ) : null}
       </div>
 
       <div className="max-w-xl">
