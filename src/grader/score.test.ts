@@ -121,3 +121,19 @@ describe("computeGrade", () => {
     expect(region?.wcagAA).toBe(false);
   });
 });
+
+describe("computeGrade rule examples", () => {
+  it("merges examples across pages and caps them at three per rule", () => {
+    const hit = (url: string, n: number) => ({
+      id: "link-name", impact: "serious" as const, nodes: n, help: "Links need names", wcagAA: true,
+      examples: Array.from({ length: n }, (_, i) => ({ url, target: `a.l${i}`, html: `<a class="l${i}"></a>` })),
+    });
+    const r = computeGrade([
+      { url: "https://x.test/", violationsByImpact: { ...emptyImpacts, serious: 2 }, passCount: 10, wcagAAViolations: 2, rules: [hit("https://x.test/", 2)] },
+      { url: "https://x.test/b", violationsByImpact: { ...emptyImpacts, serious: 2 }, passCount: 10, wcagAAViolations: 2, rules: [hit("https://x.test/b", 2)] },
+    ]);
+    expect(r.rules).toMatchObject([{ nodes: 4 }]);
+    expect(r.rules.at(0)?.examples?.map((e) => e.url)).toEqual(["https://x.test/", "https://x.test/", "https://x.test/b"]);
+  });
+});
+

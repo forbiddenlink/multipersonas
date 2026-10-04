@@ -21,6 +21,19 @@ export const IMPACT_WEIGHT: Record<Impact, number> = {
   minor: 0.5,
 };
 
+/** Most located elements kept per rule. Enough to find the pattern, small enough to store. */
+export const MAX_RULE_EXAMPLES = 3;
+
+/** One element axe flagged for a rule: where it is and what it looks like. */
+export interface GradeNodeExample {
+  /** Page the element was found on. */
+  url: string;
+  /** axe's CSS selector for the element; shadow-DOM hops joined with " >>> ". */
+  target: string;
+  /** The element's opening HTML as axe reported it, capped in length. */
+  html: string;
+}
+
 export interface GradeRuleHit {
   /** axe rule id, e.g. "landmark-one-main" */
   id: string;
@@ -31,6 +44,8 @@ export interface GradeRuleHit {
   help: string;
   /** True when tagged WCAG 2.x A/AA (any version). */
   wcagAA: boolean;
+  /** Up to MAX_RULE_EXAMPLES located elements. Absent on reports stored before examples. */
+  examples?: GradeNodeExample[];
 }
 
 export interface PageAxe {
@@ -130,10 +145,13 @@ export function computeGrade(pages: PageAxe[]): GradeReport {
     for (const hit of p.rules ?? []) {
       const prev = byRule.get(hit.id);
       if (!prev) {
-        byRule.set(hit.id, { ...hit });
+        byRule.set(hit.id, { ...hit, ...(hit.examples ? { examples: hit.examples.slice(0, MAX_RULE_EXAMPLES) } : {}) });
         continue;
       }
       prev.nodes += hit.nodes;
+      if (hit.examples?.length) {
+        prev.examples = [...(prev.examples ?? []), ...hit.examples].slice(0, MAX_RULE_EXAMPLES);
+      }
       prev.wcagAA = prev.wcagAA || hit.wcagAA;
       if (IMPACTS.indexOf(hit.impact) < IMPACTS.indexOf(prev.impact)) {
         prev.impact = hit.impact;

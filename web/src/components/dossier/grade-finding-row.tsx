@@ -3,6 +3,8 @@ import { WcagCitation } from "@/components/forensic/wcag-citation";
 import { ruleFix } from "@/components/dossier/grade-remediation";
 import { dequeRuleUrl } from "@/lib/grade-share";
 import type { Severity } from "@/components/forensic/severity";
+import { displayPath } from "@/lib/format";
+import type { GradeNodeExample } from "@engine/grader/score";
 
 /**
  * One finding as a case-file evidence row: severity + WCAG citation, the axe rule name,
@@ -16,6 +18,7 @@ export function GradeFindingRow({
   help,
   nodes,
   wcagAA,
+  examples,
   location,
   fixFirst,
 }: {
@@ -24,6 +27,8 @@ export function GradeFindingRow({
   help: string;
   nodes?: number;
   wcagAA?: boolean;
+  /** A few located elements (selector + HTML). Absent on reports stored before examples. */
+  examples?: GradeNodeExample[];
   /** Where it was found — a URL, a state label, or both. */
   location?: string;
   /** Top-priority finding: labelled so the reader knows where to start. */
@@ -64,6 +69,32 @@ export function GradeFindingRow({
           <span className="font-medium text-foreground">Fix: </span>
           {fix.fix}
         </p>
+      ) : null}
+      {examples && examples.length > 0 ? (
+        <details className="group mt-3 max-w-2xl">
+          <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-sm text-sm font-medium sm:min-h-0 [&::-webkit-details-marker]:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
+            <span aria-hidden="true" className="font-mono text-muted-foreground">
+              <span className="group-open:hidden">+</span>
+              <span className="hidden group-open:inline">&minus;</span>
+            </span>
+            {typeof nodes === "number" && nodes > examples.length
+              ? `Where: ${examples.length} of ${nodes} elements`
+              : `Where: ${examples.length} element${examples.length === 1 ? "" : "s"}`}
+          </summary>
+          <ul className="mt-2 space-y-3 border-l-2 border-border pl-3">
+            {examples.map((ex, i) => (
+              <li key={`${ex.url}-${ex.target}-${i}`} className="min-w-0 text-xs">
+                <p className="text-muted-foreground">
+                  on <span className="font-mono">{displayPath(ex.url)}</span>
+                </p>
+                <p className="mt-1 font-mono break-all">{ex.target}</p>
+                <pre className="mt-1 whitespace-pre-wrap break-all rounded-sm bg-muted px-2 py-1.5 font-mono text-[11px] leading-relaxed">
+                  <code>{ex.html}</code>
+                </pre>
+              </li>
+            ))}
+          </ul>
+        </details>
       ) : null}
       <p className="mt-1.5 text-sm">
         <a
