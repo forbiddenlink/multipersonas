@@ -9,7 +9,6 @@ vi.mock("@/lib/entitlements", () => ({ getSessionPlan: async () => "free", planA
 vi.mock("@/app/(app)/projects/actions", () => ({ saveProjectTaskAction: vi.fn(), updateProjectAction: vi.fn(), deleteProjectAction: vi.fn(), upsertProjectScheduleAction: vi.fn() }));
 vi.mock("@/components/audit-form", () => ({ AuditForm: () => null }));
 vi.mock("@/components/audit-history", () => ({ AuditHistory: () => null }));
-vi.mock("@/components/pro-audit-upsell", () => ({ ProAuditUpsell: () => null }));
 vi.mock("@/app/(app)/projects/delete-project-form", () => ({ DeleteProjectForm: () => null }));
 import ProjectDetailPage from "@/app/(app)/projects/[id]/page";
 import { TASK_INPUT_ERROR, TASK_ORIGIN_ERROR } from "@/lib/tasks";
