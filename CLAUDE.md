@@ -102,6 +102,7 @@ cd web && pnpm lint && pnpm exec tsc --noEmit && pnpm test && pnpm build
 - `NEXT_PUBLIC_FOUNDING_CHECKOUT_URL` - the explicit launch switch for the $199 agency tier. Credentials alone must not reopen an offer that was intentionally hidden.
 - `STRIPE_SOLO_PRICE_ID` - optional. Setting it IS the switch that makes the $39 Solo tier visible and buyable on /pricing; unset, the tier shows as not open yet.
 - `STRIPE_TRIAL_DAYS` - optional, default 14, `0` disables. Applied to every paid checkout session.
+- `RESEND_API_KEY` / `SCAN_EMAIL_FROM` - both required before `/api/schedules/notify` emails scheduled-scan results; either unset means no email is sent (the route returns 503).
 
 Re-check `.env.example` directly (outside this sandbox) for the complete, current list.
 

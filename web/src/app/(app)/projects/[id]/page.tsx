@@ -363,6 +363,15 @@ export default async function ProjectDetailPage({
               Enabled
             </label>
           </div>
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="notify_email"
+              defaultChecked={schedule?.notify_email ?? true}
+              className="mt-0.5 size-4 rounded-sm border-border"
+            />
+            <span>Email me each result: new issues, fixed issues, and a link to the run.</span>
+          </label>
           <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
             <p>
               Next run: {schedule ? new Date(schedule.next_run_at).toLocaleString() : "after save"}

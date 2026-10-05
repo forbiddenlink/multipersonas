@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 import { isFoundingCheckoutOpen, isPlanCheckoutOpen } from "@/lib/founding-checkout";
 import { PLANS, trialPeriodDays, type PlanKey } from "@/lib/plans";
+import { siteOrigin } from "@/lib/site-url";
 
 function checkoutClient(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -51,7 +52,7 @@ export async function startPlanCheckout(plan: PlanKey): Promise<Response> {
     return Response.json({ error: "Your account already has paid access. Contact billing support from Settings to change it." }, { status: 409 });
   }
 
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://personaudit.com";
+  const origin = siteOrigin();
   const metadata = { personaudit_plan: plan, supabase_user_id: user.id };
   const trialDays = trialPeriodDays();
   let session: Stripe.Checkout.Session;

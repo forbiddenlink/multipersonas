@@ -425,8 +425,10 @@ export type Database = {
           id: string
           interval: string
           last_job_id: string | null
+          last_notified_job_id: string | null
           last_run_at: string | null
           next_run_at: string
+          notify_email: boolean
           persona_ids: string[]
           project_id: string
           updated_at: string
@@ -438,8 +440,10 @@ export type Database = {
           id?: string
           interval?: string
           last_job_id?: string | null
+          last_notified_job_id?: string | null
           last_run_at?: string | null
           next_run_at?: string
+          notify_email?: boolean
           persona_ids?: string[]
           project_id: string
           updated_at?: string
@@ -451,8 +455,10 @@ export type Database = {
           id?: string
           interval?: string
           last_job_id?: string | null
+          last_notified_job_id?: string | null
           last_run_at?: string | null
           next_run_at?: string
+          notify_email?: boolean
           persona_ids?: string[]
           project_id?: string
           updated_at?: string
@@ -462,6 +468,13 @@ export type Database = {
           {
             foreignKeyName: "project_scan_schedules_last_job_id_fkey"
             columns: ["last_job_id"]
+            isOneToOne: false
+            referencedRelation: "audit_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_scan_schedules_last_notified_job_id_fkey"
+            columns: ["last_notified_job_id"]
             isOneToOne: false
             referencedRelation: "audit_jobs"
             referencedColumns: ["id"]

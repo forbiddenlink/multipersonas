@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
+import { siteOrigin } from "@/lib/site-url";
 
 export const runtime = "nodejs";
 
@@ -40,7 +41,7 @@ export async function POST(): Promise<Response> {
     );
   }
 
-  const origin = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://personaudit.com";
+  const origin = siteOrigin();
   let session: Stripe.BillingPortal.Session;
   try {
     session = await stripe.billingPortal.sessions.create({
