@@ -23,7 +23,7 @@ describe("buildExecutiveSummary", () => {
 
   it("names the first three things to fix", () => {
     expect(buildExecutiveSummary(base, fmt)).toContain(
-      "Start with images missing alt text, dropdowns with no label, and links with no name.",
+      "Fix first: Images missing alt text; Dropdowns with no label; Links with no name.",
     );
   });
 
@@ -49,13 +49,13 @@ describe("buildExecutiveSummary", () => {
       fmt,
     );
     expect(lines[0]).toBe("Automated checks found no violations on the 4 pages or states this audit reached.");
-    expect(lines.join(" ")).not.toMatch(/Start with/);
+    expect(lines.join(" ")).not.toMatch(/Fix first/);
     expect(lines.join(" ")).not.toMatch(/\bcompliant\b|conforms|fully accessible/i);
   });
 
   it("states the manual work still owed and the next scheduled scan", () => {
     const lines = buildExecutiveSummary(base, fmt);
-    expect(lines).toContain("2 of 3 personas reached their goal.");
+    expect(lines).toContain("2 of 3 personas reached the goal.");
     expect(lines).toContain("32 WCAG criteria cannot be checked automatically. A person needs to review them (listed at the end).");
     expect(lines).toContain("Next scheduled scan: 2026-10-12.");
   });
@@ -74,7 +74,7 @@ describe("buildExecutiveSummary", () => {
       fmt,
     );
     expect(lines[0]).toBe("Automated checks found 1 distinct issue on 1 page or state: 1 critical.");
-    expect(lines).toContain("Start with buttons with no name.");
+    expect(lines).toContain("Fix first: Buttons with no name.");
     expect(lines).toContain("1 WCAG criterion cannot be checked automatically. A person needs to review it (listed at the end).");
     expect(lines.join(" ")).not.toContain("—");
   });

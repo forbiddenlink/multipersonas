@@ -30,16 +30,6 @@ function count(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
 }
 
-function lowerFirst(title: string): string {
-  // Keep acronyms ("ARIA", "WCAG") intact; only lower a capitalised ordinary word.
-  return /^[A-Z][a-z]/.test(title) ? title[0]!.toLowerCase() + title.slice(1) : title;
-}
-
-function listOf(items: string[]): string {
-  if (items.length <= 1) return items.join("");
-  if (items.length === 2) return `${items[0]} and ${items[1]}`;
-  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
-}
 
 export function buildExecutiveSummary(
   input: ExecutiveSummaryInput,
@@ -58,8 +48,10 @@ export function buildExecutiveSummary(
     lines.push(`Automated checks found ${count(total, "distinct issue", "distinct issues")} on ${where}: ${bySeverity}.`);
   }
 
-  const first = input.fixFirstTitles.slice(0, 3).map(lowerFirst);
-  if (total > 0 && first.length > 0) lines.push(`Start with ${listOf(first)}.`);
+  // Titles are a mix of noun phrases and sentences, so list them rather than weave
+  // them into a sentence.
+  const first = input.fixFirstTitles.slice(0, 3);
+  if (total > 0 && first.length > 0) lines.push(`Fix first: ${first.join("; ")}.`);
 
   if (input.history) {
     if (input.history.previousDate === null) {
@@ -73,7 +65,8 @@ export function buildExecutiveSummary(
   }
 
   if (input.personaSuccess && input.personaSuccess.total > 0) {
-    lines.push(`${input.personaSuccess.reached} of ${input.personaSuccess.total} personas reached their goal.`);
+    const { reached, total: personas } = input.personaSuccess;
+    lines.push(`${reached} of ${personas} ${personas === 1 ? "persona" : "personas"} reached the goal.`);
   }
 
   if (input.manualReviewCount > 0) {
