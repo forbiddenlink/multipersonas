@@ -17,4 +17,10 @@ describe("ExhibitHead", () => {
     expect(screen.queryByRole("heading")).toBeNull();
     expect(screen.getByText("Case desk").tagName).toBe("P");
   });
+
+  it("plain variant keeps the heading and drops the exhibit motif", () => {
+    const { container } = render(<ExhibitHead plain label="Saved grades" headingId="g" />);
+    expect(screen.getByRole("heading", { level: 2, name: "Saved grades" })).toHaveAttribute("id", "g");
+    expect(container.querySelector(".exhibit-head, .exhibit-tab, .exhibit-serial")).toBeNull();
+  });
 });
