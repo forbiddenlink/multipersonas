@@ -173,7 +173,7 @@ export default async function ReportPage({
             )}
             . The personas reach the states; axe renders the verdict. Persona
             observations are usability opinion and are deliberately excluded from this
-            compliance report.
+            report&apos;s findings.
           </p>
           <p className={styles.disclaimer}>
             Automated testing detects a subset of accessibility barriers and is{" "}
