@@ -44,12 +44,15 @@ export function GradeForm() {
   // visitor gets a message and a Retry instead of a button that waits forever.
   const [challengeStalled, setChallengeStalled] = useState(false);
   const [challengeAttempt, setChallengeAttempt] = useState(0);
+  // Cloudflare sometimes asks for a click (VPNs, privacy browsers). That is not a
+  // stall: the visitor has a checkbox to tick, so no timer and no failure message.
+  const [challengeNeedsClick, setChallengeNeedsClick] = useState(false);
 
   useEffect(() => {
-    if (!TURNSTILE_SITE_KEY || turnstileToken !== null) return;
+    if (!TURNSTILE_SITE_KEY || turnstileToken !== null || challengeNeedsClick) return;
     const timer = setTimeout(() => setChallengeStalled(true), CHALLENGE_STALL_MS);
     return () => clearTimeout(timer);
-  }, [turnstileToken, challengeAttempt]);
+  }, [turnstileToken, challengeAttempt, challengeNeedsClick]);
 
   // "Re-grade this site" links here with ?url=<entry>. Read it after mount (keeps the
   // page statically rendered) and only fill an input the visitor has not touched.
@@ -66,6 +69,7 @@ export function GradeForm() {
 
   function retryChallenge() {
     setChallengeStalled(false);
+    setChallengeNeedsClick(false);
     setChallengeAttempt((n) => n + 1);
     resetTurnstile();
   }
@@ -73,6 +77,7 @@ export function GradeForm() {
   // Only require a solved challenge when the widget is actually configured.
   const turnstileReady = !TURNSTILE_SITE_KEY || turnstileToken !== null;
   const showStalled = !turnstileReady && challengeStalled;
+  const showNeedsClick = !turnstileReady && challengeNeedsClick && !challengeStalled;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -192,15 +197,23 @@ export function GradeForm() {
             onClick={!turnstileReady ? (e) => e.preventDefault() : undefined}
             className="h-12 shrink-0 px-6 aria-disabled:cursor-wait"
           >
-            {!loading && !turnstileReady && !showStalled ? <WaitSpinner /> : null}
-            {loading ? "Queuing grade" : !turnstileReady && !showStalled ? "Checking you\u2019re human\u2026" : "Grade this site"}
+            {!loading && !turnstileReady && !showStalled && !showNeedsClick ? <WaitSpinner /> : null}
+            {loading
+              ? "Queuing grade"
+              : !turnstileReady && !showStalled && !showNeedsClick
+                ? "Checking you\u2019re human\u2026"
+                : "Grade this site"}
           </Button>
         </div>
         <p id={hintId} className="text-sm leading-relaxed text-muted-foreground">
           Up to 10 same-site public pages. Use the CLI for logged-in flows.
         </p>
         <p id={waitId} role="status" className="sr-only">
-          {!turnstileReady ? "The Grade button unlocks once the human check below finishes." : ""}
+          {!turnstileReady
+            ? showNeedsClick
+              ? "Tick the \u201cVerify you are human\u201d box below, then grade."
+              : "The Grade button unlocks once the human check below finishes."
+            : ""}
         </p>
         <dl
           aria-label="What your free grade includes"
@@ -217,6 +230,11 @@ export function GradeForm() {
             </div>
           ))}
         </dl>
+        {showNeedsClick && (
+          <p className="text-sm text-foreground">
+            One more step: tick the \u201cVerify you are human\u201d box below, then press Grade.
+          </p>
+        )}
         {showStalled && (
           <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--redline)]">
             <p>
@@ -244,6 +262,13 @@ export function GradeForm() {
             onError={() => {
               setTurnstileToken(null);
               setChallengeStalled(true);
+            }}
+            onBeforeInteractive={() => {
+              setChallengeNeedsClick(true);
+              setChallengeStalled(false);
+            }}
+            onAfterInteractive={() => {
+              setChallengeNeedsClick(false);
             }}
             onExpire={() => {
               setTurnstileToken(null);
