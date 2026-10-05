@@ -85,6 +85,8 @@ export interface ReportData {
   conformance: ConformanceSummary;
   /** Client project name when the run is linked to a project. */
   clientName: string | null;
+  /** Project the run belongs to, for history and schedule lookups. */
+  projectId: string | null;
   /** Agency display name from the caller's profile (white-label "Prepared by"). */
   agencyName: string | null;
 }
@@ -358,6 +360,7 @@ export function assembleReport(
     conformance: buildConformance(verdicts, WCAG22_AA_CATALOG, AXE_TESTABLE_CODES),
     clientName: resolvedBranding.clientName ?? null,
     agencyName: resolvedBranding.agencyName ?? null,
+    projectId: run.project_id ?? null,
   };
 }
 

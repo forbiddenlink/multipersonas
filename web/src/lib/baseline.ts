@@ -9,7 +9,7 @@ import {
 } from "@engine/crawler/gate";
 import { clampSeverity } from "@engine/domain/vocab";
 import type { Database } from "@/lib/supabase/types";
-import type { AuditListItem } from "@/lib/audits";
+import { listAudits, type AuditListItem } from "@/lib/audits";
 
 type SB = SupabaseClient<Database>;
 
@@ -150,4 +150,20 @@ export async function compareProjectRuns(
     unchangedCount,
     identityPartial,
   };
+}
+
+/**
+ * Compare one saved run against the project run immediately before it, whichever run
+ * that is (not only the newest). Null when the run is not in the project's completed
+ * history. `previous` is null on the project's first scan.
+ */
+export async function compareRunWithPrevious(
+  supabase: SB,
+  projectId: string,
+  runId: string,
+): Promise<RunRegression | null> {
+  const audits = await listAudits(supabase, { projectId, limit: 50 });
+  const index = audits.findIndex((a) => a.id === runId);
+  if (index === -1) return null;
+  return compareProjectRuns(supabase, audits.slice(index));
 }

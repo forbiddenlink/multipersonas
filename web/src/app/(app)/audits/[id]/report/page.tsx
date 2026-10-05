@@ -10,6 +10,9 @@ import { SeverityChip } from "@/components/forensic/severity-chip";
 import { severityMeta, SEVERITY_ORDER } from "@/components/forensic/severity";
 import { displayFinding } from "@/lib/finding-display";
 import { groupPriority } from "@/lib/priority-groups";
+import { compareRunWithPrevious } from "@/lib/baseline";
+import { getProjectSchedule } from "@/lib/schedules";
+import { buildExecutiveSummary } from "@/lib/report-summary";
 import { TrackOnMount } from "@/components/track-on-mount";
 import { ExportButton } from "./export-button";
 import styles from "./report.module.css";
@@ -97,6 +100,42 @@ export default async function ReportPage({
     5,
   );
 
+  // History and schedule only exist for project runs. A failed history read drops the
+  // comparison sentence rather than inventing one.
+  const [regression, schedule] = report.projectId
+    ? await Promise.all([
+        compareRunWithPrevious(supabase, report.projectId, report.runId).catch(() => null),
+        getProjectSchedule(supabase, report.projectId).catch(() => null),
+      ])
+    : [null, null];
+  const executiveSummary = buildExecutiveSummary(
+    {
+      severityCounts: report.severityCounts,
+      locationCount: new Set(report.verdicts.flatMap((v) => v.locations)).size,
+      fixFirstTitles: priorityVerdicts.map(
+        (v) => displayFinding({ ruleId: v.ruleId, title: v.title, description: null, recommendation: null }).title,
+      ),
+      history: regression
+        ? {
+            previousDate: regression.previous?.created_at ?? null,
+            newCount: regression.newDefects.length,
+            fixedCount: regression.cleared.length,
+            stillOpenCount: regression.unchangedCount,
+          }
+        : null,
+      personaSuccess:
+        !report.task && report.personaImpact.length > 0
+          ? {
+              reached: report.personaImpact.filter((p) => p.goalCompleted).length,
+              total: report.personaImpact.length,
+            }
+          : null,
+      manualReviewCount: manualReviewRows.length,
+      nextScanAt: schedule?.enabled ? schedule.next_run_at : null,
+    },
+    formatDate,
+  );
+
   return (
     <div>
       <TrackOnMount event="report_opened" properties={{ findings: totalViolations }} />
@@ -160,6 +199,13 @@ export default async function ReportPage({
         </header>
 
         <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Executive summary</h2>
+          {executiveSummary.map((line) => (
+            <p key={line} style={{ margin: "0 0 0.5rem" }}>{line}</p>
+          ))}
+        </section>
+
+        <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Scope &amp; methodology</h2>
           <p style={{ margin: "0 0 0.75rem" }}>
             Accessibility verdicts below are produced by{" "}
@@ -187,7 +233,7 @@ export default async function ReportPage({
         </section>
 
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Summary</h2>
+          <h2 className={styles.sectionTitle}>Findings by severity</h2>
           {totalViolations === 0 ? (
             <p className={styles.empty}>
               No accessibility violations were detected at the states this audit reached.
