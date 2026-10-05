@@ -10,6 +10,9 @@ import { SeverityChip } from "@/components/forensic/severity-chip";
 import { severityMeta, SEVERITY_ORDER } from "@/components/forensic/severity";
 import { displayFinding } from "@/lib/finding-display";
 import { groupPriority } from "@/lib/priority-groups";
+import { compareRunWithPrevious } from "@/lib/baseline";
+import { getProjectSchedule } from "@/lib/schedules";
+import { buildExecutiveSummary } from "@/lib/report-summary";
 import { TrackOnMount } from "@/components/track-on-mount";
 import { ExportButton } from "./export-button";
 import styles from "./report.module.css";
@@ -37,14 +40,14 @@ const SEVERITY_META: Record<Severity, { label: string; color: string }> = {
 // Print-safe conformance colors (same rationale as SEVERITY_META — hardcoded for the
 // paper preview). Order is worst-first for the summary tiles.
 const CONFORMANCE_STATUSES = [
-  "does-not-support",
-  "partially-supports",
+  "fails-automated",
+  "passes-automated",
   "needs-manual-review",
 ] as const;
 const CONFORMANCE_META = {
-  "does-not-support": { label: "Does Not Support", color: "#b91c1c" },
-  "partially-supports": { label: "Partially Supports", color: "#a16207" },
-  "needs-manual-review": { label: "Needs Manual Review", color: "#4b5563" },
+  "fails-automated": { label: "Fails automated checks", color: "#b91c1c" },
+  "passes-automated": { label: "Passes automated checks", color: "#a16207" },
+  "needs-manual-review": { label: "Needs manual review", color: "#4b5563" },
 } as const;
 
 function formatDate(iso: string): string {
@@ -95,6 +98,42 @@ export default async function ReportPage({
       locations: v.locations,
     })),
     5,
+  );
+
+  // History and schedule only exist for project runs. A failed history read drops the
+  // comparison sentence rather than inventing one.
+  const [regression, schedule] = report.projectId
+    ? await Promise.all([
+        compareRunWithPrevious(supabase, report.projectId, report.runId).catch(() => null),
+        getProjectSchedule(supabase, report.projectId).catch(() => null),
+      ])
+    : [null, null];
+  const executiveSummary = buildExecutiveSummary(
+    {
+      severityCounts: report.severityCounts,
+      locationCount: new Set(report.verdicts.flatMap((v) => v.locations)).size,
+      fixFirstTitles: priorityVerdicts.map(
+        (v) => displayFinding({ ruleId: v.ruleId, title: v.title, description: null, recommendation: null }).title,
+      ),
+      history: regression
+        ? {
+            previousDate: regression.previous?.created_at ?? null,
+            newCount: regression.newDefects.length,
+            fixedCount: regression.cleared.length,
+            stillOpenCount: regression.unchangedCount,
+          }
+        : null,
+      personaSuccess:
+        !report.task && report.personaImpact.length > 0
+          ? {
+              reached: report.personaImpact.filter((p) => p.goalCompleted).length,
+              total: report.personaImpact.length,
+            }
+          : null,
+      manualReviewCount: manualReviewRows.length,
+      nextScanAt: schedule?.enabled ? schedule.next_run_at : null,
+    },
+    formatDate,
   );
 
   return (
@@ -160,6 +199,13 @@ export default async function ReportPage({
         </header>
 
         <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Executive summary</h2>
+          {executiveSummary.map((line) => (
+            <p key={line} style={{ margin: "0 0 0.5rem" }}>{line}</p>
+          ))}
+        </section>
+
+        <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Scope &amp; methodology</h2>
           <p style={{ margin: "0 0 0.75rem" }}>
             Accessibility verdicts below are produced by{" "}
@@ -187,7 +233,7 @@ export default async function ReportPage({
         </section>
 
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Summary</h2>
+          <h2 className={styles.sectionTitle}>Findings by severity</h2>
           {totalViolations === 0 ? (
             <p className={styles.empty}>
               No accessibility violations were detected at the states this audit reached.
@@ -326,15 +372,15 @@ export default async function ReportPage({
 
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>
-            WCAG 2.2 AA conformance ({report.conformance.totalCriteria} criteria)
+            WCAG 2.2 AA criteria: automated results ({report.conformance.totalCriteria} criteria)
           </h2>
           <p className={styles.disclaimer}>
-            This conformance table is generated from <strong>deterministic axe-core</strong>{" "}
-            results, not AI inference. Automation alone can never confirm full support: a
-            criterion axe checks and finds clean is <strong>Partially Supports</strong>{" "}
-            (manual verification still required), and a criterion axe cannot evaluate is{" "}
-            <strong>Needs Manual Review</strong>. Only measured violations yield{" "}
-            <strong>Does Not Support</strong>.
+            This table is generated from <strong>deterministic axe-core</strong> results,
+            not AI inference. It reports what automated checks found, not a conformance
+            level: <strong>Fails automated checks</strong> means axe measured a violation,{" "}
+            <strong>Passes automated checks</strong> means axe found none and a person still
+            has to verify the criterion, and <strong>Needs manual review</strong> means axe
+            cannot test it at all.
           </p>
           <div className={styles.summary}>
             {CONFORMANCE_STATUSES.map((s) => (

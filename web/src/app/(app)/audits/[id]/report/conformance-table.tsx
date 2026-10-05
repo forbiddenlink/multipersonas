@@ -5,7 +5,7 @@ export type ConformanceMeta = Readonly<Record<ConformanceStatus, { label: string
 
 /**
  * One row per WCAG success criterion. Every row renders, always: the report is a
- * handed-over document and print must show all of them. "Partially Supports" with no
+ * handed-over document and print must show all of them. "Passes automated checks" with no
  * violations is the common case (axe found nothing, manual review still owed), so it is
  * set in a quiet neutral style and only rows that carry a measured failure keep a status
  * color. On phones the table restacks into one card per criterion (see report.module.css).
@@ -17,13 +17,13 @@ export function ConformanceTable({ rows, meta }: { rows: readonly ConformanceRow
         <tr role="row">
           <th role="columnheader" style={{ width: "40%" }}>Success criterion</th>
           <th role="columnheader" style={{ width: "8%" }}>Level</th>
-          <th role="columnheader" style={{ width: "22%" }}>Conformance</th>
+          <th role="columnheader" style={{ width: "22%" }}>Automated result</th>
           <th role="columnheader" style={{ width: "30%" }}>Remarks</th>
         </tr>
       </thead>
       <tbody role="rowgroup">
         {rows.map((row) => {
-          const quiet = row.status === "partially-supports" && row.violationCount === 0;
+          const quiet = row.status === "passes-automated" && row.violationCount === 0;
           return (
             <tr key={row.code} role="row" className={quiet ? styles.quietRow : undefined}>
               <td role="cell" data-label="Criterion">
@@ -32,7 +32,7 @@ export function ConformanceTable({ rows, meta }: { rows: readonly ConformanceRow
               <td role="cell" data-label="Level">{row.level}</td>
               <td
                 role="cell"
-                data-label="Conformance"
+                data-label="Automated result"
                 style={quiet ? undefined : { color: meta[row.status].color, whiteSpace: "nowrap" }}
               >
                 {meta[row.status].label}

@@ -17,23 +17,23 @@ const v = (...codes: string[]) => ({
 });
 
 describe("buildConformance — the honest 3-way mapping", () => {
-  it("marks a criterion with a violation Does Not Support, with the violation count", () => {
+  it("marks a criterion with a violation Fails automated checks, with the violation count", () => {
     const r = buildConformance([v("1.4.3")], CATALOG, AXE_TESTABLE);
     const row = r.rows.find((x) => x.code === "1.4.3")!;
-    expect(row.status).toBe("does-not-support");
+    expect(row.status).toBe("fails-automated");
     expect(row.violationCount).toBe(1);
   });
 
-  it("marks an axe-testable, violation-free criterion Partially Supports — never bare Supports", () => {
+  it("marks an axe-testable, violation-free criterion Passes automated checks — never bare Supports", () => {
     const r = buildConformance([v("1.4.3")], CATALOG, AXE_TESTABLE);
     const row = r.rows.find((x) => x.code === "1.1.1")!; // testable, no violation
-    expect(row.status).toBe("partially-supports");
+    expect(row.status).toBe("passes-automated");
     expect(row.violationCount).toBe(0);
     // The honesty guarantee: automation alone never yields a full "supports".
     expect(r.rows.some((x) => (x.status as string) === "supports")).toBe(false);
   });
 
-  it("marks a criterion axe cannot test Needs Manual Review", () => {
+  it("marks a criterion axe cannot test Needs manual review", () => {
     const r = buildConformance([v("1.4.3")], CATALOG, AXE_TESTABLE);
     for (const code of ["2.4.5", "3.2.6"]) {
       expect(r.rows.find((x) => x.code === code)!.status).toBe("needs-manual-review");
@@ -43,8 +43,8 @@ describe("buildConformance — the honest 3-way mapping", () => {
   it("aggregates the count when multiple verdicts touch the same criterion", () => {
     const r = buildConformance([v("1.4.3"), v("1.4.3", "1.1.1")], CATALOG, AXE_TESTABLE);
     expect(r.rows.find((x) => x.code === "1.4.3")!.violationCount).toBe(2);
-    // 1.1.1 was touched by one verdict -> does-not-support with count 1
-    expect(r.rows.find((x) => x.code === "1.1.1")!.status).toBe("does-not-support");
+    // 1.1.1 was touched by one verdict -> fails-automated with count 1
+    expect(r.rows.find((x) => x.code === "1.1.1")!.status).toBe("fails-automated");
     expect(r.rows.find((x) => x.code === "1.1.1")!.violationCount).toBe(1);
   });
 
@@ -53,8 +53,8 @@ describe("buildConformance — the honest 3-way mapping", () => {
     expect(r.rows).toHaveLength(CATALOG.length);
     expect(r.totalCriteria).toBe(CATALOG.length);
     const sum =
-      r.counts["does-not-support"] +
-      r.counts["partially-supports"] +
+      r.counts["fails-automated"] +
+      r.counts["passes-automated"] +
       r.counts["needs-manual-review"];
     expect(sum).toBe(CATALOG.length);
   });
@@ -62,13 +62,13 @@ describe("buildConformance — the honest 3-way mapping", () => {
   it("ignores a violation for a code that isn't in the catalog (never crashes / invents a row)", () => {
     const r = buildConformance([v("9.9.9")], CATALOG, AXE_TESTABLE);
     expect(r.rows).toHaveLength(CATALOG.length);
-    expect(r.counts["does-not-support"]).toBe(0);
+    expect(r.counts["fails-automated"]).toBe(0);
   });
 
-  it("with no findings, nothing Does Not Support (all partial or manual)", () => {
+  it("with no findings, nothing Fails automated checks (all partial or manual)", () => {
     const r = buildConformance([], CATALOG, AXE_TESTABLE);
-    expect(r.counts["does-not-support"]).toBe(0);
-    expect(r.counts["partially-supports"]).toBe(3); // the 3 axe-testable
+    expect(r.counts["fails-automated"]).toBe(0);
+    expect(r.counts["passes-automated"]).toBe(3); // the 3 axe-testable
     expect(r.counts["needs-manual-review"]).toBe(2);
   });
 });
@@ -93,8 +93,22 @@ describe("WCAG 2.2 A+AA catalog integrity", () => {
 
   it("real catalog + no findings: every axe-testable SC is partial, the rest need manual review", () => {
     const r = buildConformance([], WCAG22_AA_CATALOG, AXE_TESTABLE_CODES);
-    expect(r.counts["partially-supports"]).toBe(AXE_TESTABLE_CODES.size);
+    expect(r.counts["passes-automated"]).toBe(AXE_TESTABLE_CODES.size);
     expect(r.counts["needs-manual-review"]).toBe(55 - AXE_TESTABLE_CODES.size);
-    expect(r.counts["does-not-support"]).toBe(0);
+    expect(r.counts["fails-automated"]).toBe(0);
+  });
+});
+
+describe("conformance vocabulary", () => {
+  it("never borrows VPAT conformance levels, which automated checks cannot establish", async () => {
+    const { readFileSync } = await import("node:fs");
+    for (const file of [
+      "src/lib/conformance.ts",
+      "src/app/(app)/audits/[id]/report/page.tsx",
+      "src/app/(app)/audits/[id]/report/conformance-table.tsx",
+    ]) {
+      const src = readFileSync(file, "utf8");
+      expect(src, file).not.toMatch(/Partially Supports|Does Not Support|partially-supports|does-not-support/);
+    }
   });
 });
