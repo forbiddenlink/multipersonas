@@ -94,6 +94,7 @@ describe("marketing copy avoids compliance claims and qualifies behind-login", (
     "src/app/docs/page.tsx",
     "src/app/guides/wcag-checklist/page.tsx",
     "src/components/site-footer.tsx",
+    "src/app/(app)/audits/[id]/report/page.tsx",
   ];
 
   it.each(FILES)("%s never says compliance verdict or compliance report", (file) => {

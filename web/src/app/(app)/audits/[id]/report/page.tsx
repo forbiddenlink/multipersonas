@@ -173,7 +173,7 @@ export default async function ReportPage({
             )}
             . The personas reach the states; axe renders the verdict. Persona
             observations are usability opinion and are deliberately excluded from this
-            compliance report.
+            report&apos;s findings.
           </p>
           <p className={styles.disclaimer}>
             Automated testing detects a subset of accessibility barriers and is{" "}
@@ -233,7 +233,7 @@ export default async function ReportPage({
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>{report.task ? "Task text-check results" : "Persona task-success impact"}</h2>
             <p className={styles.disclaimer}>
-              Personas are user-outcome evidence, not compliance verdicts. They show which
+              Personas are user-outcome evidence, not accessibility findings. They show which
               real-shaped flows reached the states where deterministic axe verdicts were captured.
             </p>
             <div className={styles.summary}>
