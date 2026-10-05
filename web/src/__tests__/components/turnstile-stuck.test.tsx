@@ -13,6 +13,8 @@ vi.mock("@marsidev/react-turnstile", async () => {
   type MockTurnstileProps = {
     onSuccess?: (token: string) => void;
     onError?: () => void;
+    onBeforeInteractive?: () => void;
+    onAfterInteractive?: () => void;
   };
 
   return {
@@ -23,6 +25,8 @@ vi.mock("@marsidev/react-turnstile", async () => {
         null,
         React.createElement("button", { type: "button", onClick: () => props.onSuccess?.("turnstile-token") }, "Solve verification"),
         React.createElement("button", { type: "button", onClick: () => props.onError?.() }, "Fail verification"),
+        React.createElement("button", { type: "button", onClick: () => props.onBeforeInteractive?.() }, "Show checkbox"),
+        React.createElement("button", { type: "button", onClick: () => props.onAfterInteractive?.() }, "Click checkbox"),
       );
     }),
   };
@@ -104,5 +108,26 @@ describe("GradeForm human check that never resolves", () => {
     fireEvent.click(screen.getByRole("button", { name: "Solve verification" }));
     expect(screen.queryByText(/human check did not finish/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /grade this site/i })).not.toHaveAttribute("aria-disabled");
+  });
+
+  it("asks for the checkbox instead of reporting a failure when Cloudflare wants a click", async () => {
+    await renderGradeForm();
+    fireEvent.click(screen.getByRole("button", { name: "Show checkbox" }));
+    act(() => {
+      vi.advanceTimersByTime(60_000);
+    });
+    expect(screen.queryByText(/human check did not finish/i)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/tick the .verify you are human. box/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: /grade this site/i })).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("restarts the stall wait after the checkbox is clicked", async () => {
+    await renderGradeForm();
+    fireEvent.click(screen.getByRole("button", { name: "Show checkbox" }));
+    fireEvent.click(screen.getByRole("button", { name: "Click checkbox" }));
+    act(() => {
+      vi.advanceTimersByTime(12_000);
+    });
+    expect(screen.getByText(/human check did not finish/i)).toBeInTheDocument();
   });
 });
