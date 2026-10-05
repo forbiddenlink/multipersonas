@@ -3,6 +3,7 @@ import { IBM_Plex_Mono, IBM_Plex_Sans, Newsreader } from "next/font/google";
 import { PALETTE, PALETTE_DARK } from "@/lib/og-palette";
 import { PostHogProvider } from "@/components/posthog-provider";
 import "./globals.css";
+import { siteOrigin } from "@/lib/site-url";
 
 // Sans — UI, copy, CTAs. Plex reads as a technical document, not a SaaS default.
 const plexSans = IBM_Plex_Sans({
@@ -27,7 +28,7 @@ const newsreader = Newsreader({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://personaudit.com"
+    siteOrigin()
   ),
   title: {
     default: "Personaudit: axe-core accessibility evidence for agencies and dev teams",
