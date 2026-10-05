@@ -733,8 +733,8 @@ export default async function AuditDetailPage({
           <div className="space-y-1.5">
                         <h3 className="display text-xl leading-tight">Persona findings</h3>
             <p className="max-w-2xl text-sm text-muted-foreground">
-              Usability notes from AI browser personas trying to finish a real task, never a
-              compliance verdict and never mixed into the axe verdicts above.
+              Usability notes from AI browser personas trying to finish a real task. They are
+              opinion, never an accessibility finding, and never mixed into the axe results above.
             </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-3">
