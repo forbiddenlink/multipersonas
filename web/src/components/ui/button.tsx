@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
-const buttonVariants = cva(
+const buttonVariantClasses = cva(
   // Dossier: flat ink, near-square corners, instant ink-blue focus ring, 150ms color.
   "group/button inline-flex shrink-0 items-center justify-center rounded-sm border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-[color,background-color,border-color,box-shadow] duration-150 ease-[var(--ease-out)] outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
@@ -45,6 +45,12 @@ const buttonVariants = cva(
   }
 )
 
+// Merged so a link styled with buttonVariants() resolves Tailwind conflicts exactly like
+// <Button>: without it, base `border-transparent` beats the outline border.
+function buttonVariants(props?: Parameters<typeof buttonVariantClasses>[0]): string {
+  return cn(buttonVariantClasses(props))
+}
+
 // The 6th interaction state (DESIGN.md §Interaction Completeness). `loading` is
 // visually distinct from `disabled` — it keeps full opacity, shows a spinner, and
 // sets aria-busy — so a working button never reads as an inert one.
@@ -70,7 +76,7 @@ function Button({
   disabled,
   children,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants> & { loading?: boolean }) {
+}: ButtonPrimitive.Props & VariantProps<typeof buttonVariantClasses> & { loading?: boolean }) {
   return (
     <ButtonPrimitive
       data-slot="button"
