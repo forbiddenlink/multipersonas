@@ -23,7 +23,6 @@ import { getProjectSchedule, SCAN_INTERVALS } from "@/lib/schedules";
 import { FINDING_STATUS_LABELS, FINDING_STATUSES } from "@/lib/finding-workflow";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { DeleteProjectForm } from "../delete-project-form";
-import { ExhibitHead } from "@/components/dossier/exhibit-head";
 import { GradeHistory } from "@/components/grade-history";
 import { getGraderScan, listGraderScansForUser } from "@/lib/grade";
 import { gradesForSite, hostOf, regradePath } from "@/lib/grade-share";
@@ -133,7 +132,6 @@ export default async function ProjectDetailPage({
 
   return (
     <div className="max-w-6xl">
-      <ExhibitHead label="Client file" className="mb-5" />
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="font-mono text-xs text-muted-foreground">

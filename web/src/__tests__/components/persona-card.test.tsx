@@ -18,4 +18,10 @@ describe("PersonaCard", () => {
     render(<PersonaCard persona={elderlyUser} />);
     expect(screen.getByText(/^A 74-year-old/)).toBeTruthy();
   });
+
+  it("shows every goal in full, with no line clamp", () => {
+    const { container } = render(<PersonaCard persona={elderlyUser} />);
+    for (const goal of elderlyUser.goals) expect(screen.getByText(goal)).toBeTruthy();
+    expect(container.querySelector("[class*='line-clamp']")).toBeNull();
+  });
 });

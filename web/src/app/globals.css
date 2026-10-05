@@ -356,6 +356,10 @@
   gap: 1rem;
   border-bottom: 2px solid var(--foreground);
 }
+.section-head {
+  border-bottom: 2px solid var(--foreground);
+  padding-bottom: 0.35rem;
+}
 .exhibit-tab {
   display: inline-flex;
   align-items: center;

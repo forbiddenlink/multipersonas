@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ExhibitHead } from "@/components/dossier/exhibit-head";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { listProjects } from "@/lib/projects";
@@ -54,7 +53,6 @@ export default async function ProjectsPage({
 
   return (
     <div className="max-w-2xl">
-      <ExhibitHead label="Client files" className="mb-5" />
       <h1 className="display text-2xl leading-tight text-foreground">Projects</h1>
       <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
         {projectsIntro(canRunPersonas)}

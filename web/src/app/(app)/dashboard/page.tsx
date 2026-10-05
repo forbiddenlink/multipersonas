@@ -62,12 +62,11 @@ export default async function DashboardPage() {
 
   return (
     <div className="max-w-6xl">
-      <ExhibitHead label="Case desk" className="mb-5" />
       <h1 className="display text-2xl leading-tight text-foreground">Dashboard</h1>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
         <section aria-labelledby="latest-heading" className="min-w-0">
-          <ExhibitHead label="Latest run" className="mb-4" headingId={latestRun ? undefined : "latest-heading"} />
+          <ExhibitHead plain label="Latest run" className="mb-4" headingId={latestRun ? undefined : "latest-heading"} />
           {latestRun ? (
             <div className="sheet px-5 py-5">
               <h2 id="latest-heading" className="display text-xl leading-snug text-foreground">
@@ -92,7 +91,7 @@ export default async function DashboardPage() {
         </section>
 
         <section aria-labelledby="scan-heading" className="min-w-0">
-          <ExhibitHead label="New scan" className="mb-4" headingId="scan-heading" />
+          <ExhibitHead plain label="New scan" className="mb-4" headingId="scan-heading" />
           {canRunPersonas ? (
             <AuditForm key={user?.id} userId={user?.id} submitLabel="Run audit" projects={projects} projectLimit={projectLimitFor(plan)} />
           ) : (
@@ -114,7 +113,7 @@ export default async function DashboardPage() {
       </div>
 
       <section aria-labelledby="findings-heading" className="mt-10">
-        <ExhibitHead label="Open findings" className="mb-4" headingId="findings-heading" />
+        <ExhibitHead plain label="Open findings" className="mb-4" headingId="findings-heading" />
         {audits.length === 0 ? (
           <p className="text-sm text-muted-foreground">Findings appear here after your first run.</p>
         ) : (
@@ -142,14 +141,14 @@ export default async function DashboardPage() {
 
       <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <section aria-labelledby="grades-heading" className="min-w-0">
-          <ExhibitHead label="Saved grades" className="mb-4" headingId="grades-heading" />
+          <ExhibitHead plain label="Saved grades" className="mb-4" headingId="grades-heading" />
           <GradeHistory grades={grades} />
           <div className="mt-6">
             <ClaimGradeForm />
           </div>
         </section>
         <section aria-labelledby="runs-heading" className="min-w-0">
-          <ExhibitHead label="Recent runs" className="mb-4" headingId="runs-heading" />
+          <ExhibitHead plain label="Recent runs" className="mb-4" headingId="runs-heading" />
           <AuditHistory audits={audits} canRunHosted={canRunPersonas} />
         </section>
       </div>

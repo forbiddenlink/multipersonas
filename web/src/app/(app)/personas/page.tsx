@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ExhibitHead } from "@/components/dossier/exhibit-head";
 import Link from "next/link";
 import { Suspense } from "react";
 import {
@@ -45,7 +44,6 @@ export default async function PersonasPage({
 
   return (
     <div>
-      <ExhibitHead label="Persona library" className="mb-5" />
       <div className="mb-1 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="display text-2xl leading-tight text-foreground">Personas</h1>

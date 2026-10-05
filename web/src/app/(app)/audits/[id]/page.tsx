@@ -378,7 +378,10 @@ export default async function AuditDetailPage({
             <p className="label-mono">Priority</p>
             <h2 className="display text-2xl leading-tight">Fix first</h2>
             <p className="max-w-2xl text-sm text-muted-foreground">
-              Severity combined with persona task impact.
+              Each score is out of 100. It starts from axe severity (critical 80,
+              serious 60, moderate 35, minor 15), adds 15 for each persona blocked at an affected page
+              or state and 5 for each persona that reached one, and stops at 100. Findings grouped
+              by rule show the highest score in the group.
             </p>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
@@ -386,7 +389,9 @@ export default async function AuditDetailPage({
               <div key={f.key} className="sheet p-4">
                 <div className="flex items-center justify-between gap-3">
                   <SeverityChip severity={f.severity as Severity} />
-                  <span className="font-mono text-lg font-semibold tabular-nums">{f.priorityScore}</span>
+                  <span className="font-mono text-sm tabular-nums">
+                    Priority <span className="text-lg font-semibold">{f.priorityScore}</span>
+                  </span>
                 </div>
                 <p className="mt-3 text-sm font-medium">
                   {displayFinding({ ruleId: f.ruleId, title: f.title, description: null, recommendation: null }).title}

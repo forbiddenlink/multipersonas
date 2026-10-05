@@ -30,12 +30,12 @@ function Readout({ label, value }: { label: string; value: string }) {
 
 export function PersonaCard({ persona }: { persona: Persona }) {
   return (
-    <div className="sheet">
+    <div className="sheet h-full">
       <div className="flex items-start gap-3 border-b border-border p-4">
         <Monogram name={persona.name} size={40} />
         <div className="min-w-0">
           <p className="font-medium text-card-foreground">{persona.name}</p>
-          <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
+          <p className="mt-0.5 text-sm text-muted-foreground">
             {persona.description.charAt(0).toUpperCase() + persona.description.slice(1)}
           </p>
         </div>
@@ -56,10 +56,10 @@ export function PersonaCard({ persona }: { persona: Persona }) {
       <div className="p-4 pt-3">
         <p className="label-mono">Goals</p>
         <ul className="mt-1.5 space-y-0.5 text-sm text-card-foreground">
-          {persona.goals.slice(0, 2).map((goal) => (
+          {persona.goals.map((goal) => (
             <li
               key={goal}
-              className="line-clamp-1 before:mr-1.5 before:text-muted-foreground before:content-['·']"
+              className="before:mr-1.5 before:text-muted-foreground before:content-['·']"
             >
               {goal}
             </li>

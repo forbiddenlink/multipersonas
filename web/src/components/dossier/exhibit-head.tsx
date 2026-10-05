@@ -7,6 +7,7 @@ export function ExhibitHead({
   label,
   className = "",
   headingId,
+  plain = false,
 }: {
   label: string;
   className?: string;
@@ -16,7 +17,25 @@ export function ExhibitHead({
    * readers announce the same words twice.
    */
   headingId?: string;
+  /**
+   * Signed-in app variant: a plain section label with no "Exhibit X" letter or serial. The
+   * case-file motif belongs to the marketing site; inside the app it is noise.
+   */
+  plain?: boolean;
 }) {
+  if (plain) {
+    return (
+      <div className={`section-head ${className}`}>
+        {headingId ? (
+          <h2 id={headingId} className="label-mono">
+            {label}
+          </h2>
+        ) : (
+          <p className="label-mono">{label}</p>
+        )}
+      </div>
+    );
+  }
   return (
     <div className={`exhibit-head ${className}`}>
       {headingId ? (
