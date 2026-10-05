@@ -4,6 +4,10 @@
     {
       "path": "/api/schedules/run-due",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/schedules/notify",
+      "schedule": "30 7 * * *"
     }
   ]
 }

@@ -158,6 +158,7 @@ export async function upsertProjectScheduleAction(
   }
 
   const enabled = formData.get("enabled") === "on";
+  const notifyEmail = formData.get("notify_email") === "on";
 
   try {
     await upsertProjectSchedule(supabase, {
@@ -165,6 +166,7 @@ export async function upsertProjectScheduleAction(
       projectId: project.id,
       interval: intervalRaw,
       enabled,
+      notifyEmail,
     });
   } catch {
     redirect(`/projects/${projectId}?error=${encodeURIComponent("Could not save the scan schedule.")}`);

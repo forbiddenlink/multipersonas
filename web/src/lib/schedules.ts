@@ -18,12 +18,13 @@ export interface ProjectScanSchedule {
   next_run_at: string;
   last_run_at: string | null;
   last_job_id: string | null;
+  notify_email: boolean;
   created_at: string;
   updated_at: string;
 }
 
 const SCHEDULE_COLUMNS =
-  "id,project_id,user_id,interval,persona_ids,enabled,next_run_at,last_run_at,last_job_id,created_at,updated_at";
+  "id,project_id,user_id,interval,persona_ids,enabled,next_run_at,last_run_at,last_job_id,notify_email,created_at,updated_at";
 
 export function isScanInterval(value: string): value is ScanInterval {
   return SCAN_INTERVALS.includes(value as ScanInterval);
@@ -51,6 +52,7 @@ export interface UpsertProjectScheduleInput {
   interval: ScanInterval;
   personaIds?: string[];
   enabled: boolean;
+  notifyEmail: boolean;
 }
 
 export async function upsertProjectSchedule(
@@ -63,6 +65,7 @@ export async function upsertProjectSchedule(
     interval: input.interval,
     persona_ids: input.personaIds?.length ? input.personaIds : defaultSchedulePersonaIds(),
     enabled: input.enabled,
+    notify_email: input.notifyEmail,
   };
 
   const { data, error } = await supabase
