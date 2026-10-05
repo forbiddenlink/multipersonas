@@ -7,15 +7,18 @@ import type { Criterion } from "./wcag";
  *
  * The one rule that makes this credible (and legally defensible) rather than the
  * accessiBe failure mode: automation ALONE never emits a bare "Supports". A criterion
- * axe checks and finds clean is "Partially Supports" (the manual portion is untested); a
- * criterion axe can't check at all is "Needs Manual Review". Only a real violation yields
- * "Does Not Support". Pure function, unit-tested independently of the catalog data.
+ * axe checks and finds clean is "Passes automated checks" (the manual portion is untested); a
+ * criterion axe can't check at all is "Needs manual review". Only a real violation yields
+ * "Fails automated checks". These labels deliberately avoid the VPAT conformance levels:
+ * those describe how much of a criterion a product meets, which automated checks alone
+ * cannot establish. Pure function, unit-tested
+ * independently of the catalog data.
  */
 
 export type ConformanceLevel = "A" | "AA";
 export type ConformanceStatus =
-  | "does-not-support"
-  | "partially-supports"
+  | "fails-automated"
+  | "passes-automated"
   | "needs-manual-review";
 
 export interface CatalogCriterion {
@@ -42,9 +45,9 @@ export interface ConformanceSummary {
 }
 
 const REMARK: Record<ConformanceStatus, string> = {
-  "does-not-support": "Automated testing found violations of this criterion. See the findings below.",
-  "partially-supports":
-    "Automated checks pass. Portions of this criterion still require manual verification.",
+  "fails-automated": "Automated testing found violations of this criterion. See the findings below.",
+  "passes-automated":
+    "Automated checks found no violations. A person still has to verify this criterion.",
   "needs-manual-review": "No automated coverage. This criterion requires manual review.",
 };
 
@@ -71,16 +74,16 @@ export function buildConformance(
   }
 
   const counts: Record<ConformanceStatus, number> = {
-    "does-not-support": 0,
-    "partially-supports": 0,
+    "fails-automated": 0,
+    "passes-automated": 0,
     "needs-manual-review": 0,
   };
 
   const rows: ConformanceRow[] = catalog.map((sc) => {
     const violationCount = violationCounts.get(sc.code) ?? 0;
     let status: ConformanceStatus;
-    if (violationCount > 0) status = "does-not-support";
-    else if (axeTestable.has(sc.code)) status = "partially-supports";
+    if (violationCount > 0) status = "fails-automated";
+    else if (axeTestable.has(sc.code)) status = "passes-automated";
     else status = "needs-manual-review";
 
     counts[status] += 1;

@@ -5,9 +5,9 @@ import { ConformanceTable } from "./conformance-table";
 import { buildConformance } from "@/lib/conformance";
 
 const META = {
-  "does-not-support": { label: "Does Not Support", color: "#b91c1c" },
-  "partially-supports": { label: "Partially Supports", color: "#a16207" },
-  "needs-manual-review": { label: "Needs Manual Review", color: "#4b5563" },
+  "fails-automated": { label: "Fails automated checks", color: "#b91c1c" },
+  "passes-automated": { label: "Passes automated checks", color: "#a16207" },
+  "needs-manual-review": { label: "Needs manual review", color: "#4b5563" },
 };
 
 describe("ConformanceTable", () => {
