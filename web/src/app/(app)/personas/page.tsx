@@ -48,7 +48,7 @@ export default async function PersonasPage({
         <div>
           <h1 className="display text-2xl leading-tight text-foreground">Personas</h1>
           <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-            Navigators that browse toward a goal. Task success, not a compliance verdict.
+            Navigators that browse toward a goal. Task success, not an accessibility finding.
           </p>
         </div>
         <Link
