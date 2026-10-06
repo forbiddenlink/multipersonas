@@ -153,6 +153,19 @@ describe("grader evidence failures", () => {
     expect(result.pagesVisited).toEqual([root, before, home]);
   });
 
+  it("queues a page with tens of thousands of links in linear time", async () => {
+    const root = "https://public.example/section/";
+    mocks.currentUrl = root;
+    const links = Array.from({ length: 50_000 }, (_, i) =>
+      i % 2 ? `https://public.example/other/${i}` : `${root}${i}`,
+    );
+    mocks.links.mockResolvedValueOnce(links);
+    const started = Date.now();
+    const result = await gradeScan(root, { maxPages: 2 });
+    expect(Date.now() - started).toBeLessThan(2_000);
+    expect(result.pagesVisited).toEqual([root, `${root}0`]);
+  });
+
   it("does not re-scan the same page through an in-page anchor", async () => {
     const root = mocks.currentUrl;
     const skipLink = `${root}#main`;
