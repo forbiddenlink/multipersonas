@@ -15,3 +15,5 @@
 **/.claude
 **/.auth
 video
+# Local review notes and captured evidence; never part of the worker image.
+functional-review
