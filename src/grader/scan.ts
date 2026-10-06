@@ -79,6 +79,20 @@ export async function gradeScan(
   const skipped: string[] = [];
   const seen = new Set<string>([entry.href]);
   const queue: string[] = [entry.href];
+  // A visitor who enters a sub-path (`/demos/bad/`) is asking about that section,
+  // so its pages fill the page limit first; the rest of the site only takes the
+  // slots left over. An entry at the site root keeps plain link order.
+  const scopePath = entry.pathname.slice(0, entry.pathname.lastIndexOf("/") + 1);
+  const inScope = (u: URL) => u.pathname.startsWith(scopePath);
+  const enqueue = (u: URL) => {
+    if (!inScope(u)) {
+      queue.push(u.href);
+      return;
+    }
+    const firstOutOfScope = queue.findIndex((q) => !inScope(new URL(q)));
+    if (firstOutOfScope === -1) queue.push(u.href);
+    else queue.splice(firstOutOfScope, 0, u.href);
+  };
 
   try {
     const context = await browser.newContext();
@@ -180,9 +194,12 @@ export async function gradeScan(
       for (const href of hrefs) {
         try {
           const u = new URL(href);
+          // `#main` on the same document is a skip link, not a new state: scanning
+          // it re-counts the page. Hash routes (`#/contact`, `#!/x`) stay, for SPAs.
+          if (u.hash && !/^#!?\//.test(u.hash)) u.hash = "";
           if (u.origin === origin && !seen.has(u.href)) {
             seen.add(u.href);
-            queue.push(u.href);
+            enqueue(u);
           }
         } catch {
           /* ignore unparseable hrefs */

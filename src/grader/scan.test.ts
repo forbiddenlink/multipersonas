@@ -130,6 +130,38 @@ describe("grader evidence failures", () => {
     expect(mocks.close).toHaveBeenCalledOnce();
   });
 
+  it("scans pages under the entered path before the rest of the site", async () => {
+    const root = "https://public.example/demos/bad/";
+    mocks.currentUrl = root;
+    const home = "https://public.example/";
+    const sibling = "https://public.example/demos/badge";
+    const before = `${root}before.html`;
+    const after = `${root}after/home.html`;
+    mocks.links.mockResolvedValueOnce([home, sibling, before, after]);
+    const result = await gradeScan(root, { maxPages: 3 });
+    expect(result.pagesVisited).toEqual([root, before, after]);
+    expect(result.skipped).toEqual([home, sibling]);
+  });
+
+  it("fills spare page slots with the rest of the site after the entered path", async () => {
+    const root = "https://public.example/demos/bad/";
+    mocks.currentUrl = root;
+    const home = "https://public.example/";
+    const before = `${root}before.html`;
+    mocks.links.mockResolvedValueOnce([home, before]);
+    const result = await gradeScan(root, { maxPages: 3 });
+    expect(result.pagesVisited).toEqual([root, before, home]);
+  });
+
+  it("does not re-scan the same page through an in-page anchor", async () => {
+    const root = mocks.currentUrl;
+    const skipLink = `${root}#main`;
+    const other = `${root}other`;
+    mocks.links.mockResolvedValueOnce([skipLink, other]);
+    const result = await gradeScan(root);
+    expect(result.pagesVisited).toEqual([root, other]);
+  });
+
   it("preserves hash-route states when navigation retains a successfully loaded document", async () => {
     const root = mocks.currentUrl;
     const route = `${root}#/contact`;
