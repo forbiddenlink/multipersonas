@@ -78,7 +78,17 @@ export async function gradeScan(
   const visited: string[] = [];
   const skipped: string[] = [];
   const seen = new Set<string>([entry.href]);
-  const queue: string[] = [entry.href];
+  // A visitor who enters a sub-path (`/demos/bad/`) is asking about that section,
+  // so its pages fill the page limit first; the rest of the site only takes the
+  // slots left over. An entry at the site root keeps plain link order. Two plain
+  // queues keep each enqueue O(1): a hostile page can carry thousands of links.
+  const scopePath = entry.pathname.slice(0, entry.pathname.lastIndexOf("/") + 1);
+  const inScopeQueue: string[] = [entry.href];
+  const outOfScopeQueue: string[] = [];
+  const enqueue = (u: URL) => {
+    (u.pathname.startsWith(scopePath) ? inScopeQueue : outOfScopeQueue).push(u.href);
+  };
+  const remaining = () => [...inScopeQueue, ...outOfScopeQueue];
 
   try {
     const context = await browser.newContext();
@@ -98,8 +108,8 @@ export async function gradeScan(
     const page = await context.newPage();
     let loadedDocument: string | null = null;
 
-    while (queue.length > 0 && visited.length < maxPages) {
-      const url = queue.shift()!;
+    while (inScopeQueue.length + outOfScopeQueue.length > 0 && visited.length < maxPages) {
+      const url = (inScopeQueue.length > 0 ? inScopeQueue : outOfScopeQueue).shift()!;
 
       // Re-validate every hop: a same-origin link can redirect to a private
       // address, and this runs on stranger-supplied URLs.
@@ -180,9 +190,12 @@ export async function gradeScan(
       for (const href of hrefs) {
         try {
           const u = new URL(href);
+          // `#main` on the same document is a skip link, not a new state: scanning
+          // it re-counts the page. Hash routes (`#/contact`, `#!/x`) stay, for SPAs.
+          if (u.hash && !/^#!?\//.test(u.hash)) u.hash = "";
           if (u.origin === origin && !seen.has(u.href)) {
             seen.add(u.href);
-            queue.push(u.href);
+            enqueue(u);
           }
         } catch {
           /* ignore unparseable hrefs */
@@ -199,8 +212,8 @@ export async function gradeScan(
 
   return {
     entryUrl: entry.href,
-    report: { ...computeGrade(pages), coverage: { pageLimit: maxPages, skippedPages: skipped.length + queue.length } },
+    report: { ...computeGrade(pages), coverage: { pageLimit: maxPages, skippedPages: skipped.length + remaining().length } },
     pagesVisited: visited,
-    skipped: [...skipped, ...queue],
+    skipped: [...skipped, ...remaining()],
   };
 }
