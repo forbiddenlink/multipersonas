@@ -4,9 +4,9 @@ set -euo pipefail
 repo_dir="$(cd "$(dirname "$0")/.." && pwd)"
 test_dir="$(mktemp -d)"
 trap 'rm -rf "$test_dir"' EXIT
-mkdir -p "$test_dir/context/worker" "$test_dir/context/nested" "$test_dir/context/web/.vercel" "$test_dir/context/.vercel" "$test_dir/context/web/tests/e2e/.auth"
+mkdir -p "$test_dir/context/functional-review/evidence" "$test_dir/context/worker" "$test_dir/context/nested" "$test_dir/context/web/.vercel" "$test_dir/context/.vercel" "$test_dir/context/web/tests/e2e/.auth"
 cp "$repo_dir/.dockerignore" "$test_dir/context/.dockerignore"
-for canary in .env.production worker/.env.local nested/.env.test .vercel/.env.production.local .mpersonas-session.json nested/private.session.json web/.vercel/project.json web/tests/e2e/.auth/state.json; do
+for canary in .env.production worker/.env.local nested/.env.test .vercel/.env.production.local .mpersonas-session.json nested/private.session.json web/.vercel/project.json web/tests/e2e/.auth/state.json functional-review/evidence/capture.txt; do
   echo synthetic-canary > "$test_dir/context/$canary"
 done
 echo source-control > "$test_dir/context/keep.txt"
