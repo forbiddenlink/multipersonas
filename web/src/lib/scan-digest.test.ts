@@ -8,7 +8,7 @@ const base: ScanDigestInput = {
   runUrl: "https://personaudit.com/audits/r1",
   outcome: "completed",
   regression: {
-    isFirstScan: false,
+    comparisonComplete: true, isFirstScan: false,
     newDefects: [
       { title: "Images must have alternate text", severity: "critical", pageUrl: "https://acme.example/cart" },
     ],
@@ -34,7 +34,7 @@ describe("buildScanDigest", () => {
   it("says nothing changed when the scan matched the last one", () => {
     const d = buildScanDigest({
       ...base,
-      regression: { isFirstScan: false, newDefects: [], cleared: [], unchangedCount: 4 },
+      regression: { comparisonComplete: true, isFirstScan: false, newDefects: [], cleared: [], unchangedCount: 4 },
     });
     expect(d.subject).toBe("Acme Store: no change since the last scan");
   });
@@ -42,7 +42,7 @@ describe("buildScanDigest", () => {
   it("names the first scan instead of claiming a comparison", () => {
     const d = buildScanDigest({
       ...base,
-      regression: { isFirstScan: true, newDefects: [], cleared: [], unchangedCount: 0 },
+      regression: { comparisonComplete: true, isFirstScan: true, newDefects: [], cleared: [], unchangedCount: 0 },
     });
     expect(d.subject).toBe("Acme Store: first scheduled scan finished");
     expect(d.text).not.toMatch(/fixed since/i);
@@ -77,7 +77,7 @@ describe("buildScanDigest", () => {
     }));
     const d = buildScanDigest({
       ...base,
-      regression: { isFirstScan: false, newDefects: many, cleared: [], unchangedCount: 0 },
+      regression: { comparisonComplete: true, isFirstScan: false, newDefects: many, cleared: [], unchangedCount: 0 },
     });
     expect(d.text).toContain("Rule 4");
     expect(d.text).not.toContain("Rule 5");
@@ -89,7 +89,7 @@ describe("buildScanDigest", () => {
       ...base,
       projectName: "<script>alert(1)</script>",
       regression: {
-        isFirstScan: false,
+        comparisonComplete: true, isFirstScan: false,
         newDefects: [{ title: 'x" onmouseover="y', severity: "minor", pageUrl: "https://a.example/<b>" }],
         cleared: [],
         unchangedCount: 0,
@@ -109,4 +109,17 @@ describe("buildScanDigest", () => {
       expect(all).toMatch(/turn off these emails/i);
     }
   });
+});
+
+
+it("labels incomplete comparison and never emails unverified fixes or no-change claims", () => {
+  const digest = buildScanDigest({ ...base, regression: { ...base.regression!, comparisonComplete: false, comparisonNotes: ["Failed check at https://acme.example/private: axe timed out"] } });
+  for (const text of [digest.subject, digest.text, digest.html]) {
+    expect(text).not.toMatch(/\d+ fixed|Fixed since|no change since/i);
+    expect(text).toMatch(/comparison incomplete/i);
+  }
+  expect(digest.text).toContain("Images must have alternate text");
+  expect(digest.text).toContain("https://acme.example/private: axe timed out");
+  const empty = buildScanDigest({ ...base, regression: { ...base.regression!, comparisonComplete: false, newDefects: [], cleared: [] } });
+  expect(empty.subject).not.toContain("no change");
 });

@@ -77,6 +77,8 @@ export async function notifyFinishedScans(
         deps.getOwnerEmail(candidate.userId),
       ]);
       if (!project || !to) {
+        await deps.release(candidate);
+        claimed = false;
         result.skipped += 1;
         continue;
       }
@@ -85,6 +87,8 @@ export async function notifyFinishedScans(
       if (job.status === "completed") {
         summary = job.runId ? await deps.getRunSummary(candidate.projectId, job.runId) : null;
         if (!summary) {
+          await deps.release(candidate);
+          claimed = false;
           result.skipped += 1;
           continue;
         }
@@ -130,27 +134,37 @@ export function supabaseNotifyDeps(
     origin,
     send,
     async listCandidates() {
-      const { data, error } = await admin
-        .from("project_scan_schedules")
-        .select("id,project_id,user_id,last_job_id,last_notified_job_id")
-        .eq("enabled", true)
-        .eq("notify_email", true)
-        .not("last_job_id", "is", null)
-        .order("last_run_at", { ascending: true })
-        .limit(200);
-      if (error) throw new Error(error.message);
-      return (data ?? [])
-        .filter((row) => row.last_job_id && row.last_job_id !== row.last_notified_job_id)
-        .map((row) => ({
-          id: row.id,
-          projectId: row.project_id,
-          userId: row.user_id,
-          lastJobId: row.last_job_id!,
-          lastNotifiedJobId: row.last_notified_job_id,
-        }));
+      const candidates: ScheduleCandidate[] = [];
+      let offset = 0;
+      while (candidates.length < 200) {
+        const { data, error, count } = await admin
+          .from("project_scan_schedules")
+          .select("id,project_id,user_id,last_job_id,last_notified_job_id", { count: "exact" })
+          .eq("enabled", true)
+          .eq("notify_email", true)
+          .not("last_job_id", "is", null)
+          .order("last_run_at", { ascending: true })
+          .order("id", { ascending: true })
+          .range(offset, offset + 199);
+        if (error) throw new Error(error.message);
+        const rows = data ?? [];
+        candidates.push(...rows
+          .filter((row) => row.last_job_id && row.last_job_id !== row.last_notified_job_id)
+          .map((row) => ({
+            id: row.id,
+            projectId: row.project_id,
+            userId: row.user_id,
+            lastJobId: row.last_job_id!,
+            lastNotifiedJobId: row.last_notified_job_id,
+          })));
+        offset += rows.length;
+        if (rows.length === 0 || (count != null ? offset >= count : rows.length < 200)) break;
+      }
+      return candidates.slice(0, 200);
     },
     async getJob(jobId) {
-      const { data } = await admin.from("audit_jobs").select("status,result").eq("id", jobId).maybeSingle();
+      const { data, error } = await admin.from("audit_jobs").select("status,result").eq("id", jobId).maybeSingle();
+      if (error) throw new Error(error.message);
       if (!data) return null;
       const result = data.result as { runId?: unknown } | null;
       return { status: data.status, runId: typeof result?.runId === "string" ? result.runId : null };
@@ -169,18 +183,21 @@ export function supabaseNotifyDeps(
       return (data ?? []).length === 1;
     },
     async release(c) {
-      await admin
+      const { error } = await admin
         .from("project_scan_schedules")
         .update({ last_notified_job_id: c.lastNotifiedJobId })
         .eq("id", c.id)
         .eq("last_notified_job_id", c.lastJobId);
+      if (error) throw new Error(error.message);
     },
     async getProject(projectId) {
-      const { data } = await admin.from("projects").select("name,url").eq("id", projectId).maybeSingle();
+      const { data, error } = await admin.from("projects").select("name,url").eq("id", projectId).maybeSingle();
+      if (error) throw new Error(error.message);
       return data ?? null;
     },
     async getOwnerEmail(userId) {
-      const { data } = await admin.auth.admin.getUserById(userId);
+      const { data, error } = await admin.auth.admin.getUserById(userId);
+      if (error) throw new Error(error.message);
       return data.user?.email ?? null;
     },
     async getRunSummary(projectId, runId) {
@@ -192,6 +209,8 @@ export function supabaseNotifyDeps(
       const run = audits[index]!;
       return {
         regression: {
+          comparisonComplete: regression.comparisonComplete,
+          comparisonNotes: regression.comparisonNotes,
           isFirstScan: regression.previous === null,
           newDefects: regression.newDefects,
           cleared: regression.cleared,

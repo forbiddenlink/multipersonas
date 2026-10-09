@@ -124,3 +124,32 @@ describe("groupAxeByRule — count problems, not elements", () => {
     expect(md).not.toMatch(/\|\s*27\s*\|\s*0\s*\|/); // 27 must never be the summary count
   });
 });
+
+describe("accessibility coverage is separate from task success", () => {
+  it("reports only completed checks as clean when every recorded check succeeded", () => {
+    const md = generateMarkdownReport("https://x.test", [{ persona: persona("a"), agentResult: result({
+      goalCompleted: true,
+      scanCoverage: { checks: [{ url: "https://x.test", step: 0, status: "scanned" }], executionFailures: [] },
+    }) }]);
+    expect(md).toContain("No axe-core violations in the states successfully checked.");
+    expect(md).not.toContain("Accessibility coverage incomplete");
+  });
+
+  it("keeps known defects visible when another state could not be checked", () => {
+    const md = generateMarkdownReport("https://x.test", [{ persona: persona("a"), agentResult: result({
+      scanCoverage: { checks: [
+        { url: "https://x.test/a", step: 0, status: "scanned" },
+        { url: "https://x.test/b", step: 1, status: "failed", error: "axe unavailable" },
+      ], executionFailures: [] },
+    }) }], [axe]);
+    expect(md).toContain("Accessibility coverage incomplete");
+    expect(md).toContain("https://x.test/b (step 1): axe unavailable");
+    expect(md).toContain("ARIA roles must conform");
+  });
+
+  it("does not describe legacy results without check evidence as clean", () => {
+    const md = generateMarkdownReport("https://x.test", [{ persona: persona("a"), agentResult: result() }]);
+    expect(md).toContain("No successful accessibility checks were recorded.");
+    expect(md).not.toContain("No axe-core violations in any state reached.");
+  });
+});

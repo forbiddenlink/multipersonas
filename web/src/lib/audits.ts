@@ -5,6 +5,7 @@ import type { Database, Json } from "@/lib/supabase/types";
 type SB = SupabaseClient<Database>;
 
 export interface AuditListItem {
+  scan_coverage?: Json | null;
   task_definition?: Json | null;
   task_outcomes?: Json;
   id: string;
@@ -35,7 +36,7 @@ export async function listAudits(
 
   let query = supabase
     .from("test_runs")
-    .select("id,url,created_at,task_success_achieved,task_success_total,persona_ids,project_id,task_definition,task_outcomes")
+    .select("id,url,created_at,task_success_achieved,task_success_total,persona_ids,project_id,task_definition,task_outcomes,scan_coverage")
     // A worker marks the run completed only after its findings are durable.
     // In-progress/failed history is not audit evidence and must not affect roll-ups.
     .eq("status", "completed")

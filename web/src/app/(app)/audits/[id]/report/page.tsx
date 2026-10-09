@@ -1,3 +1,4 @@
+import { hasCompleteScanCoverage, scanCoverageLines } from "@/lib/scan-coverage";
 import { taskEvidenceLabel, taskCheckDetails } from "@engine/tasks/definition";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -110,6 +111,7 @@ export default async function ReportPage({
     : [null, null];
   const executiveSummary = buildExecutiveSummary(
     {
+      scanCoverage: report.scanCoverage,
       severityCounts: report.severityCounts,
       locationCount: new Set(report.verdicts.flatMap((v) => v.locations)).size,
       fixFirstTitles: priorityVerdicts.map(
@@ -117,6 +119,7 @@ export default async function ReportPage({
       ),
       history: regression
         ? {
+            comparisonComplete: regression.comparisonComplete,
             previousDate: regression.previous?.created_at ?? null,
             newCount: regression.newDefects.length,
             fixedCount: regression.cleared.length,
@@ -151,7 +154,7 @@ export default async function ReportPage({
           <span className="text-foreground/70">·</span>
           <span className="normal-case">{formatDate(report.auditDate)}</span>
           <span className="ml-auto normal-case text-[var(--redline)]">·&nbsp;
-            {totalViolations === 0 ? "No findings" : `${totalViolations} finding${totalViolations === 1 ? "" : "s"}`}
+            {!hasCompleteScanCoverage(report.scanCoverage) ? "Coverage incomplete or unknown" : totalViolations === 0 ? "No findings" : `${totalViolations} finding${totalViolations === 1 ? "" : "s"}`}
           </span>
         </div>
         <div className="sheet -mt-px overflow-hidden">
@@ -173,6 +176,7 @@ export default async function ReportPage({
             </Link>
             <ExportButton
               csvRows={csvRows}
+              scanCoverage={report.scanCoverage}
               filename={`personaudit-${report.runId}-verdicts.csv`}
             />
           </div>
@@ -233,10 +237,14 @@ export default async function ReportPage({
         </section>
 
         <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Scan coverage</h2>
+          {scanCoverageLines(report.scanCoverage).map((line, index) => <p key={index}>{line}</p>)}
+        </section>
+        <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Findings by severity</h2>
           {totalViolations === 0 ? (
             <p className={styles.empty}>
-              No accessibility violations were detected at the states this audit reached.
+              {hasCompleteScanCoverage(report.scanCoverage) ? "No accessibility violations were detected in the states checked." : "No violations were recorded; scan coverage is incomplete or unknown."}
               This is not a guarantee of full conformance. See the methodology above.
             </p>
           ) : (

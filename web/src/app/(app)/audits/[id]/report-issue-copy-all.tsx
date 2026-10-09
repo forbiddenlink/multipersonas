@@ -1,5 +1,6 @@
 "use client";
 
+import { hasCompleteScanCoverage, type ScanCoverage } from "@/lib/scan-coverage";
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { buildIssueChecklist, type IssueFindingInput } from "./report-issue-markdown";
@@ -8,14 +9,16 @@ import { buildIssueChecklist, type IssueFindingInput } from "./report-issue-mark
  * "Copy all open findings" — one Markdown checklist (`- [ ]` per finding) for pasting
  * into a tracker as a single tracking issue. Same clipboard contract as
  * `ReportIssueCopy`: `navigator.clipboard.writeText` only, visible failure state, no
- * `document.execCommand`. Disabled (not hidden) when there is nothing open, so the
+ * `document.execCommand`. Disabled when there is nothing open and coverage is complete, so the
  * control's position on the page stays stable.
  */
 export function ReportIssueCopyAll({
   findings,
+  scanCoverage,
   className = "",
 }: {
   findings: IssueFindingInput[];
+  scanCoverage?: ScanCoverage | null;
   className?: string;
 }) {
   const [state, setState] = useState<"idle" | "copied" | "error">("idle");
@@ -26,13 +29,13 @@ export function ReportIssueCopyAll({
       return;
     }
     try {
-      await navigator.clipboard.writeText(buildIssueChecklist(findings));
+      await navigator.clipboard.writeText(buildIssueChecklist(findings, scanCoverage));
       setState("copied");
       window.setTimeout(() => setState("idle"), 1800);
     } catch {
       setState("error");
     }
-  }, [findings]);
+  }, [findings, scanCoverage]);
 
   return (
     <div className={`inline-flex flex-wrap items-center gap-2 ${className}`}>
@@ -41,9 +44,9 @@ export function ReportIssueCopyAll({
         variant="outline"
         size="sm"
         onClick={copy}
-        disabled={findings.length === 0}
+        disabled={findings.length === 0 && hasCompleteScanCoverage(scanCoverage)}
       >
-        {state === "copied" ? "Copied" : `Copy all open findings (${findings.length})`}
+        {state === "copied" ? "Copied" : findings.length === 0 ? "Copy coverage report" : `Copy all open findings (${findings.length})`}
       </Button>
       <span role="status" aria-live="polite" className="sr-only">
         {state === "copied" ? "Copied" : ""}

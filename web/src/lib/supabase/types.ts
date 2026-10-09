@@ -341,6 +341,39 @@ export type Database = {
           },
         ]
       }
+      checkout_attempts: {
+        Row: {
+          user_id: string
+          id: string
+          plan: string
+          params: Json
+          session_id: string | null
+          created_at: string
+        }
+        Insert: {
+          user_id: string
+          id: string
+          plan: string
+          params: Json
+          session_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          user_id?: string
+          id?: string
+          plan?: string
+          params?: Json
+          session_id?: string | null
+          created_at?: string
+        }
+        Relationships: [{
+          foreignKeyName: "checkout_attempts_user_id_fkey"
+          columns: ["user_id"]
+          isOneToOne: true
+          referencedRelation: "profiles"
+          referencedColumns: ["id"]
+        }]
+      }
       profiles: {
         Row: {
           agency_name: string | null
@@ -515,6 +548,7 @@ export type Database = {
       }
       test_runs: {
         Row: {
+          scan_coverage: Json | null
           task_outcomes: Json
           task_definition: Json | null
           completed_at: string | null
@@ -530,6 +564,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          scan_coverage?: Json | null
           task_outcomes?: Json
           task_definition?: Json | null
           completed_at?: string | null
@@ -545,6 +580,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          scan_coverage?: Json | null
           task_outcomes?: Json
           task_definition?: Json | null
           completed_at?: string | null

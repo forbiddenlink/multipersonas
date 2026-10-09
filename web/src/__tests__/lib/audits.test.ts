@@ -18,5 +18,6 @@ describe("listAudits", () => {
 
     await expect(listAudits(supabase as never)).resolves.toEqual([]);
     expect(query.eq).toHaveBeenCalledWith("status", "completed");
+    expect(query.select).toHaveBeenCalledWith(expect.stringContaining("scan_coverage"));
   });
 });

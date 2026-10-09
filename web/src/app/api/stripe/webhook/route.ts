@@ -49,6 +49,20 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
+    if (["checkout.session.completed", "checkout.session.expired", "checkout.session.async_payment_succeeded", "checkout.session.async_payment_failed"].includes(event.type)) {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const userId = session.metadata?.supabase_user_id;
+      const attemptId = session.metadata?.personaudit_checkout_attempt;
+      if (session.mode === "subscription" && isPlanKey(session.metadata?.personaudit_plan) && userId && attemptId && session.id) {
+        const admin = createAdminClient();
+        if (!admin) throw new Error("Admin client is not configured");
+        // Recover a lost create response/write from signed Stripe evidence. A late
+        // event must never overwrite a known session or another attempt's state.
+        const { error } = await admin.from("checkout_attempts").update({ session_id: session.id })
+          .eq("id", attemptId).eq("user_id", userId).is("session_id", null).select("id");
+        if (error) throw new Error("Could not reconcile checkout session");
+      }
+    }
     if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
       const session = event.data.object as Stripe.Checkout.Session;
       const userId = session.metadata?.supabase_user_id;

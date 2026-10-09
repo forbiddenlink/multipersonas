@@ -1,16 +1,17 @@
 import { describe, it, expect, vi } from "vitest";
 
-const { analyze } = vi.hoisted(() => ({ analyze: vi.fn() }));
+const { analyze, withTags } = vi.hoisted(() => ({ analyze: vi.fn(), withTags: vi.fn() }));
 
 vi.mock("@axe-core/playwright", () => ({
   AxeBuilder: class {
-    withTags(): this { return this; }
+    withTags(tags: string[]): this { withTags(tags); return this; }
     analyze = analyze;
   },
 }));
 
 import { mergeAxeFindings, runAxeScan } from "./axe-scan.js";
 import type { Finding } from "./engine.js";
+import { baselineFromFindings, evaluateGate } from "../crawler/gate.js";
 
 const f = (over: Partial<Finding>): Finding => ({
   severity: "serious",
@@ -85,6 +86,32 @@ describe("mergeAxeFindings", () => {
 });
 
 describe("runAxeScan", () => {
+  it("requests WCAG 2.2 checks as well as earlier criteria", async () => {
+    analyze.mockResolvedValueOnce({ violations: [] });
+    await runAxeScan({ url: () => "https://example.test" } as never);
+    expect(withTags).toHaveBeenLastCalledWith(expect.arrayContaining(["wcag22a", "wcag22aa"]));
+  });
+
+  it("lets the CI gate detect a sixth affected element beyond five baseline defects", async () => {
+    const page = { url: () => "https://example.test" } as never;
+    const nodes = Array.from({ length: 6 }, (_, i) => ({
+      html: `<a class="link-${i}"></a>`,
+      target: [`.link-${i}`],
+    }));
+    const violation = {
+      id: "link-name", impact: "serious", help: "Links must have discernible text",
+      description: "Links need accessible names", helpUrl: "https://example.test/rules/link-name",
+      tags: ["wcag2a"], nodes,
+    };
+    analyze.mockResolvedValueOnce({ violations: [{ ...violation, nodes: nodes.slice(0, 5) }] });
+    const baseline = baselineFromFindings(await runAxeScan(page));
+    analyze.mockResolvedValueOnce({ violations: [violation] });
+
+    const gate = evaluateGate(await runAxeScan(page), { failOn: "serious", baseline });
+    expect(gate.passed).toBe(false);
+    expect(gate.failing.map((finding) => finding.target)).toEqual([".link-5"]);
+  });
+
   it("returns an empty list for a completed scan with no violations", async () => {
     analyze.mockResolvedValueOnce({ violations: [] });
     await expect(runAxeScan({ url: () => "https://example.test" } as never)).resolves.toEqual([]);

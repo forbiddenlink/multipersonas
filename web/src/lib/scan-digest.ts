@@ -14,6 +14,8 @@ export interface ScanDigestInput {
   outcome: "completed" | "failed";
   /** Null when the scan failed, so there is nothing to compare. */
   regression: {
+    comparisonComplete: boolean;
+    comparisonNotes?: string[];
     isFirstScan: boolean;
     newDefects: Array<{ title: string; severity: Severity; pageUrl: string }>;
     cleared: Array<{ title: string; severity: Severity }>;
@@ -49,6 +51,10 @@ function escapeHtml(value: string): string {
 function subjectFor(input: ScanDigestInput): string {
   const r = input.regression;
   if (input.outcome === "failed" || !r) return `${input.projectName}: scheduled scan did not finish`;
+  if (!r.comparisonComplete) {
+    const observed = r.newDefects.length ? ` (${plural(r.newDefects.length, "new issue")})` : "";
+    return `${input.projectName}: comparison incomplete${observed}`;
+  }
   if (r.isFirstScan) return `${input.projectName}: first scheduled scan finished`;
   if (r.newDefects.length === 0 && r.cleared.length === 0) {
     return `${input.projectName}: no change since the last scan`;
@@ -85,10 +91,13 @@ function sectionsFor(input: ScanDigestInput): { intro: string[]; sections: Secti
   }
 
   const intro: string[] = [
-    r.isFirstScan
+    !r.comparisonComplete
+      ? `The scheduled scan of ${input.siteUrl} saved results. Comparison incomplete: missing or failed checks prevent verification of resolved issues.`
+      : r.isFirstScan
       ? `The first scheduled scan of ${input.siteUrl} finished. Later scans are compared against it.`
       : `The scheduled scan of ${input.siteUrl} finished. Here is what changed since the last scan.`,
   ];
+  if (!r.comparisonComplete) intro.push(...(r.comparisonNotes ?? []));
   if (input.taskSuccess && input.taskSuccess.total > 0) {
     intro.push(`${input.taskSuccess.achieved} of ${input.taskSuccess.total} tasks completed.`);
   }
@@ -100,7 +109,7 @@ function sectionsFor(input: ScanDigestInput): { intro: string[]; sections: Secti
       ...capped(r.newDefects, (d) => `${d.title} (${d.severity}) on ${d.pageUrl}`),
     });
   }
-  if (!r.isFirstScan && r.cleared.length) {
+  if (r.comparisonComplete && !r.isFirstScan && r.cleared.length) {
     sections.push({
       heading: "Fixed since the last scan",
       ...capped(r.cleared, (d) => `${d.title} (${d.severity})`),

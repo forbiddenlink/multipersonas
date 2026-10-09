@@ -31,6 +31,12 @@ export function RunDiff({
         )}
       </div>
 
+      {!diff.comparisonComplete && (
+        <div className="border-b border-border px-4 py-3 text-xs">
+          <p>Comparison incomplete. Resolved issues could not be verified.</p>
+          {diff.comparisonNotes.map((note, index) => <p key={index}>{note}</p>)}
+        </div>
+      )}
       <div className="grid grid-cols-3 divide-x divide-border border-b border-border text-center">
         <div className="px-3 py-3">
           <p
@@ -58,7 +64,7 @@ export function RunDiff({
                   : "var(--foreground)",
             }}
           >
-            {diff.cleared.length}
+            {diff.comparisonComplete ? diff.cleared.length : "Not verified"}
           </p>
           <p className="mt-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
             fixed
@@ -115,7 +121,7 @@ export function RunDiff({
             </ul>
           )}
 
-          {diff.cleared.length > 0 && (
+          {diff.comparisonComplete && diff.cleared.length > 0 && (
             <ul className="divide-y divide-border">
               {diff.cleared.slice(0, 8).map((f) => (
                 <li key={f.key} className="flex items-start gap-3 px-4 py-2.5">
@@ -143,7 +149,7 @@ export function RunDiff({
             </ul>
           )}
 
-          {diff.newDefects.length === 0 && diff.cleared.length === 0 ? (
+          {diff.comparisonComplete && diff.newDefects.length === 0 && diff.cleared.length === 0 ? (
             <p className="px-4 py-4 text-xs text-muted-foreground">
               No new or fixed axe verdicts versus the previous run.
             </p>

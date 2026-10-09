@@ -1,10 +1,11 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { generateText, page, close, send } = vi.hoisted(() => ({
+const { generateText, page, close, send, scan } = vi.hoisted(() => ({
   generateText: vi.fn(),
+  scan: vi.fn(),
   close: vi.fn(),
   send: vi.fn(),
   page: {
@@ -27,6 +28,8 @@ vi.mock("../security/url-guard.js", async (original) => ({
   assertUrlAllowed: async (url: string) => new URL(url),
 }));
 
+vi.mock("./axe-scan.js", async (original) => ({ ...await original<typeof import("./axe-scan.js")>(), runAxeScan: scan }));
+
 import { runPersonaAgent } from "./engine.js";
 import { runMultiPersonaTest } from "./orchestrator.js";
 import { firstTimeVisitor, keyboardTraversal, mobileSlowConnection } from "../personas/prebuilt.js";
@@ -36,6 +39,7 @@ const task = { version: 1 as const, goal: "Find contact information", successTex
 let directory: string;
 beforeEach(() => {
   vi.clearAllMocks();
+  scan.mockReset().mockResolvedValue([]);
   directory = mkdtempSync(join(tmpdir(), "mp-task-evidence-"));
   generateText.mockResolvedValue({ text: "I finished", toolCalls: [{
     toolCallId: "finish-1", toolName: "finish", input: { outcome: "achieved", summary: "Claimed success" },
@@ -148,4 +152,78 @@ it("rejects unreachable cross-origin checks before running any personas", async 
   })).rejects.toThrow("same origin");
   expect(generateText).not.toHaveBeenCalled();
   expect(page.goto).not.toHaveBeenCalled();
+});
+
+it("retains a failed post-action check and continues the paid persona session", async () => {
+  scan.mockResolvedValueOnce([]).mockRejectedValueOnce(new Error("axe timed out"));
+  generateText.mockResolvedValueOnce({ toolCalls: [{
+    toolCallId: "scroll-1", toolName: "scroll", input: { direction: "down" },
+  }] });
+  const result = await runPersonaAgent("https://example.com/contact", firstTimeVisitor, directory);
+  expect(result.goalCompleted).toBe(true);
+  expect(result.scanCoverage).toEqual({ checks: [
+    { url: "https://example.com/contact", step: 0, status: "scanned" },
+    { url: "https://example.com/contact", step: 1, status: "failed", error: "axe timed out" },
+  ], executionFailures: [] });
+  expect(generateText).toHaveBeenCalledTimes(2);
+});
+
+it("persists partial checks and the reason a persona execution failed", async () => {
+  generateText.mockRejectedValueOnce(new Error("model unavailable"));
+  const result = await runMultiPersonaTest({
+    url: "https://example.com/contact", personas: [firstTimeVisitor], outputDir: directory,
+  });
+  expect(result.scanCoverage).toEqual({ checks: [
+    { url: "https://example.com/contact", step: 0, status: "scanned" },
+  ], executionFailures: [{ url: "https://example.com/contact", error: "model unavailable" }] });
+  expect(result.personas[0]?.agentResult.scanCoverage).toEqual(result.scanCoverage);
+  const saved = JSON.parse(readFileSync(join(directory, "results.json"), "utf8"));
+  expect(saved.scanCoverage).toEqual(result.scanCoverage);
+  expect(readFileSync(result.reportPath, "utf8")).toContain("Accessibility coverage incomplete");
+});
+
+it("continues after an initial check failure and retains later successful checks", async () => {
+  scan.mockRejectedValueOnce(new Error("initial injection failed"));
+  generateText.mockResolvedValueOnce({ toolCalls: [{
+    toolCallId: "scroll-1", toolName: "scroll", input: { direction: "down" },
+  }] });
+  const result = await runMultiPersonaTest({
+    url: "https://example.com/contact", personas: [firstTimeVisitor], outputDir: directory,
+  });
+  expect(result.taskSuccess.achieved).toBe(1);
+  expect(result.scanCoverage?.checks).toEqual([
+    { url: "https://example.com/contact", step: 0, status: "failed", error: "initial injection failed" },
+    { url: "https://example.com/contact", step: 1, status: "scanned" },
+  ]);
+  const report = readFileSync(result.reportPath, "utf8");
+  expect(report).toContain("Accessibility coverage incomplete");
+  expect(report).toContain("initial injection failed");
+  expect(report).not.toContain("No axe-core violations in the states successfully checked.");
+});
+
+it("attributes a failure to the current page after revisiting an earlier URL", async () => {
+  let currentUrl = "https://example.com/contact";
+  page.url.mockImplementation(() => currentUrl);
+  const scroll = { toolCalls: [{ toolCallId: "scroll", toolName: "scroll", input: { direction: "down" } }] };
+  generateText.mockImplementationOnce(async () => {
+    currentUrl = "https://example.com/about";
+    return scroll;
+  }).mockImplementationOnce(async () => {
+    currentUrl = "https://example.com/contact";
+    return scroll;
+  }).mockRejectedValueOnce(new Error("model unavailable after revisit"));
+  try {
+    const result = await runMultiPersonaTest({
+      url: currentUrl, personas: [firstTimeVisitor], outputDir: directory,
+    });
+    expect(result.personas[0]?.agentResult.pagesVisited).toEqual([
+      "https://example.com/contact", "https://example.com/about",
+    ]);
+    expect(result.scanCoverage?.executionFailures).toEqual([
+      { url: "https://example.com/contact", error: "model unavailable after revisit" },
+    ]);
+    expect(result.scanCoverage?.checks).toHaveLength(3);
+  } finally {
+    page.url.mockReturnValue("https://example.com/contact");
+  }
 });

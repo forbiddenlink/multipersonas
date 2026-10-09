@@ -127,7 +127,7 @@ describe("buildIssueChecklist", () => {
   it("stays valid Markdown with no open findings, never an empty string", () => {
     const checklist = buildIssueChecklist([]);
     expect(checklist).toContain("## Open accessibility findings");
-    expect(checklist).toContain("_No open findings._");
+    expect(checklist).toContain("_No open findings recorded._");
   });
 });
 
@@ -143,4 +143,13 @@ describe("buildIssueMarkdown", () => {
       `${buildIssueTitle(finding)}\n\n${buildIssueBody(finding)}`,
     );
   });
+});
+
+
+it("carries failed scan evidence into copied Markdown even when no violations were saved", () => {
+  const checklist = buildIssueChecklist([], { checks: [{ url: "https://example.com/checkout", step: 3, status: "failed", error: "axe timed out" }], executionFailures: [{ url: "https://example.com", error: "navigation failed" }] });
+  expect(checklist).toContain("Scan coverage incomplete");
+  expect(checklist).toContain("https://example.com/checkout");
+  expect(checklist).toContain("axe timed out");
+  expect(checklist).toContain("navigation failed");
 });

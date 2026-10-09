@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildExecutiveSummary, type ExecutiveSummaryInput } from "./report-summary";
 
 const base: ExecutiveSummaryInput = {
+  scanCoverage: { checks: [{ url: "https://example.com", step: 0, status: "scanned" }], executionFailures: [] },
   severityCounts: { critical: 2, serious: 1, moderate: 0, minor: 3 },
   locationCount: 4,
   fixFirstTitles: ["Images missing alt text", "Dropdowns with no label", "Links with no name", "Low contrast"],
@@ -48,15 +49,22 @@ describe("buildExecutiveSummary", () => {
       { ...base, severityCounts: { critical: 0, serious: 0, moderate: 0, minor: 0 }, fixFirstTitles: [] },
       fmt,
     );
-    expect(lines[0]).toBe("Automated checks found no violations on the 4 pages or states this audit reached.");
+    expect(lines[0]).toBe("Automated checks found no violations in the states checked.");
     expect(lines.join(" ")).not.toMatch(/Fix first/);
     expect(lines.join(" ")).not.toMatch(/\bcompliant\b|conforms|fully accessible/i);
+  });
+
+  it("does not treat zero finding locations as zero scan coverage", () => {
+    const [first] = buildExecutiveSummary({
+      ...base, severityCounts: { critical: 0, serious: 0, moderate: 0, minor: 0 }, locationCount: 0,
+    }, fmt);
+    expect(first).not.toMatch(/0 pages|0 states/);
   });
 
   it("states the manual work still owed and the next scheduled scan", () => {
     const lines = buildExecutiveSummary(base, fmt);
     expect(lines).toContain("2 of 3 personas reached the goal.");
-    expect(lines).toContain("32 WCAG criteria cannot be checked automatically. A person needs to review them (listed at the end).");
+    expect(lines).toContain("32 WCAG criteria need manual review (listed at the end).");
     expect(lines).toContain("Next scheduled scan: 2026-10-12.");
   });
 
@@ -75,7 +83,28 @@ describe("buildExecutiveSummary", () => {
     );
     expect(lines[0]).toBe("Automated checks found 1 distinct issue on 1 page or state: 1 critical.");
     expect(lines).toContain("Fix first: Buttons with no name.");
-    expect(lines).toContain("1 WCAG criterion cannot be checked automatically. A person needs to review it (listed at the end).");
+    expect(lines).toContain("1 WCAG criterion needs manual review (listed at the end).");
     expect(lines.join(" ")).not.toContain("—");
   });
+});
+
+
+it("does not describe failed or unrecorded checks as a clean audit", () => {
+  const input = { ...base, severityCounts: { critical: 0, serious: 0, moderate: 0, minor: 0 } };
+  const scanCoverage = { checks: [{ url: "https://example.com/private", step: 2, status: "failed" as const, error: "axe timed out" }], executionFailures: [{ url: "https://example.com/start", error: "browser closed" }] };
+  const lines = buildExecutiveSummary({ ...input, scanCoverage }, fmt).join("\n");
+  expect(lines).toContain("Scan coverage incomplete");
+  expect(lines).toContain("https://example.com/private");
+  expect(lines).toContain("axe timed out");
+  expect(lines).toContain("browser closed");
+  expect(lines).not.toContain("found no violations");
+  expect(buildExecutiveSummary({ ...input, scanCoverage: null }, fmt).join("\n")).toContain("Scan coverage was not recorded");
+});
+
+
+it("does not call missing prior findings fixed when comparison coverage is incomplete", () => {
+  const summary = buildExecutiveSummary({ ...base, history: { previousDate: "2026-10-08", comparisonComplete: false, newCount: 1, fixedCount: 3, stillOpenCount: 2 } }, fmt).join("\n");
+  expect(summary).toContain("Comparison incomplete");
+  expect(summary).toContain("1 new, 2 still observed");
+  expect(summary).not.toContain("3 fixed");
 });

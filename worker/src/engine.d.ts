@@ -35,6 +35,7 @@ declare module "personaudit/orchestrator" {
   export interface EnginePersonaResult {
     persona: { id: string; name: string; description: string };
     agentResult: {
+      scanCoverage?: import("personaudit/engine").ScanCoverage;
       taskEvidence?: import("personaudit/tasks").TaskEvidence;
       goalCompleted: boolean;
       totalSteps: number;
@@ -45,6 +46,7 @@ declare module "personaudit/orchestrator" {
     };
   }
   export interface TestResult {
+    scanCoverage?: import("personaudit/engine").ScanCoverage;
     task?: import("personaudit/tasks").TaskDefinition;
     url: string;
     taskSuccess: { achieved: number; total: number };

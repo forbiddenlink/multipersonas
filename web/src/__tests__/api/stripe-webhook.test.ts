@@ -67,6 +67,23 @@ describe("POST /api/stripe/webhook", () => {
     expect(maybeSingle).toHaveBeenCalled();
   });
 
+  it.each(["checkout.session.completed", "checkout.session.expired", "checkout.session.async_payment_failed"])("reconciles an unknown session id from the signed %s event", async (type) => {
+    const saveSession = vi.fn(async () => ({ data: [{ id: "attempt-1" }], error: null }));
+    const query = { eq: vi.fn(() => query), is: vi.fn(() => query), select: saveSession };
+    const bindSession = vi.fn(() => query);
+    createAdminClient.mockReturnValue({ from: vi.fn((table: string) => table === "checkout_attempts" ? { update: bindSession } : { update }) });
+    constructEvent.mockReturnValue({ type, data: { object: {
+      id: "cs_synthetic", mode: "subscription", metadata: { ...metadata, personaudit_checkout_attempt: "attempt-1" },
+      customer: "cus_test", payment_status: "unpaid",
+    } } });
+    expect((await POST(request())).status).toBe(200);
+    expect(bindSession).toHaveBeenCalledWith({ session_id: "cs_synthetic" });
+    expect(query.eq).toHaveBeenCalledWith("id", "attempt-1");
+    expect(query.eq).toHaveBeenCalledWith("user_id", "user-1");
+    expect(query.is).toHaveBeenCalledWith("session_id", null);
+    expect(update).not.toHaveBeenCalled();
+  });
+
   it("rejects an invalid signature without accessing the database", async () => {
     constructEvent.mockImplementation(() => { throw new Error("bad signature"); });
     expect((await POST(request())).status).toBe(400);

@@ -1,5 +1,7 @@
 "use client";
 
+import { ScanCoveragePanel } from "@/components/scan-coverage";
+import type { ScanCoverage } from "@/lib/scan-coverage";
 import { TaskEvidencePanel } from "@/components/task-evidence";
 import type { TaskDefinition, TaskOutcome } from "@engine/tasks/definition";
 import Link from "next/link";
@@ -11,6 +13,7 @@ import { SeverityChip } from "@/components/forensic/severity-chip";
 import { Meter } from "@/components/forensic/meter";
 
 export interface AuditResponse {
+  scanCoverage?: ScanCoverage | null;
   /** The saved run (test_runs.id). Set by the worker for signed-in runs; absent for anonymous
    * runs and for jobs finished before this field existed, so every reader treats it as optional. */
   runId?: string;
@@ -23,6 +26,7 @@ export interface AuditResponse {
    */
   taskSuccess: { achieved: number; total: number };
   personas: Array<{
+    scanCoverage?: ScanCoverage | null;
     id: string;
     name: string;
     description: string;
@@ -75,6 +79,7 @@ export function AuditResults({
 
   return (
     <div className={shell}>
+      <ScanCoveragePanel coverage={results.scanCoverage} />
       <TaskEvidencePanel task={results.task} outcomes={results.taskOutcomes} />
       <div className={compact ? "space-y-3" : "flex flex-col items-center gap-4 text-center"}>
         <p className="text-sm text-muted-foreground">

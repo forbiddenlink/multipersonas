@@ -34,10 +34,13 @@ export interface CrawlResult {
 
 export async function crawl(entryUrl: string, options: CrawlOptions = {}): Promise<CrawlResult> {
   const { sessionFile, maxPages = 40, allowPrivate = false, onPage } = options;
+  if (!Number.isSafeInteger(maxPages) || maxPages < 1) {
+    throw new Error("maxPages must be a positive safe integer");
+  }
 
   // Same SSRF chokepoint as an audit: this points a browser at a supplied URL.
   const entry = await assertUrlAllowed(entryUrl, { allowPrivate });
-  const origin = entry.origin;
+  let origin = entry.origin;
 
   const browser = await launchAuditBrowser({ headless: true });
   const findings: Finding[] = [];
@@ -71,20 +74,22 @@ export async function crawl(entryUrl: string, options: CrawlOptions = {}): Promi
       if (!(await isUrlAllowed(url, { allowPrivate }))) continue;
 
       try {
-        await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
+        const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
+        if (response && response.status() >= 400) {
+          throw new Error(`HTTP ${response.status()}`);
+        }
         // SPA routes render after load; scanning too early would undercount.
         await page.waitForTimeout(1500);
       } catch (error) {
-        // A crawl that never reached a page has no evidence for a clean result.
-        // Later links can fail independently, but failing to load the entry point
-        // must fail the command instead of passing a gate with zero findings.
-        if (visited.length === 0) {
-          const detail = error instanceof Error ? error.message : String(error);
-          throw new Error(`Could not load entry URL ${url}: ${detail}`, { cause: error });
-        }
-        continue;
+        // Missing pages are not clean evidence. Fail before a caller can pass
+        // the CI gate or replace its baseline with an incomplete scan.
+        const detail = error instanceof Error ? error.message : String(error);
+        const label = visited.length === 0 ? "entry URL" : "URL";
+        throw new Error(`Could not load ${label} ${url}: ${detail}`, { cause: error });
       }
 
+      if (visited.length === 0) origin = new URL(page.url()).origin;
+      seen.add(normalise(page.url()));
       onPage?.(page.url(), visited.length);
       visited.push(page.url());
       findings.push(...(await runAxeScan(page)));
@@ -101,7 +106,7 @@ export async function crawl(entryUrl: string, options: CrawlOptions = {}): Promi
           continue;
         }
         if (target.origin !== origin) continue;
-        target.hash = "";
+        if (!/^#!?\//.test(target.hash)) target.hash = "";
         const key = normalise(target.href);
         if (seen.has(key)) continue;
         seen.add(key);
@@ -117,11 +122,11 @@ export async function crawl(entryUrl: string, options: CrawlOptions = {}): Promi
   }
 }
 
-/** Same crawl target. Drops the fragment; keeps the query, which routes SPAs. */
+/** Same crawl target. Keeps query/hash routes, drops ordinary document anchors. */
 function normalise(url: string): string {
   try {
     const u = new URL(url);
-    u.hash = "";
+    if (!/^#!?\//.test(u.hash)) u.hash = "";
     return u.href.replace(/\/$/, "");
   } catch {
     return url;

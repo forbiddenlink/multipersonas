@@ -6,6 +6,7 @@ import type { RunRegression } from "@/lib/baseline";
 afterEach(cleanup);
 
 const firstRun: RunRegression = {
+  comparisonComplete: true, comparisonNotes: [],
   current: {
     id: "r1",
     url: "https://example.com",
@@ -32,4 +33,13 @@ describe("RunDiff first-run copy", () => {
     render(<RunDiff diff={firstRun} />);
     expect(screen.queryByText(/Press Retest/)).not.toBeInTheDocument();
   });
+});
+
+
+it("labels missing coverage instead of showing a fixed count or no-change claim", () => {
+  render(<RunDiff diff={{ ...firstRun, previous: firstRun.current, comparisonComplete: false, comparisonNotes: ["Previous finding location was not checked: https://example.com/private"] }} />);
+  expect(screen.getByText(/Comparison incomplete/)).toBeInTheDocument();
+  expect(screen.getByText("Not verified")).toBeInTheDocument();
+  expect(screen.getByText(/https:\/\/example.com\/private/)).toBeInTheDocument();
+  expect(screen.queryByText(/No new or fixed/)).not.toBeInTheDocument();
 });

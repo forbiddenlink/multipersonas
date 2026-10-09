@@ -1,5 +1,6 @@
 "use client";
 
+import { hasCompleteScanCoverage, scanCoverageLines, type ScanCoverage } from "@/lib/scan-coverage";
 import { Button } from "@/components/ui/button";
 import { trackProductEvent } from "@/lib/analytics";
 
@@ -16,8 +17,10 @@ function csvCell(value: string): string {
   return `"${value.replaceAll('"', '""')}"`;
 }
 
-function downloadCsv(filename: string, rows: CsvVerdict[]) {
-  const headers = ["Rule", "Title", "Severity", "WCAG SC", "Found at", "Recommendation"];
+function downloadCsv(filename: string, rows: CsvVerdict[], scanCoverage?: ScanCoverage | null): void {
+  const headers = ["Rule", "Title", "Severity", "WCAG SC", "Found at", "Recommendation", "Scan coverage status", "Scan coverage evidence"];
+  const coverageStatus = !scanCoverage ? "unknown" : hasCompleteScanCoverage(scanCoverage) ? "complete" : "incomplete";
+  const coverageEvidence = scanCoverageLines(scanCoverage).join("; ");
   const csv = [
     headers.map(csvCell).join(","),
     ...rows.map((row) =>
@@ -28,6 +31,8 @@ function downloadCsv(filename: string, rows: CsvVerdict[]) {
         row.criteria.join("; "),
         row.locations.join("; "),
         row.recommendation,
+        coverageStatus,
+        coverageEvidence,
       ]
         .map(csvCell)
         .join(","),
@@ -55,9 +60,11 @@ function downloadCsv(filename: string, rows: CsvVerdict[]) {
  * secondary. Focus ring + keyboard activation come from the shared Button. */
 export function ExportButton({
   csvRows = [],
+  scanCoverage,
   filename = "personaudit-verdicts.csv",
 }: {
   csvRows?: CsvVerdict[];
+  scanCoverage?: ScanCoverage | null;
   filename?: string;
 }) {
   return (
@@ -75,7 +82,7 @@ export function ExportButton({
         disabled={csvRows.length === 0}
         onClick={() => {
           trackProductEvent("report_exported", { format: "csv" });
-          downloadCsv(filename, csvRows);
+          downloadCsv(filename, csvRows, scanCoverage);
         }}
       >
         Download CSV

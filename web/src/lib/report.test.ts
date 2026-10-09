@@ -1,5 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
-import { assembleReport, buildReport, type FindingRow } from "./report";
+import { assembleReport, buildReport, splitLocations, type FindingRow } from "./report";
+
+it("preserves commas within a URL while splitting stored state lists", () => {
+  expect(splitLocations("https://example.test/items?ids=1,2")).toEqual(["https://example.test/items?ids=1,2"]);
+  expect(splitLocations("https://example.test/items?ids=1,2, https://example.test/next"))
+    .toEqual(["https://example.test/items?ids=1,2", "https://example.test/next"]);
+});
 
 const run = {
   id: "run-1",
@@ -283,4 +289,32 @@ it("exports persisted contextual evidence instead of inferring it from journey s
   }]);
   expect(report.taskOutcomes).toEqual(outcomes);
   expect(assembleReport({ ...run, task_definition: task }, []).taskOutcomes).toEqual([]);
+});
+
+
+it("preserves persisted coverage and never marks unscanned criteria as passes", () => {
+  const scanCoverage = { checks: [{ url: run.url, step: 0, status: "failed", error: "axe timed out" }], executionFailures: [] };
+  const report = assembleReport({ ...run, scan_coverage: scanCoverage }, []);
+  expect(report.scanCoverage).toEqual(scanCoverage);
+  expect(report.conformance.counts["passes-automated"]).toBe(0);
+  expect(assembleReport(run, []).scanCoverage).toBeNull();
+  expect(assembleReport(run, []).conformance.counts["passes-automated"]).toBe(0);
+});
+
+
+it("loads durable coverage from the run and preserves successful checks", async () => {
+  const scanCoverage = { checks: [{ url: run.url, step: 0, status: "scanned" }], executionFailures: [] };
+  const { client, calls } = reportClient({ test_runs: [{ data: { ...run, scan_coverage: scanCoverage }, error: null }] });
+  const report = await buildReport(client, run.id);
+  expect(report?.scanCoverage).toEqual(scanCoverage);
+  expect(report?.conformance.counts["passes-automated"]).toBeGreaterThan(0);
+  expect(calls.find((call) => call.table === "test_runs" && call.method === "select")?.args[0]).toContain("scan_coverage");
+});
+
+it("requires at least one successful check and retains measured failures", () => {
+  const empty = assembleReport({ ...run, scan_coverage: { checks: [], executionFailures: [] } }, []);
+  expect(empty.conformance.counts["passes-automated"]).toBe(0);
+  const partial = assembleReport({ ...run, scan_coverage: { checks: [{ url: run.url, step: 0, status: "scanned" }], executionFailures: [{ url: run.url, error: "browser closed" }] } }, [row({})]);
+  expect(partial.conformance.counts["passes-automated"]).toBe(0);
+  expect(partial.conformance.counts["fails-automated"]).toBe(1);
 });

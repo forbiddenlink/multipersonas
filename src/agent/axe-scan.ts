@@ -35,22 +35,16 @@ const impactToSeverity: Record<Severity, Finding["severity"]> = {
   minor: "minor",
 };
 
-/**
- * Cap per violation. A single rule can match hundreds of nodes on a data-dense
- * page; the first few make the point and the rest are the same fix.
- */
-const MAX_NODES_PER_VIOLATION = 5;
-
 /** Scan whatever state the page is currently in. */
 export async function runAxeScan(page: Page): Promise<Finding[]> {
   try {
     const results = await new AxeBuilder({ page })
-      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"])
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22a", "wcag22aa", "best-practice"])
       .analyze();
 
     const url = page.url();
     return (results.violations as AxeViolation[]).flatMap((violation) =>
-      violation.nodes.slice(0, MAX_NODES_PER_VIOLATION).map((node) => ({
+      violation.nodes.map((node) => ({
         severity: impactToSeverity[violation.impact ?? "minor"] ?? "minor",
         category: "accessibility" as const,
         title: violation.help,
