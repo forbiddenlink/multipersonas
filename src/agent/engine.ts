@@ -139,7 +139,21 @@ export interface StepRecord {
   reasoning?: string;
 }
 
+export interface ScanCoverage {
+  checks: Array<{ url: string; step: number; status: "scanned" | "failed"; error?: string }>;
+  executionFailures: Array<{ url: string; error: string }>;
+}
+
+export class PersonaAgentError extends Error {
+  constructor(message: string, public readonly partialResult: AgentResult) {
+    super(message);
+    this.name = "PersonaAgentError";
+  }
+}
+
 export interface AgentResult {
+  /** Missing on legacy results or when accessibility checks were disabled. */
+  scanCoverage?: ScanCoverage;
   taskEvidence?: TaskEvidence;
   findings: Finding[];
   /**
@@ -711,6 +725,7 @@ export async function runPersonaAgent(
 
   const findings: Finding[] = [];
   const axeFindings: Finding[] = [];
+  const scanCoverage: ScanCoverage = { checks: [], executionFailures: [] };
   const steps: StepRecord[] = [];
   const pagesVisited = new Set<string>();
   let goalCompleted = false;
@@ -727,6 +742,34 @@ export async function runPersonaAgent(
   let deadEndStreak = 0;
 
   let browser: Browser | undefined;
+  let activePage: Page | undefined;
+  let failure: PersonaAgentError | undefined;
+  const partialResult = (): AgentResult => ({
+    findings, axeFindings: mergeAxeFindings(axeFindings), steps,
+    pagesVisited: [...pagesVisited], goalCompleted, totalSteps: steps.length,
+    ...(guard.runAxe !== false || scanCoverage.executionFailures.length ? { scanCoverage } : {}),
+    ...(taskEvidence ? { taskEvidence } : {}),
+  });
+  const scanState = async (page: Page, step: number): Promise<void> => {
+    const url = page.url();
+    try {
+      axeFindings.push(...(await runAxeScan(page)));
+      scanCoverage.checks.push({ url, step, status: "scanned" });
+    } catch (error) {
+      scanCoverage.checks.push({ url, step, status: "failed", error: error instanceof Error ? error.message : String(error) });
+    }
+  };
+  const executionError = (error: unknown): PersonaAgentError => {
+    const message = error instanceof Error ? error.message : String(error);
+    let failureUrl = scanCoverage.checks.at(-1)?.url ?? steps.at(-1)?.pageUrl ?? url;
+    try {
+      failureUrl = activePage?.url() ?? failureUrl;
+    } catch {
+      // A closed page may no longer expose its URL; retain the last recorded state.
+    }
+    scanCoverage.executionFailures.push({ url: failureUrl, error: message });
+    return new PersonaAgentError(message, partialResult());
+  };
 
   try {
     // Resolve the target before launching anything: its origin defines the audit's
@@ -768,13 +811,14 @@ export async function runPersonaAgent(
     });
 
     const page = await context.newPage();
+    activePage = page;
     await applyNetworkConditions(context, page, persona.connectionSpeed);
 
     // Navigate to target
     await page.goto(safeUrl.href, { waitUntil: "domcontentloaded", timeout: 30_000 });
     pagesVisited.add(page.url());
     if (guard.runAxe !== false && isScannablePageUrl(page.url()))
-      axeFindings.push(...(await runAxeScan(page)));
+      await scanState(page, 0);
 
     // Take initial screenshot
     const initialScreenshot = path.join(screenshotDir, "step-000.png");
@@ -1048,11 +1092,8 @@ export async function runPersonaAgent(
         toolName !== "wrong_click" &&
         isScannablePageUrl(page.url())
       ) {
-        try {
-          axeFindings.push(...(await runAxeScan(page)));
-        } catch {
-          // A failed scan must not end a paid-for session.
-        }
+        // Keep the paid session running, but retain the failed check in the report.
+        await scanState(page, step);
       }
 
       const paused = isConfirmPause(actionResult);
@@ -1115,19 +1156,19 @@ export async function runPersonaAgent(
         // Keep the observation, but never link it to an unrelated earlier frame.
       }
     }
+  } catch (error) {
+    failure = executionError(error);
   } finally {
     if (browser) {
-      await browser.close();
+      try {
+        await browser.close();
+      } catch (error) {
+        const cleanupFailure = executionError(error);
+        failure ??= cleanupFailure;
+      }
     }
   }
 
-  return {
-    findings,
-    axeFindings: mergeAxeFindings(axeFindings),
-    steps,
-    pagesVisited: [...pagesVisited],
-    goalCompleted,
-    ...(taskEvidence ? { taskEvidence } : {}),
-    totalSteps: steps.length,
-  };
+  if (failure) throw failure;
+  return partialResult();
 }

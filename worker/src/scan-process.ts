@@ -4,6 +4,7 @@ import { gradeScan } from "personaudit/grader";
 import { personaLibrary, isBuiltinPersonaId } from "personaudit/personas/library";
 
 process.env.MP_BLOCK_DESTRUCTIVE_ACTIONS = "1";
+process.env.AUDIT_REQUIRE_EGRESS_PROXY = "1";
 
 process.once("message", async (input: { kind: string; url: string; persona_ids: string[]; task_definition?: unknown; outputDir: string }) => {
   try {

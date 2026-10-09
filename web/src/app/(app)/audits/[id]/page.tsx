@@ -1,3 +1,5 @@
+import { ScanCoveragePanel } from "@/components/scan-coverage";
+import { hasCompleteScanCoverage, parseScanCoverage } from "@/lib/scan-coverage";
 import { TaskEvidencePanel } from "@/components/task-evidence";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -116,7 +118,7 @@ export default async function AuditDetailPage({
   // fall through to notFound() rather than leaking existence of other users' runs.
   const { data: run } = await supabase
     .from("test_runs")
-    .select("id,url,created_at,task_success_achieved,task_success_total,persona_ids,project_id,task_definition,task_outcomes")
+    .select("id,url,created_at,task_success_achieved,task_success_total,persona_ids,project_id,task_definition,task_outcomes,scan_coverage")
     .eq("id", id)
     .eq("status", "completed")
     .single();
@@ -261,8 +263,10 @@ export default async function AuditDetailPage({
     // run.url may be a bare host on older rows — keep it as-is.
   }
   const caseDate = formatShortDate(run.created_at);
-  const caseStatus =
-    openWorkflowCount === 0 && axeFindings.length > 0
+  const scanCoverage = parseScanCoverage(run.scan_coverage);
+  const caseStatus = !hasCompleteScanCoverage(scanCoverage)
+    ? scanCoverage ? "Coverage incomplete" : "Coverage unknown"
+    : openWorkflowCount === 0 && axeFindings.length > 0
       ? "All clear"
       : axeFindings.length === 0
         ? "No findings"
@@ -366,6 +370,10 @@ export default async function AuditDetailPage({
         )}
       </div>
 
+      <ScanCoveragePanel coverage={scanCoverage} />
+      {axeFindings.length === 0 && !hasCompleteScanCoverage(scanCoverage) && (
+        <ReportIssueCopyAll findings={[]} scanCoverage={scanCoverage} />
+      )}
       <TaskEvidencePanel task={run.task_definition} outcomes={run.task_outcomes} runId={run.id} />
       {evidence === "task" && verificationIndex < 0 ? (
         <p role="status" className="text-sm text-muted-foreground">The verification frame is unavailable. The saved text-check result is shown above.</p>
@@ -419,7 +427,7 @@ export default async function AuditDetailPage({
                 Deterministic, cited to WCAG.
               </p>
             </div>
-            <ReportIssueCopyAll findings={openAxeFindings.map(toIssueFinding)} />
+            <ReportIssueCopyAll findings={openAxeFindings.map(toIssueFinding)} scanCoverage={scanCoverage} />
           </div>
           <div className="sheet grid grid-cols-2 divide-x divide-y divide-border overflow-hidden sm:grid-cols-4 sm:divide-y-0">
             <div className="p-3">
@@ -790,7 +798,7 @@ export default async function AuditDetailPage({
       {findings.length === 0 && (
         <EmptyPrompt
           prompt="no findings recorded for this audit"
-          hint="Either the crawl found a clean pass, or this run predates finding capture."
+          hint={hasCompleteScanCoverage(scanCoverage) ? "No violations were recorded in the states checked." : "Scan coverage is incomplete or unknown. Review the coverage evidence above."}
         />
       )}
     </div>

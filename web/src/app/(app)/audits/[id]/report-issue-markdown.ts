@@ -1,3 +1,4 @@
+import { scanCoverageLines, type ScanCoverage } from "@/lib/scan-coverage";
 /**
  * Pure Markdown builder for the "Copy as issue" action on an evidence-wall finding.
  * No DOM, no clipboard — the button components (report-issue-copy.tsx,
@@ -110,10 +111,10 @@ export function buildIssueMarkdown(finding: IssueFindingInput): string {
  * (the full per-finding body is what `buildIssueMarkdown` is for). Empty list still
  * produces valid Markdown with a note, never a blank string.
  */
-export function buildIssueChecklist(findings: IssueFindingInput[]): string {
-  const lines: string[] = ["## Open accessibility findings", ""];
+export function buildIssueChecklist(findings: IssueFindingInput[], scanCoverage?: ScanCoverage | null): string {
+  const lines: string[] = ["## Scan coverage", "", ...scanCoverageLines(scanCoverage), "", "## Open accessibility findings", ""];
   if (findings.length === 0) {
-    lines.push("_No open findings._");
+    lines.push("_No open findings recorded._");
     return lines.join("\n");
   }
   for (const finding of findings) {

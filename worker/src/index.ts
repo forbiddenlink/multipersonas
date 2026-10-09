@@ -8,7 +8,7 @@ import { type TestResult } from "personaudit/orchestrator";
 import type { gradeScan } from "personaudit/grader";
 import { runJobProcess, ScanCleanupError } from "./job-process.js";
 import { isIntervalDue, positiveEnvInt } from "./config.js";
-import { persistGradeResult, withRunId, writeJobState } from "./job-write.js";
+import { persistGradeResult, saveHistoryRun, withRunId, writeJobState } from "./job-write.js";
 import { createWorkerClient } from "./database.js";
 import { clampFindingCategory, clampSeverity } from "personaudit/domain/vocab";
 
@@ -21,6 +21,7 @@ import { clampFindingCategory, clampSeverity } from "personaudit/domain/vocab";
 // worker must not allow a deployment variable to disable this safeguard. See
 // src/security/action-guard.ts and src/agent/orchestrator.ts.
 process.env.MP_BLOCK_DESTRUCTIVE_ACTIONS = "1";
+process.env.AUDIT_REQUIRE_EGRESS_PROXY = "1";
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -166,6 +167,7 @@ function toResponse(result: TestResult) {
   return {
     url: result.url,
     task: result.task ?? null,
+    scanCoverage: result.scanCoverage ?? null,
     taskOutcomes: result.task ? result.personas.map((pr) => ({
       personaId: pr.persona.id,
       evidence: pr.agentResult.taskEvidence ?? { status: "inconclusive" as const, pageUrl: result.url, stepIndex: null },
@@ -175,6 +177,7 @@ function toResponse(result: TestResult) {
       id: pr.persona.id,
       name: pr.persona.name,
       description: pr.persona.description,
+      scanCoverage: pr.agentResult.scanCoverage ?? null,
       goalCompleted: pr.agentResult.goalCompleted,
       totalSteps: pr.agentResult.totalSteps,
       statesReached: pr.agentResult.pagesVisited.length,
@@ -230,6 +233,7 @@ async function persistHistory(
       url: audit.url,
       task_definition: audit.task,
       task_outcomes: audit.taskOutcomes,
+      scan_coverage: audit.scanCoverage,
       status: "running",
       task_success_achieved: audit.taskSuccess.achieved,
       task_success_total: audit.taskSuccess.total,
@@ -276,20 +280,7 @@ async function persistHistory(
       })),
     ),
   ];
-  if (rows.length > 0) {
-    const { error: fErr } = await supabase.from("findings").insert(rows);
-    if (fErr) throw new Error(`History findings persistence failed: ${fErr.message}`);
-  }
-
-  const { data: completedRun, error: completionErr } = await supabase
-    .from("test_runs")
-    .update({ status: "completed", completed_at: new Date().toISOString() })
-    .eq("id", run.id)
-    .select("id")
-    .single();
-  if (completionErr || !completedRun) {
-    throw new Error(`History completion persistence failed: ${completionErr?.message ?? "no row updated"}`);
-  }
+  await saveHistoryRun(supabase, run.id, rows);
 
   return run.id;
 }

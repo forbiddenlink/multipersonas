@@ -2,7 +2,7 @@ import { taskDefinitionSchema, personaForTask, type TaskDefinition } from "../ta
 import * as fs from "fs";
 import * as path from "path";
 import type { Persona } from "../personas/types.js";
-import { runPersonaAgent, type AgentResult, type Finding } from "./engine.js";
+import { runPersonaAgent, PersonaAgentError, type ScanCoverage, type AgentResult, type Finding } from "./engine.js";
 import { mergeAxeFindings } from "./axe-scan.js";
 import { generateMarkdownReport, type PersonaReport } from "../report/generator.js";
 import { assertUrlAllowed } from "../security/url-guard.js";
@@ -41,6 +41,7 @@ export interface ProgressEvent {
 }
 
 export interface TestResult {
+  scanCoverage?: ScanCoverage;
   task?: TaskDefinition;
   url: string;
   date: string;
@@ -212,7 +213,8 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
 
       return { persona, agentResult };
     } catch (error) {
-      const failedResult: AgentResult = {
+      const failedResult: AgentResult = error instanceof PersonaAgentError ? error.partialResult : {
+        scanCoverage: { checks: [], executionFailures: [{ url, error: error instanceof Error ? error.message : String(error) }] },
         findings: [],
         axeFindings: [],
         steps: [],
@@ -241,7 +243,8 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
       // Should not happen since runSinglePersona catches internally, but handle anyway
       return {
         persona: personas[i]!,
-        agentResult: { findings: [], axeFindings: [], steps: [], pagesVisited: [url], goalCompleted: false, totalSteps: 0 },
+        agentResult: { findings: [], axeFindings: [], steps: [], pagesVisited: [url], goalCompleted: false, totalSteps: 0,
+          scanCoverage: { checks: [], executionFailures: [{ url, error: result.reason instanceof Error ? result.reason.message : String(result.reason) }] } },
       };
     });
   } else {
@@ -264,6 +267,12 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
     : [];
 
   const taskSuccess = computeTaskSuccess(personaResults);
+  const scanCoverage: ScanCoverage | undefined = runAxe || personaResults.some((r) => r.agentResult.scanCoverage)
+    ? {
+      checks: personaResults.flatMap((r) => r.agentResult.scanCoverage?.checks ?? []),
+      executionFailures: personaResults.flatMap((r) => r.agentResult.scanCoverage?.executionFailures ?? []),
+    }
+    : undefined;
 
   // 5. Generate report
   onProgress?.({ type: "report_start", message: "Generating report..." });
@@ -280,7 +289,7 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
   const resultsPath = path.join(outputDir, "results.json");
   fs.writeFileSync(
     resultsPath,
-    JSON.stringify({ url, ...(task ? { task } : {}), taskSuccess, personas: personaResults, axeFindings, conflicts }, null, 2),
+    JSON.stringify({ url, ...(task ? { task } : {}), ...(scanCoverage ? { scanCoverage } : {}), taskSuccess, personas: personaResults, axeFindings, conflicts }, null, 2),
   );
 
   const reportPath = path.join(outputDir, "report.md");
@@ -301,6 +310,7 @@ export async function runMultiPersonaTest(options: TestOptions): Promise<TestRes
   return {
     url,
     ...(task ? { task } : {}),
+    ...(scanCoverage ? { scanCoverage } : {}),
     date: new Date().toISOString().slice(0, 10),
     taskSuccess,
     personas: personaResults,

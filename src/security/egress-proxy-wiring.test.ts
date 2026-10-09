@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { execFile, execFileSync } from "node:child_process";
+import { promisify } from "node:util";
+import { fileURLToPath } from "node:url";
 
 // Guards the DNS-rebinding SSRF mitigation (docs/ssrf-egress-hardening.md) at the
 // infra-file level. src/security/browser.ts's use of AUDIT_BROWSER_PROXY /
@@ -35,6 +40,38 @@ const requiredDenyRanges = [
 ];
 
 describe("smokescreen egress-guard wiring", () => {
+  it.each([undefined, "", "0"])("entrypoint enforces proxy routing despite required-proxy setting %s", (required) => {
+    const bin = mkdtempSync(join(tmpdir(), "personaudit-egress-"));
+    try {
+      writeFileSync(join(bin, "smokescreen"), "#!/bin/sh\nexit 0\n");
+      writeFileSync(join(bin, "pnpm"), '#!/bin/sh\nprintf "%s\\n%s\\n" "$AUDIT_REQUIRE_EGRESS_PROXY" "$AUDIT_BROWSER_PROXY"\n');
+      chmodSync(join(bin, "smokescreen"), 0o700);
+      chmodSync(join(bin, "pnpm"), 0o700);
+      const output = execFileSync("/bin/sh", [fileURLToPath(new URL("../../worker/entrypoint.sh", import.meta.url))], {
+        env: { PATH: bin, ...(required === undefined ? {} : { AUDIT_REQUIRE_EGRESS_PROXY: required }), AUDIT_BROWSER_PROXY: "" },
+        encoding: "utf8", timeout: 5000,
+      });
+      expect(output.trim().split("\n")).toEqual(["1", "http://127.0.0.1:4750"]);
+    } finally {
+      rmSync(bin, { recursive: true, force: true });
+    }
+  });
+
+  it("direct worker scan execution refuses to launch without its required proxy", async () => {
+    const scanModule = new URL("../../worker/src/scan-process.ts", import.meta.url).href;
+    const { stdout: output } = await promisify(execFile)(process.execPath, ["--import", "tsx", "--input-type=module", "-e", `
+      const { chromium } = await import("playwright");
+      chromium.launch = async () => { throw new Error("Unexpected direct browser launch"); };
+      process.send = (message) => { process.stdout.write(JSON.stringify(message)); return true; };
+      await import(${JSON.stringify(scanModule)});
+      process.emit("message", { kind: "grade", url: "https://8.8.8.8/" });
+    `], {
+      env: { PATH: process.env.PATH, AUDIT_REQUIRE_EGRESS_PROXY: "0" },
+      encoding: "utf8", timeout: 20_000,
+    });
+    expect(JSON.parse(output).error).toMatch(/refusing to launch.*without an egress proxy/);
+  }, 25_000);
+
   it("Dockerfile builds smokescreen from source and ships the binary", () => {
     expect(dockerfile).toMatch(/go install github\.com\/stripe\/smokescreen/);
     expect(dockerfile).toMatch(/COPY --from=smokescreen .*\/usr\/local\/bin\/smokescreen/);

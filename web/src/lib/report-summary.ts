@@ -1,3 +1,4 @@
+import { hasCompleteScanCoverage, scanCoverageLines, type ScanCoverage } from "./scan-coverage";
 import type { Severity } from "@/lib/report";
 
 /**
@@ -6,6 +7,7 @@ import type { Severity } from "@/lib/report";
  * sentence restates a number already in the report; nothing here is a conformance claim.
  */
 export interface ExecutiveSummaryInput {
+  scanCoverage?: ScanCoverage | null;
   severityCounts: Record<Severity, number>;
   /** Distinct pages or states with at least one finding. */
   locationCount: number;
@@ -13,6 +15,7 @@ export interface ExecutiveSummaryInput {
   fixFirstTitles: string[];
   /** Null when the run is not part of a project, so there is nothing to compare. */
   history: {
+    comparisonComplete?: boolean;
     /** Null on the first scan of the project. */
     previousDate: string | null;
     newCount: number;
@@ -40,13 +43,17 @@ export function buildExecutiveSummary(
   const where = count(input.locationCount, "page or state", "pages or states");
 
   if (total === 0) {
-    lines.push(`Automated checks found no violations on the ${where} this audit reached.`);
+    lines.push(hasCompleteScanCoverage(input.scanCoverage)
+      ? "Automated checks found no violations in the states checked."
+      : "No violations were recorded; scan coverage is incomplete or unknown.");
   } else {
     const bySeverity = ORDER.filter((sev) => input.severityCounts[sev] > 0)
       .map((sev) => `${input.severityCounts[sev]} ${sev}`)
       .join(", ");
     lines.push(`Automated checks found ${count(total, "distinct issue", "distinct issues")} on ${where}: ${bySeverity}.`);
   }
+
+  lines.push(...scanCoverageLines(input.scanCoverage));
 
   // Titles are a mix of noun phrases and sentences, so list them rather than weave
   // them into a sentence.
@@ -58,7 +65,9 @@ export function buildExecutiveSummary(
       lines.push("This is the first scan of this site. Later scans are compared against it.");
     } else {
       const h = input.history;
-      lines.push(
+      if (h.comparisonComplete === false) {
+        lines.push(`Comparison incomplete since ${formatDate(h.previousDate!)}: ${h.newCount} new, ${h.stillOpenCount} still observed. Resolved issues could not be verified.`);
+      } else lines.push(
         `Since the previous scan on ${formatDate(h.previousDate!)}: ${h.newCount} new, ${h.fixedCount} fixed, ${h.stillOpenCount} still open.`,
       );
     }
@@ -72,8 +81,8 @@ export function buildExecutiveSummary(
   if (input.manualReviewCount > 0) {
     lines.push(
       input.manualReviewCount === 1
-        ? "1 WCAG criterion cannot be checked automatically. A person needs to review it (listed at the end)."
-        : `${input.manualReviewCount} WCAG criteria cannot be checked automatically. A person needs to review them (listed at the end).`,
+        ? "1 WCAG criterion needs manual review (listed at the end)."
+        : `${input.manualReviewCount} WCAG criteria need manual review (listed at the end).`,
     );
   }
 

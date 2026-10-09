@@ -71,7 +71,7 @@ export async function gradeScan(
 
   // Same SSRF chokepoint as an audit. No allowPrivate — public targets only.
   const entry = await assertUrlAllowed(entryUrl);
-  const origin = entry.origin;
+  let origin = entry.origin;
 
   const browser = await launchAuditBrowser({ headless: true });
   const pages: PageAxe[] = [];
@@ -82,7 +82,7 @@ export async function gradeScan(
   // so its pages fill the page limit first; the rest of the site only takes the
   // slots left over. An entry at the site root keeps plain link order. Two plain
   // queues keep each enqueue O(1): a hostile page can carry thousands of links.
-  const scopePath = entry.pathname.slice(0, entry.pathname.lastIndexOf("/") + 1);
+  let scopePath = entry.pathname.slice(0, entry.pathname.lastIndexOf("/") + 1);
   const inScopeQueue: string[] = [entry.href];
   const outOfScopeQueue: string[] = [];
   const enqueue = (u: URL) => {
@@ -169,6 +169,12 @@ export async function gradeScan(
         });
       }
 
+      if (visited.length === 0) {
+        const settled = new URL(page.url());
+        origin = settled.origin;
+        scopePath = settled.pathname.slice(0, settled.pathname.lastIndexOf("/") + 1);
+      }
+      seen.add(page.url());
       pages.push({
         url: page.url(),
         violationsByImpact: byImpact,

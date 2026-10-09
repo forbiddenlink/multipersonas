@@ -1,3 +1,4 @@
+import { hasCompleteScanCoverage, parseScanCoverage, type ScanCoverage } from "./scan-coverage";
 import "server-only";
 import { parseTaskDefinition, parseTaskOutcomes, type TaskOutcome, type TaskDefinition } from "@engine/tasks/definition";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -28,6 +29,7 @@ export interface FindingRow {
 }
 
 interface RunRow {
+  scan_coverage?: unknown;
   task_definition?: unknown;
   task_outcomes?: unknown;
   id: string;
@@ -69,6 +71,7 @@ export interface FixCluster {
 }
 
 export interface ReportData {
+  scanCoverage: ScanCoverage | null;
   task?: TaskDefinition | null;
   taskOutcomes: TaskOutcome[];
   runId: string;
@@ -233,7 +236,7 @@ export function buildFixClusters(verdicts: ReportVerdict[]): FixCluster[] {
 export function splitLocations(pageUrl: string | null | undefined): string[] {
   if (!pageUrl) return [];
   return pageUrl
-    .split(",")
+    .split(", ")
     .map((s) => s.trim())
     .filter(Boolean);
 }
@@ -346,7 +349,20 @@ export function assembleReport(
     {} as Record<Severity, number>,
   );
 
+  const scanCoverage = parseScanCoverage(run.scan_coverage);
+  const conformance = buildConformance(verdicts, WCAG22_AA_CATALOG, AXE_TESTABLE_CODES);
+  if (!hasCompleteScanCoverage(scanCoverage)) {
+    for (const row of conformance.rows) {
+      if (row.status !== "passes-automated") continue;
+      row.status = "needs-manual-review";
+      row.remarks = "Scan coverage is incomplete or unknown. No automated pass can be established; review this criterion manually.";
+      conformance.counts["passes-automated"] -= 1;
+      conformance.counts["needs-manual-review"] += 1;
+    }
+  }
+
   return {
+    scanCoverage,
     task,
     taskOutcomes: task ? parseTaskOutcomes(task, run.task_outcomes) : [],
     runId: run.id,
@@ -357,7 +373,7 @@ export function assembleReport(
     verdicts,
     personaImpact,
     fixClusters: buildFixClusters(verdicts),
-    conformance: buildConformance(verdicts, WCAG22_AA_CATALOG, AXE_TESTABLE_CODES),
+    conformance,
     clientName: resolvedBranding.clientName ?? null,
     agencyName: resolvedBranding.agencyName ?? null,
     projectId: run.project_id ?? null,
@@ -399,7 +415,7 @@ export async function buildReport(supabase: SB, id: string): Promise<ReportData 
     (async () => {
       const { data: run, error: runError } = await supabase
         .from("test_runs")
-        .select("id,url,created_at,persona_ids,project_id,task_definition,task_outcomes")
+        .select("id,url,created_at,persona_ids,project_id,task_definition,task_outcomes,scan_coverage")
         .eq("id", id)
         .eq("status", "completed")
         .maybeSingle();

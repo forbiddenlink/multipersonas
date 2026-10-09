@@ -72,3 +72,47 @@ describe("rowToFinding + gate (web baseline)", () => {
     }])).rejects.toThrow("Could not load findings for run run-1: database unavailable");
   });
 });
+
+
+const audit = (id: string, scan_coverage?: import("@/lib/supabase/types").Json) => ({
+  id, url: "https://example.com", created_at: "2026-10-09T00:00:00Z", task_success_achieved: 0, task_success_total: 1, persona_ids: [], scan_coverage,
+});
+function comparisonClient(current: AxeFindingRow[], previous: AxeFindingRow[]) {
+  return { from: () => {
+    let runId = "";
+    const query = {
+      select: () => query,
+      eq: (column: string, value: string) => { if (column === "test_run_id") runId = value; return query; },
+      then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: runId === "current" ? current : previous, error: null }).then(resolve),
+    };
+    return query;
+  } };
+}
+
+it.each([
+  undefined,
+  null,
+  { checks: [], executionFailures: [] },
+  { checks: [{ url: "https://example.com/private", step: 0, status: "failed", error: "axe timed out" }], executionFailures: [] },
+  { checks: [{ url: "https://example.com/other", step: 0, status: "scanned" }], executionFailures: [] },
+  { checks: [{ url: "https://example.com/private", step: 0, status: "scanned" }], executionFailures: [{ url: "https://example.com", error: "browser closed" }] },
+])("does not clear a prior finding without reliable checks of its location: %j", async (coverage) => {
+  const previous = row({ title: "Missing label", rule_id: "label", page_url: "https://example.com/private" });
+  const client = comparisonClient([], [previous]);
+  const diff = await compareProjectRuns(client as never, [audit("current", coverage), audit("previous")]);
+  expect(diff?.cleared).toEqual([]);
+  expect(diff?.comparisonComplete).toBe(false);
+});
+
+it("clears a defect only after all its prior locations were checked and retains observed new defects", async () => {
+  const previous = row({ title: "Missing label", rule_id: "label", page_url: "https://example.com/private, https://example.com/cart?ids=1,2" });
+  const fresh = row({ title: "New contrast", rule_id: "color-contrast", page_url: "https://example.com/private" });
+  const checks = ["https://example.com/private", "https://example.com/cart?ids=1,2"].map((url) => ({ url, step: 0, status: "scanned" }));
+  const diff = await compareProjectRuns(comparisonClient([fresh], [previous]) as never, [audit("current", { checks, executionFailures: [] }), audit("previous")]);
+  expect(diff?.comparisonComplete).toBe(true);
+  expect(diff?.cleared.map((finding) => finding.ruleId)).toEqual(["label"]);
+  expect(diff?.newDefects.map((finding) => finding.ruleId)).toEqual(["color-contrast"]);
+  const partial = await compareProjectRuns(comparisonClient([fresh], [previous]) as never, [audit("current", { checks: checks.slice(0, 1), executionFailures: [] }), audit("previous")]);
+  expect(partial?.cleared).toEqual([]);
+  expect(partial?.newDefects).toHaveLength(1);
+});

@@ -1,4 +1,4 @@
-import type { Finding, AgentResult } from "../agent/engine.js";
+import type { Finding, AgentResult, ScanCoverage } from "../agent/engine.js";
 import { SEVERITIES, severityRank as domainSeverityRank } from "../domain/vocab.js";
 import type { Persona } from "../personas/types.js";
 
@@ -127,19 +127,29 @@ export function groupAxeByRule(findings: Finding[]): AxeRuleGroup[] {
 
 const MAX_ELEMENTS_SHOWN = 5;
 
-function renderAxeSection(axeFindings: Finding[]): string {
+function renderAxeSection(axeFindings: Finding[], coverage?: ScanCoverage, personaReport = false): string {
   const lines: string[] = [];
   const groups = groupAxeByRule(axeFindings);
 
   lines.push("## Accessibility defects");
   lines.push("");
   lines.push(
-    "Found by axe-core in every state reached — not just the entry page. These are rule violations, not opinions: each names the rule, the element, and where it appeared.",
+    "Found by axe-core in the states successfully checked. These are rule violations, not opinions: each names the rule, the element, and where it appeared.",
   );
   lines.push("");
 
+  const failures = coverage?.checks.filter((check) => check.status === "failed") ?? [];
+  const incomplete = failures.length > 0 || (coverage?.executionFailures.length ?? 0) > 0 || (personaReport && !coverage?.checks.some((check) => check.status === "scanned"));
+  if (incomplete) {
+    lines.push("> **Accessibility coverage incomplete.** Unchecked states may contain violations.");
+    lines.push("");
+    for (const failure of failures) lines.push(`- Check failed at ${failure.url} (step ${failure.step}): ${failure.error ?? "Unknown error"}`);
+    for (const failure of coverage?.executionFailures ?? []) lines.push(`- Persona execution failed at ${failure.url}: ${failure.error}`);
+    if (!coverage?.checks.some((check) => check.status === "scanned")) lines.push("- No successful accessibility checks were recorded.");
+    lines.push("");
+  }
   if (groups.length === 0) {
-    lines.push("*No axe-core violations in any state reached.*");
+    lines.push(incomplete ? "*No axe-core violations were recorded. This is not a clean accessibility result.*" : "*No axe-core violations in the states successfully checked.*");
     lines.push("");
     return lines.join("\n");
   }
@@ -234,6 +244,10 @@ export function generateMarkdownReport(
   reports: PersonaReport[],
   axeFindings: Finding[] = [],
 ): string {
+  const coverage: ScanCoverage = {
+    checks: reports.flatMap((report) => report.agentResult.scanCoverage?.checks ?? []),
+    executionFailures: reports.flatMap((report) => report.agentResult.scanCoverage?.executionFailures ?? []),
+  };
   const hasTaskEvidence = reports.some((report) => report.agentResult.taskEvidence);
   const achieved = reports.filter((r) => r.agentResult.goalCompleted).length;
   const uxFindings = reports.flatMap((r) => deduplicateFindings(r.agentResult.findings));
@@ -282,7 +296,7 @@ export function generateMarkdownReport(
 
   lines.push("---");
   lines.push("");
-  lines.push(renderAxeSection(axeFindings));
+  lines.push(renderAxeSection(axeFindings, coverage, true));
   lines.push("---");
   lines.push("");
 

@@ -70,6 +70,17 @@ describe("grader evidence failures", () => {
     mocks.links.mockResolvedValue([]);
   });
 
+  it("crawls the settled entry origin after a canonical redirect without including unrelated origins", async () => {
+    const entry = "http://public.example/";
+    const canonical = "https://www.public.example/";
+    mocks.goto.mockImplementation(async (url: string) => {
+      mocks.currentUrl = url === entry ? canonical : url;
+      return { ok: () => true };
+    });
+    mocks.links.mockResolvedValueOnce([`${canonical}checkout`, "https://outside.example/next"]);
+    expect((await gradeScan(entry)).pagesVisited).toEqual([canonical, `${canonical}checkout`]);
+  });
+
   it("fails instead of issuing a grade when no page loads", async () => {
     mocks.goto.mockRejectedValue(new Error("navigation failed"));
     await expect(gradeScan(mocks.currentUrl)).rejects.toThrow("No public pages could be evaluated");

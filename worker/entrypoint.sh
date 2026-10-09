@@ -38,6 +38,9 @@ DENY_RANGES="
   --deny-range ff00::/8
 "
 
+export AUDIT_BROWSER_PROXY="${AUDIT_BROWSER_PROXY:-http://127.0.0.1:4750}"
+export AUDIT_REQUIRE_EGRESS_PROXY=1
+
 smokescreen --listen-ip 127.0.0.1 --listen-port 4750 $DENY_RANGES &
 
 exec pnpm --filter worker start

@@ -1,4 +1,5 @@
 import "server-only";
+import { hasCompleteScanCoverage, parseScanCoverage, scanCoverageLines } from "@/lib/scan-coverage";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Finding } from "@engine/agent/engine";
 import { defectKey } from "@engine/agent/defect-key";
@@ -32,6 +33,9 @@ export interface ClearedDefect {
 }
 
 export interface RunRegression {
+  /** Clears require successful current checks of every prior finding location. */
+  comparisonComplete: boolean;
+  comparisonNotes: string[];
   /** Newest completed run for the project. */
   current: AuditListItem;
   /** Immediately older run — null on the first scan. */
@@ -115,7 +119,16 @@ export async function compareProjectRuns(
     previousFindings.map((f) => [defectKey(f), f] as const),
   );
 
-  const cleared: ClearedDefect[] = gate.fixed.map((key) => {
+  const scanCoverage = parseScanCoverage(current.scan_coverage);
+  const scannedUrls = new Set(scanCoverage?.checks.filter((check) => check.status === "scanned").map((check) => check.url));
+  const previousLocations = previousRows.flatMap((row) => (row.page_url ?? "").split(", ").map((url) => url.trim()));
+  const unvisitedLocations = [...new Set(previousLocations.filter((url) => !url || !scannedUrls.has(url)))];
+  const comparisonComplete = hasCompleteScanCoverage(scanCoverage) && unvisitedLocations.length === 0;
+  const comparisonNotes = comparisonComplete ? [] : [
+    ...scanCoverageLines(scanCoverage),
+    ...unvisitedLocations.map((url) => `Previous finding location was not checked: ${url || "URL not recorded"}`),
+  ];
+  const cleared: ClearedDefect[] = (comparisonComplete ? gate.fixed : []).map((key) => {
     const f = previousByKey.get(key);
     return {
       key,
@@ -136,6 +149,8 @@ export async function compareProjectRuns(
     currentRows.some((r) => !r.target) || previousRows.some((r) => !r.target);
 
   return {
+    comparisonComplete,
+    comparisonNotes,
     current,
     previous,
     newDefects: gate.newDefects.map((f) => ({

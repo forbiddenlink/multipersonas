@@ -125,12 +125,13 @@ prove that credentials work or that the webhook can grant access.
 
 1. Reuse the existing founding product/monthly price after verifying it in Stripe; do not
    create another product just because older setup instructions said to do so.
-2. Configure `STRIPE_SECRET_KEY` (prefer a restricted key with Checkout Session write
-   and subscription-list read permissions), `STRIPE_FOUNDING_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET` as server-only
+2. Configure `STRIPE_SECRET_KEY` (prefer a restricted key with Checkout Session read/write
+   and subscription read permissions), `STRIPE_FOUNDING_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET` as server-only
    configuration. Store keys as sensitive values; never paste them into Codex. The
    webhook also needs the existing Supabase service-role configuration.
 3. Configure `https://personaudit.com/api/stripe/webhook` for
-   `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+   `checkout.session.completed`, `checkout.session.expired`,
+   `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`,
    `customer.subscription.updated`, and `customer.subscription.deleted`. Verify its
    signature and event delivery with synthetic sandbox data first.
 4. Set the existing `NEXT_PUBLIC_FOUNDING_CHECKOUT_URL` visibility flag and rebuild.
@@ -144,8 +145,57 @@ prove that credentials work or that the webhook can grant access.
 The webhook now returns HTTP 500 when its profile update fails or matches no profile,
 so Stripe can retry. Checkout grants require subscription mode and a completed payment
 status. Subscription access is reconciled against the customer's current active/trialing
-founding subscriptions, reducing stale sequential-event failures. Duplicate subscriptions,
-concurrent-event races, and a complete sandbox buying flow still need verification.
+founding subscriptions, reducing stale sequential-event failures. A complete sandbox
+buying flow and production event delivery still need verification.
+
+### Checkout reservation and persona coverage rollout (2026-10-09)
+
+Both additive migrations were applied to the linked production database on 2026-10-09:
+
+- `web/supabase/migrations/20261009140804_checkout_attempt_reservations.sql` adds
+  server-only `checkout_attempts`: one reservation per account across paid tiers,
+  immutable Stripe creation parameters, and a stable attempt-based idempotency key.
+  Public, anonymous, and authenticated roles have no table access.
+- `web/supabase/migrations/20261009140805_persona_scan_coverage.sql` adds nullable
+  `test_runs.scan_coverage`. A legacy `null` means coverage is unknown; it must not
+  be interpreted as a successful run with no failures.
+
+Both migrations precede the updated web app and worker rollout. The production
+migration history and schema were verified: checkout RLS is enabled, public roles
+have no table grants, and scan coverage is nullable JSONB. The migrations also passed
+a disposable PostgreSQL fixture with concurrent reservation and access-denial checks.
+
+The new checkout path reuses a reserved open session. It frees the reservation only
+after Stripe confirms the session expired, or a completed session's subscription is
+terminal (`canceled` or `incomplete_expired`). A completed session with an active
+subscription blocks another checkout even while the entitlement webhook is delayed.
+An ambiguous Stripe create response or session-save failure retains the same key and
+frozen parameters. An unknown session older than 23 hours, or within 31 minutes of
+its fixed expiry, fails closed and requires reconciliation before another checkout.
+Do not delete an ambiguous reservation merely to retry payment.
+
+Signed `checkout.session.completed`, `checkout.session.expired`,
+`checkout.session.async_payment_succeeded`, and `checkout.session.async_payment_failed`
+events can fill a missing session ID only when the attempt and user metadata match
+and the stored ID is still null. Subscription fulfillment is unchanged. Verify that
+the live endpoint subscribes to the expiry and failure events as well as completion
+events before rollout. The production endpoint was verified and updated on
+2026-10-09 to include expiry and async failure alongside its existing events.
+
+Before enabling the new checkout path, reconcile or expire preexisting live Checkout
+Sessions created by the old path. Those sessions have no reservation and are not
+retroactively protected by this change. Stripe reported zero open Checkout Sessions
+at the 2026-10-09 pre-release check. No live purchase was created. The application
+key permissions and a paid end-to-end transaction remain unverified.
+
+Persona results now retain optional coverage as `checks` entries with `url`, `step`,
+`status` (`scanned` or `failed`), and an optional `error`, plus `executionFailures`
+entries with `url` and `error`. Paid UX execution continues after an axe failure;
+raw output, worker persistence, saved history, reports, CSV metadata, and copied
+Markdown retain the failure evidence. Project comparisons and notification emails
+suppress verified fixes when coverage is incomplete or any prior finding location
+was not checked. Verify those outputs after deploying both packages, including a
+failed check and a legacy run with unknown coverage.
 
 The authenticated Checkout request currently has no Auth need custom field or terms
 consent collection. Record Auth need/local-vs-hosted answers separately from buyers and
