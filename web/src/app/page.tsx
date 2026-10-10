@@ -142,7 +142,7 @@ export default function Home() {
                   </a>
                 </p>
               </div>
-              <ResponsiveDisclosure summary="Probe ledger: four demo apps, scanned both ways" className="min-w-0">
+              <ResponsiveDisclosure summary="Show the results table" className="min-w-0">
               <div
       tabIndex={0}
       role="region"

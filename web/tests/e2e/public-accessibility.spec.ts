@@ -7,18 +7,20 @@ test.use({ viewport: { width: 390, height: 844 }, storageState: { cookies: [], o
 // something on a block that actually overflows 390px. Picking "the first pre" put a
 // borderline one under test on /docs -- 43 characters, which wrapped locally and did
 // not in CI -- so the block is chosen by label and by its longest line instead.
-const ROUTES: { route: string; block: string }[] = [
-  // "personaudit scan https://app.client.com --session ./session.json" -- 65 chars.
-  { route: "/", block: "Crawl every reachable state command" },
-  { route: "/for-agencies", block: "Scan the client site command" },
+// The home page is not listed: its terminal band wraps commands instead of scrolling
+// them, so it has no scrollable region to drive. /for-agencies tucks each step into a
+// <details> on phones, so `open` names the step summary to expand first.
+const ROUTES: { route: string; block: string; open?: string }[] = [
+  { route: "/for-agencies", block: "Scan the client site command", open: "Scan the client site" },
   // "npx personaudit scan https://app.example.com --session ./session.json \\" -- 71 chars.
   { route: "/docs", block: "in CI, exit non-zero only on new defects command" },
 ];
 
-for (const { route, block } of ROUTES) {
+for (const { route, block, open } of ROUTES) {
   test(`${route} command example is keyboard-scrollable on mobile`, async ({ page }) => {
     const response = await page.goto(route);
     expect(response?.status()).toBe(200);
+    if (open) await page.locator("summary", { hasText: open }).click();
     // axe judges every scrollable region on the page, not just the one driven below.
     const result = await new AxeBuilder({ page }).withRules(["scrollable-region-focusable"]).analyze();
     expect(result.violations).toEqual([]);
