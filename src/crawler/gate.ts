@@ -1,6 +1,7 @@
 import type { Finding } from "../agent/engine.js";
 import { defectKey } from "../agent/defect-key.js";
 import { severityAtLeast, type Severity } from "../domain/vocab.js";
+import { isExpired, todayUtc, type Suppression, type SuppressionOutcome } from "./suppressions.js";
 
 /**
  * CI gating for scan.
@@ -38,6 +39,9 @@ export interface GateResult {
   failing: Finding[];
   /** Defects in the baseline that are no longer present — worth celebrating, never fails. */
   fixed: string[];
+  /** Defects hidden by an active suppression. Never in `newDefects` or `failing`. */
+  suppressed: Finding[];
+  suppressions: SuppressionOutcome;
   passed: boolean;
   /** 0 pass, 2 gate failed. (1 is reserved for usage/runtime errors elsewhere.) */
   exitCode: 0 | 2;
@@ -51,15 +55,25 @@ export interface GateResult {
  */
 export function evaluateGate(
   findings: Finding[],
-  options: { failOn: Severity; baseline?: Baseline | null },
+  options: { failOn: Severity; baseline?: Baseline | null; suppressions?: Suppression[]; today?: string },
 ): GateResult {
   const baselineKeys = new Set(options.baseline?.keys ?? []);
   const currentKeys = new Set(findings.map((f) => defectKey(f)));
+  const today = options.today ?? todayUtc();
 
-  const newDefects = findings.filter((f) => !baselineKeys.has(defectKey(f)));
+  const suppressions: SuppressionOutcome = { active: [], expired: [], unmatched: [] };
+  for (const s of options.suppressions ?? []) {
+    if (!currentKeys.has(s.key)) suppressions.unmatched.push(s);
+    else if (isExpired(s, today)) suppressions.expired.push(s);
+    else suppressions.active.push(s);
+  }
+  const activeKeys = new Set(suppressions.active.map((s) => s.key));
+
+  const suppressed = findings.filter((f) => activeKeys.has(defectKey(f)));
+  const newDefects = findings.filter((f) => !baselineKeys.has(defectKey(f)) && !activeKeys.has(defectKey(f)));
   const failing = newDefects.filter((f) => severityAtLeast(f.severity, options.failOn));
   const fixed = [...baselineKeys].filter((k) => !currentKeys.has(k));
 
-  const passed = failing.length === 0;
-  return { newDefects, failing, fixed, passed, exitCode: passed ? 0 : 2 };
+  const passed = failing.length === 0 && suppressions.expired.length === 0;
+  return { newDefects, failing, fixed, suppressed, suppressions, passed, exitCode: passed ? 0 : 2 };
 }

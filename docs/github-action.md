@@ -54,9 +54,49 @@ never leave the runner.
 | `url`       | — (required)        | URL to scan.                                                       |
 | `fail-on`   | `serious`           | Minimum severity that fails the build.                             |
 | `baseline`  | _(none)_            | Baseline JSON path; only defects not in it count as new.           |
+| `suppressions` | _(none)_         | Suppressions JSON (reason, owner, expiry per defect key). See below. |
+| `comment`   | `false`             | `"true"` posts or updates one sticky PR comment. Needs `pull-requests: write`. |
+| `github-token` | `${{ github.token }}` | Token for the comment. Only read when `comment` is `"true"`. |
 | `session`   | _(none)_            | Saved session file for authenticated scans.                        |
 | `max-pages` | `20`                | Max pages to crawl.                                                |
 | `report`    | `personaudit-report`| Output directory (add your own upload-artifact step to keep it).   |
+
+## Suppressions with an expiry
+
+To accept a known defect for a while, list its key (from `scan.json`) with a reason, an
+owner and an expiry date:
+
+```json
+{ "suppressions": [
+  { "key": "color-contrast|.promo > a", "reason": "Vendor widget, fix due in their Q3 release", "owner": "ana", "expires": "2026-12-31" }
+] }
+```
+
+The defect does not count toward the gate until the expiry date. After that, the gate fails
+while the defect is still present, naming the key, owner and date. A key that matches no
+current defect is a warning, not a failure. Reports list suppressed and expired items
+separately in `scan.md` and `scan.json`.
+
+## Sticky pull request comment
+
+Set `comment: "true"` and grant `pull-requests: write` to get one comment per pull request,
+updated in place on every run (found by the hidden `<!-- personaudit-gate -->` marker). It
+shows new, fixed, still-open, suppressed and expired counts, and the top five new defects. It
+runs on `pull_request` events only, and if the token cannot write (a fork PR gets a read-only
+token) the step warns and leaves the gate result untouched.
+
+```yaml
+permissions:
+  contents: read
+  pull-requests: write
+steps:
+  - uses: actions/checkout@v4
+  - uses: forbiddenlink/multipersonas@v1
+    with:
+      url: https://staging.your-site.com
+      baseline: personaudit-baseline.json
+      comment: "true"
+```
 
 ## Outputs
 

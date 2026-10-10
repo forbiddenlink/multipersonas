@@ -1,6 +1,7 @@
 import type { Finding, AgentResult, ScanCoverage } from "../agent/engine.js";
 import { SEVERITIES, severityRank as domainSeverityRank } from "../domain/vocab.js";
 import type { Persona } from "../personas/types.js";
+import type { Suppression, SuppressionOutcome } from "../crawler/suppressions.js";
 
 /**
  * The report is the product. Two rules shape it:
@@ -315,6 +316,30 @@ export function generateMarkdownReport(
   return lines.join("\n");
 }
 
+const suppressionLine = (s: Suppression) =>
+  `- \`${s.key.replace(/`/g, "'")}\`: ${s.reason} (owner ${s.owner}, expires ${s.expires})`;
+
+/** Suppressed and expired items get their own sections so an ignore is never silent. */
+function renderSuppressions(o: SuppressionOutcome): string[] {
+  const lines: string[] = [];
+  const section = (heading: string, intro: string, items: Suppression[]) => {
+    if (items.length === 0) return;
+    lines.push(`## ${heading}`, "", intro, "", ...items.map(suppressionLine), "");
+  };
+  section(
+    "Expired suppressions",
+    "These suppressions have expired and their defects are still present, so the gate fails until they are fixed or the suppression is renewed.",
+    o.expired,
+  );
+  section(
+    "Suppressed defects (accepted risk)",
+    "Hidden from the gate until the expiry date shown. Still listed below with the other defects.",
+    o.active,
+  );
+  section("Suppressions matching no current defect", "Fixed, or the key has a typo. Remove them from the suppressions file.", o.unmatched);
+  return lines;
+}
+
 /**
  * Report for a crawl-only scan: deterministic accessibility coverage, no
  * personas. This is the product's evidence-backed core (run 4). Every number
@@ -325,6 +350,7 @@ export function generateScanReport(
   axeFindings: Finding[],
   pagesVisited: string[],
   skipped: string[] = [],
+  suppressions?: SuppressionOutcome,
 ): string {
   const groups = groupAxeByRule(axeFindings);
   const lines: string[] = [];
@@ -348,6 +374,7 @@ export function generateScanReport(
     lines.push(`> Page budget reached. ${skipped.length} more states were found but not scanned; raise \`--max-pages\` to cover them.`);
   }
   lines.push("");
+  if (suppressions) lines.push(...renderSuppressions(suppressions));
 
   lines.push("---");
   lines.push("");

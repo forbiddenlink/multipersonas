@@ -30,6 +30,17 @@ describe("action.yml (GitHub Action manifest)", () => {
     expect(manifest).not.toMatch(/scan\s+\$\{\{\s*inputs\.url/);
   });
 
+  it("keeps the PR comment opt-in and runs it only on pull_request events", () => {
+    expect(manifest).toMatch(/comment:\s*\n\s*description:[^\n]*\n\s*required: false\n\s*default: "false"/);
+    expect(manifest).toMatch(/if:.*inputs\.comment == 'true'.*github\.event_name == 'pull_request'/);
+    expect(manifest).toMatch(/default: \$\{\{ github\.token \}\}/);
+  });
+
+  it("passes the token through env, never interpolated into the run command", () => {
+    expect(manifest).toMatch(/GITHUB_TOKEN:\s*\$\{\{\s*inputs\.github-token\s*\}\}/);
+    expect(manifest).not.toMatch(/run:.*inputs\.github-token/);
+  });
+
   it("pins third-party actions to a commit SHA", () => {
     for (const line of manifest.split("\n").filter((l) => l.includes("uses:"))) {
       expect(line, line.trim()).toMatch(/@[0-9a-f]{40}\b/);

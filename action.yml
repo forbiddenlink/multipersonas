@@ -17,6 +17,10 @@ inputs:
     description: "Path (in the consumer repo) to a baseline JSON. Only defects NOT in it count as new. Omit to treat every current defect as new. Create one with `npx personaudit scan <url> --baseline <file> --update-baseline`."
     required: false
     default: ""
+  suppressions:
+    description: "Path (in the consumer repo) to a suppressions JSON: {\"suppressions\": [{\"key\", \"reason\", \"owner\", \"expires\": \"YYYY-MM-DD\"}]}. A suppressed defect does not count toward the gate until its expiry; an expired suppression on a still-present defect fails the gate. Keys are in scan.json."
+    required: false
+    default: ""
   session:
     description: "Path to a saved `personaudit auth` session file, to scan authenticated pages."
     required: false
@@ -25,6 +29,14 @@ inputs:
     description: "Maximum number of pages to crawl."
     required: false
     default: "20"
+  comment:
+    description: "\"true\" posts (or updates) one sticky comment on the pull request with new / fixed / still-open counts and the top new defects. Needs `pull-requests: write` on the workflow. Off by default; only runs on pull_request events."
+    required: false
+    default: "false"
+  github-token:
+    description: "Token used to post the comment. Only read when `comment` is \"true\"."
+    required: false
+    default: ${{ github.token }}
   report:
     description: "Directory to write the report into (uploaded as an artifact by your workflow if you add an upload step)."
     required: false
@@ -66,12 +78,14 @@ runs:
         MP_URL: ${{ inputs.url }}
         MP_FAIL_ON: ${{ inputs.fail-on }}
         MP_BASELINE: ${{ inputs.baseline }}
+        MP_SUPPRESSIONS: ${{ inputs.suppressions }}
         MP_SESSION: ${{ inputs.session }}
         MP_MAX_PAGES: ${{ inputs.max-pages }}
         MP_REPORT: ${{ inputs.report }}
       run: |
         args=( scan "$MP_URL" --fail-on "$MP_FAIL_ON" --max-pages "$MP_MAX_PAGES" --output "$MP_REPORT" )
         if [ -n "$MP_BASELINE" ]; then args+=( --baseline "$MP_BASELINE" ); fi
+        if [ -n "$MP_SUPPRESSIONS" ]; then args+=( --suppressions "$MP_SUPPRESSIONS" ); fi
         if [ -n "$MP_SESSION" ]; then args+=( --session "$MP_SESSION" ); fi
         # Keep the CLI's exit code (0 clean, 1 error, 2 new defects) while capturing its
         # output, so the step can publish `new-defects` before it fails the job.
@@ -86,3 +100,14 @@ runs:
           echo "report-path=${MP_REPORT}/scan.md"
         } >> "$GITHUB_OUTPUT"
         exit "$code"
+    - name: Comment on the pull request
+      # Runs after a failed gate too: that is when the comment matters most. A comment
+      # failure only warns (see src/pr-comment.ts), so it never changes the gate result.
+      if: ${{ always() && inputs.comment == 'true' && github.event_name == 'pull_request' }}
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        MP_ACTION_PATH: ${{ github.action_path }}
+        MP_REPORT: ${{ inputs.report }}
+        MP_GATE_OUTCOME: ${{ steps.gate.outcome }}
+      run: node "$MP_ACTION_PATH/dist/pr-comment.js" "$MP_REPORT/scan.json"

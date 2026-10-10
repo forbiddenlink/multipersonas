@@ -70,3 +70,45 @@ describe("baselineFromFindings", () => {
     expect(b.keys).toEqual(["a|1", "b|2"]);
   });
 });
+
+describe("evaluateGate with suppressions", () => {
+  const sup = (key: string, expires = "2026-12-31") => ({ key, reason: "legacy widget", owner: "ana", expires });
+  const today = "2026-06-01";
+
+  it("an active suppression keeps its defect out of new and failing", () => {
+    const g = evaluateGate([f("a", "1"), f("b", "2")], { failOn: "critical", suppressions: [sup("a|1")], today });
+    expect(g.suppressed.map((d) => d.ruleId)).toEqual(["a"]);
+    expect(g.newDefects.map((d) => d.ruleId)).toEqual(["b"]);
+    expect(g.suppressions.active).toHaveLength(1);
+  });
+
+  it("passes when the only new defect is suppressed", () => {
+    const g = evaluateGate([f("a", "1")], { failOn: "critical", suppressions: [sup("a|1")], today });
+    expect(g.passed).toBe(true);
+    expect(g.exitCode).toBe(0);
+  });
+
+  it("an expired suppression on a present defect fails the gate, even for a baselined defect", () => {
+    const findings = [f("a", "1", "minor")];
+    const g = evaluateGate(findings, {
+      failOn: "critical", baseline: baselineFromFindings(findings), suppressions: [sup("a|1", "2026-05-31")], today,
+    });
+    expect(g.suppressions.expired.map((s) => s.key)).toEqual(["a|1"]);
+    expect(g.passed).toBe(false);
+    expect(g.exitCode).toBe(2);
+    expect(g.suppressed).toHaveLength(0);
+  });
+
+  it("an expired suppression stops hiding the defect", () => {
+    const g = evaluateGate([f("a", "1")], { failOn: "critical", suppressions: [sup("a|1", "2026-05-31")], today });
+    expect(g.failing).toHaveLength(1);
+  });
+
+  it("an unknown key is reported as unmatched but does not fail", () => {
+    const g = evaluateGate([f("a", "1", "minor")], {
+      failOn: "critical", baseline: baselineFromFindings([f("a", "1", "minor")]), suppressions: [sup("typo|9"), sup("old|1", "2020-01-01")], today,
+    });
+    expect(g.suppressions.unmatched.map((s) => s.key)).toEqual(["typo|9", "old|1"]);
+    expect(g.passed).toBe(true);
+  });
+});
