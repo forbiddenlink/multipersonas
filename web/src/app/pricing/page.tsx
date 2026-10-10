@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { GradeForm } from "@/components/grade-form";
 import { BatesSerial, ExhibitHead } from "@/components/dossier/exhibit-head";
+import { ResponsiveDisclosure } from "@/components/dossier/responsive-disclosure";
 import { WcagCitation } from "@/components/forensic/wcag-citation";
 import { buttonVariants } from "@/components/ui/button";
 import { JsonLd, faqSchema } from "@/components/json-ld";
@@ -186,8 +187,7 @@ export default function PricingPage() {
         {/* ── Hero ── */}
         <section className="section-y-sm border-b border-border">
           <div className="frame">
-            <ExhibitHead label="Pricing" />
-            <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center lg:gap-16">
+            <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center lg:gap-16">
               <div className="min-w-0">
                 <h1 className="display max-w-2xl text-[clamp(2.2rem,4.6vw,3.5rem)] leading-[1.05]">
                   The part that produces the evidence <span className="mark-sweep">is free.</span>
@@ -292,16 +292,18 @@ export default function PricingPage() {
 
                   <div className="min-w-0">
                     <p className="max-w-md leading-relaxed text-muted-foreground">{tier.who}</p>
-                    <ul className="mt-5 grid gap-2 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-2">
-                      {tier.features.map((feature) => (
-                        <li key={feature} className="flex min-w-0 gap-2 text-sm leading-relaxed">
-                          <span aria-hidden="true" className="mt-0.5 text-muted-foreground">
-                            +
-                          </span>
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <ResponsiveDisclosure summary={`What is included in ${tier.name}`} className="mt-5">
+                      <ul className="grid gap-2 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-2">
+                        {tier.features.map((feature) => (
+                          <li key={feature} className="flex min-w-0 gap-2 text-sm leading-relaxed">
+                            <span aria-hidden="true" className="mt-0.5 text-muted-foreground">
+                              +
+                            </span>
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </ResponsiveDisclosure>
                     <p className="mt-5 border-t border-border pt-4 text-sm leading-relaxed text-muted-foreground">
                       {tier.limits}
                     </p>
@@ -343,10 +345,10 @@ export default function PricingPage() {
                       <th
                         key={tier.id}
                         scope="col"
-                        className="w-[4.5rem] px-1 py-2 text-center align-bottom font-mono text-[10px] font-normal uppercase tracking-[0.06em] text-muted-foreground sm:w-[18%] sm:px-2 sm:text-xs sm:tracking-[0.08em]"
+                        className="w-[5rem] px-1 py-2 text-center align-bottom font-mono text-xs font-normal uppercase tracking-[0.04em] text-muted-foreground sm:w-[18%] sm:px-2 sm:tracking-[0.08em]"
                       >
                         {tier.name}
-                        <span className="mt-0.5 block font-sans text-[10px] normal-case tracking-normal sm:text-[11px]">
+                        <span className="mt-0.5 block font-sans text-xs normal-case tracking-normal">
                           {tier.price} {tier.cadence}
                         </span>
                       </th>
@@ -363,7 +365,7 @@ export default function PricingPage() {
                         ) : null}
                       </th>
                       {TIERS.map((tier) => (
-                        <td key={tier.id} className="px-1 py-3 text-center font-mono text-[11px] uppercase tracking-[0.04em] sm:px-2 sm:text-xs sm:tracking-[0.08em]">
+                        <td key={tier.id} className="px-1 py-3 text-center font-mono text-xs uppercase tracking-[0.04em] sm:px-2 sm:tracking-[0.08em]">
                           <AvailabilityCell value={row.plans[tier.id]} />
                         </td>
                       ))}
@@ -378,7 +380,7 @@ export default function PricingPage() {
         {/* ── Why $199 beats an enterprise contract, and why free tools aren't enough ── */}
         <section aria-labelledby="anchor-heading" className="section-y">
           <div className="frame">
-          <ExhibitHead label="Compared to the alternatives" />
+          <ExhibitHead label="Alternatives" />
           <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
             <div>
               <h2 id="anchor-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
@@ -389,31 +391,49 @@ export default function PricingPage() {
                 and Evinced are generally sold by quote; we have not verified their current prices.
                 Two we did check:
               </p>
-              <ul className="mt-4 max-w-md list-disc space-y-2 pl-5 leading-relaxed text-muted-foreground">
-                <li>
-                  <a href="https://pope.tech/pricing" target="_blank" rel="noopener noreferrer" className="text-link">
-                    Pope Tech
-                  </a>{" "}
-                  lists Free (25 pages), Team at $25/month, Business Plus at $225/month (includes
-                  scanning behind a login), and Professional at $400/month.
-                </li>
-                <li>
-                  <a href="https://silktide.com/pricing/" target="_blank" rel="noopener noreferrer" className="text-link">
-                    Silktide
-                  </a>{" "}
-                  is quote-only with a 12-month minimum.
-                </li>
-              </ul>
+              <table className="mt-6 w-full max-w-lg border-collapse text-left text-sm">
+                <caption className="mb-3 text-left text-sm leading-relaxed text-muted-foreground">
+                  As of Oct 2026, from each vendor&apos;s pricing page; plans change, so check the source.
+                </caption>
+                <thead>
+                  <tr className="border-b-2 border-foreground">
+                    <th scope="col" className="py-2 pr-4 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">Vendor</th>
+                    <th scope="col" className="py-2 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">Listed pricing</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-border align-top">
+                    <th scope="row" className="py-3 pr-4 font-normal">
+                      <a href="https://pope.tech/pricing" target="_blank" rel="noopener noreferrer" className="text-link">
+                        Pope Tech
+                      </a>
+                    </th>
+                    <td className="py-3 leading-relaxed text-muted-foreground">
+                      Free (25 pages), Team at $25/month, Business Plus at $225/month (includes
+                      scanning behind a login), and Professional at $400/month.
+                    </td>
+                  </tr>
+                  <tr className="border-b border-border align-top">
+                    <th scope="row" className="py-3 pr-4 font-normal">
+                      <a href="https://silktide.com/pricing/" target="_blank" rel="noopener noreferrer" className="text-link">
+                        Silktide
+                      </a>
+                    </th>
+                    <td className="py-3 leading-relaxed text-muted-foreground">
+                      Quote-only with a 12-month minimum.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
               <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
-                As of Oct 2026, from each vendor&apos;s pricing page; plans change, so check the
-                source. Agency founding access is $199 a month, no sales call.
+                Agency founding access is $199 a month, no sales call.
               </p>
             </div>
             <div className="sheet min-w-0 p-6 sm:p-8">
               <p className="label-mono">Free tools, and where they stop</p>
               <p className="mt-3 max-w-md font-serif text-[1.0625rem] leading-relaxed">
                 WAVE, Lighthouse CI, and pa11y-ci are free and worth running. Personaudit keys each
-                defect to a <span className="mark">render-stable id</span>, so a framework that
+                defect to a render-stable id, so a framework that
                 regenerates element ids on every build does not make the baseline noisy. We have
                 not benchmarked every free tool on this, so test yours against a churning build.
               </p>
@@ -430,13 +450,12 @@ export default function PricingPage() {
         {/* ── FAQ ── */}
         <section aria-labelledby="faq-heading" className="border-t border-border bg-card section-y">
           <div className="frame-narrow">
-            <ExhibitHead label="Questions" />
-            <h2 id="faq-heading" className="display mt-8 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+            <h2 id="faq-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
               The questions a serious buyer actually asks.
             </h2>
             <div className="mt-10 border-t border-border">
               {PRICING_FAQS.map((faq) => (
-                <details key={faq.question} className="group border-b border-border py-6">
+                <details key={faq.question} className="group border-b border-border py-4 sm:py-6">
                   <summary className="flex cursor-pointer list-none items-start justify-between gap-4 rounded-sm font-medium [&::-webkit-details-marker]:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
                     <span>{faq.question}</span>
                     <span aria-hidden="true" className="mt-0.5 shrink-0 font-mono text-muted-foreground">
@@ -466,8 +485,7 @@ export default function PricingPage() {
         {/* ── Try before you decide: the free grade, same form as the home page. ── */}
         <section aria-labelledby="try-heading" className="border-t border-border section-y">
           <div className="frame">
-            <ExhibitHead label="Before you pay" />
-            <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
+            <div className="grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
               <h2 id="try-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
                 Grade one of your client sites first.
               </h2>
