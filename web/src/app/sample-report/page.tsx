@@ -172,7 +172,7 @@ export default function SampleReportPage() {
             {/* Persona task-success — AI opinion, clearly labeled */}
             <section className="mt-8 border-t border-border pt-6">
               <h2 className="label-mono">Persona layer</h2>
-              <p className="display mt-2 text-xl leading-snug">The report says what broke. This shows who it stopped.</p>
+              <p className="display mt-2 text-xl leading-snug">The report says what broke. This shows whether an agent could finish the task.</p>
               <SampleTaskSuccess className="mt-5" />
             </section>
 
