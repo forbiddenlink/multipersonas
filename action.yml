@@ -29,6 +29,14 @@ inputs:
     description: "Maximum number of pages to crawl."
     required: false
     default: "20"
+  comment:
+    description: "\"true\" posts (or updates) one sticky comment on the pull request with new / fixed / still-open counts and the top new defects. Needs `pull-requests: write` on the workflow. Off by default; only runs on pull_request events."
+    required: false
+    default: "false"
+  github-token:
+    description: "Token used to post the comment. Only read when `comment` is \"true\"."
+    required: false
+    default: ${{ github.token }}
   report:
     description: "Directory to write the report into (uploaded as an artifact by your workflow if you add an upload step)."
     required: false
@@ -92,3 +100,14 @@ runs:
           echo "report-path=${MP_REPORT}/scan.md"
         } >> "$GITHUB_OUTPUT"
         exit "$code"
+    - name: Comment on the pull request
+      # Runs after a failed gate too: that is when the comment matters most. A comment
+      # failure only warns (see src/pr-comment.ts), so it never changes the gate result.
+      if: ${{ always() && inputs.comment == 'true' && github.event_name == 'pull_request' }}
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        MP_ACTION_PATH: ${{ github.action_path }}
+        MP_REPORT: ${{ inputs.report }}
+        MP_GATE_OUTCOME: ${{ steps.gate.outcome }}
+      run: node "$MP_ACTION_PATH/dist/pr-comment.js" "$MP_REPORT/scan.json"
