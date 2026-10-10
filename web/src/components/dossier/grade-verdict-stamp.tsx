@@ -89,14 +89,17 @@ export function GradeVerdictStamp({
     <div
       ref={stampRef}
       role="img"
-      className={`stamp shrink-0 ${className}`}
+      className={`stamp shrink-0 px-6 py-3 ${className}`}
       style={{ color, borderColor: color, outlineColor: color }}
       aria-label={`Verdict: grade ${grade}, score ${score} of 100`}
     >
-      <span aria-hidden="true" className="text-[2.1rem] leading-none tracking-[0.02em]">
+      <span
+        aria-hidden="true"
+        className="font-serif text-[5.5rem] font-medium normal-case leading-[0.9] tracking-[-0.02em] sm:text-[7rem]"
+      >
         {grade}
       </span>
-      <span aria-hidden="true" className="text-[0.65rem] tracking-[0.14em]">
+      <span aria-hidden="true" className="text-[0.7rem] tracking-[0.14em]">
         <span ref={scoreRef}>{score}</span> / 100
       </span>
     </div>

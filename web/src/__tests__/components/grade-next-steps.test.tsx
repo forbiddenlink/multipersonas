@@ -32,10 +32,8 @@ describe("GradeNextSteps", () => {
       "href",
       "/guides/ci-accessibility-gate",
     );
-    expect(screen.getByRole("link", { name: "See founding access" })).toHaveAttribute(
-      "href",
-      "/for-agencies#early-access",
-    );
+    // The result sheet carries no plan offer; pricing lives on its own page.
+    expect(screen.queryByRole("link", { name: "See founding access" })).not.toBeInTheDocument();
     expect(screen.getByText(/4 public pages only/)).toBeInTheDocument();
 
     fireEvent.click(save);
@@ -68,7 +66,6 @@ describe("GradeNextSteps print behaviour", () => {
     const checklist = screen.getByText(/Keyboard-only navigation/);
     expect(hidden.some((el) => el.contains(checklist))).toBe(false);
     expect(hidden.some((el) => el.contains(screen.getByRole("link", { name: "Save and track this site" })))).toBe(true);
-    expect(hidden.some((el) => el.contains(screen.getByRole("link", { name: /founding access/i })))).toBe(true);
     expect(hidden.some((el) => el.contains(screen.getByText(/Create an account and this grade/)))).toBe(true);
   });
 });
