@@ -62,7 +62,7 @@ export default function SampleReportPage() {
             <span className="text-sm text-muted-foreground">Public pages, no signup.</span>
           </div>
 
-          <div className="sheet mt-6 p-6 sm:p-8">
+          <div className="report-paper-surface sheet mt-6 p-6 sm:p-8">
             <SampleCoverSheet axeVersion={AXE_VERSION} preparedOn={PREPARED_ON} />
 
             {/* Executive summary */}
