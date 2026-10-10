@@ -142,14 +142,14 @@ export function StateFlowTrail() {
   const [activeStep, setActiveStep] = useState<number | null>(null);
 
   return (
-    <div className="mt-12 space-y-6">
+    <div className="mt-8 space-y-6 sm:mt-12">
       {/* Boundary indicator */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-foreground pb-3">
         <div className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-primary" />
           <span className="label-mono text-xs">Full-flow crawl map: 6 states captured</span>
         </div>
-        <div className="flex flex-wrap items-center gap-3 font-mono text-[11px] text-muted-foreground">
+        <div className="hidden flex-wrap items-center gap-3 font-mono text-xs text-muted-foreground sm:flex">
           <span className="flex items-center gap-1.5">
             <span className="inline-block h-2 w-2 border border-border bg-card" />
             Public entry (1 state)
@@ -181,17 +181,14 @@ export function StateFlowTrail() {
             </span>
             <span className="min-w-0">
               <span className="block text-sm font-semibold leading-tight">{s.label}</span>
-              <span className="mt-0.5 block font-mono text-[11px] text-muted-foreground">
-                {s.publicUrl ? "Public" : "Session only"}
-              </span>
-              <span className="block break-words font-mono text-[11px] text-muted-foreground">
-                {s.path}
+              <span className="mt-0.5 block break-words font-mono text-xs text-muted-foreground">
+                {s.publicUrl ? "Public" : "Session only"} · {s.path}
               </span>
             </span>
             {s.findings > 0 ? (
               <SeverityChip severity="critical" ruleId="4.1.2" />
             ) : (
-              <span className="font-mono text-[11px] text-muted-foreground">
+              <span className="font-mono text-xs text-muted-foreground">
                 <span aria-hidden="true">✓ </span>Clean
               </span>
             )}
@@ -216,7 +213,7 @@ export function StateFlowTrail() {
             >
               {/* Top classification banner */}
               <div
-                className={`flex items-center justify-between border-b px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] ${
+                className={`flex items-center justify-between border-b px-3 py-1.5 font-mono text-xs uppercase tracking-[0.08em] ${
                   s.publicUrl
                     ? "border-border bg-muted/40 text-muted-foreground"
                     : "border-border bg-[color-mix(in_oklch,var(--primary)_8%,transparent)] text-primary font-medium"
@@ -231,7 +228,7 @@ export function StateFlowTrail() {
                 <StateWireframe index={i} />
                 {s.findings > 0 && (
                   <span
-                    className="absolute right-2 top-2 rounded-xs border bg-card px-1.5 py-0.5 font-mono text-[11px] font-bold text-[var(--redline)]"
+                    className="absolute right-2 top-2 rounded-xs border bg-card px-1.5 py-0.5 font-mono text-xs font-bold text-[var(--redline)]"
                     style={{ borderColor: "var(--redline)" }}
                     title="Critical accessibility defect found at this state"
                   >
@@ -243,14 +240,14 @@ export function StateFlowTrail() {
               {/* State Content */}
               <div className="flex flex-1 flex-col p-3.5 sm:p-4">
                 <p className="font-semibold text-sm leading-tight text-foreground">{s.label}</p>
-                <p className="mt-1 truncate font-mono text-[11px] text-muted-foreground">{s.path}</p>
+                <p className="mt-1 truncate font-mono text-xs text-muted-foreground">{s.path}</p>
                 <p className="mt-2.5 flex-1 text-xs leading-relaxed text-muted-foreground">{s.why}</p>
 
                 <div className="mt-3.5 border-t border-border pt-3">
                   {s.findings > 0 ? (
                     <SeverityChip severity="critical" ruleId="4.1.2" />
                   ) : (
-                    <span className="inline-flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
+                    <span className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground">
                       <span className="text-xs text-[var(--severity-minor)]">✓</span> Clean
                     </span>
                   )}

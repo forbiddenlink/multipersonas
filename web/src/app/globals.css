@@ -301,6 +301,16 @@
   color: inherit;
 }
 
+/* Redline correction: the annotator's underline on an evidence phrase. Used where the page
+   has already spent its one highlighter pass (the H1), and never in the severity hues. */
+.redline-mark {
+  text-decoration-line: underline;
+  text-decoration-color: var(--redline);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+  text-decoration-skip-ink: none;
+}
+
 /* Redline margin note — the annotator's voice. */
 .redline-note {
   font-family: var(--font-mono), ui-monospace, monospace;

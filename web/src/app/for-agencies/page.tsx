@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ExhibitHead } from "@/components/dossier/exhibit-head";
+import { ProcedureSteps } from "@/components/dossier/procedure-steps";
 import { WaitlistForm } from "@/components/waitlist-form";
 import { UnlockFoundingAccessButton } from "@/components/unlock-founding-access-button";
 import { SeverityChip } from "@/components/forensic/severity-chip";
@@ -175,32 +176,10 @@ export default function ForAgenciesPage() {
         {/* ── Workflow: scan, hand over the case file, retest to prove the fix. ── */}
         <section aria-labelledby="workflow-heading" className="section-y">
           <div className="frame">
-            <ExhibitHead label="Your workflow" />
-            <h2 id="workflow-heading" className="display mt-8 max-w-2xl text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+            <h2 id="workflow-heading" className="display max-w-2xl text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
               Three steps to a case file you can put in front of a client.
             </h2>
-            <ol className="mt-10 border-t border-border">
-              {WORKFLOW.map((w) => (
-                <li
-                  key={w.n}
-                  className="grid gap-4 border-b border-border py-7 md:grid-cols-[3rem_minmax(0,1fr)_minmax(0,1.15fr)] md:gap-8"
-                >
-                  <span className="display text-3xl leading-none text-muted-foreground">{w.n}</span>
-                  <div className="min-w-0">
-                    <h3 className="text-[1.0625rem] font-semibold">{w.title}</h3>
-                    <p className="mt-2 max-w-md leading-relaxed text-muted-foreground">{w.body}</p>
-                  </div>
-                  <pre
-                    tabIndex={0}
-                    role="region"
-                    aria-label={`${w.title} command`}
-                    className="min-w-0 self-start overflow-x-auto whitespace-pre rounded-sm border border-border bg-card px-4 py-3 font-mono text-[13px] leading-relaxed text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-                  >
-                    {w.cmd}
-                  </pre>
-                </li>
-              ))}
-            </ol>
+            <ProcedureSteps steps={WORKFLOW} variant="ledger" className="mt-10" />
             <p className="mt-6 text-sm text-muted-foreground">
               Full setup, including a ready-to-use GitHub Action:{" "}
               <Link href="/guides/ci-accessibility-gate" className="text-link">
@@ -318,8 +297,7 @@ export default function ForAgenciesPage() {
         {/* ── Honesty: not an overlay, not a substitute for disabled testers. ── */}
         <section aria-labelledby="honesty-heading" className="border-t border-border bg-card section-y">
           <div className="frame-narrow">
-            <ExhibitHead label="Our position" />
-            <h2 id="honesty-heading" className="display mt-8 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+            <h2 id="honesty-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
               We don&apos;t sell a fix. We sell the truth.
             </h2>
             <div className="mt-6 space-y-4 font-serif text-[1.0625rem] leading-relaxed text-muted-foreground">
@@ -346,14 +324,13 @@ export default function ForAgenciesPage() {
 
         {/* ── FAQ ── */}
         <section aria-labelledby="faq-heading" className="section-y">
-          <div className="frame-narrow">
-            <ExhibitHead label="Before you pay" />
-            <h2 id="faq-heading" className="display mt-8 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+          <div className="frame grid gap-8 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] lg:gap-16">
+            <h2 id="faq-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
               The questions a serious buyer actually asks.
             </h2>
-            <div className="mt-10 border-t border-border">
+            <div className="min-w-0 border-t border-border">
               {AGENCY_FAQS.map((faq) => (
-                <details key={faq.question} className="group border-b border-border py-6">
+                <details key={faq.question} className="group border-b border-border py-4 sm:py-6">
                   <summary className="flex cursor-pointer list-none items-start justify-between gap-4 rounded-sm font-medium [&::-webkit-details-marker]:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
                     <span>{faq.question}</span>
                     <span aria-hidden="true" className="mt-0.5 shrink-0 font-mono text-muted-foreground">
@@ -369,10 +346,9 @@ export default function ForAgenciesPage() {
         </section>
 
         {/* ── Early access / founding checkout. ── */}
-        <section id="early-access" className="scroll-mt-20 border-t border-border bg-card section-y">
+        <section id="early-access" aria-label="Founding access" className="scroll-mt-20 border-t border-border bg-card section-y">
           <div className="frame">
-          <ExhibitHead label="Founding access" />
-          <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
+          <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
             <div>
               <h2 className="display text-[clamp(1.9rem,4vw,3rem)] leading-[1.08]">
                 {FOUNDING_CHECKOUT_OPEN
