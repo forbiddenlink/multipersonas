@@ -107,7 +107,7 @@ export default function Home() {
         {/* ── Where scanners stop: the SauceDemo trail, state by state. ── */}
         <section id="behind" aria-labelledby="behind-heading" className="section-y scroll-mt-20">
           <div className="frame">
-            <ExhibitHead label="Where scanners stop" className="mb-8" />
+            <ExhibitHead label="Where scanners stop" className="mb-6 md:mb-8" />
             <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-end">
               <h2 id="behind-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
                 The homepage passes. The bugs are behind the login.
@@ -123,7 +123,7 @@ export default function Home() {
             <StateFlowTrail />
 
             {/* Probe ledger — every target, including the one where the crawl found nothing. */}
-            <div className="mt-16 grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+            <div className="mt-10 grid gap-8 md:mt-16 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
               <div>
                 <p className="label-mono">Probe ledger</p>
                 <p className="mt-3 max-w-sm font-serif text-[1.125rem] leading-relaxed">
@@ -198,8 +198,8 @@ export default function Home() {
                 site.
               </p>
             </div>
-            <ProcedureSteps steps={PROCEDURE} variant="terminal" className="mt-10" />
-            <div className="mt-10 max-w-2xl">
+            <ProcedureSteps steps={PROCEDURE} variant="terminal" className="mt-8 md:mt-10" />
+            <div className="mt-8 max-w-2xl md:mt-10">
               <ContentCodeBlock label="behind the login, on your machine" code="npx personaudit scan https://your.app" />
             </div>
             <p className="mt-6 text-sm text-[color-mix(in_oklch,var(--background)_74%,var(--foreground))]">
@@ -223,7 +223,7 @@ export default function Home() {
                 A violation list is where the work starts. Each scan becomes something a client can
                 read and a developer can close.
               </p>
-              <ResponsiveDisclosure summary="What each report contains" className="mt-8">
+              <ResponsiveDisclosure summary="What each report contains" className="mt-6 md:mt-8">
               <dl className="border-t border-border">
                 {DELIVERABLE.slice(0, -1).map((d) => (
                   <div key={d.term} className="grid gap-1 border-b border-border py-3.5 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-6 sm:py-4">
@@ -304,7 +304,7 @@ export default function Home() {
 
         {/* ── Close. ── */}
         <section aria-labelledby="close-heading" className="border-t border-border">
-          <div className="frame flex flex-col items-start gap-8 py-14 md:flex-row md:items-end md:justify-between md:py-20">
+          <div className="frame flex flex-col items-start gap-8 py-10 md:flex-row md:items-end md:justify-between md:py-20">
             <div>
               <h2 id="close-heading" className="display max-w-2xl text-[clamp(2.2rem,4.6vw,3.5rem)] leading-[1.02]">
                 Open a case file on your next client.
