@@ -12,6 +12,8 @@
  * `wcag411` tag on a legacy finding is simply dropped.
  */
 
+import { AXE_TESTED_CODES } from "./wcag-coverage";
+
 export interface Criterion {
   code: string;
   name: string;
@@ -55,6 +57,7 @@ const TAG_TO_CRITERION: Record<string, Criterion> = {
   wcag252: { code: "2.5.2", name: "Pointer Cancellation" },
   wcag253: { code: "2.5.3", name: "Label in Name" },
   wcag254: { code: "2.5.4", name: "Motion Actuation" },
+  wcag258: { code: "2.5.8", name: "Target Size (Minimum)" },
   wcag311: { code: "3.1.1", name: "Language of Page" },
   wcag312: { code: "3.1.2", name: "Language of Parts" },
   wcag321: { code: "3.2.1", name: "On Focus" },
@@ -74,13 +77,13 @@ const CRITERION_BY_CODE: Record<string, Criterion> = Object.fromEntries(
 );
 
 /**
- * SC codes axe-core can actually test (i.e. it ships rules that emit these tags). Used by
- * the conformance engine to distinguish "automated checks apply here" from "no automated
- * coverage — manual review". A code NOT in this set can never be claimed as automated-clean.
+ * SC codes axe-core can actually test: at least one axe rule that runs in our scans emits the
+ * criterion (see `wcag-coverage.ts`). The conformance engine uses it to tell "automated
+ * checks apply here" from "no automated coverage, manual review". A code NOT in this set can
+ * never be claimed as automated-clean. It is deliberately smaller than the set of tags in
+ * TAG_TO_CRITERION: a tag only names a criterion, it does not mean a rule exists to test it.
  */
-export const AXE_TESTABLE_CODES: ReadonlySet<string> = new Set(
-  Object.values(TAG_TO_CRITERION).map((c) => c.code),
-);
+export const AXE_TESTABLE_CODES: ReadonlySet<string> = AXE_TESTED_CODES;
 
 /** Human name for a success-criterion code, or null if the code is not a known SC. */
 export function criterionName(code: string): string | null {

@@ -15,7 +15,7 @@ export function EvidenceSheet({ className = "" }: { className?: string }) {
       {/* The sheet underneath — offset, only its edge shows. */}
       <div
         aria-hidden="true"
-        className="sheet absolute inset-x-6 -top-3 bottom-3 rotate-[1.4deg] sm:inset-x-10"
+        className="report-paper-surface sheet absolute inset-x-6 -top-3 bottom-3 rotate-[1.4deg] sm:inset-x-10"
       />
       <div className="file-tab relative ml-5">
         <span>Case PA-0426</span>

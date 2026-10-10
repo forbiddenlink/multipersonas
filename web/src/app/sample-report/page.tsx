@@ -5,10 +5,14 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { SampleCoverSheet } from "@/components/dossier/sample-cover-sheet";
 import { SampleTaskSuccess } from "@/components/dossier/sample-task-success";
-import { GradeFindingRow } from "@/components/dossier/grade-finding-row";
+import { SampleFindings } from "@/components/dossier/sample-findings";
+import { ManualReviewRecord, SampleCoverage } from "@/components/dossier/sample-coverage";
+import { ReportFooter, ReportRunningHeader } from "@/components/dossier/report-furniture";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { SAMPLE_SEVERITY_COUNTS, SAMPLE_TARGET, SAMPLE_VERDICTS } from "@/lib/sample-evidence";
 import { SAUCEDEMO_TRAIL } from "@/lib/probe-ledger";
+import { wcagTagsToCriteria } from "@/lib/wcag";
+import { SEVERITY_DEFINITIONS } from "@/lib/severity-definitions";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/sample-report" },
@@ -41,6 +45,18 @@ const FIX_FIRST = [
   },
 ] as const;
 
+// The probe's axe tag filter was wcag2a/2aa/21a/21aa (experiments/net-new-violations/measure.ts),
+// so WCAG 2.2 only rules such as target-size did not run.
+const SAMPLE_PROBE_SCAN = { wcag22Rules: false } as const;
+
+// Each sample finding's success criterion, as the engine would attribute it from axe's tags.
+const SAMPLE_VERDICT_CRITERIA = SAMPLE_VERDICTS.map((v) => ({
+  criteria: wcagTagsToCriteria([`wcag${v.wcag.replaceAll(".", "")}`]),
+}));
+
+// Priority order: the two fix-first items, then the remaining finding in crawl order.
+const FINDINGS = [SAMPLE_VERDICTS[1], SAMPLE_VERDICTS[0], SAMPLE_VERDICTS[2]] as const;
+
 export default function SampleReportPage() {
   return (
     <div className="flex min-h-dvh flex-col pb-[env(safe-area-inset-bottom)]">
@@ -62,7 +78,8 @@ export default function SampleReportPage() {
             <span className="text-sm text-muted-foreground">Public pages, no signup.</span>
           </div>
 
-          <div className="sheet mt-6 p-6 sm:p-8">
+          <div className="report-paper-surface sheet mt-6 p-6 sm:p-8">
+            <ReportRunningHeader host={SAMPLE_TARGET.host} />
             <SampleCoverSheet axeVersion={AXE_VERSION} preparedOn={PREPARED_ON} />
 
             {/* Executive summary */}
@@ -78,6 +95,7 @@ export default function SampleReportPage() {
                   <div key={sev} className="border-t border-foreground pt-2">
                     <dt><SeverityChip severity={sev} /></dt>
                     <dd className="mt-1.5 font-mono text-2xl tabular-nums">{SAMPLE_SEVERITY_COUNTS[sev]}</dd>
+                    <dd className="mt-1 text-xs leading-snug text-muted-foreground">{SEVERITY_DEFINITIONS[sev]}</dd>
                   </div>
                 ))}
               </dl>
@@ -105,22 +123,7 @@ export default function SampleReportPage() {
             {/* Findings, in detail */}
             <section className="mt-8 border-t-2 border-foreground pt-6">
               <h2 className="label-mono">Findings · signed-in states</h2>
-              <ul className="mt-3">
-                {SAMPLE_VERDICTS.map((v) => (
-                  <GradeFindingRow
-                    key={v.ruleId}
-                    ruleId={v.ruleId}
-                    severity={v.severity}
-                    help={v.help}
-                    wcagAA
-                    location={v.location}
-                  />
-                ))}
-              </ul>
-              <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-                {SAMPLE_SEVERITY_COUNTS.critical - SAMPLE_VERDICTS.length} additional critical
-                finding is logged in the raw probe below but not excerpted here.
-              </p>
+              <SampleFindings findings={FINDINGS} />
             </section>
 
             {/* State-by-state coverage: public vs behind-login */}
@@ -169,6 +172,13 @@ export default function SampleReportPage() {
               </p>
             </section>
 
+            {/* Per-criterion coverage + the agency's own manual pass */}
+            <section className="mt-8 border-t-2 border-foreground pt-6">
+              <h2 className="label-mono">WCAG 2.2 A and AA · coverage by criterion</h2>
+              <SampleCoverage verdicts={SAMPLE_VERDICT_CRITERIA} scan={SAMPLE_PROBE_SCAN} />
+              <ManualReviewRecord />
+            </section>
+
             {/* Persona task-success — AI opinion, clearly labeled */}
             <section className="mt-8 border-t border-border pt-6">
               <h2 className="label-mono">Persona layer</h2>
@@ -189,6 +199,11 @@ export default function SampleReportPage() {
                   Automated checks cover a large share of WCAG failures but not all of them.
                   Manual keyboard and screen-reader review still matters; this report is not a
                   substitute for testing with disabled users.
+                </li>
+                <li>
+                  The coverage table marks a criterion as tested only when an axe-core rule
+                  that ran in this probe reports on it. The probe used the WCAG 2.0 and 2.1
+                  rule tags, so rules that need the 2.2 tags, such as target size, did not run.
                 </li>
                 <li>
                   Persona task-success is an AI browser agent&apos;s read of a final page state
@@ -220,6 +235,8 @@ export default function SampleReportPage() {
                 </Link>
               </div>
             </section>
+
+            <ReportFooter />
           </div>
 
           <p className="report-print-hide mt-6 text-xs text-muted-foreground">
