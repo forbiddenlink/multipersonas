@@ -13,8 +13,9 @@ import { generatePersonasFromUrl, generatePersonasFromDescription } from "./pers
 import { runMultiPersonaTest, type ProgressEvent } from "./agent/orchestrator.js";
 import { crawl } from "./crawler/crawl.js";
 import { gradeScan } from "./grader/scan.js";
-import { evaluateGate, baselineFromFindings, type Severity } from "./crawler/gate.js";
+import { evaluateGate, baselineFromFindings, type Baseline, type Severity } from "./crawler/gate.js";
 import { groupAxeByRule, generateScanReport } from "./report/generator.js";
+import { buildScanJson } from "./report/json.js";
 import { SEVERITIES } from "./domain/vocab.js";
 import type { Persona } from "./personas/types.js";
 import { getAllPersonas, saveCustomPersona, deleteCustomPersona, isCustomPersona, personaSource, hasProjectPersonas, PROJECT_DIR } from "./personas/custom.js";
@@ -151,9 +152,40 @@ program
     const groups = groupAxeByRule(result.findings);
     const groupSev = (sev: string) => groups.filter((g) => g.severity === sev).length;
 
+    // The baseline is read before the reports are written so scan.json can say which
+    // defects are new. --update-baseline skips it: that run replaces the file anyway.
+    let baseline: Baseline | null = null;
+    if (!options.updateBaseline && options.baseline && fs.existsSync(options.baseline)) {
+      try {
+        baseline = JSON.parse(fs.readFileSync(options.baseline, "utf8"));
+      } catch {
+        console.error(chalk.red(`  Could not read baseline ${options.baseline}`));
+        process.exit(1);
+      }
+    }
+    const gate = evaluateGate(result.findings, { failOn: (options.failOn as Severity | undefined) ?? "minor", baseline });
+
     fs.mkdirSync(options.output, { recursive: true });
     const reportPath = path.join(options.output, "scan.md");
     fs.writeFileSync(reportPath, generateScanReport(url, result.findings, result.pagesVisited, result.skipped));
+    const jsonPath = path.join(options.output, "scan.json");
+    fs.writeFileSync(
+      jsonPath,
+      JSON.stringify(
+        buildScanJson({
+          url,
+          version: pkg.version,
+          findings: result.findings,
+          pagesVisited: result.pagesVisited,
+          skipped: result.skipped,
+          baselineKeys: baseline ? new Set(baseline.keys) : null,
+          baselinePath: options.baseline,
+          fixed: gate.fixed,
+        }),
+        null,
+        2,
+      ),
+    );
 
     console.log("");
     console.log(`  Accessibility: ${groups.length} defects` +
@@ -161,7 +193,7 @@ program
     if (result.skipped.length > 0) {
       console.log(chalk.yellow(`  Budget reached: ${result.skipped.length} more states not scanned (raise --max-pages)`));
     }
-    console.log(chalk.dim(`  Report: ${reportPath}`));
+    console.log(chalk.dim(`  Report: ${reportPath} (+ scan.json)`));
 
     // --update-baseline: snapshot current defects, exit clean.
     if (options.updateBaseline) {
@@ -177,19 +209,10 @@ program
 
     // --fail-on: the CI gate. Fail only on NEW defects at/above the threshold.
     if (options.failOn) {
-      let baseline = null;
-      if (options.baseline && fs.existsSync(options.baseline)) {
-        try {
-          baseline = JSON.parse(fs.readFileSync(options.baseline, "utf8"));
-        } catch {
-          console.error(chalk.red(`  Could not read baseline ${options.baseline}`));
-          process.exit(1);
-        }
-      } else if (options.baseline) {
+      if (options.baseline && !baseline) {
         console.log(chalk.yellow(`  No baseline at ${options.baseline} yet — every current defect counts as new. Create one with --update-baseline.`));
       }
 
-      const gate = evaluateGate(result.findings, { failOn: options.failOn as Severity, baseline });
       console.log("");
       if (gate.fixed.length > 0) console.log(chalk.green(`  ${gate.fixed.length} defect(s) fixed since the baseline`));
       if (gate.passed) {
