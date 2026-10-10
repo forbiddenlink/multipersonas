@@ -549,6 +549,9 @@ export type Database = {
       test_runs: {
         Row: {
           scan_coverage: Json | null
+          share_expires_at: string | null
+          share_revoked_at: string | null
+          share_token: string | null
           task_outcomes: Json
           task_definition: Json | null
           completed_at: string | null
@@ -565,6 +568,9 @@ export type Database = {
         }
         Insert: {
           scan_coverage?: Json | null
+          share_expires_at?: string | null
+          share_revoked_at?: string | null
+          share_token?: string | null
           task_outcomes?: Json
           task_definition?: Json | null
           completed_at?: string | null
@@ -581,6 +587,9 @@ export type Database = {
         }
         Update: {
           scan_coverage?: Json | null
+          share_expires_at?: string | null
+          share_revoked_at?: string | null
+          share_token?: string | null
           task_outcomes?: Json
           task_definition?: Json | null
           completed_at?: string | null
@@ -724,6 +733,43 @@ export type Database = {
           p_user_id?: string | null
         }
         Returns: string
+      }
+      get_shared_report: {
+        Args: { p_token: string }
+        Returns: {
+          run_id: string
+          url: string
+          created_at: string
+          persona_ids: string[]
+          task_definition: Json | null
+          task_outcomes: Json
+          scan_coverage: Json | null
+          client_name: string | null
+          agency_name: string | null
+        }[]
+      }
+      get_shared_report_findings: {
+        Args: { p_token: string }
+        Returns: {
+          id: string
+          source: string
+          severity: string
+          title: string
+          description: string
+          recommendation: string
+          rule_id: string | null
+          wcag_tags: string[] | null
+          page_url: string | null
+        }[]
+      }
+      get_shared_report_journey: {
+        Args: { p_token: string }
+        Returns: {
+          persona_id: string
+          goal_completed: boolean
+          page_url: string | null
+          step: number
+        }[]
       }
       enqueue_grade_scan: {
         Args: { p_url: string; p_rate_key: string; p_queue_cap?: number; p_rate_max?: number; p_rate_window_seconds?: number }
