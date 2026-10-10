@@ -53,7 +53,11 @@ export interface GithubTarget {
   repo: string;
   pullNumber: number;
   token: string;
+  /** Login that owns the sticky comment. Defaults to the Actions bot, which is who GITHUB_TOKEN posts as. */
+  author?: string;
 }
+
+export const DEFAULT_COMMENT_AUTHOR = "github-actions[bot]";
 
 type Fetch = typeof fetch;
 
@@ -72,12 +76,18 @@ async function gh(f: Fetch, t: GithubTarget, method: string, path: string, body?
   return res.json();
 }
 
-/** Create the comment, or update the one carrying the marker. Returns which happened. */
+/**
+ * Create the comment, or update the one carrying the marker. Returns which happened.
+ *
+ * Only a bot comment by the expected login counts: anyone on the PR can paste the
+ * marker into their own comment, and matching on the marker alone would overwrite it.
+ */
 export async function upsertComment(t: GithubTarget, body: string, f: Fetch = fetch): Promise<"created" | "updated"> {
   const base = `/repos/${t.repo}/issues`;
   for (let page = 1; ; page++) {
-    const batch = (await gh(f, t, "GET", `${base}/${t.pullNumber}/comments?per_page=100&page=${page}`)) as { id: number; body?: string }[];
-    const existing = batch.find((c) => c.body?.includes(COMMENT_MARKER));
+    const batch = (await gh(f, t, "GET", `${base}/${t.pullNumber}/comments?per_page=100&page=${page}`)) as { id: number; body?: string; user?: { login: string; type: string } }[];
+    const author = t.author ?? DEFAULT_COMMENT_AUTHOR;
+    const existing = batch.find((c) => c.body?.includes(COMMENT_MARKER) && c.user?.type === "Bot" && c.user.login === author);
     if (existing) {
       await gh(f, t, "PATCH", `${base}/comments/${existing.id}`, { body });
       return "updated";

@@ -10,7 +10,7 @@ import type { ScanJson } from "./report/json.js";
  */
 async function main(): Promise<void> {
   const scanPath = process.argv[2];
-  const { GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_EVENT_PATH, GITHUB_API_URL, MP_GATE_OUTCOME } = process.env;
+  const { GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_EVENT_PATH, GITHUB_API_URL, MP_GATE_OUTCOME, MP_COMMENT_AUTHOR } = process.env;
   if (!scanPath || !fs.existsSync(scanPath)) throw new Error(`no scan.json at ${scanPath ?? "(no path given)"}`);
   if (!GITHUB_TOKEN || !GITHUB_REPOSITORY || !GITHUB_EVENT_PATH) throw new Error("GITHUB_TOKEN, GITHUB_REPOSITORY and GITHUB_EVENT_PATH are required");
 
@@ -21,7 +21,7 @@ async function main(): Promise<void> {
   }
   const scan = JSON.parse(fs.readFileSync(scanPath, "utf8")) as ScanJson;
   const result = await upsertComment(
-    { apiUrl: GITHUB_API_URL ?? "https://api.github.com", repo: GITHUB_REPOSITORY, pullNumber: event.pull_request.number, token: GITHUB_TOKEN },
+    { apiUrl: GITHUB_API_URL ?? "https://api.github.com", repo: GITHUB_REPOSITORY, pullNumber: event.pull_request.number, token: GITHUB_TOKEN, author: MP_COMMENT_AUTHOR || undefined },
     buildCommentBody(scan, MP_GATE_OUTCOME),
   );
   console.log(`PR comment ${result}.`);

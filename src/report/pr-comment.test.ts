@@ -46,7 +46,9 @@ describe("buildCommentBody", () => {
   });
 });
 
-function fakeFetch(existing: { id: number; body: string }[][]) {
+const bot = { login: "github-actions[bot]", type: "Bot" };
+
+function fakeFetch(existing: { id: number; body: string; user?: { login: string; type: string } }[][]) {
   const calls: { method: string; url: string; body?: string }[] = [];
   const impl = (async (url: string, init: RequestInit) => {
     const method = init.method ?? "GET";
@@ -69,15 +71,29 @@ describe("upsertComment", () => {
   });
 
   it("updates the marked comment instead of adding a second one", async () => {
-    const { impl, calls } = fakeFetch([[{ id: 1, body: "x" }, { id: 42, body: `${COMMENT_MARKER}\nold` }]]);
+    const { impl, calls } = fakeFetch([[{ id: 1, body: "x" }, { id: 42, body: `${COMMENT_MARKER}\nold`, user: bot }]]);
     expect(await upsertComment(target, `${COMMENT_MARKER}\nnew`, impl)).toBe("updated");
     expect(calls.at(-1)).toMatchObject({ method: "PATCH", url: "https://api.github.com/repos/o/r/issues/comments/42" });
   });
 
   it("finds the marker on a later page", async () => {
     const full = Array.from({ length: 100 }, (_, i) => ({ id: i, body: "x" }));
-    const { impl, calls } = fakeFetch([full, [{ id: 500, body: COMMENT_MARKER }]]);
+    const { impl, calls } = fakeFetch([full, [{ id: 500, body: COMMENT_MARKER, user: bot }]]);
     expect(await upsertComment(target, COMMENT_MARKER, impl)).toBe("updated");
     expect(calls.filter((c) => c.method === "GET")).toHaveLength(2);
+  });
+
+  it("ignores a human comment that carries the marker and posts a new one", async () => {
+    const human = { login: "mallory", type: "User" };
+    const { impl, calls } = fakeFetch([[{ id: 9, body: `${COMMENT_MARKER}\nmine`, user: human }]]);
+    expect(await upsertComment(target, COMMENT_MARKER, impl)).toBe("created");
+    expect(calls.map((c) => c.method)).toEqual(["GET", "POST"]);
+  });
+
+  it("ignores a different bot unless it is the configured author", async () => {
+    const other = { login: "other-app[bot]", type: "Bot" };
+    const page = [[{ id: 9, body: COMMENT_MARKER, user: other }]];
+    expect(await upsertComment(target, COMMENT_MARKER, fakeFetch(page).impl)).toBe("created");
+    expect(await upsertComment({ ...target, author: "other-app[bot]" }, COMMENT_MARKER, fakeFetch(page).impl)).toBe("updated");
   });
 });
