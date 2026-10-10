@@ -6,8 +6,12 @@ export const COMMENT_MARKER = "<!-- personaudit-gate -->";
 
 const TOP_NEW = 5;
 
-/** Inline code that cannot be broken out of by a backtick or a table pipe in a selector. */
-const code = (s: string) => `\`${s.replace(/`/g, "'").replace(/\|/g, "\\|")}\``;
+/**
+ * Inline code that cannot be broken out of by a backtick or a table pipe in a selector.
+ * Backslashes are escaped first: a selector ending in `\` would otherwise turn the pipe
+ * escape into an escaped backslash followed by a live cell separator.
+ */
+const code = (s: string) => `\`${s.replace(/`/g, "'").replace(/\\/g, "\\\\").replace(/\|/g, "\\|")}\``;
 
 /** Markdown body of the sticky comment, built from scan.json. `gateOutcome` is the gate step's outcome. */
 export function buildCommentBody(scan: ScanJson, gateOutcome?: string): string {
