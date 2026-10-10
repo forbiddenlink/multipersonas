@@ -39,6 +39,11 @@ describe("buildCommentBody", () => {
     expect(body).toContain("`x'\\|y`");
   });
 
+  it("escapes a backslash before a pipe so the pipe escape cannot be cancelled", () => {
+    const body = buildCommentBody(scan([f("a", "x\\|y", "serious")], { baselineKeys: null }));
+    expect(body).toContain("`x\\\\\\|y`");
+  });
+
   it("never claims compliance and uses no em dashes", () => {
     const body = buildCommentBody(scan([f("a", "1", "serious")]), "success");
     expect(body).not.toMatch(/complian/i);
