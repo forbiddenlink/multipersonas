@@ -56,7 +56,7 @@ describe("route titles and headings", () => {
 describe("report tables", () => {
   it("are keyboard-focusable and named, since they scroll sideways on phones", () => {
     const src =
-      read("src/app/(app)/audits/[id]/report/page.tsx") +
+      read("src/app/(app)/audits/[id]/report/report-document.tsx") +
       read("src/app/(app)/audits/[id]/report/conformance-table.tsx");
     const tables = src.match(/<table className=\{styles\.table\}[^>]*>/g) ?? [];
     expect(tables.length).toBe(4);
@@ -64,5 +64,18 @@ describe("report tables", () => {
       expect(t).toMatch(/tabIndex=\{0\}/);
       expect(t).toMatch(/aria-label="/);
     }
+  });
+});
+
+describe("report print stylesheet", () => {
+  const css = read("src/app/globals.css");
+  const report = css.slice(css.indexOf("@page report"));
+  it("prints the signed-in report as a named page with a running header and page numbers", () => {
+    expect(css).toMatch(/page:\s*report/);
+    expect(report).toMatch(/@top-left\s*\{\s*content:\s*var\(--report-running-title\)/);
+    expect(report).toMatch(/counter\(page\) " of " counter\(pages\)/);
+  });
+  it("repeats the standing limit of automated checks on every page", () => {
+    expect(report).toMatch(/Automated checks only; manual review is still required\./);
   });
 });

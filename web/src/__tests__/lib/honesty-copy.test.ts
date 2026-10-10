@@ -95,6 +95,7 @@ describe("marketing copy avoids compliance claims and qualifies behind-login", (
     "src/app/guides/wcag-checklist/page.tsx",
     "src/components/site-footer.tsx",
     "src/app/(app)/audits/[id]/report/page.tsx",
+    "src/app/(app)/audits/[id]/report/report-document.tsx",
   ];
 
   it.each(FILES)("%s never says compliance verdict or compliance report", (file) => {
@@ -395,7 +396,7 @@ describe("W7 signed-in QA copy", () => {
   );
 
   it("the run page and report show plain finding text and a short Learn more link, never the raw url sentence", () => {
-    for (const file of ["src/app/(app)/audits/[id]/page.tsx", "src/app/(app)/audits/[id]/report/page.tsx"]) {
+    for (const file of ["src/app/(app)/audits/[id]/page.tsx", "src/app/(app)/audits/[id]/report/report-document.tsx"]) {
       const src = read(file);
       expect(src).toMatch(/displayFinding\(/);
       expect(src).toMatch(/Learn more/);

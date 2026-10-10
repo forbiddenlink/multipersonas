@@ -105,6 +105,7 @@ describe("conformance vocabulary", () => {
     for (const file of [
       "src/lib/conformance.ts",
       "src/app/(app)/audits/[id]/report/page.tsx",
+      "src/app/(app)/audits/[id]/report/report-document.tsx",
       "src/app/(app)/audits/[id]/report/conformance-table.tsx",
     ]) {
       const src = readFileSync(file, "utf8");
