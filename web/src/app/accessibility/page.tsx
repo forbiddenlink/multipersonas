@@ -9,6 +9,13 @@ export const metadata: Metadata = {
     "Personaudit's commitment to accessibility, the standard we hold our own site to, and how to report a barrier.",
 };
 
+// Result of the last green run of .github/workflows/a11y-dogfood.yml on main (9 October
+// 2026, commit bfe1bcb), which scanned the 16 public routes then listed in
+// scripts/axe-dogfood.mjs. Update these constants by hand with the next green run.
+const LAST_SCAN = { date: "9 October 2026", pages: 16 };
+const SCAN_RUNS_URL =
+  "https://github.com/forbiddenlink/multipersonas/actions/workflows/a11y-dogfood.yml";
+
 export default function AccessibilityPage() {
   return (
     <MarketingShell narrow={false}>
@@ -16,7 +23,7 @@ export default function AccessibilityPage() {
         eyebrow="The fine print"
         title="Accessibility statement"
         mark="statement"
-        lastReviewed="20 August 2026"
+        lastReviewed="10 October 2026"
       >
         <p>
           Personaudit sells accessibility testing, so we hold our own site to the standard we
@@ -36,6 +43,14 @@ export default function AccessibilityPage() {
           runs, in both light and dark themes on every change, and the build fails on any
           violation. We test keyboard navigation and visible focus, respect
           reduced-motion preferences, and verify color contrast in both themes.
+        </p>
+        <p>
+          Last automated scan: {LAST_SCAN.date}, {LAST_SCAN.pages} public pages, both themes, 0
+          axe-core violations at WCAG 2.2 AA plus best practice. See the{" "}
+          <a href={SCAN_RUNS_URL} target="_blank" rel="noopener noreferrer" className="text-link">
+            scan run history
+          </a>
+          .
         </p>
 
         <h2>Known limitations</h2>
