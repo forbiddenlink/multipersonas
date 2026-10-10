@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import posthog from "posthog-js";
 import type { PostHogConfig } from "posthog-js";
 import { PostHogProvider as Provider } from "posthog-js/react";
+import { carriesShareToken } from "@/lib/sentry-scrub";
 
 // Identifies this app in the shared PostHog project (325061), which several apps
 // report into. Registered as a super property so every event carries it and per-app
@@ -23,10 +24,6 @@ function scrubUrl(raw: string): string {
     url.hash = "";
     if (/^\/grade\/[^/]+/.test(url.pathname)) {
       url.pathname = "/grade/[token]";
-    }
-    // A share link's token is a credential; it must never reach analytics.
-    if (/^\/r\/[^/]+/.test(url.pathname)) {
-      url.pathname = "/r/[token]";
     }
     return url.toString();
   } catch {
@@ -65,6 +62,9 @@ const posthogOptions = {
     captureCurrentPageview(client);
   },
   before_send: (event) => {
+    // A share link token is a credential. Drop any event carrying one in ANY property
+    // (current, initial, session entry URLs, person properties), not just known keys.
+    if (carriesShareToken(event)) return null;
     if (event?.properties) {
       if (typeof event.properties.$current_url === "string") {
         event.properties.$current_url = scrubUrl(event.properties.$current_url);
@@ -77,7 +77,8 @@ const posthogOptions = {
   },
 } satisfies Partial<PostHogConfig>;
 
-if (typeof window !== "undefined" && POSTHOG_KEY) {
+// No analytics at all on a share link page: the token is in the URL.
+if (typeof window !== "undefined" && POSTHOG_KEY && !carriesShareToken(window.location.pathname)) {
   posthog.init(POSTHOG_KEY, posthogOptions);
 }
 

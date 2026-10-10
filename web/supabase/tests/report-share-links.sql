@@ -22,6 +22,14 @@ insert into public.test_runs(id,project_id,user_id,url,status,share_token,share_
  ('30000000-0000-4000-8000-000000000035','20000000-0000-4000-8000-000000000031','10000000-0000-4000-8000-000000000031','https://example.invalid/e','running',
   'EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE', now() + interval '1 day', null);
 
+-- A run pointing at ANOTHER user's project (the existing update policy allows it) must not
+-- leak that project's name through a share link.
+insert into public.projects(id,user_id,name,url) values
+ ('20000000-0000-4000-8000-000000000032','10000000-0000-4000-8000-000000000032','Foreign Secret Client','https://example.invalid');
+insert into public.test_runs(id,project_id,user_id,url,status,share_token,share_expires_at) values
+ ('30000000-0000-4000-8000-000000000036','20000000-0000-4000-8000-000000000032','10000000-0000-4000-8000-000000000031','https://example.invalid/f','completed',
+  'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', now() + interval '1 day');
+
 insert into public.findings(test_run_id,persona_id,severity,category,title,description,recommendation,page_url,source,rule_id,wcag_tags) values
  ('30000000-0000-4000-8000-000000000031','axe','serious','accessibility','Axe finding','d','r','https://example.invalid/a','axe','color-contrast','{wcag2aa}'),
  ('30000000-0000-4000-8000-000000000031','p1','minor','usability','Persona opinion','d','r','https://example.invalid/a','persona',null,null);
@@ -71,6 +79,11 @@ begin
   end if;
   if (select count(*) from public.get_shared_report_journey('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')) <> 1 then
     raise exception 'journey rows must be returned for a valid token';
+  end if;
+
+  if (select count(*) from public.get_shared_report('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF')) <> 1
+     or (select client_name from public.get_shared_report('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF')) is not null then
+    raise exception 'a foreign project name must not be returned';
   end if;
 
   -- Expired, revoked, null expiry, not completed, unknown, malformed, null: nothing.

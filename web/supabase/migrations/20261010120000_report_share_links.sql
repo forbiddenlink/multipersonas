@@ -77,7 +77,9 @@ as $$
          pr.name,
          case when pf.plan = 'team' then pf.agency_name end
   from public.test_runs r
-  left join public.projects pr on pr.id = r.project_id
+  -- Match the project's owner too: the existing test_runs policies do not stop an owner
+  -- from pointing project_id at another user's project, and that name must not leak.
+  left join public.projects pr on pr.id = r.project_id and pr.user_id = r.user_id
   left join public.profiles pf on pf.id = r.user_id
   where r.id = public._shared_run_id(p_token)
 $$;

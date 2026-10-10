@@ -84,3 +84,39 @@ export function scrubEvent<T extends ScrubbableEvent>(event: T): T {
   }
   return event;
 }
+
+// Report share links put a bearer token in the path (/r/<token>). Analytics and tracing
+// carry URLs in many properties (session entry URLs, span attributes, transaction names),
+// so these helpers work on whole payloads instead of a fixed list of keys.
+const SHARE_PATH_RE = /\/r\/[^/\s?#"'\\]+/g;
+const MAX_DEPTH = 12;
+
+/** True when any string anywhere in the value contains a /r/<token> path. */
+export function carriesShareToken(value: unknown, depth = 0): boolean {
+  if (typeof value === "string") return /\/r\/[^/\s?#"'\\]+/.test(value);
+  if (depth >= MAX_DEPTH || value === null || typeof value !== "object") return false;
+  return Object.values(value as Record<string, unknown>).some((v) => carriesShareToken(v, depth + 1));
+}
+
+/** Replace every /r/<token> path in every string, in place on a copy. */
+export function redactShareTokens<T>(value: T, depth = 0): T {
+  if (typeof value === "string") return value.replace(SHARE_PATH_RE, "/r/[token]") as T;
+  if (depth >= MAX_DEPTH || value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map((v) => redactShareTokens(v, depth + 1)) as T;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    out[k] = redactShareTokens(v, depth + 1);
+  }
+  return out as T;
+}
+
+/** Transactions and spans: scrub URLs the error scrubber never sees. */
+export function scrubTransaction<T extends object>(event: T): T {
+  return redactShareTokens(event);
+}
+
+/** Never trace a share-link request; otherwise sample at `rate`. */
+export function sharedReportSafeSampler(rate: number) {
+  return (ctx: { name?: string; attributes?: Record<string, unknown>; normalizedRequest?: { url?: string } }): number =>
+    carriesShareToken([ctx.name, ctx.normalizedRequest?.url, ctx.attributes]) ? 0 : rate;
+}

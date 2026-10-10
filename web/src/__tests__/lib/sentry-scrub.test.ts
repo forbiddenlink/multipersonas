@@ -1,5 +1,27 @@
 import { describe, it, expect } from "vitest";
-import { stripQuery, redactEmails, scrubEvent } from "@/lib/sentry-scrub";
+import fs from "node:fs";
+import {
+  stripQuery,
+  redactEmails,
+  scrubEvent,
+  carriesShareToken,
+  scrubTransaction,
+  sharedReportSafeSampler,
+} from "@/lib/sentry-scrub";
+
+describe("wiring", () => {
+  it("PostHog skips init and drops events on share links; Sentry samples and scrubs", () => {
+    const read = (f: string) => fs.readFileSync(`${process.cwd()}/src/${f}`, "utf8");
+    const ph = read("components/posthog-provider.tsx");
+    expect(ph).toMatch(/!carriesShareToken\(window\.location\.pathname\)/);
+    expect(ph).toMatch(/if \(carriesShareToken\(event\)\) return null/);
+    for (const f of ["instrumentation.ts", "instrumentation-client.ts"]) {
+      const src = read(f);
+      expect(src).toContain("sharedReportSafeSampler(0.1)");
+      expect(src).toContain("beforeSendTransaction");
+    }
+  });
+});
 
 describe("stripQuery", () => {
   it("drops the query string, keeps origin+path", () => {
@@ -62,6 +84,42 @@ it("removes credentials and private result tokens from requests and breadcrumbs"
 
 it("does not return malformed absolute URLs containing credentials", () => {
   expect(stripQuery("https://synthetic:password@[invalid")).toBe("[url]");
+});
+
+describe("share token never reaches analytics or tracing", () => {
+  const token = "A".repeat(43);
+  const sdkPayload = {
+    event: "$pageview",
+    properties: {
+      $current_url: `https://x.test/r/${token}`,
+      $initial_current_url: `https://x.test/r/${token}`,
+      $session_entry_url: `https://x.test/r/${token}`,
+      $pathname: `/r/${token}`,
+      $set_once: { $initial_referrer: "$direct", $initial_current_url: `https://x.test/r/${token}` },
+    },
+  };
+
+  it("detects a token in any property of an SDK-shaped payload", () => {
+    expect(carriesShareToken(sdkPayload)).toBe(true);
+    expect(carriesShareToken({ properties: { $current_url: "https://x.test/dashboard" } })).toBe(false);
+    expect(carriesShareToken(`/r/${token}`)).toBe(true);
+  });
+
+  it("redacts every occurrence in a transaction with spans", () => {
+    const tx = {
+      transaction: `GET /r/${token}`,
+      request: { url: `https://x.test/r/${token}` },
+      spans: [{ description: `fetch /r/${token}`, data: { "url.full": `https://x.test/r/${token}`, "url.path": `/r/${token}` } }],
+    };
+    expect(JSON.stringify(scrubTransaction(tx))).not.toContain(token);
+  });
+
+  it("samples share link requests at 0 and others at the base rate", () => {
+    const sampler = sharedReportSafeSampler(0.1);
+    expect(sampler({ name: `GET /r/${token}` })).toBe(0);
+    expect(sampler({ name: "GET /x", attributes: { "url.path": `/r/${token}` } })).toBe(0);
+    expect(sampler({ name: "GET /dashboard", attributes: { "url.path": "/dashboard" } })).toBe(0.1);
+  });
 });
 
 it("redacts report share tokens from paths", () => {

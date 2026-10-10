@@ -1,1 +1,9 @@
-export { stripQuery, redactEmails, scrubEvent } from "@engine/security/sentry-scrub";
+export {
+  stripQuery,
+  redactEmails,
+  scrubEvent,
+  carriesShareToken,
+  redactShareTokens,
+  scrubTransaction,
+  sharedReportSafeSampler,
+} from "@engine/security/sentry-scrub";
