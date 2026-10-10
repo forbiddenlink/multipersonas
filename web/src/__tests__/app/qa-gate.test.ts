@@ -66,3 +66,16 @@ describe("report tables", () => {
     }
   });
 });
+
+describe("report print stylesheet", () => {
+  const css = read("src/app/globals.css");
+  const report = css.slice(css.indexOf("@page report"));
+  it("prints the signed-in report as a named page with a running header and page numbers", () => {
+    expect(css).toMatch(/page:\s*report/);
+    expect(report).toMatch(/@top-left\s*\{\s*content:\s*var\(--report-running-title\)/);
+    expect(report).toMatch(/counter\(page\) " of " counter\(pages\)/);
+  });
+  it("repeats the standing limit of automated checks on every page", () => {
+    expect(report).toMatch(/Automated checks only; manual review is still required\./);
+  });
+});

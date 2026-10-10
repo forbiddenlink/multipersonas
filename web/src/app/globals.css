@@ -556,6 +556,35 @@
   .report-print-hide {
     display: none !important;
   }
+  /* The signed-in report prints as a named page: running header, page numbers and the
+     standing limit of automated checks sit in the margin boxes. Chromium prints margin
+     boxes; engines without support print the same page without them. */
+  body:where(:has(.report-print-root)) {
+    page: report;
+  }
+  @page report {
+    margin: 22mm 18mm 20mm;
+    @top-left {
+      content: var(--report-running-title);
+      font: 8pt sans-serif;
+      color: #4b5563;
+    }
+    @top-right {
+      content: var(--report-running-date);
+      font: 8pt sans-serif;
+      color: #4b5563;
+    }
+    @bottom-left {
+      content: "Automated checks only; manual review is still required.";
+      font: 8pt sans-serif;
+      color: #4b5563;
+    }
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+      font: 8pt sans-serif;
+      color: #4b5563;
+    }
+  }
   @page {
     margin: 18mm;
   }

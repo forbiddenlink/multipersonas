@@ -8,6 +8,7 @@ import { groupPriority } from "@/lib/priority-groups";
 import type { compareRunWithPrevious } from "@/lib/baseline";
 import type { getProjectSchedule } from "@/lib/schedules";
 import { buildExecutiveSummary } from "@/lib/report-summary";
+import { buildReportScope, runningHeaderCss } from "@/lib/report-scope";
 import styles from "./report.module.css";
 import { ConformanceTable } from "./conformance-table";
 
@@ -62,6 +63,7 @@ export function ReportDocument({
     (pid) => PERSONA_DATA[pid as keyof typeof PERSONA_DATA]?.name ?? pid,
   );
   const totalViolations = report.verdicts.length;
+  const scope = buildReportScope(report);
   const manualReviewRows = report.conformance.rows.filter(
     (row) => row.status === "needs-manual-review",
   );
@@ -111,6 +113,14 @@ export function ReportDocument({
 
   return (
       <article className={`${styles.report} report-print-root`}>
+        <style
+          dangerouslySetInnerHTML={{
+            __html: runningHeaderCss(
+              `${report.agencyName ?? "Personaudit"} accessibility report: ${report.url}`,
+              formatDate(report.auditDate),
+            ),
+          }}
+        />
         <header className={styles.header}>
           <h1 className={styles.title}>
             {report.agencyName
@@ -128,6 +138,40 @@ export function ReportDocument({
           <p className={styles.meta}>Audit date: {formatDate(report.auditDate)}</p>
           <p className={styles.meta}>Report ID: {report.runId}</p>
         </header>
+
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Scope of this report</h2>
+          <dl className={styles.scopeList}>
+            <div>
+              <dt>Audit date</dt>
+              <dd>{formatDate(scope.auditDate)}</dd>
+            </div>
+            <div>
+              <dt>URLs checked ({scope.urls.length + scope.moreUrls})</dt>
+              <dd>
+                <ul className={styles.scopeUrls}>
+                  {scope.urls.map((url) => (
+                    <li key={url}>{url}</li>
+                  ))}
+                </ul>
+                {scope.moreUrls > 0 ? (
+                  <p className={styles.scopeMore}>and {scope.moreUrls} more</p>
+                ) : null}
+              </dd>
+            </div>
+            <div>
+              <dt>Engine</dt>
+              <dd>axe-core {scope.axeVersion}</dd>
+            </div>
+            <div>
+              <dt>Criteria</dt>
+              <dd>WCAG {scope.wcagVersion} Level A and AA success criteria</dd>
+            </div>
+          </dl>
+          <p className={styles.disclaimer}>
+            <strong>{scope.statement}</strong>
+          </p>
+        </section>
 
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Executive summary</h2>

@@ -90,6 +90,9 @@ export default async function ReportPage({
               scanCoverage={report.scanCoverage}
               filename={`personaudit-${report.runId}-verdicts.csv`}
             />
+            <p className="max-w-xs text-xs text-muted-foreground">
+              In the print dialog, choose Save as PDF and turn off Headers and footers.
+            </p>
           </div>
         </div>
       </div>
