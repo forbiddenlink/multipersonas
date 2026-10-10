@@ -6,10 +6,12 @@ import { SiteFooter } from "@/components/site-footer";
 import { SampleCoverSheet } from "@/components/dossier/sample-cover-sheet";
 import { SampleTaskSuccess } from "@/components/dossier/sample-task-success";
 import { SampleFindings } from "@/components/dossier/sample-findings";
+import { ManualReviewRecord, SampleCoverage } from "@/components/dossier/sample-coverage";
 import { ReportFooter, ReportRunningHeader } from "@/components/dossier/report-furniture";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { SAMPLE_SEVERITY_COUNTS, SAMPLE_TARGET, SAMPLE_VERDICTS } from "@/lib/sample-evidence";
 import { SAUCEDEMO_TRAIL } from "@/lib/probe-ledger";
+import { wcagTagsToCriteria } from "@/lib/wcag";
 import { SEVERITY_DEFINITIONS } from "@/lib/severity-definitions";
 
 export const metadata: Metadata = {
@@ -42,6 +44,15 @@ const FIX_FIRST = [
     reason: "Blocks recovery from a checkout error, the highest-cost place to lose a customer.",
   },
 ] as const;
+
+// The probe's axe tag filter was wcag2a/2aa/21a/21aa (experiments/net-new-violations/measure.ts),
+// so WCAG 2.2 only rules such as target-size did not run.
+const SAMPLE_PROBE_SCAN = { wcag22Rules: false } as const;
+
+// Each sample finding's success criterion, as the engine would attribute it from axe's tags.
+const SAMPLE_VERDICT_CRITERIA = SAMPLE_VERDICTS.map((v) => ({
+  criteria: wcagTagsToCriteria([`wcag${v.wcag.replaceAll(".", "")}`]),
+}));
 
 // Priority order: the two fix-first items, then the remaining finding in crawl order.
 const FINDINGS = [SAMPLE_VERDICTS[1], SAMPLE_VERDICTS[0], SAMPLE_VERDICTS[2]] as const;
@@ -161,6 +172,13 @@ export default function SampleReportPage() {
               </p>
             </section>
 
+            {/* Per-criterion coverage + the agency's own manual pass */}
+            <section className="mt-8 border-t-2 border-foreground pt-6">
+              <h2 className="label-mono">WCAG 2.2 A and AA · coverage by criterion</h2>
+              <SampleCoverage verdicts={SAMPLE_VERDICT_CRITERIA} scan={SAMPLE_PROBE_SCAN} />
+              <ManualReviewRecord />
+            </section>
+
             {/* Persona task-success — AI opinion, clearly labeled */}
             <section className="mt-8 border-t border-border pt-6">
               <h2 className="label-mono">Persona layer</h2>
@@ -181,6 +199,11 @@ export default function SampleReportPage() {
                   Automated checks cover a large share of WCAG failures but not all of them.
                   Manual keyboard and screen-reader review still matters; this report is not a
                   substitute for testing with disabled users.
+                </li>
+                <li>
+                  The coverage table marks a criterion as tested only when an axe-core rule
+                  that ran in this probe reports on it. The probe used the WCAG 2.0 and 2.1
+                  rule tags, so rules that need the 2.2 tags, such as target size, did not run.
                 </li>
                 <li>
                   Persona task-success is an AI browser agent&apos;s read of a final page state

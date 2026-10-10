@@ -38,7 +38,7 @@ export function SampleFindings({ findings }: { findings: readonly SampleFinding[
           const fix = ruleFix(f.ruleId);
           const name = criterionName(f.wcag);
           return (
-            <tbody key={`${f.ruleId}-${f.state}`} className="border-b border-border align-top">
+            <tbody key={`${f.ruleId}-${f.state}`} className="border-b border-border align-top last:border-b-0">
               <tr>
                 <th scope="row" className="pt-4 pr-3 text-left font-normal">
                   <span className="block font-mono text-xs">{f.ruleId}</span>
