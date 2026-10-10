@@ -44,6 +44,12 @@ const securityHeaders = [
   { key: "Content-Security-Policy", value: contentSecurityPolicy },
 ];
 
+const sharedReportHeaders = [
+  { key: "Cache-Control", value: "no-store" },
+  { key: "Referrer-Policy", value: "no-referrer" },
+  { key: "X-Robots-Tag", value: "noindex, nofollow" },
+];
+
 const nextConfig: NextConfig = {
   // PostHog reverse proxy. Content blockers drop requests to us.i.posthog.com outright,
   // which silently deletes the traffic product decisions are made from; a same-origin
@@ -63,6 +69,12 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: securityHeaders,
+      },
+      // Report share links are capability URLs: no caching, no indexing, and no referrer
+      // so the token cannot leak to any third party the page links or loads.
+      {
+        source: "/r/:token",
+        headers: sharedReportHeaders,
       },
     ];
   },

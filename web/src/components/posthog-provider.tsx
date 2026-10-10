@@ -24,6 +24,10 @@ function scrubUrl(raw: string): string {
     if (/^\/grade\/[^/]+/.test(url.pathname)) {
       url.pathname = "/grade/[token]";
     }
+    // A share link's token is a credential; it must never reach analytics.
+    if (/^\/r\/[^/]+/.test(url.pathname)) {
+      url.pathname = "/r/[token]";
+    }
     return url.toString();
   } catch {
     return raw.split(/[?#]/)[0] ?? raw;

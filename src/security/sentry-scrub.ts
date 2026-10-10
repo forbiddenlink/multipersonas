@@ -1,6 +1,13 @@
 // Shared error-event scrubbing for the web app and worker.
 const EMAIL_RE = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
 
+/** Private result tokens live in the path: grade results and report share links. */
+function redactTokenPath(pathname: string): string {
+  return pathname
+    .replace(/^\/grade\/[^/]+/, "/grade/[token]")
+    .replace(/^\/r\/[^/]+/, "/r/[token]");
+}
+
 /** Remove URL credentials, query strings, fragments, and private result tokens. */
 export function stripQuery(url: string): string {
   try {
@@ -9,11 +16,11 @@ export function stripQuery(url: string): string {
     parsed.password = "";
     parsed.search = "";
     parsed.hash = "";
-    parsed.pathname = parsed.pathname.replace(/^\/grade\/[^/]+/, "/grade/[token]");
+    parsed.pathname = redactTokenPath(parsed.pathname);
     return parsed.toString();
   } catch {
     if (/^https?:/i.test(url)) return "[url]";
-    return url.split(/[?#]/)[0]?.replace(/^\/grade\/[^/]+/, "/grade/[token]") ?? "";
+    return redactTokenPath(url.split(/[?#]/)[0] ?? "");
   }
 }
 

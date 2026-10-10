@@ -13,6 +13,7 @@ import { TrackOnMount } from "@/components/track-on-mount";
 import { ExportButton } from "./export-button";
 import styles from "./report.module.css";
 import { formatDate, ReportDocument } from "./report-document";
+import { ShareLinkControl } from "./share-link-control";
 
 export const metadata: Metadata = {
   title: "Accessibility report",
@@ -20,16 +21,27 @@ export const metadata: Metadata = {
 
 export default async function ReportPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ share?: string }>;
 }) {
   const { id } = await params;
+  const { share } = await searchParams;
   const supabase = await createClient();
 
   // RLS scopes the underlying run to the caller; a missing or not-owned id both return
   // null → 404, never leaking that another user's run exists.
   const report = await buildReport(supabase, id);
   if (!report) notFound();
+
+  // The owner's own share columns, read under RLS. Null only if the run vanished between
+  // the two reads, in which case the control shows the "no link" state.
+  const { data: shareRow } = await supabase
+    .from("test_runs")
+    .select("share_token,share_expires_at,share_revoked_at")
+    .eq("id", id)
+    .maybeSingle();
 
   const totalViolations = report.verdicts.length;
   const csvRows = report.verdicts.map((v) => ({
@@ -94,6 +106,11 @@ export default async function ReportPage({
               In the print dialog, choose Save as PDF and turn off Headers and footers.
             </p>
           </div>
+          <ShareLinkControl
+            runId={id}
+            columns={shareRow ?? { share_token: null, share_expires_at: null, share_revoked_at: null }}
+            failed={share === "error"}
+          />
         </div>
       </div>
 

@@ -63,3 +63,9 @@ it("removes credentials and private result tokens from requests and breadcrumbs"
 it("does not return malformed absolute URLs containing credentials", () => {
   expect(stripQuery("https://synthetic:password@[invalid")).toBe("[url]");
 });
+
+it("redacts report share tokens from paths", () => {
+  const token = "A".repeat(43);
+  expect(stripQuery(`https://example.com/r/${token}?x=1`)).toBe("https://example.com/r/[token]");
+  expect(stripQuery(`/r/${token}#frag`)).toBe("/r/[token]");
+});

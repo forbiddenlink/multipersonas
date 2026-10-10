@@ -382,7 +382,7 @@ export function assembleReport(
 
 // Reports must not turn a failed or truncated read into apparent absence of defects.
 // Completed runs are read in stable ID order; a changed count invalidates assembly.
-async function loadReportRows<T>(
+export async function loadReportRows<T>(
   fetchPage: (from: number, to: number) => PromiseLike<{
     data: T[] | null; error: unknown; count: number | null;
   }>,
