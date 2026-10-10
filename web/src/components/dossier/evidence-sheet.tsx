@@ -36,9 +36,9 @@ export function EvidenceSheet({ className = "" }: { className?: string }) {
             </div>
             <p className="mt-2 font-serif text-[0.975rem] leading-relaxed">
               The inventory sort control has no accessible name.{" "}
-              <span className="mark">Behind auth, a crawler without a session never reaches it.</span>
+              <span className="redline-mark">Behind auth, a crawler without a session never reaches it.</span>
             </p>
-            <p className="mt-1 font-mono text-[11px] text-muted-foreground">found at /inventory · signed-in state</p>
+            <p className="mt-1 font-mono text-xs text-muted-foreground">found at /inventory · signed-in state</p>
           </section>
 
           <section className="border-t border-border pt-5">
@@ -48,24 +48,24 @@ export function EvidenceSheet({ className = "" }: { className?: string }) {
             </div>
             <p className="mt-2 font-serif text-[0.975rem] leading-relaxed">
               The error-dismiss control on checkout validation exposes no name, so a screen
-              reader announces only <span className="mark">&ldquo;button.&rdquo;</span>
+              reader announces only <span className="redline-mark">&ldquo;button.&rdquo;</span>
             </p>
-            <p className="mt-1 font-mono text-[11px] text-muted-foreground">found at /checkout · validation error</p>
+            <p className="mt-1 font-mono text-xs text-muted-foreground">found at /checkout · validation error</p>
           </section>
         </div>
 
         <footer className="mt-6 flex flex-col-reverse gap-4 border-t border-border pt-4 sm:flex-row sm:items-end sm:justify-between">
-          <p className="max-w-[16rem] font-mono text-[10.5px] leading-relaxed text-muted-foreground">
+          <p className="max-w-[16rem] font-mono text-xs leading-relaxed text-muted-foreground">
             axe-core verdicts only. Deterministic, reproducible, no AI opinion on this page.
           </p>
           <div className="stamp stamp-land shrink-0 self-end text-[0.7rem] sm:self-auto" aria-label="Verdict: 3 critical findings, 0 on the public page">
             <span className="text-[1.35rem] leading-none tracking-[0.04em]">3 Critical</span>
-            <span className="text-[0.6rem] tracking-[0.14em]">0 on public page</span>
+            <span className="text-xs tracking-[0.14em]">0 on public page</span>
           </div>
         </footer>
       </article>
       </div>
-      <figcaption className="relative mt-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pl-5 font-mono text-[11px] text-muted-foreground">
+      <figcaption className="relative mt-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pl-5 font-mono text-xs text-muted-foreground">
         <span>Real probe of the SauceDemo test store. Not a customer account.</span>
         <BatesSerial n="0001" className="shrink-0" />
       </figcaption>

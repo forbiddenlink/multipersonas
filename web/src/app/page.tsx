@@ -9,6 +9,8 @@ import { EvidenceSheet } from "@/components/dossier/evidence-sheet";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { FocusGradeLink } from "@/components/focus-grade-link";
 import { ExhibitHead } from "@/components/dossier/exhibit-head";
+import { ProcedureSteps } from "@/components/dossier/procedure-steps";
+import { ResponsiveDisclosure } from "@/components/dossier/responsive-disclosure";
 import { StateFlowTrail } from "@/components/dossier/state-flow-trail";
 import { SampleTaskSuccess } from "@/components/dossier/sample-task-success";
 import { PROBE_LEDGER } from "@/lib/probe-ledger";
@@ -108,7 +110,7 @@ export default function Home() {
             <ExhibitHead label="Where scanners stop" className="mb-8" />
             <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-end">
               <h2 id="behind-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
-                The homepage passes. The bugs are <span className="mark-sweep">behind the login.</span>
+                The homepage passes. The bugs are behind the login.
               </h2>
               <p className="max-w-xl text-[1.0625rem] leading-relaxed text-muted-foreground lg:justify-self-end">
                 A scanner that takes one URL sees one page; your users see the whole flow. We ran
@@ -140,6 +142,7 @@ export default function Home() {
                   </a>
                 </p>
               </div>
+              <ResponsiveDisclosure summary="Probe ledger: four demo apps, scanned both ways" className="min-w-0">
               <div
       tabIndex={0}
       role="region"
@@ -177,50 +180,31 @@ export default function Home() {
                   </tbody>
                 </table>
               </div>
+              </ResponsiveDisclosure>
             </div>
           </div>
         </section>
 
-        {/* ── Procedure: how a scan runs, with the command at each step. ── */}
-        <section aria-labelledby="procedure-heading" className="section-y">
+        {/* ── Procedure: a full-bleed terminal band, no exhibit tab. ── */}
+        <section aria-labelledby="procedure-heading" className="section-y bg-foreground text-background">
           <div className="frame">
-            <ExhibitHead label="Procedure" />
-            <h2 id="procedure-heading" className="display mt-8 max-w-2xl text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
-              Four steps from login to a gated build.
-            </h2>
-            <div className="mt-6 grid max-w-3xl gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
-              <p className="leading-relaxed text-muted-foreground">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end lg:gap-16">
+              <h2 id="procedure-heading" className="display max-w-2xl text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+                Four steps from login to a gated build.
+              </h2>
+              <p className="max-w-xl leading-relaxed text-[color-mix(in_oklch,var(--background)_74%,var(--foreground))]">
                 For developers. Scan signed-in flows with the free CLI; the session
                 never leaves your machine. Open source, MIT licensed, and no overlay script on your
                 site.
               </p>
+            </div>
+            <ProcedureSteps steps={PROCEDURE} variant="terminal" className="mt-10" />
+            <div className="mt-10 max-w-2xl">
               <ContentCodeBlock label="behind the login, on your machine" code="npx personaudit scan https://your.app" />
             </div>
-            <ol className="mt-10 border-t border-border">
-              {PROCEDURE.map((p) => (
-                <li
-                  key={p.n}
-                  className="grid gap-4 border-b border-border py-7 md:grid-cols-[3rem_minmax(0,1fr)_minmax(0,1.15fr)] md:gap-8"
-                >
-                  <span className="display text-3xl leading-none text-muted-foreground">{p.n}</span>
-                  <div className="min-w-0">
-                    <h3 className="text-[1.0625rem] font-semibold">{p.title}</h3>
-                    <p className="mt-2 max-w-md leading-relaxed text-muted-foreground">{p.body}</p>
-                  </div>
-                  <pre
-                    tabIndex={0}
-                    role="region"
-                    aria-label={`${p.title} command`}
-                    className="min-w-0 self-start overflow-x-auto whitespace-pre rounded-sm border border-border bg-card px-4 py-3 font-mono text-[13px] leading-relaxed text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-                  >
-                    {p.cmd}
-                  </pre>
-                </li>
-              ))}
-            </ol>
-            <p className="mt-6 text-sm text-muted-foreground">
+            <p className="mt-6 text-sm text-[color-mix(in_oklch,var(--background)_74%,var(--foreground))]">
               Full setup, including a ready-to-use GitHub Action:{" "}
-              <Link href="/guides/ci-accessibility-gate" className="text-link">
+              <Link href="/guides/ci-accessibility-gate" className="underline underline-offset-4 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--background)]">
                 the CI accessibility gate guide
               </Link>
               .
@@ -228,32 +212,37 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── The deliverable: what exists in the app today. ── */}
-        <section aria-labelledby="deliverable-heading" className="border-t border-border section-y">
-          <div className="frame">
-            <ExhibitHead label="The deliverable" />
-          <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
-            <div>
+        {/* ── The deliverable: a single-column essay with one margin note, no exhibit tab. ── */}
+        <section aria-labelledby="deliverable-heading" className="section-y-sm">
+          <div className="frame grid gap-10 lg:grid-cols-[minmax(0,42rem)_minmax(0,1fr)] lg:gap-20">
+            <div className="min-w-0">
               <h2 id="deliverable-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
                 Built for the handoff, not the screenshot.
               </h2>
-              <p className="mt-5 max-w-md leading-relaxed text-muted-foreground">
+              <p className="mt-5 font-serif text-[1.125rem] leading-relaxed text-muted-foreground">
                 A violation list is where the work starts. Each scan becomes something a client can
                 read and a developer can close.
               </p>
-              <Link href="/sample-report" className="text-link mt-6 inline-block">
+              <ResponsiveDisclosure summary="What each report contains" className="mt-8">
+              <dl className="border-t border-border">
+                {DELIVERABLE.slice(0, -1).map((d) => (
+                  <div key={d.term} className="grid gap-1 border-b border-border py-3.5 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-6 sm:py-4">
+                    <dt className="font-semibold">{d.term}</dt>
+                    <dd className="text-[0.9375rem] leading-relaxed text-muted-foreground">{d.desc}</dd>
+                  </div>
+                ))}
+              </dl>
+              </ResponsiveDisclosure>
+            </div>
+            <aside aria-label="Margin note" className="min-w-0 self-end border-l-2 border-dashed border-[var(--redline)] pl-5 lg:max-w-xs lg:self-start lg:pt-2">
+              <p className="redline-note uppercase tracking-[0.1em]">{DELIVERABLE[DELIVERABLE.length - 1]!.term}</p>
+              <p className="mt-2 text-[0.9375rem] leading-relaxed text-muted-foreground">
+                {DELIVERABLE[DELIVERABLE.length - 1]!.desc}
+              </p>
+              <Link href="/sample-report" className="text-link mt-4 inline-block">
                 Read the sample report
               </Link>
-            </div>
-            <dl className="grid min-w-0 gap-x-10 border-t border-border sm:grid-cols-2">
-              {DELIVERABLE.map((d) => (
-                <div key={d.term} className="border-b border-border py-5">
-                  <dt className="font-semibold">{d.term}</dt>
-                  <dd className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{d.desc}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
+            </aside>
           </div>
         </section>
 
@@ -295,9 +284,9 @@ export default function Home() {
                 </div>
               </dl>
             </div>
-            <div className="min-w-0">
+            <ResponsiveDisclosure summary="Open the sample replay: saucedemo.com, 3 steps" className="min-w-0">
               <SampleTaskSuccess />
-            </div>
+            </ResponsiveDisclosure>
           </div>
           </div>
         </section>
@@ -315,7 +304,7 @@ export default function Home() {
 
         {/* ── Close. ── */}
         <section aria-labelledby="close-heading" className="border-t border-border">
-          <div className="frame flex flex-col items-start gap-8 py-20 md:flex-row md:items-end md:justify-between">
+          <div className="frame flex flex-col items-start gap-8 py-14 md:flex-row md:items-end md:justify-between md:py-20">
             <div>
               <h2 id="close-heading" className="display max-w-2xl text-[clamp(2.2rem,4.6vw,3.5rem)] leading-[1.02]">
                 Open a case file on your next client.

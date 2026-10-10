@@ -149,7 +149,7 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
             <FrameViewport index={index} />
           </div>
           {frame.target && (
-            <div className="mt-3 flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
+            <div className="mt-3 flex items-center gap-2 font-mono text-xs text-muted-foreground">
               <span className="text-[var(--redline)] font-bold">Element inspection:</span>
               <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">{frame.target}</code>
             </div>
@@ -162,7 +162,7 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
             <div>
               <div className="flex items-center justify-between gap-2">
                 <span className="label-mono">State: {frame.state}</span>
-                <span className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+                <span className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
                   Action: {frame.action}
                 </span>
               </div>
@@ -174,7 +174,7 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
             {/* Inferred Frustration Gauge */}
             <div className="border-t border-border pt-3">
               <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-muted-foreground uppercase tracking-wider text-[11px]">
+                <span className="text-muted-foreground uppercase tracking-wider text-xs">
                   Inferred friction
                 </span>
                 <span className="font-bold tabular-nums" style={{ color: band.token }}>
@@ -207,7 +207,7 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
             )}
           </div>
 
-          <p className="mt-4 font-mono text-[11px] leading-relaxed text-muted-foreground">
+          <p className="mt-4 font-mono text-xs leading-relaxed text-muted-foreground">
             Illustrative walk from {SAMPLE_TARGET.source}. The task success opinion is separate from deterministic WCAG findings.
           </p>
         </div>
@@ -240,12 +240,12 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
                 }`}
               >
                 <div className="flex flex-col items-start gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-1">
-                  <span className="font-mono text-[11px] font-bold tabular-nums">Step {f.step}</span>
-                  <span className="font-mono text-[11px]" style={{ color: b.token }}>
+                  <span className="font-mono text-xs font-bold tabular-nums">Step {f.step}</span>
+                  <span className="font-mono text-xs" style={{ color: b.token }}>
                     {b.label}
                   </span>
                 </div>
-                <span className="mt-1 min-w-0 break-words font-mono text-[11px] font-medium text-foreground sm:text-xs">
+                <span className="mt-1 min-w-0 break-words font-mono text-xs font-medium text-foreground sm:text-xs">
                   {f.state}
                 </span>
               </button>
