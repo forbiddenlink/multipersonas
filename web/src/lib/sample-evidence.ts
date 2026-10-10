@@ -32,6 +32,18 @@ export const SAMPLE_VERDICTS = [
     location: "saucedemo.com · inventory (behind auth)",
     state: "/inventory",
   },
+  {
+    // From the probe record: state `login-error`, impact critical, target `button`. The
+    // record carries no element detail beyond the selector, so none is claimed here.
+    ruleId: "button-name",
+    severity: "critical",
+    wcag: "4.1.2",
+    help: "Buttons must have discernible text",
+    verdict:
+      "A button on the login error state exposes no accessible name, so assistive technology announces only “button.” The state only exists after a failed sign-in, so a URL-level scan never loads it.",
+    location: "saucedemo.com · login (error state)",
+    state: "/login (error)",
+  },
 ] as const;
 
 export const SAMPLE_REPLAY_FRAMES = [

@@ -5,10 +5,12 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { SampleCoverSheet } from "@/components/dossier/sample-cover-sheet";
 import { SampleTaskSuccess } from "@/components/dossier/sample-task-success";
-import { GradeFindingRow } from "@/components/dossier/grade-finding-row";
+import { SampleFindings } from "@/components/dossier/sample-findings";
+import { ReportFooter, ReportRunningHeader } from "@/components/dossier/report-furniture";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { SAMPLE_SEVERITY_COUNTS, SAMPLE_TARGET, SAMPLE_VERDICTS } from "@/lib/sample-evidence";
 import { SAUCEDEMO_TRAIL } from "@/lib/probe-ledger";
+import { SEVERITY_DEFINITIONS } from "@/lib/severity-definitions";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/sample-report" },
@@ -41,6 +43,9 @@ const FIX_FIRST = [
   },
 ] as const;
 
+// Priority order: the two fix-first items, then the remaining finding in crawl order.
+const FINDINGS = [SAMPLE_VERDICTS[1], SAMPLE_VERDICTS[0], SAMPLE_VERDICTS[2]] as const;
+
 export default function SampleReportPage() {
   return (
     <div className="flex min-h-dvh flex-col pb-[env(safe-area-inset-bottom)]">
@@ -63,6 +68,7 @@ export default function SampleReportPage() {
           </div>
 
           <div className="report-paper-surface sheet mt-6 p-6 sm:p-8">
+            <ReportRunningHeader host={SAMPLE_TARGET.host} />
             <SampleCoverSheet axeVersion={AXE_VERSION} preparedOn={PREPARED_ON} />
 
             {/* Executive summary */}
@@ -78,6 +84,7 @@ export default function SampleReportPage() {
                   <div key={sev} className="border-t border-foreground pt-2">
                     <dt><SeverityChip severity={sev} /></dt>
                     <dd className="mt-1.5 font-mono text-2xl tabular-nums">{SAMPLE_SEVERITY_COUNTS[sev]}</dd>
+                    <dd className="mt-1 text-xs leading-snug text-muted-foreground">{SEVERITY_DEFINITIONS[sev]}</dd>
                   </div>
                 ))}
               </dl>
@@ -105,22 +112,7 @@ export default function SampleReportPage() {
             {/* Findings, in detail */}
             <section className="mt-8 border-t-2 border-foreground pt-6">
               <h2 className="label-mono">Findings · signed-in states</h2>
-              <ul className="mt-3">
-                {SAMPLE_VERDICTS.map((v) => (
-                  <GradeFindingRow
-                    key={v.ruleId}
-                    ruleId={v.ruleId}
-                    severity={v.severity}
-                    help={v.help}
-                    wcagAA
-                    location={v.location}
-                  />
-                ))}
-              </ul>
-              <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-                {SAMPLE_SEVERITY_COUNTS.critical - SAMPLE_VERDICTS.length} additional critical
-                finding is logged in the raw probe below but not excerpted here.
-              </p>
+              <SampleFindings findings={FINDINGS} />
             </section>
 
             {/* State-by-state coverage: public vs behind-login */}
@@ -220,6 +212,8 @@ export default function SampleReportPage() {
                 </Link>
               </div>
             </section>
+
+            <ReportFooter />
           </div>
 
           <p className="report-print-hide mt-6 text-xs text-muted-foreground">
