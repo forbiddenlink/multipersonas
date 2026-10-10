@@ -86,6 +86,15 @@ const nextConfig: NextConfig = {
       // "$" pins this to the exact bare specifier so "posthog-js/react" still resolves normally.
       config.resolve.alias["posthog-js$"] = require.resolve("posthog-js/dist/module.slim");
     }
+    // next-font-loader writes `?dpl=<deploymentId>` into each @font-face url, but Next's
+    // webpack cache key omits the deployment id. Vercel restores that cache, so production
+    // CSS kept the PREVIOUS deployment's font urls while the HTML preloaded the current
+    // ones: every font downloaded twice and the preloads went unused. Keying the cache on
+    // the deployment id makes each deploy re-run the font loader.
+    const deploymentId = process.env.NEXT_DEPLOYMENT_ID ?? process.env.VERCEL_DEPLOYMENT_ID;
+    if (deploymentId && config.cache && typeof config.cache === "object" && config.cache.type === "filesystem") {
+      config.cache = { ...config.cache, version: `${config.cache.version ?? ""}|${deploymentId}` };
+    }
     // Resolve .js imports to .ts files (engine uses Node ESM .js extensions)
     config.resolve.extensionAlias = {
       ".js": [".ts", ".js"],

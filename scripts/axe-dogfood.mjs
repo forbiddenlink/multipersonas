@@ -26,6 +26,7 @@ const ROUTES = [
   "/guides/screen-reader-testing",
   "/guides/ci-accessibility-gate",
   "/guides/accessibility-deadlines",
+  "/security",
   "/privacy",
   "/terms",
   "/accessibility",
