@@ -29,6 +29,7 @@ const GROUPS: { title: string; links: { href: string; label: string; external?: 
     title: "The fine print",
     links: [
       { href: "/accessibility", label: "Accessibility statement" },
+      { href: "/security", label: "Security" },
       { href: "/privacy", label: "Privacy" },
       { href: "/terms", label: "Terms" },
       { href: "mailto:hello@personaudit.com", label: "hello@personaudit.com", external: true },
