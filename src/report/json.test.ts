@@ -36,7 +36,7 @@ describe("buildScanJson", () => {
   it("marks every defect new without a baseline", () => {
     const j = buildScanJson({ ...base, findings: [f("a", "1"), f("b", "2")], baselineKeys: null });
     expect(j.baseline).toBeNull();
-    expect(j.summary).toEqual({ total: 2, new: 2, fixed: 0, stillOpen: 0 });
+    expect(j.summary).toEqual({ total: 2, new: 2, fixed: 0, stillOpen: 0, suppressed: 0, expired: 0 });
   });
 
   it("splits new from still-open against a baseline and reports fixed keys", () => {
@@ -46,7 +46,21 @@ describe("buildScanJson", () => {
     });
     expect(j.baseline).toBe("b.json");
     expect(j.defects.map((d) => d.isNew)).toEqual([false, true]);
-    expect(j.summary).toEqual({ total: 2, new: 1, fixed: 1, stillOpen: 1 });
+    expect(j.summary).toEqual({ total: 2, new: 1, fixed: 1, stillOpen: 1, suppressed: 0, expired: 0 });
     expect(j.fixed).toEqual(["gone|9"]);
+  });
+});
+
+describe("buildScanJson with suppressions", () => {
+  const s = (key: string) => ({ key, reason: "legacy", owner: "ana", expires: "2099-01-01" });
+
+  it("flags suppressed defects, drops them from new, and lists outcomes", () => {
+    const j = buildScanJson({
+      ...base, findings: [f("a", "1"), f("b", "2")], baselineKeys: null,
+      suppressions: { active: [s("a|1")], expired: [s("z|9")], unmatched: [s("q|0")] },
+    });
+    expect(j.defects.map((d) => [d.suppressed, d.isNew])).toEqual([[true, false], [false, true]]);
+    expect(j.summary).toMatchObject({ new: 1, suppressed: 1, expired: 1, stillOpen: 0 });
+    expect(j.suppressions.unmatched[0]?.key).toBe("q|0");
   });
 });

@@ -17,6 +17,10 @@ inputs:
     description: "Path (in the consumer repo) to a baseline JSON. Only defects NOT in it count as new. Omit to treat every current defect as new. Create one with `npx personaudit scan <url> --baseline <file> --update-baseline`."
     required: false
     default: ""
+  suppressions:
+    description: "Path (in the consumer repo) to a suppressions JSON: {\"suppressions\": [{\"key\", \"reason\", \"owner\", \"expires\": \"YYYY-MM-DD\"}]}. A suppressed defect does not count toward the gate until its expiry; an expired suppression on a still-present defect fails the gate. Keys are in scan.json."
+    required: false
+    default: ""
   session:
     description: "Path to a saved `personaudit auth` session file, to scan authenticated pages."
     required: false
@@ -66,12 +70,14 @@ runs:
         MP_URL: ${{ inputs.url }}
         MP_FAIL_ON: ${{ inputs.fail-on }}
         MP_BASELINE: ${{ inputs.baseline }}
+        MP_SUPPRESSIONS: ${{ inputs.suppressions }}
         MP_SESSION: ${{ inputs.session }}
         MP_MAX_PAGES: ${{ inputs.max-pages }}
         MP_REPORT: ${{ inputs.report }}
       run: |
         args=( scan "$MP_URL" --fail-on "$MP_FAIL_ON" --max-pages "$MP_MAX_PAGES" --output "$MP_REPORT" )
         if [ -n "$MP_BASELINE" ]; then args+=( --baseline "$MP_BASELINE" ); fi
+        if [ -n "$MP_SUPPRESSIONS" ]; then args+=( --suppressions "$MP_SUPPRESSIONS" ); fi
         if [ -n "$MP_SESSION" ]; then args+=( --session "$MP_SESSION" ); fi
         # Keep the CLI's exit code (0 clean, 1 error, 2 new defects) while capturing its
         # output, so the step can publish `new-defects` before it fails the job.

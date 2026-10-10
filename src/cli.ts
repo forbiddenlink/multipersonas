@@ -15,6 +15,7 @@ import { crawl } from "./crawler/crawl.js";
 import { gradeScan } from "./grader/scan.js";
 import { evaluateGate, baselineFromFindings, type Baseline, type Severity } from "./crawler/gate.js";
 import { groupAxeByRule, generateScanReport } from "./report/generator.js";
+import { loadSuppressions, SuppressionsError, type Suppression } from "./crawler/suppressions.js";
 import { buildScanJson } from "./report/json.js";
 import { SEVERITIES } from "./domain/vocab.js";
 import type { Persona } from "./personas/types.js";
@@ -95,8 +96,9 @@ program
   .option("--allow-private", "Allow localhost / private-network targets. For your own app or staging box.")
   .option("--fail-on <severity>", "Exit non-zero if a NEW defect at/above this severity is found (critical|serious|moderate|minor). For CI.")
   .option("--baseline <file>", "Compare against this baseline; only defects not in it count as new")
+  .option("--suppressions <file>", "JSON file of accepted defects, each with reason, owner and expiry (YYYY-MM-DD). An expired one fails the gate while its defect remains")
   .option("--update-baseline", "Write the current defects to --baseline (or ./personaudit-baseline.json) and exit 0")
-  .action(async (url: string, options: { output: string; session?: string; maxPages: string; allowPrivate?: boolean; failOn?: string; baseline?: string; updateBaseline?: boolean }) => {
+  .action(async (url: string, options: { output: string; session?: string; maxPages: string; allowPrivate?: boolean; failOn?: string; baseline?: string; suppressions?: string; updateBaseline?: boolean }) => {
     if (options.failOn && !SEVERITIES.includes(options.failOn as (typeof SEVERITIES)[number])) {
       console.error(chalk.red(`  --fail-on must be one of: ${SEVERITIES.join(", ")}`));
       process.exit(1);
@@ -125,6 +127,22 @@ program
         if (error instanceof SessionError) {
           console.error("");
           console.error(chalk.red(`  ${error.message}`));
+          console.error("");
+          process.exit(1);
+        }
+        throw error;
+      }
+    }
+
+    // Validated before the crawl so a malformed file fails in seconds, not after the scan.
+    let suppressions: Suppression[] = [];
+    if (options.suppressions) {
+      try {
+        suppressions = loadSuppressions(options.suppressions);
+      } catch (error) {
+        if (error instanceof SuppressionsError) {
+          console.error("");
+          console.error(chalk.red(error.message));
           console.error("");
           process.exit(1);
         }
@@ -163,11 +181,11 @@ program
         process.exit(1);
       }
     }
-    const gate = evaluateGate(result.findings, { failOn: (options.failOn as Severity | undefined) ?? "minor", baseline });
+    const gate = evaluateGate(result.findings, { failOn: (options.failOn as Severity | undefined) ?? "minor", baseline, suppressions });
 
     fs.mkdirSync(options.output, { recursive: true });
     const reportPath = path.join(options.output, "scan.md");
-    fs.writeFileSync(reportPath, generateScanReport(url, result.findings, result.pagesVisited, result.skipped));
+    fs.writeFileSync(reportPath, generateScanReport(url, result.findings, result.pagesVisited, result.skipped, options.suppressions ? gate.suppressions : undefined));
     const jsonPath = path.join(options.output, "scan.json");
     fs.writeFileSync(
       jsonPath,
@@ -181,6 +199,7 @@ program
           baselineKeys: baseline ? new Set(baseline.keys) : null,
           baselinePath: options.baseline,
           fixed: gate.fixed,
+          suppressions: gate.suppressions,
         }),
         null,
         2,
@@ -194,6 +213,11 @@ program
       console.log(chalk.yellow(`  Budget reached: ${result.skipped.length} more states not scanned (raise --max-pages)`));
     }
     console.log(chalk.dim(`  Report: ${reportPath} (+ scan.json)`));
+
+    for (const s of gate.suppressions.unmatched) {
+      console.log(chalk.yellow(`  Suppression matches no current defect: ${s.key} (owner ${s.owner}). Remove it if the defect is fixed.`));
+    }
+    if (gate.suppressed.length > 0) console.log(chalk.dim(`  ${gate.suppressed.length} defect(s) suppressed (accepted risk)`));
 
     // --update-baseline: snapshot current defects, exit clean.
     if (options.updateBaseline) {
@@ -220,11 +244,21 @@ program
         console.log("");
         return;
       }
-      console.log(chalk.red(`  Gate FAILED: ${gate.failing.length} new defect(s) at/above ${options.failOn}`));
-      for (const d of gate.failing.slice(0, 10)) {
-        console.log(chalk.dim(`    [${d.severity}] ${d.title}  ${d.target ?? ""}`));
+      // The new-defect count stays on its own "Gate FAILED: N new defect" line: the GitHub Action parses it.
+      if (gate.failing.length > 0) {
+        console.log(chalk.red(`  Gate FAILED: ${gate.failing.length} new defect(s) at/above ${options.failOn}`));
+        for (const d of gate.failing.slice(0, 10)) {
+          console.log(chalk.dim(`    [${d.severity}] ${d.title}  ${d.target ?? ""}`));
+        }
+        if (gate.failing.length > 10) console.log(chalk.dim(`    …and ${gate.failing.length - 10} more`));
       }
-      if (gate.failing.length > 10) console.log(chalk.dim(`    …and ${gate.failing.length - 10} more`));
+      if (gate.suppressions.expired.length > 0) {
+        console.log(chalk.red(`  Gate FAILED: ${gate.suppressions.expired.length} expired suppression(s) on defects that are still present`));
+        for (const s of gate.suppressions.expired) {
+          console.log(chalk.dim(`    ${s.key}  owner ${s.owner}, expired ${s.expires}: ${s.reason}`));
+        }
+        console.log(chalk.dim("    Fix the defect, or renew the suppression with a new expiry."));
+      }
       console.log("");
       process.exit(gate.exitCode);
     }
