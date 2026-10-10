@@ -37,6 +37,8 @@ async function renderGradeForm() {
   vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "site-key");
   const { GradeForm } = await import("@/components/grade-form");
   render(<GradeForm />);
+  // The widget mounts on first engagement with the form, not on page load.
+  fireEvent.focus(screen.getByLabelText("Public website URL"));
 }
 
 beforeEach(() => {
@@ -48,6 +50,22 @@ afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllEnvs();
   resetTurnstile.mockClear();
+});
+
+describe("GradeForm human check timing", () => {
+  it("does not load the widget until the visitor engages with the form", async () => {
+    vi.resetModules();
+    vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "site-key");
+    const { GradeForm } = await import("@/components/grade-form");
+    render(<GradeForm />);
+    expect(screen.queryByRole("button", { name: "Solve verification" })).not.toBeInTheDocument();
+    act(() => {
+      vi.advanceTimersByTime(60_000);
+    });
+    expect(screen.queryByText(/human check did not finish/i)).not.toBeInTheDocument();
+    fireEvent.focus(screen.getByLabelText("Public website URL"));
+    expect(screen.getByRole("button", { name: "Solve verification" })).toBeInTheDocument();
+  });
 });
 
 describe("GradeForm human check that never resolves", () => {

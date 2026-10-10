@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { afterLoadIdle } from "@/lib/idle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileNav } from "@/components/mobile-nav";
 
@@ -30,14 +30,17 @@ export function HeaderActions({
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    // The Supabase client is ~55KB gzip and the signed-out header does not need it to
+    // paint, so load it once the page is idle rather than during hydration.
+    afterLoadIdle(async () => {
       try {
+        const { createClient } = await import("@/lib/supabase/client");
         const { data } = await createClient().auth.getSession();
         if (!cancelled && data.session) setSignedIn(true);
       } catch {
         // Auth not configured or unreachable: the signed-out header is the safe default.
       }
-    })();
+    });
     return () => {
       cancelled = true;
     };

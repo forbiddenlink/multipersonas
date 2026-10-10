@@ -1,17 +1,29 @@
-import * as Sentry from "@sentry/nextjs";
-import { scrubEvent } from "@/lib/sentry-scrub";
-import { isInjectedEvalError } from "@/lib/sentry-noise";
+import { afterLoadIdle } from "@/lib/idle";
+import { captureClientError, captureRouterTransition, startSentry } from "@/lib/sentry-lazy";
 
 // Client-side Sentry init. No-op until NEXT_PUBLIC_SENTRY_DSN is set (see instrumentation.ts).
+// The SDK loads after the page has loaded (see lib/sentry-lazy.ts); until then uncaught
+// errors are buffered by the listeners below and replayed once it is ready.
 const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
-if (dsn) {
-  Sentry.init({
-    dsn,
-    environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
-    release: process.env.VERCEL_GIT_COMMIT_SHA,
-    tracesSampleRate: 0.1,
-    beforeSend: (event) => (isInjectedEvalError(event) ? null : scrubEvent(event)),
-  });
+
+function onError(event: ErrorEvent): void {
+  captureClientError(event.error ?? event.message);
 }
 
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+function onRejection(event: PromiseRejectionEvent): void {
+  captureClientError(event.reason);
+}
+
+if (dsn && typeof window !== "undefined") {
+  window.addEventListener("error", onError);
+  window.addEventListener("unhandledrejection", onRejection);
+  afterLoadIdle(() =>
+    startSentry(dsn, () => {
+      // Sentry installs its own global handlers on init; drop the buffering ones.
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onRejection);
+    }),
+  );
+}
+
+export const onRouterTransitionStart = captureRouterTransition;

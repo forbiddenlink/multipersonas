@@ -47,19 +47,29 @@ export function GradeForm() {
   // Cloudflare sometimes asks for a click (VPNs, privacy browsers). That is not a
   // stall: the visitor has a checkbox to tick, so no timer and no failure message.
   const [challengeNeedsClick, setChallengeNeedsClick] = useState(false);
+  // The Turnstile script, its challenge iframe and ~700KB of follow-up requests are the
+  // heaviest thing on the home page, and none of it is needed to paint the hero. Mount the
+  // widget when the visitor first engages with the form (or arrives with a prefilled URL)
+  // so it solves while they type, instead of competing with first paint for the main thread.
+  const [challengeArmed, setChallengeArmed] = useState(false);
+  const armChallenge = () => setChallengeArmed(true);
 
   useEffect(() => {
-    if (!TURNSTILE_SITE_KEY || turnstileToken !== null || challengeNeedsClick) return;
+    if (!TURNSTILE_SITE_KEY || !challengeArmed || turnstileToken !== null || challengeNeedsClick) return;
     const timer = setTimeout(() => setChallengeStalled(true), CHALLENGE_STALL_MS);
     return () => clearTimeout(timer);
-  }, [turnstileToken, challengeAttempt, challengeNeedsClick]);
+  }, [challengeArmed, turnstileToken, challengeAttempt, challengeNeedsClick]);
 
   // "Re-grade this site" links here with ?url=<entry>. Read it after mount (keeps the
   // page statically rendered) and only fill an input the visitor has not touched.
   useEffect(() => {
     const prefill = prefillFromSearch(window.location.search);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time prefill from the address bar
-    if (prefill) setUrl((current) => (current === "" ? prefill : current));
+    if (prefill) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time prefill from the address bar
+      setUrl((current) => (current === "" ? prefill : current));
+      // A prefilled URL means the visitor will submit without typing: start the check now.
+      setChallengeArmed(true);
+    }
   }, []);
 
   function resetTurnstile() {
@@ -164,7 +174,15 @@ export function GradeForm() {
 
   return (
     <div className="w-full">
-      <form onSubmit={handleSubmit} noValidate className="space-y-3">
+      <form
+        onSubmit={handleSubmit}
+        noValidate
+        className="space-y-3"
+        onFocusCapture={armChallenge}
+        onPointerEnter={armChallenge}
+        onTouchStart={armChallenge}
+        onKeyDownCapture={armChallenge}
+      >
         <label htmlFor={inputId} className="label-mono block">
           Public website URL
         </label>
@@ -250,7 +268,7 @@ export function GradeForm() {
             </button>
           </div>
         )}
-        {TURNSTILE_SITE_KEY && (
+        {TURNSTILE_SITE_KEY && challengeArmed && (
           <Turnstile
             ref={turnstileRef}
             siteKey={TURNSTILE_SITE_KEY}

@@ -60,6 +60,7 @@ describe("Turnstile-backed forms", () => {
       "@/components/grade-form",
     );
     render(<GradeForm />);
+    fireEvent.focus(screen.getByLabelText("Public website URL"));
     fireEvent.change(screen.getByLabelText("Public website URL"), { target: { value: "https://example.com" } });
     fireEvent.click(screen.getByRole("button", { name: /solve verification/i }));
     fireEvent.click(screen.getByRole("button", { name: /grade this site/i }));
@@ -78,6 +79,7 @@ describe("Turnstile-backed forms", () => {
     );
 
     render(<GradeForm />);
+    fireEvent.focus(screen.getByLabelText("Public website URL"));
     fireEvent.change(screen.getByLabelText("Public website URL"), {
       target: { value: "https://example.com" },
     });
