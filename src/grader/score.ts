@@ -102,12 +102,16 @@ export interface GradeReport {
 
 const IMPACTS: Impact[] = [...SEVERITIES];
 
+/** Lowest score that earns each letter, best first. Anything below the last band is an F. */
+export const GRADE_BANDS: readonly { grade: GradeReport["grade"]; min: number }[] = [
+  { grade: "A", min: 95 },
+  { grade: "B", min: 85 },
+  { grade: "C", min: 70 },
+  { grade: "D", min: 50 },
+];
+
 function bandFor(score: number): GradeReport["grade"] {
-  if (score >= 95) return "A";
-  if (score >= 85) return "B";
-  if (score >= 70) return "C";
-  if (score >= 50) return "D";
-  return "F";
+  return GRADE_BANDS.find((b) => score >= b.min)?.grade ?? "F";
 }
 
 /**

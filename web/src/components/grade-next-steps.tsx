@@ -75,15 +75,6 @@ export function GradeNextSteps({
             </Link>
           </li>
           <li>
-            <Link
-              href="/for-agencies#early-access"
-              className="text-link inline-flex min-h-11 items-center"
-              onClick={() => trackProductEvent("grade_offer_clicked", { from: "grade_result" })}
-            >
-              See founding access
-            </Link>
-          </li>
-          <li>
             <Link href="/guides/screen-reader-testing" className="text-link inline-flex min-h-11 items-center">
               Manual testing guide
             </Link>
