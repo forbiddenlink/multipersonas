@@ -13,6 +13,7 @@ import { SAMPLE_SEVERITY_COUNTS, SAMPLE_TARGET, SAMPLE_VERDICTS } from "@/lib/sa
 import { SAUCEDEMO_TRAIL } from "@/lib/probe-ledger";
 import { wcagTagsToCriteria } from "@/lib/wcag";
 import { SEVERITY_DEFINITIONS } from "@/lib/severity-definitions";
+import { AXE_CORE_VERSION } from "@/lib/scan-engine";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/sample-report" },
@@ -21,10 +22,7 @@ export const metadata: Metadata = {
     "A full sample client report from a real probe of the SauceDemo test store: findings, fixes, persona task-success, and what a free grade doesn't cover.",
 };
 
-// axe-core 4.13.0 — the version resolved in pnpm-lock.yaml for this workspace
-// (transitive via @axe-core/playwright). Not user-editable copy; keep in sync with the
-// lockfile if the engine's axe-core dependency moves.
-const AXE_VERSION = "4.13.0";
+const AXE_VERSION = AXE_CORE_VERSION;
 const PREPARED_ON = "September 2026";
 
 const TOTAL_VIOLATIONS: number = Object.values(SAMPLE_SEVERITY_COUNTS).reduce(
