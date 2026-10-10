@@ -29,6 +29,7 @@ const ROUTES = [
   "/privacy",
   "/terms",
   "/accessibility",
+  "/method",
 ];
 
 // The site is light-first, toggled by localStorage 'theme' (see layout.tsx no-FOUC

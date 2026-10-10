@@ -28,6 +28,7 @@ const GROUPS: { title: string; links: { href: string; label: string; external?: 
   {
     title: "The fine print",
     links: [
+      { href: "/method", label: "Method" },
       { href: "/accessibility", label: "Accessibility statement" },
       { href: "/privacy", label: "Privacy" },
       { href: "/terms", label: "Terms" },
