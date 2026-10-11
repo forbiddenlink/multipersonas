@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { armBounceBeacon, claimOpeningPageview } from "@/lib/bounce-beacon";
 import { afterLoadIdle } from "@/lib/idle";
 import { capturePageview, getPosthog, scrubUrl } from "@/lib/posthog-client";
 
@@ -25,9 +26,13 @@ function PostHogPageview() {
       // Opening pageview: wait for the page to finish loading so the SDK stays out of
       // first paint. Later navigations load it right away.
       const currentUrl = scrubUrl(window.location.href);
+      // A visitor who leaves first is counted by the beacon. Whichever path claims the
+      // opening pageview sends it, so it is never sent twice.
+      const disarm = armBounceBeacon();
       afterLoadIdle(() => {
         void getPosthog().then((client) => {
-          if (client) capturePageview(client, currentUrl);
+          if (client && claimOpeningPageview()) capturePageview(client, currentUrl);
+          disarm();
         });
       });
       return;

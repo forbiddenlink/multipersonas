@@ -76,6 +76,11 @@ export const posthogOptions = {
 } satisfies Partial<PostHogConfig>;
 
 let client: Promise<PostHog | null> | null = null;
+// Set by bounce-beacon when it minted the visitor id for a beacon, so posthog-js adopts it.
+let bootstrapDistinctId: string | undefined;
+export function setBootstrapDistinctId(id: string): void {
+  bootstrapDistinctId = id;
+}
 
 /**
  * Load and initialise posthog-js on first use. The SDK is ~45KB gzip and nothing above the
@@ -87,7 +92,12 @@ export function getPosthog(): Promise<PostHog | null> {
   // No analytics at all on a share link page: the token is in the URL.
   if (carriesShareToken(window.location.pathname)) return Promise.resolve(null);
   client ??= import("posthog-js").then(({ default: posthog }) => {
-    posthog.init(POSTHOG_KEY, posthogOptions);
+    posthog.init(
+      POSTHOG_KEY,
+      bootstrapDistinctId
+        ? { ...posthogOptions, bootstrap: { distinctID: bootstrapDistinctId } }
+        : posthogOptions,
+    );
     return posthog;
   });
   return client;
