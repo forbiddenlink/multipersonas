@@ -5,6 +5,7 @@ const posthogMock = vi.hoisted(() => ({
   identify: vi.fn(),
   reset: vi.fn(),
   capture: vi.fn(),
+  init: vi.fn(),
 }));
 
 vi.mock("posthog-js", () => ({ default: posthogMock }));
@@ -37,18 +38,20 @@ describe("PostHogIdentify", () => {
   it("identifies by user id with the plan only, once per session", async () => {
     const { PostHogIdentify } = await load("phc_test");
     const { rerender, unmount } = render(<PostHogIdentify userId="user-1" plan="pro" />);
-    expect(posthogMock.identify).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(posthogMock.identify).toHaveBeenCalledTimes(1));
     expect(posthogMock.identify).toHaveBeenCalledWith("user-1", { plan: "pro" });
 
     rerender(<PostHogIdentify userId="user-1" plan="pro" />);
     unmount();
     render(<PostHogIdentify userId="user-1" plan="pro" />);
+    await Promise.resolve();
     expect(posthogMock.identify).toHaveBeenCalledTimes(1);
   });
 
   it("sends no email or name", async () => {
     const { PostHogIdentify } = await load("phc_test");
     render(<PostHogIdentify userId="user-2" plan="free" />);
+    await waitFor(() => expect(posthogMock.identify).toHaveBeenCalled());
     const [, props] = posthogMock.identify.mock.calls[0]!;
     expect(Object.keys(props)).toEqual(["plan"]);
     expect(JSON.stringify(posthogMock.identify.mock.calls)).not.toMatch(/@|email|name/i);
@@ -70,13 +73,13 @@ describe("SignOutButton analytics", () => {
   it("resets the PostHog identity and lets the next sign-in identify again", async () => {
     const { PostHogIdentify, SignOutButton } = await load("phc_test");
     render(<PostHogIdentify userId="user-4" />);
-    expect(posthogMock.identify).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(posthogMock.identify).toHaveBeenCalledTimes(1));
 
     render(<SignOutButton />);
     fireEvent.click(screen.getByRole("button", { name: /sign out/i }));
     await waitFor(() => expect(posthogMock.reset).toHaveBeenCalledTimes(1));
 
     render(<PostHogIdentify userId="user-4" />);
-    expect(posthogMock.identify).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(posthogMock.identify).toHaveBeenCalledTimes(2));
   });
 });

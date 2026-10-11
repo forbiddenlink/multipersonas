@@ -252,6 +252,28 @@
   white-space: nowrap;
 }
 
+/* Phones: a long label wraps above the block instead of truncating on the border. */
+@media (max-width: 30rem) {
+  .codeLabel {
+    position: static;
+    display: block;
+    width: fit-content;
+    max-width: calc(100% - 6rem);
+    margin: 0 0 0.9rem;
+    padding: 0;
+    background: none;
+    color: inherit;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    line-height: 1.4;
+  }
+  .codeBlock:has(.codeLabel) .copyBtn {
+    top: -0.2rem;
+    right: 0;
+  }
+}
+
 .copyBtn {
   /* Straddles the top border, like the label, so it never covers scrolled code. */
   position: absolute;

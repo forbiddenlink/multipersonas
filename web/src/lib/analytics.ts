@@ -1,6 +1,6 @@
 "use client";
 
-import posthog from "posthog-js";
+import { getPosthog } from "@/lib/posthog-client";
 
 type AnalyticsValue = string | number | boolean | null | undefined;
 type AnalyticsProperties = Record<string, AnalyticsValue>;
@@ -22,11 +22,13 @@ export function trackProductEvent(event: string, properties: AnalyticsProperties
     Object.entries(properties).filter(([, value]) => value !== undefined),
   );
 
-  try {
-    posthog.capture(event, safeProperties, { send_instantly: true });
-  } catch {
-    // Analytics must never block the product path.
-  }
+  // posthog-js loads lazily, so the event waits in the promise chain until it is ready
+  // (delayed, not dropped).
+  void getPosthog()
+    .then((posthog) => posthog?.capture(event, safeProperties, { send_instantly: true }))
+    .catch(() => {
+      // Analytics must never block the product path.
+    });
 }
 
 const IDENTIFIED_KEY = "pa_identified_user";
@@ -48,15 +50,15 @@ export function identifyUser(userId: string, personProperties: AnalyticsProperti
     Object.entries(personProperties).filter(([, value]) => value !== undefined),
   );
 
+  void getPosthog()
+    .then((posthog) => posthog?.identify(userId, safeProperties))
+    .catch(() => {
+      // Analytics must never block the product path.
+    });
   try {
-    posthog.identify(userId, safeProperties);
-    try {
-      window.sessionStorage.setItem(IDENTIFIED_KEY, userId);
-    } catch {
-      // Best effort.
-    }
+    window.sessionStorage.setItem(IDENTIFIED_KEY, userId);
   } catch {
-    // Analytics must never block the product path.
+    // Best effort.
   }
 }
 
@@ -70,11 +72,11 @@ export function resetAnalyticsIdentity(): void {
     // Best effort.
   }
 
-  try {
-    posthog.reset();
-  } catch {
-    // Analytics must never block the product path.
-  }
+  void getPosthog()
+    .then((posthog) => posthog?.reset())
+    .catch(() => {
+      // Analytics must never block the product path.
+    });
 }
 
 /** Coarse, PII-free bucket for a failed grade. The raw error text can contain URLs. */

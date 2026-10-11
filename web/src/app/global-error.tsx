@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import * as Sentry from "@sentry/nextjs";
+import { captureClientError } from "@/lib/sentry-lazy";
 import { PALETTE_DARK } from "@/lib/og-palette";
 
 // Root fallback when the whole app tree crashes: renders its own <html>, so no
@@ -27,7 +27,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    Sentry.captureException(error);
+    captureClientError(error);
   }, [error]);
 
   return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import * as Sentry from "@sentry/nextjs";
+import { captureClientError } from "@/lib/sentry-lazy";
 
 // In-app error state: a calm sheet in the Evidence Dossier language (DESIGN.md)
 // rather than a terminal error dump. error.message is never rendered: it can carry
@@ -14,7 +14,7 @@ export default function AppError({
   reset: () => void;
 }) {
   useEffect(() => {
-    Sentry.captureException(error);
+    captureClientError(error);
   }, [error]);
 
   return (

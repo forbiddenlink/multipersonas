@@ -2,84 +2,16 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import posthog from "posthog-js";
-import type { PostHogConfig } from "posthog-js";
-import { PostHogProvider as Provider } from "posthog-js/react";
-import { carriesShareToken } from "@/lib/sentry-scrub";
+import { afterLoadIdle } from "@/lib/idle";
+import { capturePageview, getPosthog, scrubUrl } from "@/lib/posthog-client";
 
-// Identifies this app in the shared PostHog project (325061), which several apps
-// report into. Registered as a super property so every event carries it and per-app
-// funnels stay filterable.
-const APP_NAME = "personaudit";
-
-const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com";
-
-function scrubUrl(raw: string): string {
-  try {
-    const url = new URL(raw);
-    url.username = "";
-    url.password = "";
-    url.search = "";
-    url.hash = "";
-    if (/^\/grade\/[^/]+/.test(url.pathname)) {
-      url.pathname = "/grade/[token]";
-    }
-    return url.toString();
-  } catch {
-    return raw.split(/[?#]/)[0] ?? raw;
-  }
-}
-
-function captureCurrentPageview(client: Pick<typeof posthog, "capture">): void {
+// The URL is read when the pageview is queued, not when posthog-js finishes loading, so a
+// pageview that waits for the SDK still reports the page it was queued on.
+function queuePageview(): void {
   const currentUrl = scrubUrl(window.location.href);
-  client.capture("$pageview", {
-    $current_url: currentUrl,
-    $pathname: new URL(currentUrl).pathname,
-  }, { send_instantly: true });
-}
-
-const posthogOptions = {
-  api_host: POSTHOG_HOST,
-  // api_host may be the same-origin /ingest proxy. ui_host keeps the toolbar and
-  // every "view in PostHog" link pointing at the real app instead of the proxy.
-  ui_host: 'https://us.posthog.com',
-  autocapture: false,
-  capture_pageview: false,
-  capture_pageleave: false,
-  advanced_disable_feature_flags: true,
-  disable_external_dependency_loading: true,
-  disable_session_recording: true,
-  disable_surveys: true,
-  disable_web_experiments: true,
-  mask_all_element_attributes: true,
-  mask_all_text: true,
-  person_profiles: "identified_only",
-  respect_dnt: true,
-  loaded: (client) => {
-    // Register before the first capture so the opening pageview carries the app too.
-    client.register({ app: APP_NAME });
-    captureCurrentPageview(client);
-  },
-  before_send: (event) => {
-    // A share link token is a credential. Drop any event carrying one in ANY property
-    // (current, initial, session entry URLs, person properties), not just known keys.
-    if (carriesShareToken(event)) return null;
-    if (event?.properties) {
-      if (typeof event.properties.$current_url === "string") {
-        event.properties.$current_url = scrubUrl(event.properties.$current_url);
-      }
-      if (typeof event.properties.$referrer === "string") {
-        event.properties.$referrer = scrubUrl(event.properties.$referrer);
-      }
-    }
-    return event;
-  },
-} satisfies Partial<PostHogConfig>;
-
-// No analytics at all on a share link page: the token is in the URL.
-if (typeof window !== "undefined" && POSTHOG_KEY && !carriesShareToken(window.location.pathname)) {
-  posthog.init(POSTHOG_KEY, posthogOptions);
+  void getPosthog().then((client) => {
+    if (client) capturePageview(client, currentUrl);
+  });
 }
 
 function PostHogPageview() {
@@ -87,12 +19,20 @@ function PostHogPageview() {
   const isInitialRender = useRef(true);
 
   useEffect(() => {
-    if (!POSTHOG_KEY) return;
+    if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
     if (isInitialRender.current) {
       isInitialRender.current = false;
+      // Opening pageview: wait for the page to finish loading so the SDK stays out of
+      // first paint. Later navigations load it right away.
+      const currentUrl = scrubUrl(window.location.href);
+      afterLoadIdle(() => {
+        void getPosthog().then((client) => {
+          if (client) capturePageview(client, currentUrl);
+        });
+      });
       return;
     }
-    captureCurrentPageview(posthog);
+    queuePageview();
   }, [pathname]);
 
   return null;
@@ -100,9 +40,9 @@ function PostHogPageview() {
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
   return (
-    <Provider client={posthog}>
+    <>
       <PostHogPageview />
       {children}
-    </Provider>
+    </>
   );
 }

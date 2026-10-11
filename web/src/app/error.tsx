@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import * as Sentry from "@sentry/nextjs";
+import { captureClientError } from "@/lib/sentry-lazy";
 
 // On-brand error state: a case file stamped "unreadable", framed like every other
 // dossier sheet. Dossier tokens only — this segment renders inside the root layout,
@@ -14,7 +14,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    Sentry.captureException(error);
+    captureClientError(error);
   }, [error]);
 
   return (

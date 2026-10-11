@@ -12,10 +12,11 @@ import {
 describe("wiring", () => {
   it("PostHog skips init and drops events on share links; Sentry samples and scrubs", () => {
     const read = (f: string) => fs.readFileSync(`${process.cwd()}/src/${f}`, "utf8");
-    const ph = read("components/posthog-provider.tsx");
-    expect(ph).toMatch(/!carriesShareToken\(window\.location\.pathname\)/);
+    const ph = read("lib/posthog-client.ts");
+    expect(ph).toMatch(/if \(carriesShareToken\(window\.location\.pathname\)\) return Promise\.resolve\(null\)/);
     expect(ph).toMatch(/if \(carriesShareToken\(event\)\) return null/);
-    for (const f of ["instrumentation.ts", "instrumentation-client.ts"]) {
+    // The browser SDK is initialised lazily in lib/sentry-lazy.ts, not in instrumentation-client.ts.
+    for (const f of ["instrumentation.ts", "lib/sentry-lazy.ts"]) {
       const src = read(f);
       expect(src).toContain("sharedReportSafeSampler(0.1)");
       expect(src).toContain("beforeSendTransaction");
