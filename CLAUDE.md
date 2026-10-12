@@ -11,9 +11,9 @@ This is a pnpm workspace monorepo: the CLI/engine at the repo root, plus `web/` 
 - Node >=20 (root `engines`); Vercel deploys `web/` on Node 24.x
 - TypeScript 6.0.3
 - CLI/engine deps: `playwright` ^1.62.1, `@axe-core/playwright` ^4.13.0, `ai` ^7.0.84 + `@ai-sdk/anthropic` ^4.0.45, `commander` ^15.0.0, `zod` ^4.4.3, `vitest` 4.1.11
-- `web/`: Next.js 16.3.4, React 19.2.8, Tailwind CSS 4.3.3, `@base-ui/react` ^1.7.0, `@supabase/ssr` + `@supabase/supabase-js`, Stripe 22.4.0, `@sentry/nextjs` ^10.71.0, PostHog (`posthog-js`), `shadcn` 4.19.0, Playwright for e2e
+- `web/`: Next.js 16.3.8, React 19.2.8, Tailwind CSS 4.3.3, `@base-ui/react` ^1.7.0, `@supabase/ssr` + `@supabase/supabase-js`, Stripe 22.4.0, `@sentry/nextjs` ^10.71.0, PostHog (`posthog-js`), `shadcn` 4.19.0, Playwright for e2e
 - `worker/`: `tsx`, `@supabase/supabase-js`, `@sentry/node`, depends on the root package as `personaudit` (workspace dependency)
-- Package manager: pnpm (pnpm-lock.yaml at root; `packageManager: pnpm@10.34.5`)
+- Package manager: pnpm (pnpm-lock.yaml at root; `packageManager: pnpm@10.34.6`)
 
 ## Commands
 
@@ -62,9 +62,9 @@ cd web && pnpm lint && pnpm exec tsc --noEmit && pnpm test && pnpm build
 - `web/` - Next.js app, its own workspace with its own `package.json`, `AGENTS.md`, and `CLAUDE.md` (do not edit those from here; they govern `web/` specifically).
 - `worker/` - persistent background job runner (claims `audit_jobs`, runs the browser + engine, writes results back). Depends on the root package as `personaudit`.
 - `experiments/` - evidence behind the product's positioning claims. Kept on purpose; do not delete.
-- `docs/` - includes `DEPLOYMENT.md`, `TESTING.md`, `ssrf-egress-hardening.md`, ADRs (`docs/adr/`), plans, audits.
+- `docs/` - includes `DEPLOYMENT.md`, `RUNBOOK.md`, `TESTING.md`, `ssrf-egress-hardening.md`, ADRs (`docs/adr/`), plans, audits.
 - `examples/github-actions/` - a ready-to-use CI accessibility gate action.
-- `scripts/` - `axe-dogfood.mjs`, `check-bundle-budget.mjs`, `check-prod-env.mjs`, `fixture-session.ts`, `prod-smoke.mjs`, `shot.mjs`, `test-docker-context.sh`.
+- `scripts/` - `axe-dogfood.mjs`, `check-bundle-budget.mjs`, `check-prod-env.mjs`, `fixture-session.ts`, `prod-smoke.mjs`, `shot.mjs`, `test-docker-context.sh`, `walkthrough.mjs`.
 - `thoughts/` - `ledgers/` and `shared/` (continuity ledgers).
 - `AI/diagrams/` - architecture diagrams.
 - Root `railway.toml` builds `worker/Dockerfile` for the Railway worker service (no HTTP port; background process).
@@ -82,7 +82,7 @@ cd web && pnpm lint && pnpm exec tsc --noEmit && pnpm test && pnpm build
 
 ## Testing
 
-- Root: `vitest` (`pnpm test`), config-free (uses vitest defaults); type-level tests checked via `tsconfig.test.json`.
+- Root: `vitest` (`pnpm test`) with `vitest.config.ts` (node environment; includes `src/**/*.test.ts`, `experiments/**/*.test.ts`, and `worker/src/**/*.test.ts`, so worker tests run from the root); type-level tests checked via `tsconfig.test.json`.
 - `web/`: `vitest` unit tests (`vitest.config.ts`) plus Playwright e2e (`playwright.config.ts`, run via `pnpm test:e2e` / `tests/e2e/run.sh`).
 - `docs/TESTING.md` documents testing against a real login-gated fixture (a disposable local Metabase container) to prove personas reach authenticated states a crawler cannot. Fixture credentials are written to a gitignored `.env.local` and a `.mpersonas-session.json` session file (mode 0600), never printed to a terminal.
 - CI (`.github/workflows/ci.yml`) runs: lint, typecheck, build, and test for both the CLI and `web/`, plus a bundle-budget check. `.github/workflows/a11y-dogfood.yml` scans the deployed site with the product's own axe ruleset and fails on any violation. Separate workflows: `e2e.yml`, `semgrep.yml`, `deploy-prod.yml`, `worker-image.yml`, `dependabot-automerge.yml`, `dependabot-lockfile-resync.yml`.
