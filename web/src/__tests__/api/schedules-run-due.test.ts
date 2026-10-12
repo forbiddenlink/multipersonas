@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { CALLS_PER_PERSONA } from "@/lib/limits";
+import { CALLS_PER_PERSONA, TRIAL_CALLER_DAILY_CALL_CAP } from "@/lib/limits";
 
 const mockRpc = vi.fn();
 
@@ -71,6 +71,7 @@ describe("POST /api/schedules/run-due", () => {
       p_daily_cap: 5000,
       p_caller_cap: 250,
       p_calls_per_persona: CALLS_PER_PERSONA,
+      p_trial_caller_cap: TRIAL_CALLER_DAILY_CALL_CAP,
     });
   });
 
@@ -82,7 +83,39 @@ describe("POST /api/schedules/run-due", () => {
       p_daily_cap: 5000,
       p_caller_cap: 250,
       p_calls_per_persona: CALLS_PER_PERSONA,
+      p_trial_caller_cap: TRIAL_CALLER_DAILY_CALL_CAP,
     });
+  });
+});
+
+describe("POST /api/schedules/run-due deploy order", () => {
+  it("retries without the trial cap when the database lacks the new function signature", async () => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    process.env.CRON_SECRET = "test-cron-secret";
+    mockRpc
+      .mockResolvedValueOnce({ data: null, error: { code: "PGRST202", message: "Could not find the function" } })
+      .mockResolvedValueOnce({ data: [{ schedule_id: "s", job_id: "j" }], error: null });
+    const { POST } = await import("@/app/api/schedules/run-due/route");
+    const res = await POST(new Request("http://localhost/api/schedules/run-due", {
+      method: "POST", headers: { authorization: "Bearer test-cron-secret" },
+    }));
+    expect(res.status).toBe(200);
+    expect(mockRpc).toHaveBeenCalledTimes(2);
+    expect(mockRpc.mock.calls[1]![1]).not.toHaveProperty("p_trial_caller_cap");
+  });
+
+  it("does not retry other errors", async () => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    process.env.CRON_SECRET = "test-cron-secret";
+    mockRpc.mockResolvedValue({ data: null, error: { code: "XX000", message: "boom" } });
+    const { POST } = await import("@/app/api/schedules/run-due/route");
+    const res = await POST(new Request("http://localhost/api/schedules/run-due", {
+      method: "POST", headers: { authorization: "Bearer test-cron-secret" },
+    }));
+    expect(res.status).toBe(500);
+    expect(mockRpc).toHaveBeenCalledTimes(1);
   });
 });
 

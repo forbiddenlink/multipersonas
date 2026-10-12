@@ -18,7 +18,7 @@ do $$ declare affected int; begin
  if has_function_privilege('authenticated','public.enqueue_audit_job(text,uuid,uuid,text[],text,integer,text)','execute') then
    raise exception 'Authenticated callers must not bypass checked queue admission';
  end if;
- if has_function_privilege('authenticated','public.enqueue_due_project_scan_schedules(integer,integer,integer,integer)','execute') then
+ if has_function_privilege('authenticated','public.enqueue_due_project_scan_schedules(integer,integer,integer,integer,integer)','execute') then
    raise exception 'Authenticated callers must not invoke the scheduler';
  end if;
 end $$;

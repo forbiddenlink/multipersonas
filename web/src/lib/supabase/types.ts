@@ -779,7 +779,7 @@ export type Database = {
         Returns: { status: string; job_id: string | null; token: string | null }[]
       }
       enqueue_due_project_scan_schedules: {
-        Args: { p_limit?: number; p_daily_cap?: number; p_caller_cap?: number; p_calls_per_persona?: number }
+        Args: { p_limit?: number; p_daily_cap?: number; p_caller_cap?: number; p_calls_per_persona?: number; p_trial_caller_cap?: number }
         Returns: {
           job_id: string
           schedule_id: string

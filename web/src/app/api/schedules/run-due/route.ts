@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { bearerMatches } from "@/lib/cron-auth";
-import { killSwitchEnabled, DAILY_MODEL_CALL_CAP, CALLER_DAILY_CALL_CAP, CALLS_PER_PERSONA } from "@/lib/limits";
+import { killSwitchEnabled, DAILY_MODEL_CALL_CAP, CALLER_DAILY_CALL_CAP, TRIAL_CALLER_DAILY_CALL_CAP, CALLS_PER_PERSONA } from "@/lib/limits";
 
 export const dynamic = "force-dynamic";
 
@@ -34,12 +34,21 @@ async function runDueSchedules(request: Request) {
     );
   }
 
-  const { data, error } = await admin.rpc("enqueue_due_project_scan_schedules", {
+  const args = {
     p_limit: 25,
     p_daily_cap: DAILY_MODEL_CALL_CAP,
     p_caller_cap: CALLER_DAILY_CALL_CAP,
     p_calls_per_persona: CALLS_PER_PERSONA,
+  };
+  let { data, error } = await admin.rpc("enqueue_due_project_scan_schedules", {
+    ...args,
+    p_trial_caller_cap: TRIAL_CALLER_DAILY_CALL_CAP,
   });
+  // Deploy order: before migration 20261012130100 the function has no p_trial_caller_cap
+  // and PostgREST answers PGRST202. Fall back to the old signature so scans keep running.
+  if (error?.code === "PGRST202") {
+    ({ data, error } = await admin.rpc("enqueue_due_project_scan_schedules", args));
+  }
 
   if (error) {
     return NextResponse.json(
