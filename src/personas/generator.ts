@@ -2,7 +2,7 @@ import { generateObject } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { launchAuditBrowser } from "../security/browser.js";
-import { Persona, generateSystemPrompt } from "./types.js";
+import { Persona, generateSystemPrompt, PERSONA_ID_PATTERN } from "./types.js";
 import { resolveModel } from "../agent/engine.js";
 import { assertUrlAllowed, assertRequestAllowed } from "../security/url-guard.js";
 
@@ -36,12 +36,15 @@ export function coercePersonaList(value: unknown): unknown {
   return v;
 }
 
-const personaSchema = z.object({
+/** Matches the largest maxSteps in the built-in library (src/personas/library.ts). */
+const MAX_GENERATED_STEPS = 25;
+
+export const generatedPersonaListSchema = z.object({
   personas: z.preprocess(
     coercePersonaList,
     z.array(
     z.object({
-      id: z.string().describe("kebab-case unique identifier"),
+      id: z.string().regex(PERSONA_ID_PATTERN).describe("kebab-case unique identifier"),
       name: z.string(),
       description: z.string(),
       goals: z.array(z.string()),
@@ -56,7 +59,7 @@ const personaSchema = z.object({
       viewport: z.object({ width: z.number(), height: z.number() }),
       isMobile: z.boolean(),
       connectionSpeed: z.enum(["fast", "3g", "slow-3g"]),
-      maxSteps: z.number().int().min(1).max(50),
+      maxSteps: z.number().int().min(1).max(MAX_GENERATED_STEPS),
       patienceLevel: z.enum(["low", "medium", "high"]),
     }),
     ),
@@ -189,7 +192,7 @@ Requirements:
 - At least 1 persona should have low tech proficiency.
 - Each persona should have realistic goals related to what this specific website offers.
 - Use realistic names, ages, and backgrounds.
-- Set maxSteps between 10-30 based on patience level.
+- Set maxSteps between 10-25 based on patience level.
 - Viewports: desktop 1440x900, mobile 375x812 or 390x844.
 
 DO NOT give any persona a disability, impairment, or assistive-technology need.
@@ -218,7 +221,7 @@ export async function generatePersonasFromUrl(
 
     const { object } = await generateObject({
       model: anthropic(resolveModel()),
-      schema: personaSchema,
+      schema: generatedPersonaListSchema,
       prompt,
       maxOutputTokens: 4096,
     });
@@ -269,7 +272,7 @@ blindness, or motor impairment.`;
 
     const { object } = await generateObject({
       model: anthropic(resolveModel()),
-      schema: personaSchema,
+      schema: generatedPersonaListSchema,
       prompt,
       maxOutputTokens: 4096,
     });

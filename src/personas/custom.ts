@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
-import type { Persona } from "./types.js";
+import { assertValidPersonaId, type Persona } from "./types.js";
 import { personaLibrary } from "./library.js";
 
 /**
@@ -54,6 +54,7 @@ export function hasProjectPersonas(cwd: string = process.cwd()): boolean {
 }
 
 export function saveCustomPersona(persona: Persona, cwd: string = process.cwd()): string {
+  assertValidPersonaId(persona.id);
   const dir = projectDir(cwd);
   fs.mkdirSync(dir, { recursive: true });
   const filePath = path.join(dir, `${persona.id}.json`);
@@ -62,6 +63,7 @@ export function saveCustomPersona(persona: Persona, cwd: string = process.cwd())
 }
 
 export function deleteCustomPersona(id: string, cwd: string = process.cwd()): boolean {
+  assertValidPersonaId(id);
   for (const dir of [projectDir(cwd), LEGACY_GLOBAL_DIR]) {
     const filePath = path.join(dir, `${id}.json`);
     if (fs.existsSync(filePath)) {

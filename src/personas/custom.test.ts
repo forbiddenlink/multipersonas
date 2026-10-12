@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { getAllPersonas, saveCustomPersona, hasProjectPersonas, personaSource, projectDir, PROJECT_DIR } from "./custom.js";
+import { isValidPersonaId } from "./types.js";
+import { getAllPersonas, saveCustomPersona, deleteCustomPersona, hasProjectPersonas, personaSource, projectDir, PROJECT_DIR } from "./custom.js";
 import { personaLibrary } from "./library.js";
 import type { Persona } from "./types.js";
 
@@ -73,5 +74,29 @@ describe("project personas", () => {
   it("survives a project with no personas directory", () => {
     expect(() => getAllPersonas(cwd)).not.toThrow();
     expect(hasProjectPersonas(cwd)).toBe(false);
+  });
+});
+
+describe("persona id safety (AIR-001)", () => {
+  const bad = ["../package", "..", "a/b", "a\\b", "A-B", "-lead", "", "x".repeat(65), "a.json", "a b"];
+
+  it("refuses to save a persona whose id could escape the persona directory", () => {
+    fs.writeFileSync(path.join(cwd, "package.json"), "{}\n");
+    for (const id of bad) {
+      expect(() => saveCustomPersona(persona(id), cwd), JSON.stringify(id)).toThrow(/persona id/i);
+    }
+    expect(fs.readFileSync(path.join(cwd, "package.json"), "utf-8")).toBe("{}\n");
+  });
+
+  it("refuses to delete by an unsafe id", () => {
+    for (const id of bad) {
+      expect(() => deleteCustomPersona(id, cwd), JSON.stringify(id)).toThrow(/persona id/i);
+    }
+  });
+
+  it("accepts every built-in id", () => {
+    for (const id of [...Object.keys(personaLibrary), "first-time-visitor", "keyboard-traversal", "mobile-slow-connection"]) {
+      expect(isValidPersonaId(id), id).toBe(true);
+    }
   });
 });

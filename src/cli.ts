@@ -20,7 +20,7 @@ import { buildScanJson } from "./report/json.js";
 import { SEVERITIES } from "./domain/vocab.js";
 import type { Persona } from "./personas/types.js";
 import { getAllPersonas, saveCustomPersona, deleteCustomPersona, isCustomPersona, personaSource, hasProjectPersonas, PROJECT_DIR } from "./personas/custom.js";
-import { generateSystemPrompt } from "./personas/types.js";
+import { generateSystemPrompt, PERSONA_ID_PATTERN } from "./personas/types.js";
 import { BrowserMissingError } from "./security/browser.js";
 import { assertUrlAllowed, BlockedUrlError } from "./security/url-guard.js";
 import { captureSession, resolveSessionFile, sessionIsLive, SessionError } from "./auth/session.js";
@@ -31,7 +31,7 @@ const __dirname = path.dirname(__filename);
 const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, "../package.json"), "utf-8"));
 
 const importedPersonaSchema = z.object({
-  id: z.string(),
+  id: z.string().regex(PERSONA_ID_PATTERN, "id must be kebab-case: a-z, 0-9, hyphens, max 64 characters"),
   name: z.string(),
   description: z.string(),
   goals: z.array(z.string()),

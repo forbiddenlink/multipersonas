@@ -27,6 +27,25 @@ export type ProfileKind = "ux" | "traversal";
  */
 export type InputModality = "pointer" | "keyboard";
 
+/**
+ * One rule for a persona id. The id becomes a file name (`<id>.json`) in the
+ * project persona directory, and it can originate from model output or an
+ * imported file, so it must never carry a path separator or `..`.
+ */
+export const PERSONA_ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,63}$/;
+
+export function isValidPersonaId(id: string): boolean {
+  return PERSONA_ID_PATTERN.test(id);
+}
+
+export function assertValidPersonaId(id: string): void {
+  if (!isValidPersonaId(id)) {
+    throw new Error(
+      `Invalid persona id ${JSON.stringify(id)}: use lowercase letters, digits and hyphens, 1-64 characters, starting with a letter or digit.`,
+    );
+  }
+}
+
 export interface Persona {
   id: string;
   name: string;
