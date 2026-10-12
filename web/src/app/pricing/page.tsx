@@ -14,12 +14,19 @@ import { isFoundingCheckoutOpen, isSoloCheckoutOpen } from "@/lib/founding-check
 import { PROJECT_LIMITS } from "@/lib/entitlements";
 import { trialPeriodDays } from "@/lib/plans";
 
-export const metadata: Metadata = {
-  alternates: { canonical: "/pricing" },
-  title: "Pricing: free CLI, hosted workspace from $39",
-  description:
-    "The keyless CLI and the CI accessibility gate are free forever. Hosted projects, scheduled re-scans and persona task-success start at $39/month. Agency founding access adds white-label reports.",
-};
+// The title and description must not advertise a price the visible page says is not buyable yet.
+export function generateMetadata(): Metadata {
+  const soloOpen = isSoloCheckoutOpen();
+  return {
+    alternates: { canonical: "/pricing" },
+    title: soloOpen
+      ? "Pricing: free CLI, hosted workspace from $39"
+      : "Pricing: free CLI, hosted workspace not open yet",
+    description: soloOpen
+      ? "The keyless CLI and the CI accessibility gate are free forever. Hosted projects, scheduled re-scans and persona task-success start at $39/month. Agency founding access adds white-label reports."
+      : "The keyless CLI and the CI accessibility gate are free forever. Hosted projects, scheduled re-scans and persona task-success are not open for purchase yet.",
+  };
+}
 
 const PRIMARY_CTA = buttonVariants({ size: "lg", className: "w-full sm:w-auto" });
 const OUTLINE_CTA = buttonVariants({ variant: "outline", size: "lg", className: "w-full border-foreground sm:w-auto" });
