@@ -10,7 +10,7 @@ This is a pnpm workspace monorepo: the CLI/engine at the repo root, plus `web/` 
 
 - Node >=20 (root `engines`); Vercel deploys `web/` on Node 24.x
 - TypeScript 6.0.3
-- CLI/engine deps: `playwright` ^1.62.1, `@axe-core/playwright` ^4.13.0, `ai` ^7.0.84 + `@ai-sdk/anthropic` ^4.0.45, `commander` ^15.0.0, `zod` ^4.4.3, `vitest` 4.1.11
+- CLI/engine deps: `playwright` ^1.64.0, `@axe-core/playwright` ^4.13.0, `ai` ^7.0.84 + `@ai-sdk/anthropic` ^4.0.45, `commander` ^15.0.0, `zod` ^4.4.3, `vitest` 4.1.11
 - `web/`: Next.js 16.3.8, React 19.2.8, Tailwind CSS 4.3.3, `@base-ui/react` ^1.7.0, `@supabase/ssr` + `@supabase/supabase-js`, Stripe 22.4.0, `@sentry/nextjs` ^10.71.0, PostHog (`posthog-js`), `shadcn` 4.19.0, Playwright for e2e
 - `worker/`: `tsx`, `@supabase/supabase-js`, `@sentry/node`, depends on the root package as `personaudit` (workspace dependency)
 - Package manager: pnpm (pnpm-lock.yaml at root; `packageManager: pnpm@10.34.6`)
