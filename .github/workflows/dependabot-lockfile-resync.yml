@@ -6,8 +6,10 @@ name: Dependabot lockfile resync
 # block back and pushes the corrected lockfile to the PR branch.
 #
 # pull_request_target is needed to get a token that can push. Safe here: the job
-# only runs for dependabot's own in-repo branches, and `--lockfile-only
-# --ignore-scripts` resolves the manifest without executing any package code.
+# only runs for dependabot's own in-repo `dependabot/*` branches, checks out the gated
+# commit SHA with no stored credentials, and `--lockfile-only --ignore-scripts` resolves
+# the manifest without executing package install scripts. The push token exists only in
+# the final step.
 
 on: pull_request_target
 
@@ -20,19 +22,23 @@ concurrency:
 
 jobs:
   resync:
-    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    # All three must hold: dependabot authored it, it lives in this repo (not a fork),
+    # and it is on a dependabot/ branch.
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'dependabot/')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - name: Check out the pull request branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          persist-credentials: true
-          # A PAT makes the pushed commit retrigger CI. With the default
-          # GITHUB_TOKEN the push lands but its workflow runs sit at
-          # action_required until someone approves them.
-          token: ${{ secrets.AUTOMATION_TOKEN || github.token }}
+          # Pin to the exact commit that was gated, not the moving branch name.
+          ref: ${{ github.event.pull_request.head.sha }}
+          # No credential stays in .git/config while `pnpm install` runs on the PR's
+          # manifest. The PAT is used only in the push step below.
+          persist-credentials: false
 
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
 
@@ -61,9 +67,16 @@ jobs:
         if: steps.resync.outputs.changed == 'true'
         env:
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          REPO: ${{ github.repository }}
+          # A PAT makes the pushed commit retrigger CI. With the default GITHUB_TOKEN the
+          # push lands but its workflow runs sit at action_required until someone approves.
+          PUSH_TOKEN: ${{ secrets.AUTOMATION_TOKEN || github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add pnpm-lock.yaml
           git commit -m "fix(deps): resync pnpm-lock.yaml with package.json overrides"
-          git push origin "HEAD:$HEAD_REF"
+          auth=$(printf 'x-access-token:%s' "$PUSH_TOKEN" | base64 | tr -d '\n')
+          echo "::add-mask::$auth"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
+            push "https://github.com/$REPO.git" "HEAD:refs/heads/$HEAD_REF"
