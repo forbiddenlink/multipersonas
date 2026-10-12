@@ -21,7 +21,14 @@ async function setPlan(
   const update = customerId
     ? { plan, stripe_customer_id: customerId, trial_ends_at: trialEndsAt }
     : { plan, trial_ends_at: trialEndsAt };
-  const { data, error } = await admin.from("profiles").update(update).eq("id", userId).select("id").maybeSingle();
+  let { data, error } = await admin.from("profiles").update(update).eq("id", userId).select("id").maybeSingle();
+  // Deploy order: before migration 20261012120400 the column does not exist (Postgres 42703,
+  // or PostgREST PGRST204 for an unknown column in the body). Entitlement must still be
+  // saved, so retry without the trial marker rather than failing every subscription event.
+  if (error && (error.code === "42703" || error.code === "PGRST204")) {
+    const { trial_ends_at: _omitted, ...withoutTrial } = update;
+    ({ data, error } = await admin.from("profiles").update(withoutTrial).eq("id", userId).select("id").maybeSingle());
+  }
   if (error || !data) throw new Error("Could not persist subscription access");
 }
 

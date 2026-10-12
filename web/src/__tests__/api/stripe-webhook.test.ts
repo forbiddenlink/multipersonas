@@ -246,6 +246,21 @@ describe("POST /api/stripe/webhook", () => {
     expect(update).toHaveBeenCalledWith({ plan: "free", stripe_customer_id: "cus_test", trial_ends_at: null });
   });
 
+  it.each(["42703", "PGRST204"])("retries without trial_ends_at when the column is absent (%s)", async (code) => {
+    maybeSingle
+      .mockResolvedValueOnce({ data: null, error: { code, message: "column does not exist" } })
+      .mockResolvedValueOnce({ data: { id: "user-1" }, error: null });
+    expect((await POST(request())).status).toBe(200);
+    expect(update).toHaveBeenNthCalledWith(1, { plan: "team", stripe_customer_id: "cus_test", trial_ends_at: null });
+    expect(update).toHaveBeenNthCalledWith(2, { plan: "team", stripe_customer_id: "cus_test" });
+  });
+
+  it("does not retry other persistence errors", async () => {
+    maybeSingle.mockResolvedValue({ data: null, error: { code: "23514", message: "check violation" } });
+    expect((await POST(request())).status).toBe(500);
+    expect(update).toHaveBeenCalledTimes(1);
+  });
+
   it("ignores unrelated events", async () => {
     constructEvent.mockReturnValue({ type: "payment_intent.succeeded", data: { object: {} } });
     expect((await POST(request())).status).toBe(200);

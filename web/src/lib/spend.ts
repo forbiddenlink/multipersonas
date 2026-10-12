@@ -20,6 +20,9 @@ async function callerCapForKey(admin: SupabaseClient, callerKey: string): Promis
     .select("trial_ends_at")
     .eq("id", callerKey)
     .maybeSingle();
+  // Deploy order: before migration 20261012120400 the column is absent. Nobody is marked
+  // trialing yet, so the normal cap applies; every other error keeps the lower cap.
+  if (error && (error.code === "42703" || error.code === "PGRST204")) return callerCapFor(null);
   if (error) {
     console.error("[spend] trial lookup failed, using the trial cap:", error.message);
     return TRIAL_CALLER_DAILY_CALL_CAP;

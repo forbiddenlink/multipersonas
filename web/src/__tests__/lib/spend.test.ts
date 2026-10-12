@@ -57,6 +57,21 @@ describe("reserveSpend caller cap", () => {
     expect(reservedCallerCap()).toBe(TRIAL_CALLER_DAILY_CALL_CAP);
   });
 
+  it.each(["42703", "PGRST204"])("treats a missing trial_ends_at column (%s) as not trialing", async (code) => {
+    maybeSingle.mockResolvedValue({ data: null, error: { code, message: "column profiles.trial_ends_at does not exist" } });
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    await reserveSpend(1, USER);
+    expect(reservedCallerCap()).toBe(CALLER_DAILY_CALL_CAP);
+    expect(logged).not.toHaveBeenCalled();
+  });
+
+  it("keeps the lower cap for any other lookup error", async () => {
+    maybeSingle.mockResolvedValue({ data: null, error: { code: "57014", message: "timeout" } });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await reserveSpend(1, USER);
+    expect(reservedCallerCap()).toBe(TRIAL_CALLER_DAILY_CALL_CAP);
+  });
+
   it("still refuses when the reservation RPC errors or is declined", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     rpc.mockResolvedValue({ data: null, error: { message: "down" } });
