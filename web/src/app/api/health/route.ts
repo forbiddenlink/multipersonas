@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { bearerMatches } from "@/lib/cron-auth";
 
 const STALE_RUNNING_SECONDS = 15 * 60;
 const STALE_QUEUED_SECONDS = 15 * 60;
@@ -9,12 +10,20 @@ const HEALTH_TIMEOUT_MS = 5000;
 export const dynamic = "force-dynamic";
 
 /**
- * Liveness + dependency health for an uptime monitor. Checks the two things the audit
- * path depends on: the database and the job queue. Returns 200 only when both are
- * reachable; 503 otherwise so a monitor can alert. Deliberately leaks no data — just
- * a status per dependency and the current queue backlog (a useful stuck-worker signal).
+ * Public callers get a cheap liveness answer and no database work. The dependency
+ * checks run five service-role count queries and publish queue depth, so they sit
+ * behind the same CRON_SECRET bearer the cron routes use.
+ *
+ * With the bearer: checks the two things the audit path depends on, the database and
+ * the job queue. Returns 200 only when both are reachable; 503 otherwise so a monitor
+ * can alert. Leaks no data beyond a status per dependency and the queue backlog.
  */
-export async function GET() {
+export async function GET(request: Request) {
+  const secret = process.env.CRON_SECRET;
+  const authorization = request.headers.get("authorization") ?? "";
+  if (!secret || !bearerMatches(authorization, secret)) {
+    return NextResponse.json({ status: "ok" });
+  }
   try {
     return await checkHealth();
   } catch {
