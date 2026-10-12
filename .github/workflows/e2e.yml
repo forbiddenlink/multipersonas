@@ -89,6 +89,7 @@ jobs:
             psql -v ON_ERROR_STOP=1 -f "$test_file"
           done
           PERSONAUDIT_DISPOSABLE_DB=1 python3 supabase/tests/queue-concurrency.py
+          PERSONAUDIT_DISPOSABLE_DB=1 python3 supabase/tests/rate-limit-prune-concurrency.py
 
       # run.sh: pulls the local stack's URL + keys from `supabase status`, seeds
       # the test user + owned data, then runs Playwright. The config's webServer
