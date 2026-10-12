@@ -1,3 +1,22 @@
 packages:
   - "web"
   - "worker"
+
+# Supply-chain policy (pnpm 10 reads these from this file).
+# Do not install a version published in the last 24h (1440 min): gives the registry and
+# scanners time to pull a malicious release. To take an urgent security fix sooner, add
+# the package to minimumReleaseAgeExclude for that PR only.
+minimumReleaseAge: 1440
+
+# Only these packages may run install scripts. Everything else (esbuild, core-js, msw,
+# unrs-resolver) installs fine without them: they ship prebuilt binaries via optional
+# dependencies or only print a banner.
+# @sentry/cli downloads its binary in postinstall, which the web build uses for source maps.
+onlyBuiltDependencies:
+  - "@sentry/cli"
+
+ignoredBuiltDependencies:
+  - core-js
+  - esbuild
+  - msw
+  - unrs-resolver
