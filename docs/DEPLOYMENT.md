@@ -1,11 +1,13 @@
 # Deployment
 
-**Status: public production app, still pending two owner-dashboard hardening checks.**
+**Status: public production app, three owner-dashboard and platform items still open.**
 The architecture is deployable and the original three security blockers (rate
-limiting, spend cap, network isolation) are closed and live in production. The
-remaining public-launch risks are Turnstile production keys and Supabase Auth dashboard
-settings, not application code. Snapshot updated 2026-08-26.
-See `docs/PLAN-2026-07-26-phase2-deploy-infra.md`.
+limiting, spend cap, network isolation) are closed and live in production. The open items
+are in the checklist below: Supabase Leaked Password Protection, a hosted backup restore
+proof, and the Railway Config as Code migration (cutoff 2026-12-01). None is application
+code. Header refreshed 2026-10-12; sections below carry their own dates.
+See `docs/PLAN-2026-07-26-phase2-deploy-infra.md`. For incident response, rollback, and the
+kill switch, see [`RUNBOOK.md`](RUNBOOK.md).
 
 ## Deploy model: a push to `main` is live
 
@@ -14,6 +16,11 @@ Vercel's git integration deploys `main` to production automatically (reconnected
 production.** Treat every merge to `main` as a production release.
 
 Two consequences worth holding onto:
+
+- **Migrations are not part of the deploy.** Neither the git-integration deploy nor
+  `deploy-prod.yml` applies anything under `web/supabase/migrations/`. A merge that adds a
+  migration file puts the new web code live before the schema exists, unless you apply the
+  migration first. See "Migration rollout order" below.
 
 - `.github/workflows/deploy-prod.yml` is not a gate, and its name ("manual") describes only
   its own trigger. It is the *verified* deploy path: it runs `scripts/check-prod-env.mjs`
@@ -282,6 +289,10 @@ Expected production env names (presence only; never print values):
   `AUDIT_BROWSER_PROXY`, `AUDIT_REQUIRE_EGRESS_PROXY`, and optional
   `WORKER_ALERT_WEBHOOK`, `WORKER_POLL_MS`, `WORKER_JOB_TIMEOUT_SECONDS`,
   `WORKER_REAP_AFTER_SECONDS`, `WORKER_MAX_ATTEMPTS`.
+- Optional spend and abuse controls on Vercel (`web/src/lib/limits.ts`):
+  `AUDIT_DAILY_CALL_CAP` (global daily model-call ceiling, default 5000),
+  `AUDIT_CALLER_DAILY_CALL_CAP` (per-caller ceiling, default 250), and `AUDIT_KILL_SWITCH`
+  (`1` or `true` freezes audits, grades, and scheduled runs; needs a redeploy to change).
 
 The September 19, 2026 UTC Vercel check confirmed PostHog, Supabase, Sentry, site URL,
 admin, and both Turnstile variable names in production. Presence does not prove correct
@@ -291,12 +302,34 @@ values or delivery; see the continuation review for current verification evidenc
 
 ```bash
 pnpm install
-cp .env.example .env          # ANTHROPIC_API_KEY is required
+cp .env.example .env          # ANTHROPIC_API_KEY is needed only for `run` and `generate`
 pnpm exec playwright install chromium
-pnpm dev -- <url>             # CLI
+pnpm dev -- scan <url>        # CLI; `scan` is keyless, the CLI has no default command
 ```
 
 For the web app, copy `.env.example` to `web/.env.local` and `cd web && pnpm dev`.
+
+## Migration rollout order (read before merging any migration)
+
+`main` auto-deploys and nothing applies migrations, so apply them by hand before the merge
+that needs them (or hold the merge until they are applied). Migrations are additive and
+forward-only: there are no down scripts. Undoing a data change means a point-in-time restore
+or a forward fix (see `RUNBOOK.md`).
+
+Not yet confirmed as applied to production in this repo's records. Run
+`supabase migration list` against the linked project and apply anything missing, in order,
+before the deploy that depends on it:
+
+- `web/supabase/migrations/20261010120000_report_share_links.sql` (per-report share links,
+  `/r/[token]`).
+- `web/supabase/migrations/20261010150000_test_runs_project_ownership.sql` (ownership
+  policy on `test_runs` writes and schedule job pointers).
+- Any migration newer than `20261010150000`. Also confirm `20261004190000_enforce_project_cap.sql`
+  and `20261005120000_scan_result_email.sql`, which the 2026-10-09 rollout notes do not cover.
+
+Order for a release that includes a migration: apply the migration, then deploy the worker
+if it reads new columns, then let the web deploy go live. Write migrations so the old web
+and worker keep working against the new schema (add, then switch, then remove later).
 
 ## Saved project tasks rollout
 
