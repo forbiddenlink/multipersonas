@@ -4,7 +4,7 @@
 [![CI](https://github.com/forbiddenlink/multipersonas/actions/workflows/ci.yml/badge.svg)](https://github.com/forbiddenlink/multipersonas/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Accessibility scanner that crawls every reachable state of your site, behind the login too, and runs axe-core at each one.
+Accessibility scanner that crawls every reachable state of your site and runs axe-core at each one. With the local CLI it can also sign in and scan behind a login; hosted scanning is public pages only.
 
 ```bash
 npx personaudit scan https://your-site.com
