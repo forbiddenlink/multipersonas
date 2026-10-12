@@ -20,8 +20,8 @@ Show
 
 Sleep 600ms
 Type "npx personaudit grade https://example.com --max-pages 2" Sleep 500ms Enter
-Sleep 9s
+Sleep 15s
 
 Type "clear" Enter
 Type "npx personaudit scan https://example.com --max-pages 2 -o /tmp/personaudit-demo" Sleep 500ms Enter
-Sleep 9s
+Sleep 12s
