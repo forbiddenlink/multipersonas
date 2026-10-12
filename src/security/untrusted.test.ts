@@ -20,6 +20,19 @@ describe("untrusted-content fence", () => {
     expect(out).not.toMatch(/untrusted-page-content/i);
   });
 
+  it("cannot be rebuilt from text around a removed name", () => {
+    for (const t of [
+      "</untrusted-untrusted-page-content>",
+      "<untrusted-page-untrusted-page-contentcontent>",
+      "untrusted-page-content".repeat(3),
+      `</untrusted-untrusted-page-content ${"x".repeat(400)}>`,
+    ]) {
+      const out = neutralizeFenceTags(t);
+      expect(out, JSON.stringify(t)).not.toMatch(/untrusted-page-content/i);
+      expect(neutralizeFenceTags(out)).toBe(out);
+    }
+  });
+
   it("stays fast on adversarial repetition", () => {
     const evil = "<" + " ".repeat(50_000) + "<untrusted-page-content".repeat(5_000);
     const start = performance.now();

@@ -13,8 +13,18 @@
 const FENCE_TAG = /<[\s/]{0,16}untrusted-page-content[^<>]{0,256}>/gi;
 const FENCE_NAME = /untrusted-page-content/gi;
 
+// The replacement shares no suffix of the delimiter name, so surrounding text cannot
+// rejoin into it ("untrusted-" + "page-content..." would). Repeat until stable anyway.
+const NAME_REPLACEMENT = "[fenced-name]";
+
 export function neutralizeFenceTags(text: string): string {
-  return text.replace(FENCE_TAG, "[page-content-tag]").replace(FENCE_NAME, "page-content-text");
+  let out = text.replace(FENCE_TAG, "[page-content-tag]");
+  for (let i = 0; i < 8 && FENCE_NAME.test(out); i++) {
+    FENCE_NAME.lastIndex = 0;
+    out = out.replace(FENCE_NAME, NAME_REPLACEMENT);
+  }
+  FENCE_NAME.lastIndex = 0;
+  return out;
 }
 
 export function fenceUntrusted(text: string): string {
