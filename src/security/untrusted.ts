@@ -7,10 +7,14 @@
  * fence, every form of the delimiter tag inside it is neutralized first,
  * including spaced and attributed variants.
  */
-const FENCE_TAG = /<\s*\/?\s*untrusted-page-content[^>]*>/gi;
+// Bounded, unambiguous quantifiers keep matching linear on hostile input (CodeQL
+// js/polynomial-redos). Any tag name left over (e.g. attributes longer than the bound)
+// is renamed by the second pass, so no delimiter can survive inside the fence.
+const FENCE_TAG = /<[\s/]{0,16}untrusted-page-content[^<>]{0,256}>/gi;
+const FENCE_NAME = /untrusted-page-content/gi;
 
 export function neutralizeFenceTags(text: string): string {
-  return text.replace(FENCE_TAG, "[page-content-tag]");
+  return text.replace(FENCE_TAG, "[page-content-tag]").replace(FENCE_NAME, "page-content-text");
 }
 
 export function fenceUntrusted(text: string): string {
