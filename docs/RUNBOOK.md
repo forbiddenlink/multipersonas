@@ -171,7 +171,7 @@ no down scripts.
 | --- | --- | --- |
 | Web exceptions | Sentry (web project, `NEXT_PUBLIC_SENTRY_DSN`) | Configured; who is notified: UNKNOWN |
 | Worker exceptions and reaper activity | Sentry project `personaudit-worker`, plus `WORKER_ALERT_WEBHOOK` | Webhook destination: UNKNOWN |
-| Uptime | UptimeRobot, HTTP monitor on `/api/health` (public 200 = ok, 503 = degraded web, database or worker queue) | Checked 2026-10-12: no Personaudit monitor existed. One must be created in the UptimeRobot dashboard with the account's email alert contact; the stored API key is read-only. |
+| Uptime | UptimeRobot HTTP monitor `804247766` on `https://personaudit.com/api/health`, every 5 minutes (public 200 = ok, 503 = degraded web, database or worker queue) | Created 2026-10-12; alerts go to the account email contact. |
 | Stripe delivery failures | Stripe dashboard email | UNKNOWN |
 | Dependabot and CI | GitHub notifications | Owner's account |
 | On-call or backup responder | None documented | UNKNOWN. This is a solo project; there is no secondary |
