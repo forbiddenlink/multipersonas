@@ -85,8 +85,10 @@ export async function proxy(request: NextRequest) {
   return supabaseResponse;
 }
 
+// Stripe webhooks, the health probe and the Sentry tunnel never need a session, so they skip the
+// Supabase getUser() round trip. `(?:/|$)` keeps the exclusion to those exact path segments.
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/stripe/webhook(?:/|$)|api/health(?:/|$)|monitoring(?:/|$)|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

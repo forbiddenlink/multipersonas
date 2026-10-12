@@ -16,7 +16,7 @@ vi.mock("@supabase/ssr", () => ({
   }),
 }));
 
-import { proxy } from "@/proxy";
+import { config, proxy } from "@/proxy";
 
 beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://auth.example.invalid");
@@ -38,5 +38,17 @@ describe("session refresh responses", () => {
     expect(response.headers.get("pragma")).toBe("no-cache");
     expect(response.headers.get("expires")).toBe("0");
     expect(response.headers.get("location")).toBe(destination ? `https://personaudit.com${destination}` : null);
+  });
+});
+
+describe("proxy matcher", () => {
+  const matches = (path: string): boolean => new RegExp(`^${config.matcher[0]!}$`).test(path);
+
+  it.each(["/api/stripe/webhook", "/api/health", "/monitoring", "/monitoring/envelope"])("skips %s", (path) => {
+    expect(matches(path)).toBe(false);
+  });
+
+  it.each(["/", "/dashboard", "/api/audit", "/api/healthz", "/monitoring-tools", "/api/stripe/checkout"])("still runs on %s", (path) => {
+    expect(matches(path)).toBe(true);
   });
 });
