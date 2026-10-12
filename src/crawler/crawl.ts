@@ -2,6 +2,7 @@ import { launchAuditBrowser } from "../security/browser.js";
 import { runAxeScan, mergeAxeFindings } from "../agent/axe-scan.js";
 import type { Finding } from "../agent/engine.js";
 import { assertUrlAllowed, isUrlAllowed, assertRequestAllowed } from "../security/url-guard.js";
+import { guardedRoute } from "../security/redirect-guard.js";
 
 /**
  * Authenticated accessibility crawler — the product's spine.
@@ -57,12 +58,11 @@ export async function crawl(entryUrl: string, options: CrawlOptions = {}): Promi
     // to one, would slip past the pre-navigation isUrlAllowed check below. This runs
     // on stranger-supplied URLs, so guard the request layer too (mirrors the audit
     // engine's context.route + grader/scan.ts). Respects allowPrivate for CLI use.
-    await context.route("**/*", async (route, request) => {
-      const allowed = await assertRequestAllowed(request.url(), request.resourceType(), {
-        allowPrivate,
-      });
-      return allowed ? route.continue() : route.abort("blockedbyclient");
-    });
+    // context.route sees only the first url of a redirect; guardedRoute vets each hop.
+    await context.route(
+      "**/*",
+      guardedRoute((url, type) => assertRequestAllowed(url, type, { allowPrivate })),
+    );
 
     const page = await context.newPage();
 

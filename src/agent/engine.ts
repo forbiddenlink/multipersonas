@@ -37,6 +37,7 @@ import { runAxeScan, mergeAxeFindings } from "./axe-scan.js";
 import { formatKnownAxeForPage } from "./known-axe.js";
 import { parseAriaRef, ariaRefLocator } from "./aria-ref.js";
 import { neutralizeFenceTags, fenceUntrusted } from "../security/untrusted.js";
+import { guardedRoute } from "../security/redirect-guard.js";
 import {
   FINDING_CATEGORIES,
   SEVERITIES,
@@ -805,11 +806,12 @@ export async function runPersonaAgent(
     // an RFC1918 host is an SSRF vector exactly as a navigation is. assertRequestAllowed
     // blocks private/reserved destinations on ALL request types, and additionally keeps
     // document navigations on-origin (scope) — see its contract in url-guard.ts. This is
-    // the assertRequestAllowed() the guard's DNS-rebinding note refers to.
-    await context.route("**/*", async (route, request) => {
-      const allowed = await assertRequestAllowed(request.url(), request.resourceType(), scope);
-      return allowed ? route.continue() : route.abort("blockedbyclient");
-    });
+    // the assertRequestAllowed() the guard's DNS-rebinding note refers to. context.route
+    // runs only for the FIRST url of a redirect, so guardedRoute vets each hop itself.
+    await context.route(
+      "**/*",
+      guardedRoute((url, type) => assertRequestAllowed(url, type, scope)),
+    );
 
     const page = await context.newPage();
     activePage = page;

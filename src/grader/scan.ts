@@ -1,6 +1,7 @@
 import { launchAuditBrowser } from "../security/browser.js";
 import { AxeBuilder } from "@axe-core/playwright";
 import { assertUrlAllowed, isUrlAllowed, assertRequestAllowed } from "../security/url-guard.js";
+import { guardedRoute } from "../security/redirect-guard.js";
 import { computeGrade, MAX_RULE_EXAMPLES, type PageAxe, type Impact, type GradeReport, type GradeRuleHit } from "./score.js";
 import { SEVERITIES } from "../domain/vocab.js";
 
@@ -98,12 +99,13 @@ export async function gradeScan(
     // a public URL that 302s to 169.254.169.254 / an RFC1918 host, or an <img>/
     // fetch to one, would bypass the pre-navigation isUrlAllowed check. This runs
     // on stranger-supplied URLs, so guard the request layer (mirrors the audit
-    // engine's context.route guard). No scope origin: block private/reserved
+    // engine's context.route guard; guardedRoute vets each redirect hop, which
+    // context.route alone never sees). No scope origin: block private/reserved
     // always, but allow legit cross-origin public redirects (apex <-> www, CDNs).
-    await context.route("**/*", async (route, request) => {
-      const allowed = await assertRequestAllowed(request.url(), request.resourceType());
-      return allowed ? route.continue() : route.abort("blockedbyclient");
-    });
+    await context.route(
+      "**/*",
+      guardedRoute((url, type) => assertRequestAllowed(url, type)),
+    );
 
     const page = await context.newPage();
     let loadedDocument: string | null = null;

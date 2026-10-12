@@ -6,6 +6,7 @@ import { Persona, generateSystemPrompt, PERSONA_ID_PATTERN } from "./types.js";
 import { resolveModel } from "../agent/engine.js";
 import { fenceUntrusted } from "../security/untrusted.js";
 import { assertUrlAllowed, assertRequestAllowed } from "../security/url-guard.js";
+import { guardedRoute } from "../security/redirect-guard.js";
 
 export class PersonaGenerationError extends Error {
   constructor(message: string, options?: { cause?: unknown }) {
@@ -95,12 +96,11 @@ async function extractWebsiteSignals(
   // Guard every request, not just the initial URL: this navigates a stranger-supplied
   // target and a 302 to a private/metadata host (or a subresource to one) would
   // otherwise be followed and read into the model prompt. Mirrors crawler/grader/engine.
-  await context.route("**/*", async (route, request) => {
-    const allowed = await assertRequestAllowed(request.url(), request.resourceType(), {
-      allowPrivate: options.allowPrivate,
-    });
-    return allowed ? route.continue() : route.abort("blockedbyclient");
-  });
+  // guardedRoute also vets every redirect hop, which context.route alone never sees.
+  await context.route(
+    "**/*",
+    guardedRoute((url, type) => assertRequestAllowed(url, type, { allowPrivate: options.allowPrivate })),
+  );
 
   const page = await context.newPage();
 
