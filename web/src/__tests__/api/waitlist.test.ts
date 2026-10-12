@@ -91,12 +91,13 @@ describe("POST /api/waitlist", () => {
     expect(mockInsert).not.toHaveBeenCalled();
   });
 
-  it("returns ok+already on a unique-violation (23505)", async () => {
+  it("answers a duplicate exactly like a new signup so it cannot reveal membership (23505)", async () => {
+    mockInsert.mockResolvedValue({ error: null });
+    const fresh = await POST(makeRequest({ email: "new@example.com" }));
     mockInsert.mockResolvedValue({ error: { code: "23505", message: "duplicate key" } });
-    const res = await POST(makeRequest({ email: "dupe@example.com" }));
-    expect(res.status).toBe(200);
-    const data = await res.json();
-    expect(data).toEqual({ ok: true, already: true });
+    const dupe = await POST(makeRequest({ email: "dupe@example.com" }));
+    expect(dupe.status).toBe(fresh.status);
+    expect(await dupe.json()).toEqual(await fresh.json());
   });
 
   it("rejects a sitesCount value outside the enum with 400", async () => {

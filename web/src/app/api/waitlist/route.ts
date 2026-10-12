@@ -80,7 +80,8 @@ export async function POST(request: Request) {
 
   if (error) {
     if (error.code === "23505") {
-      return NextResponse.json({ ok: true, already: true });
+      // Same body as a new signup, so the response never reveals whether an email is already listed.
+      return NextResponse.json({ ok: true });
     }
     console.error("waitlist insert failed:", error);
     return NextResponse.json(
