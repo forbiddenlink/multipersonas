@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import * as http from "node:http";
 import type { AddressInfo } from "node:net";
 import type { Browser } from "playwright";
-import { launchAuditBrowser, isBrowserMissingError } from "./browser.js";
+import { launchAuditBrowser, isBrowserMissingError, BrowserMissingError } from "./browser.js";
 import { guardedRoute, assertLandedUrlAllowed } from "./redirect-guard.js";
 
 /**
@@ -63,7 +63,8 @@ beforeAll(async () => {
         : {},
     );
   } catch (e) {
-    if (!isBrowserMissingError(e)) throw e;
+    // launchAuditBrowser wraps the launch failure, so match the wrapper too.
+    if (!(e instanceof BrowserMissingError) && !isBrowserMissingError(e)) throw e;
     skip = true;
   }
 });
