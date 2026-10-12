@@ -140,10 +140,13 @@ no down scripts.
 
 - **Bad migration or bad data write.** Two options: fix forward with a new migration, or
   restore from a point-in-time backup. Never restore over production as a drill.
-- **Point-in-time recovery window and plan:** **UNKNOWN.** Not recorded in this repo. Open
-  the Supabase dashboard -> Database -> Backups and write the window here. A hosted restore
-  has never been tested; only a local dump and restore passed on 2026-09-29
-  (`docs/DEPLOYMENT.md`, checklist). Restore time: UNKNOWN.
+- **Backups (checked 2026-10-12 with `supabase backups list`):** point-in-time recovery is
+  **off** (`pitr_enabled: false`). Supabase takes one physical backup a day at about
+  05:00 UTC, and 8 were listed, so the worst-case data loss is about 24 hours. Restoring
+  means picking a daily backup in the dashboard (Database -> Backups). PITR is a paid
+  add-on; turning it on is a cost decision. A hosted restore has never been tested;
+  only a local dump and restore passed on 2026-09-29 (`docs/DEPLOYMENT.md`, checklist).
+  Restore time: UNKNOWN until a restore is rehearsed into a separate project.
 - **Release skew.** Because a merge deploys web without applying migrations, a missing
   migration shows up as runtime errors on the new routes. Apply the migration (see
   "Migration rollout order" in `docs/DEPLOYMENT.md`), no code rollback needed.
@@ -168,7 +171,7 @@ no down scripts.
 | --- | --- | --- |
 | Web exceptions | Sentry (web project, `NEXT_PUBLIC_SENTRY_DSN`) | Configured; who is notified: UNKNOWN |
 | Worker exceptions and reaper activity | Sentry project `personaudit-worker`, plus `WORKER_ALERT_WEBHOOK` | Webhook destination: UNKNOWN |
-| Uptime | UptimeRobot monitors on `/`, `/grade`, `/api/health` | Monitor list and alert contacts: UNKNOWN (not in repo) |
+| Uptime | UptimeRobot, HTTP monitor on `/api/health` (public 200 = ok, 503 = degraded web, database or worker queue) | Checked 2026-10-12: no Personaudit monitor existed. One must be created in the UptimeRobot dashboard with the account's email alert contact; the stored API key is read-only. |
 | Stripe delivery failures | Stripe dashboard email | UNKNOWN |
 | Dependabot and CI | GitHub notifications | Owner's account |
 | On-call or backup responder | None documented | UNKNOWN. This is a solo project; there is no secondary |
