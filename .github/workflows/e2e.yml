@@ -72,6 +72,14 @@ jobs:
         with:
           version: 2.117.0
 
+      # The CLI test job has no browser, so these real-Chromium SSRF tests skip there.
+      # This job installs the same Playwright build, so run them here and fail on skip.
+      - name: Test redirect SSRF guard in a real browser
+        run: |
+          set -o pipefail
+          pnpm exec vitest run src/security/redirect-guard.test.ts 2>&1 | tee redirect-guard.log
+          if grep -q 'skipped' redirect-guard.log; then echo "::error::redirect-guard tests skipped"; exit 1; fi
+
       - name: Start local Supabase stack
         working-directory: web
         run: supabase start
