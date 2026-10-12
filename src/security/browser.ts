@@ -52,8 +52,15 @@ export function launchAuditBrowser(options: LaunchOptions = {}): Promise<Browser
     );
   }
 
+  // Opt-in Chromium sandbox. Playwright launches with --no-sandbox unless chromiumSandbox is
+  // true. The sandbox needs user namespaces or a suitable seccomp profile from the host, so
+  // it stays off by default and the hosted worker enables it with AUDIT_CHROMIUM_SANDBOX=1
+  // once its container allows it. An explicit caller option wins.
+  const sandbox = ["1", "true"].includes(process.env.AUDIT_CHROMIUM_SANDBOX ?? "");
+
   return chromium
     .launch({
+      ...(sandbox ? { chromiumSandbox: true } : {}),
       ...options,
       ...(proxyServer ? { proxy: { server: proxyServer } } : {}),
     })

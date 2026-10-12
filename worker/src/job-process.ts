@@ -29,11 +29,30 @@ function terminateTree(pid: number): void {
   for (const child of [...stopped].reverse()) signal(child, "SIGKILL");
 }
 
+/** Variables the scan child may inherit. Everything else is dropped, so a secret added to
+ * the worker later (database, billing, email, alert sinks) is not inherited by the process
+ * that drives a stranger's page. The child needs the model key, egress-proxy and sandbox
+ * settings, and the usual process basics. */
+const SCAN_ENV_EXACT = new Set([
+  "PATH", "HOME", "USER", "LOGNAME", "LANG", "LANGUAGE", "TZ", "TERM", "TMPDIR", "TEMP", "TMP",
+  "NODE_ENV", "NODE_PATH", "NODE_OPTIONS", "NODE_EXTRA_CA_CERTS", "SSL_CERT_FILE", "SSL_CERT_DIR",
+  "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "no_proxy",
+  "DISPLAY", "FONTCONFIG_PATH", "FONTCONFIG_FILE", "CI",
+]);
+const SCAN_ENV_PREFIXES = ["LC_", "XDG_", "PLAYWRIGHT_", "AUDIT_", "MP_", "ANTHROPIC_", "PERSONAUDIT_", "MULTIPERSONAS_"];
+
+export function scanChildEnv(source: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = {};
+  for (const [name, value] of Object.entries(source)) {
+    if (value === undefined) continue;
+    if (SCAN_ENV_EXACT.has(name) || SCAN_ENV_PREFIXES.some((prefix) => name.startsWith(prefix))) env[name] = value;
+  }
+  return env;
+}
+
 export function runJobProcess<T>(entry: string | URL, input: Serializable, timeoutMs: number): Promise<T> {
   // Scanners need model/egress settings, never database write credentials or alert sinks.
-  const env = { ...process.env };
-  delete env.SUPABASE_SERVICE_ROLE_KEY;
-  delete env.WORKER_ALERT_WEBHOOK;
+  const env = scanChildEnv();
   const child = fork(entry, [], {
     ...(process.platform === "linux" ? {
       execPath: "python3",

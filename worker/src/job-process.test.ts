@@ -2,7 +2,7 @@ import { afterEach, expect, it } from "vitest";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { runJobProcess, ScanCleanupError } from "./job-process.js";
+import { runJobProcess, scanChildEnv, ScanCleanupError } from "./job-process.js";
 
 const dirs: string[] = [];
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
@@ -77,4 +77,43 @@ it.skipIf(process.platform === "linux")("rejects with a fatal cleanup error if t
   try {
     await expect(runJobProcess(script, {}, 3000)).rejects.toBeInstanceOf(ScanCleanupError);
   } finally { process.env.PATH = previousPath; }
+});
+
+it("passes the scan child only allowlisted environment variables", () => {
+  const env = scanChildEnv({
+    PATH: "/usr/bin", HOME: "/home/pwuser", LANG: "C.UTF-8", LC_ALL: "C", TZ: "UTC",
+    ANTHROPIC_API_KEY: "model-key", PERSONAUDIT_MODEL: "m",
+    AUDIT_BROWSER_PROXY: "http://127.0.0.1:4750", AUDIT_REQUIRE_EGRESS_PROXY: "1",
+    MP_BLOCK_DESTRUCTIVE_ACTIONS: "1", PLAYWRIGHT_BROWSERS_PATH: "/ms-playwright",
+    HTTPS_PROXY: "http://proxy:3128", NODE_ENV: "production",
+    SUPABASE_SERVICE_ROLE_KEY: "service", SUPABASE_URL: "https://x.invalid",
+    NEXT_PUBLIC_SUPABASE_URL: "https://x.invalid", WORKER_ALERT_WEBHOOK: "https://hook.invalid",
+    SENTRY_DSN: "dsn", STRIPE_SECRET_KEY: "sk", RESEND_API_KEY: "re", CRON_SECRET: "c",
+    RAILWAY_TOKEN: "t", DATABASE_URL: "postgres://u:p@h/db", SOMETHING_ELSE: "x",
+  });
+  expect(Object.keys(env).sort()).toEqual([
+    "ANTHROPIC_API_KEY", "AUDIT_BROWSER_PROXY", "AUDIT_REQUIRE_EGRESS_PROXY", "HOME", "HTTPS_PROXY",
+    "LANG", "LC_ALL", "MP_BLOCK_DESTRUCTIVE_ACTIONS", "NODE_ENV", "PATH", "PERSONAUDIT_MODEL",
+    "PLAYWRIGHT_BROWSERS_PATH", "TZ",
+  ]);
+});
+
+it("does not hand the database key to the real scan child", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "worker-env-"));
+  dirs.push(dir);
+  const script = join(dir, "scan.cjs");
+  writeFileSync(script, `process.on('message', () => process.send({ result: Object.keys(process.env) }));`);
+  const secrets = {
+    SUPABASE_SERVICE_ROLE_KEY: "synthetic-service", WORKER_ALERT_WEBHOOK: "https://hook.invalid",
+    STRIPE_SECRET_KEY: "synthetic-stripe", SENTRY_DSN: "synthetic-dsn", DATABASE_URL: "synthetic-url",
+  };
+  Object.assign(process.env, secrets, { ANTHROPIC_API_KEY: "synthetic-model" });
+  try {
+    const keys = await runJobProcess<string[]>(script, {}, 5000);
+    for (const name of Object.keys(secrets)) expect(keys).not.toContain(name);
+    expect(keys).toContain("ANTHROPIC_API_KEY");
+    expect(keys).toContain("PATH");
+  } finally {
+    for (const name of [...Object.keys(secrets), "ANTHROPIC_API_KEY"]) delete process.env[name];
+  }
 });

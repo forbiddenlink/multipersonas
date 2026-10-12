@@ -1,4 +1,5 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
+import { chromium, type Browser } from "playwright";
 import { launchAuditBrowser, isBrowserMissingError, BrowserMissingError } from "./browser.js";
 
 /**
@@ -52,5 +53,43 @@ describe("browser-missing error mapping", () => {
     const err = new BrowserMissingError({ cause });
     expect(err.message).toBe("Chromium is not installed. Run: npx playwright install chromium");
     expect(err.cause).toBe(cause);
+  });
+});
+
+describe("launchAuditBrowser Chromium sandbox opt-in", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.AUDIT_CHROMIUM_SANDBOX;
+    delete process.env.AUDIT_REQUIRE_EGRESS_PROXY;
+    delete process.env.AUDIT_BROWSER_PROXY;
+  });
+
+  async function launchedOptions(): Promise<Record<string, unknown>> {
+    const launch = vi.spyOn(chromium, "launch").mockResolvedValue({} as Browser);
+    await launchAuditBrowser({ headless: true });
+    return launch.mock.calls[0]![0] as Record<string, unknown>;
+  }
+
+  it("keeps Playwright's default (sandbox off) unless opted in", async () => {
+    expect((await launchedOptions()).chromiumSandbox).toBeUndefined();
+  });
+
+  it.each(["1", "true"])("enables the Chromium sandbox when AUDIT_CHROMIUM_SANDBOX=%s", async (value) => {
+    process.env.AUDIT_CHROMIUM_SANDBOX = value;
+    const options = await launchedOptions();
+    expect(options.chromiumSandbox).toBe(true);
+    expect(options.headless).toBe(true);
+  });
+
+  it.each(["0", "false", "", "yes"])("ignores AUDIT_CHROMIUM_SANDBOX=%j", async (value) => {
+    process.env.AUDIT_CHROMIUM_SANDBOX = value;
+    expect((await launchedOptions()).chromiumSandbox).toBeUndefined();
+  });
+
+  it("does not override an explicit caller choice", async () => {
+    process.env.AUDIT_CHROMIUM_SANDBOX = "1";
+    const launch = vi.spyOn(chromium, "launch").mockResolvedValue({} as Browser);
+    await launchAuditBrowser({ chromiumSandbox: false });
+    expect((launch.mock.calls[0]![0] as Record<string, unknown>).chromiumSandbox).toBe(false);
   });
 });
