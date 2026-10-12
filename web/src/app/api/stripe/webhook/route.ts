@@ -9,10 +9,18 @@ function stripeClient(): Stripe | null {
   return key ? new Stripe(key) : null;
 }
 
-async function setPlan(userId: string, plan: "free" | "pro" | "team", customerId?: string): Promise<void> {
+async function setPlan(
+  userId: string,
+  plan: "free" | "pro" | "team",
+  customerId?: string,
+  trialEndsAt: string | null = null,
+): Promise<void> {
   const admin = createAdminClient();
   if (!admin) throw new Error("Admin client is not configured");
-  const update = customerId ? { plan, stripe_customer_id: customerId } : { plan };
+  // trial_ends_at lets the spend path cap trialing callers lower (lib/spend.ts).
+  const update = customerId
+    ? { plan, stripe_customer_id: customerId, trial_ends_at: trialEndsAt }
+    : { plan, trial_ends_at: trialEndsAt };
   const { data, error } = await admin.from("profiles").update(update).eq("id", userId).select("id").maybeSingle();
   if (error || !data) throw new Error("Could not persist subscription access");
 }
@@ -24,15 +32,23 @@ async function syncPaidPlan(stripe: Stripe, userId: string, customerId: string):
   // upgrades solo -> founding briefly holds both, and stopping at the first match
   // could downgrade them to the tier they just left.
   let plan: "free" | "pro" | "team" = "free";
+  let anyActive = false;
+  let latestTrialEnd: number | null = null;
   for await (const subscription of stripe.subscriptions.list({ customer: customerId, status: "all", limit: 100 })) {
     const entitled = subscription.status === "active" || subscription.status === "trialing";
     const key = subscription.metadata.personaudit_plan;
     if (entitled && isPlanKey(key) && subscription.metadata.supabase_user_id === userId) {
       const grant = PLANS[key].grants;
       if (GRANT_RANK[grant] > GRANT_RANK[plan]) plan = grant;
+      if (subscription.status === "active") anyActive = true;
+      else if (typeof subscription.trial_end === "number") {
+        latestTrialEnd = Math.max(latestTrialEnd ?? 0, subscription.trial_end);
+      }
     }
   }
-  await setPlan(userId, plan, customerId);
+  // Trialing only if nothing entitled is already paid; a paid subscription clears it.
+  const trialEndsAt = !anyActive && latestTrialEnd !== null ? new Date(latestTrialEnd * 1000).toISOString() : null;
+  await setPlan(userId, plan, customerId, trialEndsAt);
 }
 
 export async function POST(request: Request): Promise<Response> {

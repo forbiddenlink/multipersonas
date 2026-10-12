@@ -55,6 +55,28 @@ export const DAILY_MODEL_CALL_CAP = positiveEnvInt(process.env.AUDIT_DAILY_CALL_
  */
 export const CALLER_DAILY_CALL_CAP = positiveEnvInt(process.env.AUDIT_CALLER_DAILY_CALL_CAP, 250);
 
+/**
+ * Lower per-caller daily ceiling while a caller's Stripe trial is running. A trial needs
+ * only a card hold and an email, so ~20 trial accounts at the full per-caller cap could
+ * drain the whole global budget and lock out paying users for the day. At 75 (three
+ * maximum-budget personas) it takes ~67 identities. Never above the normal per-caller cap.
+ * Override with AUDIT_TRIAL_CALLER_DAILY_CALL_CAP.
+ */
+export const TRIAL_CALLER_DAILY_CALL_CAP = Math.min(
+  positiveEnvInt(process.env.AUDIT_TRIAL_CALLER_DAILY_CALL_CAP, 75),
+  CALLER_DAILY_CALL_CAP,
+);
+
+/**
+ * The per-caller cap for a caller whose trial ends at `trialEndsAt` (profiles.trial_ends_at).
+ * Trialing only while that instant is in the future, so a late billing webhook cannot
+ * stretch a trial. Null, missing or unparseable means not trialing.
+ */
+export function callerCapFor(trialEndsAt: string | null | undefined, now: number = Date.now()): number {
+  const end = trialEndsAt ? Date.parse(trialEndsAt) : NaN;
+  return Number.isFinite(end) && end > now ? TRIAL_CALLER_DAILY_CALL_CAP : CALLER_DAILY_CALL_CAP;
+}
+
 /** Hard stop for all runs, independent of limits — flip in the environment to freeze spend. */
 export function killSwitchEnabled(env: Record<string, string | undefined> = process.env): boolean {
   const v = env.AUDIT_KILL_SWITCH;

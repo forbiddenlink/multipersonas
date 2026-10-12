@@ -1,6 +1,31 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { CALLER_DAILY_CALL_CAP, DAILY_MODEL_CALL_CAP, estimatedCallsFor } from "@/lib/limits";
+import {
+  DAILY_MODEL_CALL_CAP,
+  TRIAL_CALLER_DAILY_CALL_CAP,
+  callerCapFor,
+  estimatedCallsFor,
+} from "@/lib/limits";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+/**
+ * Per-caller daily cap for this caller. Anonymous callers (`anon:<ip>`) are never trialing.
+ * A signed-in caller is capped lower while profiles.trial_ends_at is in the future. If the
+ * profile read fails, use the lower cap: spend stays bounded and the error is logged.
+ */
+async function callerCapForKey(admin: SupabaseClient, callerKey: string): Promise<number> {
+  if (callerKey.startsWith("anon:")) return callerCapFor(null);
+  const { data, error } = await admin
+    .from("profiles")
+    .select("trial_ends_at")
+    .eq("id", callerKey)
+    .maybeSingle();
+  if (error) {
+    console.error("[spend] trial lookup failed, using the trial cap:", error.message);
+    return TRIAL_CALLER_DAILY_CALL_CAP;
+  }
+  return callerCapFor(data?.trial_ends_at);
+}
 
 /**
  * Reserve the estimated model-call budget for a run against today's global cap, atomically.
@@ -30,7 +55,7 @@ export async function reserveSpend(personaCount: number, callerKey: string): Pro
     p_calls: planned,
     p_cap: DAILY_MODEL_CALL_CAP,
     p_caller: callerKey,
-    p_caller_cap: CALLER_DAILY_CALL_CAP,
+    p_caller_cap: await callerCapForKey(admin, callerKey),
   });
 
   if (error) {

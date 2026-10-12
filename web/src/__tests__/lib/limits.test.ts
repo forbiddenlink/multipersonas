@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   RATE_LIMITS,
   killSwitchEnabled,
@@ -6,6 +6,9 @@ import {
   withinDailyCap,
   CALLS_PER_PERSONA,
   positiveEnvInt,
+  CALLER_DAILY_CALL_CAP,
+  TRIAL_CALLER_DAILY_CALL_CAP,
+  callerCapFor,
 } from "@/lib/limits";
 import { personaLibrary } from "@engine/personas/library";
 
@@ -69,5 +72,38 @@ describe("RATE_LIMITS", () => {
     expect(RATE_LIMITS.anonymous.windowSeconds).toBeGreaterThanOrEqual(
       RATE_LIMITS.authenticated.windowSeconds,
     );
+  });
+});
+
+describe("trial caller cap", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  it("defaults well under the normal per-caller cap", () => {
+    expect(TRIAL_CALLER_DAILY_CALL_CAP).toBeLessThan(CALLER_DAILY_CALL_CAP);
+    expect(TRIAL_CALLER_DAILY_CALL_CAP).toBeGreaterThanOrEqual(CALLS_PER_PERSONA);
+  });
+
+  it("applies the trial cap only while the trial is in the future", () => {
+    const now = Date.parse("2026-10-12T12:00:00Z");
+    expect(callerCapFor("2026-10-13T00:00:00Z", now)).toBe(TRIAL_CALLER_DAILY_CALL_CAP);
+    expect(callerCapFor("2026-10-12T11:59:59Z", now)).toBe(CALLER_DAILY_CALL_CAP);
+    expect(callerCapFor("2026-10-12T12:00:00Z", now)).toBe(CALLER_DAILY_CALL_CAP);
+    expect(callerCapFor(null, now)).toBe(CALLER_DAILY_CALL_CAP);
+    expect(callerCapFor(undefined, now)).toBe(CALLER_DAILY_CALL_CAP);
+    expect(callerCapFor("not a date", now)).toBe(CALLER_DAILY_CALL_CAP);
+  });
+
+  it("is configurable by env and never exceeds the normal per-caller cap", async () => {
+    vi.stubEnv("AUDIT_TRIAL_CALLER_DAILY_CALL_CAP", "40");
+    vi.resetModules();
+    expect((await import("@/lib/limits")).TRIAL_CALLER_DAILY_CALL_CAP).toBe(40);
+
+    vi.stubEnv("AUDIT_TRIAL_CALLER_DAILY_CALL_CAP", "999999");
+    vi.stubEnv("AUDIT_CALLER_DAILY_CALL_CAP", "100");
+    vi.resetModules();
+    expect((await import("@/lib/limits")).TRIAL_CALLER_DAILY_CALL_CAP).toBe(100);
   });
 });
