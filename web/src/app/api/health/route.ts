@@ -9,38 +9,56 @@ const HEALTH_TIMEOUT_MS = 5000;
 // Never cached — a health check must reflect the current state on every hit.
 export const dynamic = "force-dynamic";
 
+const PUBLIC_CACHE_MS = 30_000;
+
+interface HealthResult {
+  httpStatus: number;
+  body: Record<string, unknown>;
+}
+
+let publicCache: { at: number; result: Promise<HealthResult> } | null = null;
+
 /**
- * Public callers get a cheap liveness answer and no database work. The dependency
- * checks run five service-role count queries and publish queue depth, so they sit
- * behind the same CRON_SECRET bearer the cron routes use.
+ * Public callers get the same 200/503 status an uptime monitor needs, with a body that
+ * carries no queue counts or service details. The status comes from the same checks as the
+ * detailed response, cached in memory for ~30s with concurrent misses sharing one in-flight
+ * promise, so anonymous traffic cannot fan out service-role queries.
  *
- * With the bearer: checks the two things the audit path depends on, the database and
- * the job queue. Returns 200 only when both are reachable; 503 otherwise so a monitor
- * can alert. Leaks no data beyond a status per dependency and the queue backlog.
+ * With the CRON_SECRET bearer: the full detail (per-service checks and queue backlog),
+ * uncached.
  */
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   const authorization = request.headers.get("authorization") ?? "";
-  if (!secret || !bearerMatches(authorization, secret)) {
-    return NextResponse.json({ status: "ok" });
+  if (secret && bearerMatches(authorization, secret)) {
+    const { httpStatus, body } = await safeHealth();
+    return NextResponse.json(body, { status: httpStatus });
   }
+
+  const now = Date.now();
+  if (!publicCache || now - publicCache.at >= PUBLIC_CACHE_MS) {
+    publicCache = { at: now, result: safeHealth() };
+  }
+  const { httpStatus } = await publicCache.result;
+  return NextResponse.json({ status: httpStatus === 200 ? "ok" : "degraded" }, { status: httpStatus });
+}
+
+async function safeHealth(): Promise<HealthResult> {
   try {
     return await checkHealth();
   } catch {
-    return NextResponse.json(
-      { status: "degraded", checks: { database: "error", queue: "error" } },
-      { status: 503 },
-    );
+    return degraded({ database: "error", queue: "error" });
   }
 }
 
-async function checkHealth() {
+function degraded(checks: Record<string, string>, extra: Record<string, unknown> = {}): HealthResult {
+  return { httpStatus: 503, body: { status: "degraded", checks, ...extra } };
+}
+
+async function checkHealth(): Promise<HealthResult> {
   const admin = createAdminClient();
   if (!admin) {
-    return NextResponse.json(
-      { status: "degraded", checks: { database: "unconfigured", queue: "unconfigured" } },
-      { status: 503 },
-    );
+    return degraded({ database: "unconfigured", queue: "unconfigured" });
   }
 
   const signal = AbortSignal.timeout(HEALTH_TIMEOUT_MS);
@@ -76,28 +94,24 @@ async function checkHealth() {
 
   const queueError = error ?? queued.error ?? running.error ?? staleRunning.error ?? staleQueued.error;
   if (queueError) {
-    return NextResponse.json(
-      { status: "degraded", checks: { database: "error", queue: "error" } },
-      { status: 503 },
-    );
+    return degraded({ database: "error", queue: "error" });
   }
 
   if ((staleRunning.count ?? 0) > 0 || (staleQueued.count ?? 0) > 0) {
-    return NextResponse.json(
+    return degraded(
+      { database: "ok", queue: (staleRunning.count ?? 0) > 0 ? "stale-running" : "stale-queued" },
       {
-        status: "degraded",
-        checks: { database: "ok", queue: (staleRunning.count ?? 0) > 0 ? "stale-running" : "stale-queued" },
         backlog: count ?? 0,
         queued: queued.count ?? 0,
         running: running.count ?? 0,
         staleRunning: staleRunning.count ?? 0,
       },
-      { status: 503 },
     );
   }
 
-  return NextResponse.json(
-    {
+  return {
+    httpStatus: 200,
+    body: {
       status: "ok",
       checks: { database: "ok", queue: "ok" },
       backlog: count ?? 0,
@@ -105,6 +119,5 @@ async function checkHealth() {
       running: running.count ?? 0,
       staleRunning: staleRunning.count ?? 0,
     },
-    { status: 200 },
-  );
+  };
 }

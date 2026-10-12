@@ -13,7 +13,8 @@ interface Job {
   started_at: string;
 }
 
-const now = new Date("2026-09-29T12:00:00Z");
+const base = new Date("2026-09-29T12:00:00Z");
+let now = base;
 let jobs: Job[];
 const databaseFetch = vi.fn<typeof fetch>();
 
@@ -28,6 +29,8 @@ function authed(secret = "test-cron-secret"): Request {
 
 beforeEach(() => {
   vi.stubEnv("CRON_SECRET", "test-cron-secret");
+  // Each test starts past the 30s public cache window of the previous one.
+  now = new Date(now.getTime() + 120_000);
   vi.spyOn(Date, "now").mockReturnValue(now.getTime());
   jobs = [];
   databaseFetch.mockReset();
@@ -56,22 +59,55 @@ afterEach(() => {
 });
 
 describe("GET /api/health", () => {
-  it("answers a cheap public liveness probe without touching the database", async () => {
-    jobs = [job("queued", 60)];
-    for (const request of [new Request("http://localhost/api/health"), authed("wrong")]) {
-      const response = await GET(request);
-      expect(response.status).toBe(200);
-      expect(await response.json()).toEqual({ status: "ok" });
-    }
-    expect(createAdminClient).not.toHaveBeenCalled();
-    expect(databaseFetch).not.toHaveBeenCalled();
+  const publicRequest = () => new Request("http://localhost/api/health");
+
+  it("public request returns 200 with a body that has no details when healthy", async () => {
+    jobs = [job("queued", 1), job("running", 4)];
+    const response = await GET(publicRequest());
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ status: "ok" });
   });
 
-  it("serves public liveness when no cron secret is configured, never the detailed checks", async () => {
+  it("public request returns 503 when the queue is stale, still without details", async () => {
+    jobs = [job("queued", 16)];
+    for (const request of [publicRequest(), authed("wrong")]) {
+      vi.spyOn(Date, "now").mockReturnValue(now.getTime());
+      const response = await GET(request);
+      expect(response.status).toBe(503);
+      expect(await response.json()).toEqual({ status: "degraded" });
+    }
+  });
+
+  it("two public hits inside the TTL run the checks once", async () => {
+    await GET(publicRequest());
+    const calls = databaseFetch.mock.calls.length;
+    expect(calls).toBeGreaterThan(0);
+    vi.spyOn(Date, "now").mockReturnValue(now.getTime() + 29_000);
+    await GET(publicRequest());
+    expect(databaseFetch.mock.calls.length).toBe(calls);
+    vi.spyOn(Date, "now").mockReturnValue(now.getTime() + 31_000);
+    await GET(publicRequest());
+    expect(databaseFetch.mock.calls.length).toBe(calls * 2);
+  });
+
+  it("concurrent public misses share one in-flight check", async () => {
+    await Promise.all([GET(publicRequest()), GET(publicRequest()), GET(publicRequest())]);
+    expect(databaseFetch.mock.calls.length).toBe(5);
+  });
+
+  it("a bearer request returns details and is not cached", async () => {
+    jobs = [job("queued", 1)];
+    await GET(publicRequest());
+    const before = databaseFetch.mock.calls.length;
+    const response = await GET(authed());
+    expect(await response.json()).toMatchObject({ status: "ok", checks: { database: "ok", queue: "ok" }, queued: 1 });
+    expect(databaseFetch.mock.calls.length).toBe(before + 5);
+  });
+
+  it("without a configured secret a bearer never unlocks details", async () => {
     vi.stubEnv("CRON_SECRET", "");
     const response = await GET(new Request("http://localhost/api/health", { headers: { authorization: "Bearer " } }));
     expect(await response.json()).toEqual({ status: "ok" });
-    expect(databaseFetch).not.toHaveBeenCalled();
   });
 
   it("accepts an empty queue", async () => {

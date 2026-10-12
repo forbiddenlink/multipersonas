@@ -26,9 +26,10 @@ function expectStatus(res, allowed) {
   }
 }
 
-// /api/health is a cheap public liveness probe. The database and queue checks sit behind the
-// cron bearer, so they run only when SMOKE_CRON_SECRET is set (never printed).
-await check("health liveness answers ok", async () => {
+// Public /api/health returns 200/503 from the real checks (cached ~30s) with no details.
+// The detailed body sits behind the cron bearer, so it is checked only when SMOKE_CRON_SECRET
+// is set (never printed).
+await check("health status is ok", async () => {
   const res = await fetchWithTimeout(`${baseUrl}/api/health`, { cache: "no-store" });
   expectStatus(res, [200]);
   const json = await res.json();
