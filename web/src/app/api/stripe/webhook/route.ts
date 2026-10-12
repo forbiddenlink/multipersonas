@@ -26,7 +26,7 @@ async function setPlan(
   // or PostgREST PGRST204 for an unknown column in the body). Entitlement must still be
   // saved, so retry without the trial marker rather than failing every subscription event.
   if (error && (error.code === "42703" || error.code === "PGRST204")) {
-    const { trial_ends_at: _omitted, ...withoutTrial } = update;
+    const withoutTrial = customerId ? { plan, stripe_customer_id: customerId } : { plan };
     ({ data, error } = await admin.from("profiles").update(withoutTrial).eq("id", userId).select("id").maybeSingle());
   }
   if (error || !data) throw new Error("Could not persist subscription access");
