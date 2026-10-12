@@ -10,6 +10,12 @@ name: E2E (gated app)
 # NOT mark it a required status check in branch protection until it has proven
 # green + non-flaky across several runs — that is the "non-blocking until proven"
 # safety valve. ci.yml stays the fast gate that blocks main.
+#
+# CURRENT STATE (2026-10-12): this check IS required by branch protection on `main`
+# (required checks: `ci` and `e2e`). The earlier advice not to require it was overtaken
+# by that decision, so a flaky e2e run blocks merges: re-run it, and de-flake via
+# workflow_dispatch rather than bypassing. If you drop the requirement, change it in
+# Settings -> Branches and update this note.
 
 on:
   push:
