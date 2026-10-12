@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { ogFonts } from "@/lib/og-fonts";
 import { PALETTE } from "@/lib/og-palette";
 
-export const alt = "Personaudit: scan behind the login, keep the password";
+export const alt = "Personaudit: scan behind the login with the CLI, keep the password";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -35,7 +35,7 @@ export default async function OGImage() {
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ fontSize: "76px", lineHeight: 1.02, letterSpacing: "-0.03em" }}>
-              Scan behind the login. Keep the password.
+              Scan behind the login with the CLI. Keep the password.
             </div>
             <div
               style={{
@@ -46,7 +46,7 @@ export default async function OGImage() {
                 lineHeight: 1.4,
               }}
             >
-              axe-core at every state a signed-in crawl reaches.
+              axe-core at every state a signed-in crawl reaches, run locally.
             </div>
           </div>
           <div style={{ display: "flex", fontSize: "18px", color: MUTED, fontFamily: "Plex Mono, monospace", letterSpacing: "0.08em" }}>

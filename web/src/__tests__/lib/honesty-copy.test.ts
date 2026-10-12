@@ -120,6 +120,21 @@ describe("marketing copy avoids compliance claims and qualifies behind-login", (
   });
 });
 
+describe("guide and share-card copy keeps behind-login on the CLI", () => {
+  it("the common-issues guide says authenticated pages are reached by the CLI", () => {
+    const src = read("src/app/guides/common-accessibility-issues/page.tsx");
+    expect(src).not.toMatch(/including authenticated pages/);
+    expect(src).toMatch(/the CLI reaches authenticated pages/);
+  });
+
+  it("the OG image names the CLI instead of implying a hosted login scan", () => {
+    const src = read("src/app/opengraph-image.tsx");
+    expect(src).not.toMatch(/Scan behind the login\. Keep the password\./);
+    expect(src).toMatch(/Scan behind the login with the CLI\./);
+    expect(src).toMatch(/behind the login with the CLI/);
+  });
+});
+
 describe("pricing competitor claims are sourced and dated", () => {
   const src = read("src/app/pricing/page.tsx");
 

@@ -130,8 +130,9 @@ export default function CommonIssuesPage() {
 
         <h2 className="sr-only">Find these automatically</h2>
         <p>
-          Personaudit runs axe-core at every state it reaches, including authenticated pages a
-          single-URL scan never sees. No signup required for the public-page grade.
+          Personaudit runs axe-core at every state it reaches. The free CLI runs on your machine, so
+          the CLI reaches authenticated pages a single-URL scan never sees. The hosted public-page
+          grade needs no signup and covers public pages only.
         </p>
 
         <h2 className="sr-only">Related guides</h2>
