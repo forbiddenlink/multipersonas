@@ -11,7 +11,8 @@ import { AxeBuilder } from "@axe-core/playwright";
 const BASE = (process.env.DOGFOOD_URL || "http://localhost:3000").replace(/\/$/, "");
 
 // Public, unauthenticated routes. Gated app surfaces (dashboard, audits, personas)
-// need a session and are out of scope for a headless CI scan.
+// need a session and are out of scope for a headless CI scan (A11Y-001 gap: those and
+// real result pages need a seeded fixture).
 const ROUTES = [
   "/",
   "/for-agencies",
@@ -32,6 +33,12 @@ const ROUTES = [
   "/accessibility",
   "/method",
   "/changelog",
+  // Dynamic and error surfaces reachable without a secret or a real token. Bogus tokens render the
+  // not-found state of the result pages (or the error boundary when the app runs without Supabase,
+  // as in CI); /sample-report above is the public demo report.
+  "/this-page-does-not-exist",
+  "/grade/00000000000000000000000000000000",
+  "/r/00000000000000000000000000000000",
 ];
 
 // The site is light-first, toggled by localStorage 'theme' (see layout.tsx no-FOUC
