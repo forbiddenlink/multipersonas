@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { bearerMatches } from "@/lib/cron-auth";
@@ -39,8 +40,11 @@ async function notifyScheduledScans(request: Request) {
 
   try {
     const result = await notifyFinishedScans(supabaseNotifyDeps(admin, siteOrigin(), sendEmail));
-    return NextResponse.json(result);
-  } catch {
+    // Failed sends release their claim, so the next cron run retries them. A non-2xx here
+    // does not change that; it makes the failure visible in the cron run history.
+    return NextResponse.json(result, { status: result.failed > 0 ? 502 : 200 });
+  } catch (error) {
+    Sentry.captureException(error, { tags: { route: "schedules-notify", stage: "run" } });
     return NextResponse.json({ error: "Could not send scan result emails." }, { status: 500 });
   }
 }

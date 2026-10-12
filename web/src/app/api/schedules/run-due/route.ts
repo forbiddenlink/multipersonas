@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { bearerMatches } from "@/lib/cron-auth";
@@ -42,14 +43,19 @@ async function runDueSchedules(request: Request) {
   });
 
   if (error) {
+    Sentry.captureException(new Error(error.message), { tags: { route: "schedules-run-due", stage: "enqueue" } });
+    console.error(JSON.stringify({ route: "schedules-run-due", stage: "enqueue", code: error.code ?? null }));
     return NextResponse.json(
       { error: "Could not enqueue scheduled scans." },
       { status: 500 },
     );
   }
 
+  // The RPC returns only the schedules it enqueued; schedules it skipped for budget are not reported back.
+  const enqueued = Array.isArray(data) ? data.length : 0;
+  console.info(JSON.stringify({ route: "schedules-run-due", enqueued }));
   return NextResponse.json({
-    enqueued: Array.isArray(data) ? data.length : 0,
+    enqueued,
     jobs: data ?? [],
   });
 }

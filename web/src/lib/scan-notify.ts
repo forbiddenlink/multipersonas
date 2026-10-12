@@ -1,4 +1,5 @@
 import "server-only";
+import * as Sentry from "@sentry/nextjs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { listAudits } from "@/lib/audits";
@@ -114,9 +115,15 @@ export async function notifyFinishedScans(
         result.sent += 1;
       } else {
         result.failed += 1;
+        // The provider error text names a status or a domain problem, never the recipient.
+        Sentry.captureMessage(`Scan result email failed: ${sent.error}`, {
+          level: "error",
+          tags: { route: "schedules-notify", stage: "send" },
+        });
         await deps.release(candidate);
       }
-    } catch {
+    } catch (error) {
+      Sentry.captureException(error, { tags: { route: "schedules-notify", stage: "candidate" } });
       result.failed += 1;
       if (claimed) await deps.release(candidate).catch(() => {});
     }

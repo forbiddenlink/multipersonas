@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { GRANT_RANK, PLANS, isPlanKey } from "@/lib/plans";
@@ -80,7 +81,9 @@ export async function POST(request: Request): Promise<Response> {
         await syncPaidPlan(stripe, userId, customerId);
       }
     }
-  } catch {
+  } catch (error) {
+    // Tag only the event type and id. Never attach the event object: it carries customer and billing data.
+    Sentry.captureException(error, { tags: { route: "stripe-webhook", event_type: event.type, event_id: event.id } });
     // Stripe must retry when the entitlement was not saved. Do not expose billing data.
     return new Response("Could not persist subscription access", { status: 500 });
   }

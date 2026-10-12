@@ -4,6 +4,8 @@ import path from "node:path";
 import { CALLS_PER_PERSONA } from "@/lib/limits";
 
 const mockRpc = vi.fn();
+const captureException = vi.fn();
+vi.mock("@sentry/nextjs", () => ({ captureException: (...a: unknown[]) => captureException(...a) }));
 
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: vi.fn(() => ({
@@ -72,6 +74,26 @@ describe("POST /api/schedules/run-due", () => {
       p_caller_cap: 250,
       p_calls_per_persona: CALLS_PER_PERSONA,
     });
+  });
+
+  it("captures and logs an RPC failure, then returns 500", async () => {
+    const rpcError = { message: "rpc down", code: "XX000" };
+    mockRpc.mockResolvedValue({ data: null, error: rpcError });
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = await POST(request());
+    expect(res.status).toBe(500);
+    expect(captureException).toHaveBeenCalledWith(expect.objectContaining({ message: "rpc down" }), {
+      tags: { route: "schedules-run-due", stage: "enqueue" },
+    });
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('"route":"schedules-run-due"'));
+    log.mockRestore();
+  });
+
+  it("logs a structured line with the enqueued count on success", async () => {
+    const log = vi.spyOn(console, "info").mockImplementation(() => {});
+    await POST(request());
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('"enqueued":1'));
+    log.mockRestore();
   });
 
   it("accepts Vercel's authenticated GET cron invocation", async () => {

@@ -17,6 +17,8 @@ vi.mock("stripe", () => ({
   },
 }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient }));
+const { captureException } = vi.hoisted(() => ({ captureException: vi.fn() }));
+vi.mock("@sentry/nextjs", () => ({ captureException }));
 
 import { POST } from "@/app/api/stripe/webhook/route";
 
@@ -219,5 +221,20 @@ describe("POST /api/stripe/webhook", () => {
     constructEvent.mockReturnValue({ type: "payment_intent.succeeded", data: { object: {} } });
     expect((await POST(request())).status).toBe(200);
     expect(update).not.toHaveBeenCalled();
+  });
+
+  it("keeps the 500 and captures a failed persist with event tags and no billing data", async () => {
+    constructEvent.mockReturnValue({
+      id: "evt_123",
+      type: "checkout.session.completed",
+      data: { object: { mode: "subscription", metadata, customer: "cus_secret", payment_status: "paid" } },
+    });
+    maybeSingle.mockResolvedValue({ data: null, error: { message: "boom" } });
+    expect((await POST(request())).status).toBe(500);
+    expect(captureException).toHaveBeenCalledOnce();
+    const [, hint] = captureException.mock.calls[0]!;
+    expect(hint).toEqual({ tags: { route: "stripe-webhook", event_type: "checkout.session.completed", event_id: "evt_123" } });
+    expect(JSON.stringify(captureException.mock.calls)).not.toContain("cus_secret");
+    expect(JSON.stringify(captureException.mock.calls)).not.toContain("user-1");
   });
 });

@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 
 vi.mock("server-only", () => ({}));
+const { captureMessage, captureException } = vi.hoisted(() => ({ captureMessage: vi.fn(), captureException: vi.fn() }));
+vi.mock("@sentry/nextjs", () => ({ captureMessage, captureException }));
 
 import { notifyFinishedScans, supabaseNotifyDeps, type NotifyDeps, type ScheduleCandidate } from "./scan-notify";
 
@@ -69,6 +71,25 @@ describe("notifyFinishedScans", () => {
     const d = deps({ send: vi.fn(async () => ({ ok: false as const, error: "Resend responded 500" })) });
     expect(await notifyFinishedScans(d)).toEqual({ sent: 0, skipped: 0, failed: 1 });
     expect(d.release).toHaveBeenCalledWith(candidate);
+  });
+
+  it("captures a failed send to Sentry without the recipient address", async () => {
+    captureMessage.mockClear();
+    const d = deps({ send: vi.fn(async () => ({ ok: false as const, error: "Resend responded 403" })) });
+    await notifyFinishedScans(d);
+    expect(captureMessage).toHaveBeenCalledWith("Scan result email failed: Resend responded 403", {
+      level: "error",
+      tags: { route: "schedules-notify", stage: "send" },
+    });
+    expect(JSON.stringify(captureMessage.mock.calls)).not.toContain("@");
+  });
+
+  it("captures a thrown error to Sentry and still counts it as failed", async () => {
+    captureException.mockClear();
+    const boom = new Error("db down");
+    const d = deps({ getJob: vi.fn(async () => { throw boom; }) });
+    expect(await notifyFinishedScans(d)).toEqual({ sent: 0, skipped: 0, failed: 1 });
+    expect(captureException).toHaveBeenCalledWith(boom, { tags: { route: "schedules-notify", stage: "candidate" } });
   });
 
   it("tells the owner when a scheduled scan failed", async () => {
