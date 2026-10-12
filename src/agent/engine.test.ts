@@ -415,3 +415,11 @@ describe("resolveModel", () => {
     expect(resolveModel({ PERSONAUDIT_MODEL: "" , MULTIPERSONAS_MODEL: "old" })).toBe("old");
   });
 });
+
+describe("engine fences browser error text (AIR-003)", () => {
+  const src = fs.readFileSync(path.join(process.cwd(), "src/agent/engine.ts"), "utf-8");
+  it("routes Playwright error messages through the untrusted fence", () => {
+    expect(src).toMatch(/Action failed[^\n]*\$\{fenceUntrusted\(/);
+    expect(src).not.toMatch(/`Action failed: \$\{errMsg\}`/);
+  });
+});
