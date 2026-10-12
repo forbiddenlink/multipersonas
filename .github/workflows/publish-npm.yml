@@ -1,0 +1,74 @@
+name: Publish to npm
+
+# Publishes the root `personaudit` package with a provenance attestation, so the npm
+# tarball is verifiably built from this repo by this workflow (npm shows the "Built and
+# signed on GitHub Actions" badge). Before this workflow existed, 0.1.0 was published from
+# a local machine and has no attestation.
+#
+# Triggers: publishing a GitHub release, or a manual run that types "publish".
+# Adding required reviewers to the `npm` environment gates both paths.
+#
+# Requires: repo secret NPM_TOKEN (automation token with publish rights on `personaudit`)
+# in an environment named `npm`. Bump `version` in package.json first; npm rejects a
+# version that already exists.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "publish" to confirm an npm publish of personaudit'
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-npm
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: ${{ github.event_name == 'release' || github.event.inputs.confirm == 'publish' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write # npm provenance (OIDC)
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          # No dependency cache in a release job: a poisoned cache could reach the tarball.
+          package-manager-cache: false
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm exec tsc --noEmit
+
+      - name: Type check (tests)
+        run: pnpm exec tsc --noEmit -p tsconfig.test.json
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Publish with provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
