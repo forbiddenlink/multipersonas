@@ -1,7 +1,7 @@
 import { launchAuditBrowser } from "../security/browser.js";
 import { AxeBuilder } from "@axe-core/playwright";
 import { assertUrlAllowed, isUrlAllowed, assertRequestAllowed } from "../security/url-guard.js";
-import { guardedRoute } from "../security/redirect-guard.js";
+import { guardedRoute, assertLandedUrlAllowed } from "../security/redirect-guard.js";
 import { computeGrade, MAX_RULE_EXAMPLES, type PageAxe, type Impact, type GradeReport, type GradeRuleHit } from "./score.js";
 import { SEVERITIES } from "../domain/vocab.js";
 
@@ -122,6 +122,7 @@ export async function gradeScan(
 
       try {
         const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
+        await assertLandedUrlAllowed(page, (u, t) => assertRequestAllowed(u, t));
         const documentUrl = new URL(page.url());
         documentUrl.hash = "";
         // Playwright resolves goto for HTTP errors. An error document is not

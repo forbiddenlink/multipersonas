@@ -37,7 +37,7 @@ import { runAxeScan, mergeAxeFindings } from "./axe-scan.js";
 import { formatKnownAxeForPage } from "./known-axe.js";
 import { parseAriaRef, ariaRefLocator } from "./aria-ref.js";
 import { neutralizeFenceTags, fenceUntrusted } from "../security/untrusted.js";
-import { guardedRoute } from "../security/redirect-guard.js";
+import { guardedRoute, assertLandedUrlAllowed } from "../security/redirect-guard.js";
 import {
   FINDING_CATEGORIES,
   SEVERITIES,
@@ -642,6 +642,7 @@ export async function executeAction(
         timeout: ACTION_TIMEOUT,
         waitUntil: "domcontentloaded",
       });
+      await assertLandedUrlAllowed(page, (u, t) => assertRequestAllowed(u, t, guard));
       return `Navigated to ${target}`;
     }
     case "report_finding": {
@@ -819,6 +820,7 @@ export async function runPersonaAgent(
 
     // Navigate to target
     await page.goto(safeUrl.href, { waitUntil: "domcontentloaded", timeout: 30_000 });
+    await assertLandedUrlAllowed(page, (u, t) => assertRequestAllowed(u, t, scope));
     pagesVisited.add(page.url());
     if (guard.runAxe !== false && isScannablePageUrl(page.url()))
       await scanState(page, 0);

@@ -2,7 +2,7 @@ import { launchAuditBrowser } from "../security/browser.js";
 import { runAxeScan, mergeAxeFindings } from "../agent/axe-scan.js";
 import type { Finding } from "../agent/engine.js";
 import { assertUrlAllowed, isUrlAllowed, assertRequestAllowed } from "../security/url-guard.js";
-import { guardedRoute } from "../security/redirect-guard.js";
+import { guardedRoute, assertLandedUrlAllowed } from "../security/redirect-guard.js";
 
 /**
  * Authenticated accessibility crawler — the product's spine.
@@ -75,6 +75,7 @@ export async function crawl(entryUrl: string, options: CrawlOptions = {}): Promi
 
       try {
         const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
+        await assertLandedUrlAllowed(page, (u, t) => assertRequestAllowed(u, t, { allowPrivate }));
         if (response && response.status() >= 400) {
           throw new Error(`HTTP ${response.status()}`);
         }

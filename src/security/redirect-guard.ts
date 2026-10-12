@@ -6,47 +6,64 @@ export type RequestVerdict = (url: string, resourceType: string) => Promise<bool
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 export const MAX_REDIRECT_HOPS = 10;
 
+function redirectTarget(status: number, headers: Record<string, string>, from: string): string | null | undefined {
+  // undefined: not a redirect. null: a redirect we cannot resolve (refuse it).
+  const location = headers["location"];
+  if (!REDIRECT_STATUSES.has(status) || !location) return undefined;
+  try {
+    return new URL(location, from).href;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Playwright's `context.route` handler runs only for the FIRST url of a request.
- * When the response is a redirect the browser follows it internally and the handler
- * never sees the target, so `public.example -> 302 -> http://169.254.169.254/` would
- * load unvetted. For GET/HEAD navigations we therefore walk the redirect chain
- * ourselves (no redirect following, one vetted hop at a time) BEFORE letting the
- * browser load it, and abort if any hop is disallowed.
+ * Chromium does not route the follow-up of a redirect we fulfill either (verified on
+ * Chromium 153 / Playwright 1.62.1), so `public.example -> 302 -> http://169.254.169.254/`
+ * would load unvetted. For GET/HEAD navigations the handler therefore fetches hop 1
+ * itself (route.fetch honors the launch proxy) and:
  *
- * Fails closed: a hop that cannot be fetched or a chain longer than
- * MAX_REDIRECT_HOPS is refused. Non-GET navigations (form POSTs) and subresources
- * are only checked at their first url; the egress proxy is the backstop there.
+ * - not a redirect: fulfills with that response. One network request in total.
+ * - a redirect: walks hops 2..n with fetch (no redirect following, private-network
+ *   rule only, MAX_REDIRECT_HOPS cap, fail closed), and if every hop is allowed
+ *   fulfills with hop 1's 3xx so Chromium follows it.
+ *
+ * Residual: hop 1 is requested once (magic-link and token URLs live there), but hops
+ * 2..n are requested twice, once by this walk and once by Chromium, because Chromium
+ * does not route the follow-up of a fulfilled 3xx. Form POSTs and subresources are only
+ * checked at their first url; assertLandedUrlAllowed and the egress proxy are the
+ * backstops there.
  */
-async function redirectChainAllowed(
-  route: Route,
-  request: Request,
-  isAllowed: RequestVerdict,
-): Promise<boolean> {
-  let url = request.url();
-  for (let hop = 0; hop <= MAX_REDIRECT_HOPS; hop++) {
-    let status: number;
-    let location: string | undefined;
-    try {
-      const response = await route.fetch({ url, maxRedirects: 0, timeout: 15_000 });
-      status = response.status();
-      location = response.headers()["location"];
-    } catch {
-      return false;
-    }
-    if (!REDIRECT_STATUSES.has(status) || !location) return true;
-    let next: string;
-    try {
-      next = new URL(location, url).href;
-    } catch {
-      return false;
-    }
+async function handleNavigation(route: Route, request: Request, isAllowed: RequestVerdict): Promise<void> {
+  let first;
+  try {
+    first = await route.fetch({ maxRedirects: 0, timeout: 15_000 });
+  } catch {
+    return route.abort("blockedbyclient");
+  }
+
+  let next = redirectTarget(first.status(), first.headers(), request.url());
+  if (next === undefined) return route.fulfill({ response: first });
+
+  for (let hop = 1; hop <= MAX_REDIRECT_HOPS; hop++) {
     // Not "document": hops get the private-network check only. The on-origin scope rule
     // applies to the page the agent asked for, and apex <-> www redirects are legitimate.
-    if (!(await isAllowed(next, "other"))) return false;
-    url = next;
+    if (next === null || !(await isAllowed(next, "other"))) return route.abort("blockedbyclient");
+    let status: number;
+    let headers: Record<string, string>;
+    try {
+      const response = await route.fetch({ url: next, maxRedirects: 0, timeout: 15_000 });
+      status = response.status();
+      headers = response.headers();
+    } catch {
+      return route.abort("blockedbyclient");
+    }
+    const after = redirectTarget(status, headers, next);
+    if (after === undefined) return route.fulfill({ response: first });
+    next = after;
   }
-  return false;
+  return route.abort("blockedbyclient");
 }
 
 /**
@@ -61,10 +78,23 @@ export function guardedRoute(isAllowed: RequestVerdict) {
     }
     const method = request.method();
     if (type === "document" && (method === "GET" || method === "HEAD")) {
-      if (!(await redirectChainAllowed(route, request, isAllowed))) {
-        return route.abort("blockedbyclient");
-      }
+      return handleNavigation(route, request, isAllowed);
     }
     return route.continue();
   };
+}
+
+/**
+ * Backstop for the cases guardedRoute cannot see (POST navigations, client-side
+ * redirects): after a navigation, the url the page ended on must pass the same
+ * private-network rule. Throws so callers treat it as a failed navigation.
+ */
+export async function assertLandedUrlAllowed(
+  page: { url(): string },
+  isAllowed: RequestVerdict,
+): Promise<void> {
+  const url = page.url();
+  if (!(await isAllowed(url, "other"))) {
+    throw new Error("Navigation ended on a disallowed address after a redirect.");
+  }
 }
