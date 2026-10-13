@@ -67,7 +67,7 @@ cd web && pnpm lint && pnpm exec tsc --noEmit && pnpm test && pnpm build
 - `scripts/` - `axe-dogfood.mjs`, `check-bundle-budget.mjs`, `check-prod-env.mjs`, `fixture-session.ts`, `prod-smoke.mjs`, `shot.mjs`, `test-docker-context.sh`, `walkthrough.mjs`.
 - `thoughts/` - `ledgers/` and `shared/` (continuity ledgers).
 - `AI/diagrams/` - architecture diagrams.
-- Root `railway.toml` builds `worker/Dockerfile` for the Railway worker service (no HTTP port; background process).
+- `.railway/railway.ts` (Railway Infrastructure as Code) builds `worker/Dockerfile` for the Railway worker service (no HTTP port; background process).
 - Vercel project `multipersonas` is linked at the repo root with `rootDirectory: web`.
 
 ## Conventions
@@ -114,7 +114,7 @@ Re-check `.env.example` directly (outside this sandbox) for the complete, curren
 - `--allow-private` (for scanning localhost targets) is CLI-only. The hosted service must never set it, because there the URL comes from a stranger.
 - No surface may claim hosted behind-login scanning until it ships; behind-login is CLI-only today (see `CONTEXT.md`).
 - The baseline/CI gate (`--baseline` / `--fail-on`) keys defects by a render-stable id so framework-generated element ids (e.g. `#mantine-…`) don't read as false regressions.
-- `railway.toml` lives at the repo ROOT (not in `worker/`) because the Docker build context is the repo root (the worker Dockerfile pulls in the root engine too).
-- The Railway worker's `startCommand` must point at `worker/entrypoint.sh` (which backgrounds smokescreen before exec'ing the worker) - overriding it skips the egress guard and silently falls back to an unguarded direct browser launch.
+- The Railway build uses the repo ROOT as Docker build context (not `worker/`) (the worker Dockerfile pulls in the root engine too).
+- The Railway worker's start command (`start:` in `.railway/railway.ts`) must point at `worker/entrypoint.sh` (which backgrounds smokescreen before exec'ing the worker) - overriding it skips the egress guard and silently falls back to an unguarded direct browser launch.
 - `web/` has its own `AGENTS.md` and `CLAUDE.md`; this file governs the repo root and the `src/`/`worker/`/shared-tooling layer, not `web/`-specific conventions.
 - Session artifacts (`.mpersonas-session.json`, saved via `mpersonas auth`) are credential-equivalent; `mpersonas run` refuses to use one if other users can read it.

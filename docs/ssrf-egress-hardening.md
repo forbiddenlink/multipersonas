@@ -48,7 +48,7 @@ BEFORE launch when `AUDIT_REQUIRE_EGRESS_PROXY=1` and the proxy var is unset/bla
 `golang:1.23-bookworm` build stage (`go install github.com/stripe/smokescreen@latest`); only
 the compiled binary crosses into the runtime image. `worker/entrypoint.sh` backgrounds it on
 `127.0.0.1:4750` with explicit deny ranges then execs the worker; the
-image `CMD` and `railway.toml`'s `startCommand` both point at it. Verified locally (built +
+image `CMD` and the Railway IaC start command (`.railway/railway.ts`) both point at it. Verified locally (built +
 ran the image): a request to `example.com` through the proxy returns `200`; a request to
 `169.254.169.254` returns `407` with `decision_reason: "Deny: Not Global Unicast"`.
 For reference, this is what shipped:

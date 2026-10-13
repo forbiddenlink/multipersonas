@@ -66,15 +66,15 @@ merge deploys like any other.
 ## Roll back the worker
 
 The worker runs on Railway as service `multipersonas-worker`, built from `worker/Dockerfile`
-via `railway.toml` (single replica, restart `on_failure`, max 10 retries).
+via `.railway/railway.ts` (single replica, restart `on_failure`, max 10 retries).
 
 1. Railway dashboard -> the service -> Deployments -> choose the previous successful
    deployment -> **Redeploy**. Or `railway redeploy` after `railway link`.
 2. Watch `railway logs` for smokescreen's `[INFO] starting` and then
    `[worker] started; polling every 3000ms`. If the egress proxy line is missing, the worker
    refuses to launch the browser (`AUDIT_REQUIRE_EGRESS_PROXY=1`), by design.
-3. Do not set the service's start command by hand. `railway.toml` must keep
-   `startCommand = "/usr/local/bin/entrypoint.sh"`, which starts smokescreen before the worker.
+3. Do not set the service's start command by hand. `.railway/railway.ts` must keep
+   `start: "/usr/local/bin/entrypoint.sh"`, which starts smokescreen before the worker.
 4. Do not roll back only the worker while saved-task jobs are queued: an older worker cannot
    process task snapshots or version 2 task checks (`docs/DEPLOYMENT.md`, "Saved project
    tasks rollout" and "September 23, 2026 release"). Pause admission first (kill switch).

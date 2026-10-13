@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 
 const dockerfile = readFileSync(new URL("../../worker/Dockerfile", import.meta.url), "utf8");
 const entrypoint = readFileSync(new URL("../../worker/entrypoint.sh", import.meta.url), "utf8");
-const railwayToml = readFileSync(new URL("../../railway.toml", import.meta.url), "utf8");
+const railwayIac = readFileSync(new URL("../../.railway/railway.ts", import.meta.url), "utf8");
 const browserSrc = readFileSync(new URL("./browser.ts", import.meta.url), "utf8");
 const requiredDenyRanges = [
   "0.0.0.0/8",
@@ -90,8 +90,8 @@ describe("smokescreen egress-guard wiring", () => {
     expect(entrypoint).toMatch(/exec pnpm --filter worker start/);
   });
 
-  it("railway.toml's startCommand points at the entrypoint, not a bare worker start", () => {
-    expect(railwayToml).toMatch(/startCommand\s*=\s*"\/usr\/local\/bin\/entrypoint\.sh"/);
+  it("the Railway IaC start command points at the entrypoint, not a bare worker start", () => {
+    expect(railwayIac).toMatch(/start:\s*"\/usr\/local\/bin\/entrypoint\.sh"/);
   });
 
   it("the app side still reads AUDIT_BROWSER_PROXY and can fail closed", () => {

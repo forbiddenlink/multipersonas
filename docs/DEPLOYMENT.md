@@ -114,10 +114,9 @@ that read that page choose where to go next. Public + anonymous is a hostile env
       A disposable local dump/restore passed on 2026-09-29 (14 application tables matched;
       11 SQL regressions passed after restore). This does not verify hosted backups,
       point-in-time recovery, or screenshot object-file recovery.
-- [ ] **Railway Config as Code migration.** `railway.toml` still works today, but Railway
-      has announced a 2026-12-01 cutoff. `railway config migrate` produced a sparse dry-run,
-      so review/apply the generated `.railway/railway.ts` before that date instead of
-      accepting the migration blindly.
+- [x] **Railway Config as Code migration.** Done 2026-10-13: `.railway/railway.ts` was
+      hand-written (the generated migration dropped builder, Dockerfile path and restart
+      policy), applied with `railway config apply`, and `railway.toml` removed.
 
 ## Founding checkout (ADR 0002 demand test)
 
@@ -364,7 +363,7 @@ recorded in `docs/plans/2026-09-18-continuation-review.md`.
 
 ## Deploying the worker to Railway
 
-Config is in `railway.toml` (root) — Dockerfile build from the repo root, background
+Config is in `.railway/railway.ts` (Infrastructure as Code; preview with `railway config plan`, apply with `railway config apply`) — Dockerfile build from the repo root, background
 service, no port. Steps (run from the repo root; the `railway` CLI is already
 authenticated):
 
