@@ -10,7 +10,8 @@ import { SeverityChip } from "@/components/forensic/severity-chip";
 import { WcagCitation } from "@/components/forensic/wcag-citation";
 import { buttonVariants } from "@/components/ui/button";
 import { JsonLd, faqSchema } from "@/components/json-ld";
-import { isFoundingCheckoutOpen } from "@/lib/founding-checkout";
+import { isFoundingCheckoutOpen, isSoloCheckoutOpen } from "@/lib/founding-checkout";
+import { PLANS } from "@/lib/plans";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/for-agencies" },
@@ -283,9 +284,14 @@ export default function ForAgenciesPage() {
               </p>
               <p className="mt-4 border-t border-border pt-4 text-sm leading-relaxed text-muted-foreground">
                 Unlimited client projects and white-label export are agency founding only.
-                Everything else on this page runs the same on Solo, one site at a time.{" "}
+                Everything else on this page runs the same on Solo, one site at a time.
+                Smaller shop?{" "}
+                <Link href="/pricing#solo" className="text-link">
+                  {isSoloCheckoutOpen() ? `Solo is $${PLANS.solo.monthlyUsd} a month` : "See the Solo plan"}
+                </Link>
+                , or{" "}
                 <Link href="/pricing" className="text-link">
-                  Compare plans
+                  compare plans
                 </Link>
                 .
               </p>
