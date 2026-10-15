@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { GradeEmailCapture } from "@/components/grade-email-field";
+import dynamic from "next/dynamic";
+
+// Shown only while a grade is still running, so it stays out of the result page's first load.
+const GradeEmailCapture = dynamic(
+  () => import("@/components/grade-email-field").then((m) => m.GradeEmailCapture),
+  { ssr: false },
+);
 
 /** Stop auto-refresh after this long. The worker's in-process cap is 5 minutes
  * and the reaper fires at 10; ten minutes of watching is past both, and matches

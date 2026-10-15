@@ -6,7 +6,10 @@ import path from "node:path";
 
 const projectDir = path.resolve(process.argv[2] || "web");
 const chunksDir = path.join(projectDir, ".next", "static", "chunks");
-const budgetKb = Number(process.env.BUNDLE_GZIP_BUDGET_KB || 750);
+// 760 since 2026-10-15: main measured 747.3 KB and the optional grade email capture adds
+// about 4 KB of chunks, its widget lazy-loaded so no page's first load grows. Raise this
+// again only with the same kind of note: what grew, and why first load did not.
+const budgetKb = Number(process.env.BUNDLE_GZIP_BUDGET_KB || 760);
 
 if (!Number.isFinite(budgetKb) || budgetKb <= 0) {
   console.error("BUNDLE_GZIP_BUDGET_KB must be a positive number");
