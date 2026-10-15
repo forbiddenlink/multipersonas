@@ -63,4 +63,12 @@ describe("CheckoutPlanWatcher", () => {
     expect(refresh).not.toHaveBeenCalled();
     expect(screen.getByRole("status")).toHaveTextContent("Your account has paid access.");
   });
+
+  it("shows next steps only once the plan is paid", () => {
+    render(<CheckoutPlanWatcher paid />);
+    expect(screen.getByRole("link", { name: /add a project/i })).toHaveAttribute("href", "/projects");
+    cleanup();
+    render(<CheckoutPlanWatcher paid={false} />);
+    expect(screen.queryByRole("link", { name: /add a project/i })).not.toBeInTheDocument();
+  });
 });

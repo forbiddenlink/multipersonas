@@ -2,6 +2,7 @@ import * as Sentry from "@sentry/nextjs";
 import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { GRANT_RANK, PLANS, isPlanKey } from "@/lib/plans";
+import { captureServerEvent } from "@/lib/analytics-server";
 
 export const runtime = "nodejs";
 
@@ -93,6 +94,10 @@ export async function POST(request: Request): Promise<Response> {
       const paymentComplete = session.payment_status === "paid" || session.payment_status === "no_payment_required";
       if (session.mode === "subscription" && paymentComplete && isPlanKey(session.metadata?.personaudit_plan) && userId && typeof session.customer === "string") {
         await syncPaidPlan(stripe, userId, session.customer);
+        // Revenue was invisible in PostHog: the browser never sees the payment land.
+        // Plan key only; no customer, email or amount. Stripe retries a delivery until it
+        // gets a 2xx, so count these by unique stripe_event_id, not raw event count.
+        await captureServerEvent(userId, "subscription_started", { plan: session.metadata?.personaudit_plan, stripe_event_id: event.id });
       }
     }
 
@@ -102,6 +107,9 @@ export async function POST(request: Request): Promise<Response> {
       if (isPlanKey(subscription.metadata.personaudit_plan) && userId) {
         const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
         await syncPaidPlan(stripe, userId, customerId);
+        if (event.type === "customer.subscription.deleted") {
+          await captureServerEvent(userId, "subscription_cancelled", { plan: subscription.metadata.personaudit_plan, stripe_event_id: event.id });
+        }
       }
     }
   } catch (error) {

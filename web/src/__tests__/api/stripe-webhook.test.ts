@@ -19,6 +19,8 @@ vi.mock("stripe", () => ({
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient }));
 const { captureException } = vi.hoisted(() => ({ captureException: vi.fn() }));
 vi.mock("@sentry/nextjs", () => ({ captureException }));
+const { captureServerEvent } = vi.hoisted(() => ({ captureServerEvent: vi.fn() }));
+vi.mock("@/lib/analytics-server", () => ({ captureServerEvent }));
 
 import { POST } from "@/app/api/stripe/webhook/route";
 
@@ -84,6 +86,30 @@ describe("POST /api/stripe/webhook", () => {
     expect(query.eq).toHaveBeenCalledWith("user_id", "user-1");
     expect(query.is).toHaveBeenCalledWith("session_id", null);
     expect(update).not.toHaveBeenCalled();
+  });
+
+  it("records a started subscription in analytics with the plan key and no billing data", async () => {
+    constructEvent.mockReturnValue({ id: "evt_1", type: "checkout.session.completed", data: { object: { mode: "subscription", metadata, customer: "cus_test", payment_status: "paid" } } });
+    expect((await POST(request())).status).toBe(200);
+    expect(captureServerEvent).toHaveBeenCalledWith("user-1", "subscription_started", { plan: "founding", stripe_event_id: "evt_1" });
+  });
+
+  it("records a cancellation only for a deleted subscription", async () => {
+    activeSubscriptions([]);
+    constructEvent.mockReturnValue({ id: "evt_2", type: "customer.subscription.deleted", data: { object: { metadata, customer: "cus_test" } } });
+    expect((await POST(request())).status).toBe(200);
+    expect(captureServerEvent).toHaveBeenCalledWith("user-1", "subscription_cancelled", { plan: "founding", stripe_event_id: "evt_2" });
+
+    captureServerEvent.mockClear();
+    constructEvent.mockReturnValue({ id: "evt_3", type: "customer.subscription.updated", data: { object: { metadata, customer: "cus_test" } } });
+    await POST(request());
+    expect(captureServerEvent).not.toHaveBeenCalled();
+  });
+
+  it("does not record a subscription for a checkout still awaiting payment", async () => {
+    checkoutEvent("checkout.session.completed", "unpaid");
+    await POST(request());
+    expect(captureServerEvent).not.toHaveBeenCalled();
   });
 
   it("rejects an invalid signature without accessing the database", async () => {

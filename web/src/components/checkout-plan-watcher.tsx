@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export const CHECKOUT_POLL_INTERVAL_MS = 4000;
@@ -51,8 +52,28 @@ export function CheckoutPlanWatcher({ paid }: { paid: boolean }) {
         : "Your plan has not been updated yet. Refresh this page shortly. If you completed payment and access is still missing, contact billing support below before trying another checkout.";
 
   return (
-    <p role="status" aria-live="polite" className="mt-3 text-sm text-muted-foreground">
-      {message}
-    </p>
+    <>
+      <p role="status" aria-live="polite" className="mt-3 text-sm text-muted-foreground">
+        {message}
+      </p>
+      {action === "done" ? (
+        <div className="mt-3 text-sm">
+          <p className="font-medium">Get the most out of it:</p>
+          <ol className="mt-1.5 list-decimal space-y-1 pl-5 text-muted-foreground">
+            <li>
+              <Link href="/projects" className="text-link">
+                Add a project for each site you look after
+              </Link>
+            </li>
+            <li>Turn on a weekly re-scan from the project page, so changes reach your inbox.</li>
+            <li>
+              <Link href="/dashboard" className="text-link">
+                Run a persona task-success check on a public flow
+              </Link>
+            </li>
+          </ol>
+        </div>
+      ) : null}
+    </>
   );
 }
