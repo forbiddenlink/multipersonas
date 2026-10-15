@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CI_GATE_WORKFLOW } from "@/lib/ci-gate-example";
 import Link from "next/link";
 import { MarketingShell } from "@/components/marketing-shell";
 import { JsonLd, articleSchema } from "@/components/json-ld";
@@ -89,45 +90,12 @@ export default function CiGateGuidePage() {
             examples/github-actions/accessibility-gate.yml
           </a>
           . It restores an optional session secret, scans{" "}
-          <code>vars.MPERSONAS_TARGET_URL</code>, gates on new critical/serious defects, and
+          <code>vars.PERSONAUDIT_TARGET_URL</code>, gates on new critical/serious defects, and
           uploads the Markdown report as a build artifact.
         </p>
         <ContentCodeBlock
           label="examples/github-actions/accessibility-gate.yml"
-          code={`name: Accessibility gate
-on: pull_request
-
-jobs:
-  a11y:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: npm install -g personaudit
-      - run: npx playwright install --with-deps chromium
-
-      # Session is optional: omit for a public site.
-      - name: Restore session
-        if: \${{ secrets.MPERSONAS_SESSION != '' }}
-        run: printf '%s' "$MPERSONAS_SESSION" > session.json && chmod 600 session.json
-        env:
-          MPERSONAS_SESSION: \${{ secrets.MPERSONAS_SESSION }}
-
-      - name: Scan and gate on new critical/serious defects
-        run: |
-          personaudit scan "\${{ vars.MPERSONAS_TARGET_URL }}" \\
-            \${{ secrets.MPERSONAS_SESSION != '' && '--session session.json' || '' }} \\
-            --baseline personaudit-baseline.json \\
-            --fail-on serious
-
-      - name: Upload report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: accessibility-report
-          path: personaudit-report/scan.md`}
+          code={CI_GATE_WORKFLOW}
         />
 
         <h2 id="honesty">What the gate is (and isn&apos;t)</h2>
