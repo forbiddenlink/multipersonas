@@ -104,17 +104,18 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Where scanners stop: the SauceDemo trail, state by state. ── */}
+        {/* ── Behind the login: the SauceDemo trail, state by state. ── */}
         <section id="behind" aria-labelledby="behind-heading" className="section-y scroll-mt-20">
           <div className="frame">
-            <ExhibitHead label="Where scanners stop" className="mb-6 md:mb-8" />
+            <ExhibitHead label="Behind the login" className="mb-6 md:mb-8" />
             <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-end">
               <h2 id="behind-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
-                The homepage passes. The bugs are behind the login.
+                Scan the signed-in states. Fail only on what is new.
               </h2>
               <p className="max-w-xl text-[1.0625rem] leading-relaxed text-muted-foreground lg:justify-self-end">
-                A scanner that takes one URL sees one page; your users see the whole flow. We ran
-                both on the SauceDemo test store. The public login page scanned clean. Three
+                A one-URL scan sees one page; your users see the whole flow. The free CLI logs in on
+                your machine, so the password never leaves it, and the CI gate fails only on new
+                defects. On the SauceDemo test store the public login page scanned clean. Three
                 critical defects were waiting in states that only exist after you sign in, add to
                 cart, or get something wrong.
               </p>
