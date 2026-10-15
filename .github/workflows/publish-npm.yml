@@ -64,11 +64,12 @@ jobs:
       - name: Type check (tests)
         run: pnpm exec tsc --noEmit -p tsconfig.test.json
 
-      - name: Test
-        run: pnpm test
-
+      # Build first, as ci.yml does: the worker tests import the built CLI from dist/.
       - name: Build
         run: pnpm build
+
+      - name: Test
+        run: pnpm test
 
       - name: Publish with provenance (trusted publishing)
         run: npm publish --provenance --access public
