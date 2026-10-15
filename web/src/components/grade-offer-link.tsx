@@ -14,17 +14,21 @@ import { trackProductEvent } from "@/lib/analytics";
  * people who arrived at /for-agencies cold.
  */
 export function GradeOfferLink({
+  href = "/for-agencies",
+  offer = "founding",
   className,
   children,
 }: {
+  href?: string;
+  offer?: "solo" | "founding";
   className?: string;
   children: ReactNode;
 }) {
   return (
     <Link
-      href="/for-agencies"
+      href={href}
       className={className}
-      onClick={() => trackProductEvent("grade_offer_clicked", { from: "grade_result" })}
+      onClick={() => trackProductEvent("grade_offer_clicked", { from: "grade_result", offer })}
     >
       {children}
     </Link>

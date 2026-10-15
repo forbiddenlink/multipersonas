@@ -103,8 +103,8 @@ export default async function DashboardPage() {
                 <Link href="/grade" className={btn}>
                   Run a free grade
                 </Link>
-                <Link href="/for-agencies#early-access" className="text-link text-sm">
-                  See founding access
+                <Link href="/pricing#solo" className="text-link text-sm">
+                  See the Solo plan
                 </Link>
               </div>
             </div>

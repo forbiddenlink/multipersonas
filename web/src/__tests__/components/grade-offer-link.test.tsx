@@ -30,6 +30,7 @@ describe("GradeOfferLink", () => {
 
     expect(trackProductEvent).toHaveBeenCalledWith("grade_offer_clicked", {
       from: "grade_result",
+      offer: "founding",
     });
   });
 });

@@ -32,8 +32,9 @@ describe("GradeNextSteps", () => {
       "href",
       "/guides/ci-accessibility-gate",
     );
-    // The result sheet carries no plan offer; pricing lives on its own page.
+    // No founding pre-order on the sheet, and no Solo offer while its checkout is closed.
     expect(screen.queryByRole("link", { name: "See founding access" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "See the Solo plan" })).not.toBeInTheDocument();
     expect(screen.getByText(/4 public pages only/)).toBeInTheDocument();
 
     fireEvent.click(save);
@@ -54,6 +55,40 @@ describe("GradeNextSteps", () => {
     );
     expect(screen.queryByRole("link", { name: "Save and track this site" })).not.toBeInTheDocument();
     expect(screen.getByText(/1 public page only/)).toBeInTheDocument();
+  });
+});
+
+describe("GradeNextSteps Solo offer", () => {
+  it("offers Solo only when its checkout is open, and measures the click", () => {
+    render(
+      <GradeNextSteps
+        signedIn={false}
+        pagesScanned={3}
+        entryUrl="https://example.com"
+        soloOpen
+        trialDays={14}
+      />,
+    );
+
+    const offer = screen.getByRole("link", { name: "See the Solo plan" });
+    expect(offer).toHaveAttribute("href", "/pricing#solo");
+    expect(screen.getByText(/\$39 a month, with a 14-day free trial/)).toBeInTheDocument();
+    // The free path stays the primary action.
+    expect(screen.getByRole("link", { name: "Save and track this site" })).toBeInTheDocument();
+
+    fireEvent.click(offer);
+    expect(trackProductEvent).toHaveBeenCalledWith("grade_offer_clicked", {
+      from: "grade_result",
+      offer: "solo",
+    });
+  });
+
+  it("omits the trial clause when no trial is configured", () => {
+    render(
+      <GradeNextSteps signedIn pagesScanned={1} entryUrl="https://example.com" soloOpen trialDays={0} />,
+    );
+    expect(screen.getByText(/\$39 a month\./)).toBeInTheDocument();
+    expect(screen.queryByText(/free trial/)).not.toBeInTheDocument();
   });
 });
 

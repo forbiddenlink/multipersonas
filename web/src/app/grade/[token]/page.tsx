@@ -22,6 +22,8 @@ import { displayPath } from "@/lib/format";
 import { RATE_LIMITS } from "@/lib/limits";
 import { EmptyPrompt } from "@/components/forensic/empty-prompt";
 import { createClient } from "@/lib/supabase/server";
+import { isSoloCheckoutOpen } from "@/lib/founding-checkout";
+import { trialPeriodDays } from "@/lib/plans";
 import type { GradeReport } from "@engine/grader/score";
 
 type GradeScanStatus = "queued" | "running" | "completed" | "failed";
@@ -325,6 +327,8 @@ function GradeReportView({
         signedIn={signedIn}
         pagesScanned={report.pagesScanned}
         entryUrl={entryUrl}
+        soloOpen={isSoloCheckoutOpen()}
+        trialDays={trialPeriodDays()}
       />
 
       {/* Embed badge + share link */}

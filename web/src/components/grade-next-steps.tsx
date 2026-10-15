@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { trackProductEvent } from "@/lib/analytics";
+import { GradeOfferLink } from "@/components/grade-offer-link";
 
 /**
  * The conversion cluster on a finished public grade.
@@ -16,10 +17,15 @@ export function GradeNextSteps({
   signedIn,
   pagesScanned,
   entryUrl,
+  soloOpen = false,
+  trialDays = 0,
 }: {
   signedIn: boolean;
   pagesScanned: number;
   entryUrl: string;
+  /** True only when the Solo Stripe price is configured; the offer is never shown for a closed plan. */
+  soloOpen?: boolean;
+  trialDays?: number;
 }) {
   const pageLabel = `${pagesScanned} public page${pagesScanned === 1 ? "" : "s"}`;
   const projectPath = `/projects?url=${encodeURIComponent(entryUrl)}`;
@@ -81,6 +87,25 @@ export function GradeNextSteps({
           </li>
         </ul>
       </div>
+      {soloOpen ? (
+        <div className="grade-print-hide border-t border-border pt-5">
+          <p className="max-w-lg font-medium leading-relaxed">
+            Keep this grade from slipping.{" "}
+            <span className="font-normal text-muted-foreground">
+              Solo re-scans this site on a schedule, emails you what changed, and shows which
+              findings are new, cleared, or still open. $39 a month
+              {trialDays > 0 ? `, with a ${trialDays}-day free trial` : ""}.
+            </span>
+          </p>
+          <GradeOfferLink
+            href="/pricing#solo"
+            offer="solo"
+            className={buttonVariants({ variant: "outline", size: "lg", className: "mt-4" })}
+          >
+            See the Solo plan
+          </GradeOfferLink>
+        </div>
+      ) : null}
       {!signedIn ? (
         <p className="redline-note grade-print-hide">
           Create an account and this grade lands on your dashboard. The CLI scans behind
