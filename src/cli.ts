@@ -207,7 +207,9 @@ program
     );
 
     console.log("");
-    console.log(`  Accessibility: ${groups.length} defects` +
+    // "Defect" means one rule on one element (the baseline and gate unit). This line counts
+    // rules, so it says rules: calling both "defects" printed 10 here and 19 on the gate line.
+    console.log(`  Accessibility: ${groups.length} failing rule${groups.length === 1 ? "" : "s"}` +
       chalk.dim(` (${groupSev("critical")} critical, ${groupSev("serious")} serious) across ${result.findings.length} elements`));
     if (result.skipped.length > 0) {
       console.log(chalk.yellow(`  Budget reached: ${result.skipped.length} more states not scanned (raise --max-pages)`));
@@ -222,11 +224,9 @@ program
     // --update-baseline: snapshot current defects, exit clean.
     if (options.updateBaseline) {
       const baselinePath = options.baseline ?? "./personaudit-baseline.json";
-      fs.writeFileSync(
-        baselinePath,
-        JSON.stringify(baselineFromFindings(result.findings, { url, createdAt: new Date().toISOString() }), null, 2),
-      );
-      console.log(chalk.green(`  Baseline written to ${baselinePath} (${groups.length} defects)`));
+      const snapshot = baselineFromFindings(result.findings, { url, createdAt: new Date().toISOString() });
+      fs.writeFileSync(baselinePath, JSON.stringify(snapshot, null, 2));
+      console.log(chalk.green(`  Baseline written to ${baselinePath} (${snapshot.keys.length} defects)`));
       console.log("");
       return;
     }
@@ -638,7 +638,7 @@ program
     const axeGroups = groupAxeByRule(result.axeFindings);
     const groupSev = (s: string) => axeGroups.filter((g) => g.severity === s).length;
     console.log(
-      `  Accessibility: ${axeGroups.length} defects` +
+      `  Accessibility: ${axeGroups.length} failing rule${axeGroups.length === 1 ? "" : "s"}` +
         chalk.dim(` (${groupSev("critical")} critical, ${groupSev("serious")} serious) across ${result.axeFindings.length} elements — axe-core`),
     );
     console.log(
