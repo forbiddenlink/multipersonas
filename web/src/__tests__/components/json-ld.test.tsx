@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { articleSchema } from "@/components/json-ld";
 
 describe("articleSchema", () => {
@@ -30,5 +30,22 @@ describe("articleSchema", () => {
         },
       },
     });
+  });
+});
+
+describe("articleSchema origin", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("follows siteOrigin() instead of a hardcoded host", () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://preview.example.test");
+    const schema = articleSchema({
+      headline: "h",
+      description: "d",
+      path: "/guides/x",
+      datePublished: "2026-08-03",
+      dateModified: "2026-08-18",
+    });
+    expect(schema.image).toBe("https://preview.example.test/opengraph-image");
+    expect(schema.mainEntityOfPage).toMatchObject({ "@id": "https://preview.example.test/guides/x" });
   });
 });

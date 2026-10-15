@@ -1,3 +1,5 @@
+import { siteOrigin } from "@/lib/site-url";
+
 /**
  * Render a JSON-LD structured-data block. Server component — emits a single
  * <script type="application/ld+json"> with the given object. Kept tiny and typed loosely
@@ -26,7 +28,7 @@ export function articleSchema(input: {
   datePublished: string;
   dateModified: string;
 }): Record<string, unknown> {
-  const siteUrl = "https://personaudit.com";
+  const siteUrl = siteOrigin();
   return {
     "@context": "https://schema.org",
     "@type": "Article",
