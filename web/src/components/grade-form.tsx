@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import { safeAnalyticsHost, trackProductEvent } from "@/lib/analytics";
+import { GradeEmailField } from "@/components/grade-email-field";
+import { normalizeGradeEmail } from "@/lib/grade-email";
 import { rememberGradeToken } from "@/lib/grade-tokens";
 import { normalizeGradeInput, prefillFromSearch } from "@/lib/grade-url";
 
@@ -36,6 +38,7 @@ export function GradeForm() {
   const errorId = `${inputId}-error`;
   const waitId = `${inputId}-wait`;
   const [url, setUrl] = useState("");
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -106,6 +109,14 @@ export function GradeForm() {
       return;
     }
 
+    // The box only exists when the server can send; blank means no email, which is the default.
+    const emailTrimmed = email.trim();
+    const emailNormalized = emailTrimmed ? normalizeGradeEmail(emailTrimmed) : null;
+    if (emailTrimmed && !emailNormalized) {
+      setError("Enter a valid email address, or leave that field blank.");
+      return;
+    }
+
     if (TURNSTILE_SITE_KEY && !turnstileToken) {
       setError("Please complete the verification below.");
       return;
@@ -125,11 +136,13 @@ export function GradeForm() {
         body: JSON.stringify({
           url: parsedUrl.toString(),
           turnstileToken: turnstileToken ?? undefined,
+          email: emailNormalized ?? undefined,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
         token?: string;
+        emailStatus?: string;
       };
 
       if (!res.ok) {
@@ -155,6 +168,13 @@ export function GradeForm() {
         target_host: safeAnalyticsHost(parsedUrl.toString()),
         turnstile_configured: Boolean(TURNSTILE_SITE_KEY),
       });
+      if (emailNormalized) {
+        // Surface and outcome only. The address never goes to analytics.
+        trackProductEvent("grade_email_requested", {
+          surface: "form",
+          outcome: data.emailStatus ?? "unknown",
+        });
+      }
       rememberGradeToken(token);
       router.push(`/grade/${token}`);
     } catch (err) {
@@ -226,6 +246,7 @@ export function GradeForm() {
         <p id={hintId} className="text-sm leading-relaxed text-muted-foreground">
           Up to 10 same-site public pages. Use the CLI for logged-in flows.
         </p>
+        <GradeEmailField value={email} onChange={setEmail} disabled={loading} />
         <p id={waitId} role="status" className="sr-only">
           {!turnstileReady
             ? showNeedsClick

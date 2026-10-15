@@ -10,6 +10,13 @@ vi.mock("@/lib/scan-notify", () => ({
   supabaseNotifyDeps: vi.fn(() => ({})),
 }));
 
+const sweep = vi.fn();
+vi.mock("@/lib/grade-email-notify", () => ({
+  sweepGradeEmails: (...args: unknown[]) => sweep(...args),
+  supabaseGradeEmailDeps: vi.fn(() => ({})),
+  gradeEmailRpc: (admin: unknown) => admin,
+}));
+
 describe("/api/schedules/notify", () => {
   let POST: (req: Request) => Promise<Response>;
 
@@ -20,6 +27,7 @@ describe("/api/schedules/notify", () => {
     vi.stubEnv("RESEND_API_KEY", "re_test");
     vi.stubEnv("SCAN_EMAIL_FROM", "Personaudit <scans@personaudit.com>");
     notify.mockResolvedValue({ sent: 1, skipped: 0, failed: 0 });
+    sweep.mockResolvedValue({ sent: 0, skipped: 0, failed: 0 });
     POST = (await import("@/app/api/schedules/notify/route")).POST;
   });
 
@@ -60,5 +68,21 @@ describe("/api/schedules/notify", () => {
     notify.mockRejectedValue(boom);
     expect((await POST(request())).status).toBe(500);
     expect(captureException).toHaveBeenCalledWith(boom, { tags: { route: "schedules-notify", stage: "run" } });
+  });
+
+  it("also sweeps pending grade emails, without changing its own result", async () => {
+    sweep.mockResolvedValue({ sent: 3, skipped: 0, failed: 1 });
+    const res = await POST(request());
+    expect(sweep).toHaveBeenCalledTimes(1);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ sent: 1, skipped: 0, failed: 0 });
+  });
+
+  it("a failing grade-email sweep is reported to Sentry and does not fail the scan notifications", async () => {
+    const boom = new Error("sweep down");
+    sweep.mockRejectedValue(boom);
+    const res = await POST(request());
+    expect(res.status).toBe(200);
+    expect(captureException).toHaveBeenCalledWith(boom, { tags: { route: "grade-notify", stage: "sweep" } });
   });
 });

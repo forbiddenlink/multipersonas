@@ -32,9 +32,13 @@ export function gradeStatusFromJob({
 // possession of it is the authorization. Returns null when the service key is unset.
 const TOKEN_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export function isGradeToken(token: unknown): token is string {
+  return typeof token === "string" && TOKEN_RE.test(token);
+}
+
 export async function getGraderScan(token: string) {
   // A malformed token can never match a row; Postgres would throw on the uuid cast.
-  if (!TOKEN_RE.test(token)) return null;
+  if (!isGradeToken(token)) return null;
   const admin = createAdminClient();
   if (!admin) return null;
   const { data, error } = await admin

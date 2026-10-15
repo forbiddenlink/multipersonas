@@ -45,7 +45,8 @@ describe("GradeForm", () => {
     });
 
     expect(screen.getByRole("alert")).toHaveTextContent("Use an http or https URL.");
-    expect(fetchMock).not.toHaveBeenCalled();
+    // The form asks /api/grade/email whether to show the optional field; it must not queue a grade.
+    expect(fetchMock).not.toHaveBeenCalledWith("/api/grade", expect.anything());
     expect(push).not.toHaveBeenCalled();
   });
 

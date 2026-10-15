@@ -7,6 +7,9 @@ import { killSwitchEnabled, positiveEnvInt, RATE_LIMITS } from "@/lib/limits";
 import { getClientIP } from "@/lib/client-ip";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { logAuditEvent } from "@/lib/audit-log";
+import { emailConfigured } from "@/lib/email";
+import { normalizeGradeEmail, type GradeEmailCaptureStatus } from "@/lib/grade-email";
+import { captureGradeEmail, gradeEmailRpc } from "@/lib/grade-email-notify";
 
 // Public accessibility grader: anonymous, axe-only, no model spend. Enqueues a
 // kind='grade' job onto the shared audit_jobs queue; the worker runs gradeScan and
@@ -22,7 +25,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { url?: string; turnstileToken?: string };
+  let body: { url?: string; turnstileToken?: string; email?: unknown };
   try {
     const parsed: unknown = await request.json();
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -46,6 +49,17 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Verification failed. Please refresh the page and try again." },
       { status: 403 },
+    );
+  }
+
+  // Optional "email me this grade". A malformed address is the visitor's typo, so say so
+  // before any quota is spent. A blank field is the normal case and changes nothing.
+  const wantsEmail = typeof body.email === "string" && body.email.trim() !== "";
+  const email = wantsEmail ? normalizeGradeEmail(body.email) : null;
+  if (wantsEmail && !email) {
+    return NextResponse.json(
+      { error: "Enter a valid email address, or leave that field blank." },
+      { status: 400 },
     );
   }
 
@@ -124,6 +138,16 @@ export async function POST(request: Request) {
     // The scan is already queued. Return its token even if optional account linking
     // fails; the browser can retain it and retry claiming it after sign-in.
     Sentry.captureException(error, { tags: { route: "grade", stage: "claim" } });
+  }
+
+  // The grade is already queued, so nothing below may fail it. The address goes to its own
+  // table through its own checked path and is never logged or put in the audit event.
+  if (email) {
+    let emailStatus: GradeEmailCaptureStatus = "unavailable";
+    if (emailConfigured()) {
+      emailStatus = await captureGradeEmail(gradeEmailRpc(admin), { token: scan.token, email, ip });
+    }
+    return NextResponse.json({ token: scan.token, emailStatus }, { status: 202 });
   }
 
   return NextResponse.json({ token: scan.token }, { status: 202 });

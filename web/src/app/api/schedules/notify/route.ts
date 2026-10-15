@@ -5,6 +5,7 @@ import { bearerMatches } from "@/lib/cron-auth";
 import { emailConfigured, sendEmail } from "@/lib/email";
 import { notifyFinishedScans, supabaseNotifyDeps } from "@/lib/scan-notify";
 import { siteOrigin } from "@/lib/site-url";
+import { gradeEmailRpc, supabaseGradeEmailDeps, sweepGradeEmails } from "@/lib/grade-email-notify";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,12 @@ async function notifyScheduledScans(request: Request) {
 
   try {
     const result = await notifyFinishedScans(supabaseNotifyDeps(admin, siteOrigin(), sendEmail));
+    // Backstop for "email me this grade" requests whose worker notification never arrived.
+    // It rides this daily cron so no extra cron slot is needed; it must never change this
+    // route's own result, so its outcome is not reported here (failures reach Sentry).
+    await sweepGradeEmails(supabaseGradeEmailDeps(gradeEmailRpc(admin), siteOrigin(), sendEmail)).catch((error) => {
+      Sentry.captureException(error, { tags: { route: "grade-notify", stage: "sweep" } });
+    });
     // Failed sends release their claim, so the next cron run retries them. A non-2xx here
     // does not change that; it makes the failure visible in the cron run history.
     return NextResponse.json(result, { status: result.failed > 0 ? 502 : 200 });

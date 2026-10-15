@@ -40,6 +40,12 @@ export default function PrivacyPage() {
           you can track them over time.
         </p>
         <p>
+          <strong>Optional grade email.</strong> If you enter an email address on a free grade,
+          we use it only to send you that one result email, then delete it (an address we could
+          not send to is deleted within 7 days); it is stored apart from the grade, and we never
+          send it to analytics or error reports.
+        </p>
+        <p>
           <strong>When you run an audit,</strong> we browse the URL you provide with automated
           browsers to inspect it. Persona runs can retain screenshots, visited URLs, actions,
           generated reasoning, and task-check results so you can replay the run. Screenshots
@@ -68,6 +74,7 @@ export default function PrivacyPage() {
             </a>
             .
           </li>
+          <li><strong>Resend</strong>: delivers the emails you ask for, such as a grade result or a scheduled scan summary.</li>
           <li><strong>Cloudflare Turnstile</strong>: abuse prevention when configured.</li>
           <li><strong>Vercel</strong>: web hosting and delivery.</li>
           <li><strong>Railway</strong>: the worker that runs browser audits.</li>

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/grade/route";
 
 const { rpc, countQuery, consumeRateLimit, getUser, update, updateEq, updateIs } = vi.hoisted(() => {
@@ -124,5 +124,92 @@ describe("POST /api/grade — transactional rate limit", () => {
     }));
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ error: "Could not queue the grade." });
+  });
+});
+
+describe("POST /api/grade: optional email capture", () => {
+  const post = (body: Record<string, unknown>) =>
+    POST(new Request("http://localhost/api/grade", { method: "POST", body: JSON.stringify({ url: "https://example.invalid", ...body }) }));
+  const emailCalls = () => rpc.mock.calls.filter(([fn]) => fn === "request_grade_email");
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubEnv("RESEND_API_KEY", "re_test");
+    vi.stubEnv("SCAN_EMAIL_FROM", "Personaudit <grades@personaudit.com>");
+    getUser.mockResolvedValue({ data: { user: null } });
+    rpc.mockImplementation(async (fn: string) =>
+      fn === "enqueue_grade_scan"
+        ? { data: [{ job_id: "job-1", token: "scan-1", status: "queued" }], error: null }
+        : { data: "saved", error: null });
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("needs no email: the free grade queues exactly as before", async () => {
+    const response = await post({});
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ token: "scan-1" });
+    expect(emailCalls()).toHaveLength(0);
+  });
+
+  it("treats a blank field as no email", async () => {
+    const response = await post({ email: "   " });
+    expect(await response.json()).toEqual({ token: "scan-1" });
+    expect(emailCalls()).toHaveLength(0);
+  });
+
+  it("rejects a malformed address before queueing or spending any quota", async () => {
+    const response = await post({ email: "not-an-address" });
+    expect(response.status).toBe(400);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("stores the address against the new token, after the grade is queued", async () => {
+    const response = await post({ email: "Visitor@Example.com" });
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ token: "scan-1", emailStatus: "saved" });
+    expect(rpc.mock.calls[0]![0]).toBe("enqueue_grade_scan");
+    expect(emailCalls()).toHaveLength(1);
+    expect(emailCalls()[0]![1]).toMatchObject({ p_token: "scan-1", p_email: "visitor@example.com" });
+  });
+
+  it("never puts the address in the enqueue call or the response", async () => {
+    const response = await post({ email: "visitor@example.com" });
+    const enqueue = rpc.mock.calls.find(([fn]) => fn === "enqueue_grade_scan")!;
+    expect(JSON.stringify(enqueue)).not.toContain("visitor");
+    expect(JSON.stringify(await response.json())).not.toContain("visitor");
+  });
+
+  it("still queues the grade when the email cannot be stored", async () => {
+    rpc.mockImplementation(async (fn: string) =>
+      fn === "enqueue_grade_scan"
+        ? { data: [{ job_id: "job-1", token: "scan-1", status: "queued" }], error: null }
+        : { data: null, error: { code: "PGRST202", message: "Could not find the function" } });
+    const response = await post({ email: "visitor@example.com" });
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ token: "scan-1", emailStatus: "unavailable" });
+  });
+
+  it("reports a cap hit but still queues the grade", async () => {
+    rpc.mockImplementation(async (fn: string) =>
+      fn === "enqueue_grade_scan"
+        ? { data: [{ job_id: "job-1", token: "scan-1", status: "queued" }], error: null }
+        : { data: "rate_limited", error: null });
+    const response = await post({ email: "visitor@example.com" });
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ token: "scan-1", emailStatus: "rate_limited" });
+  });
+
+  it("ignores the email when mail is not configured (fail closed)", async () => {
+    vi.stubEnv("RESEND_API_KEY", "");
+    const response = await post({ email: "visitor@example.com" });
+    expect(await response.json()).toEqual({ token: "scan-1", emailStatus: "unavailable" });
+    expect(emailCalls()).toHaveLength(0);
+  });
+
+  it("does not store an address when the queue is busy (no grade exists to email about)", async () => {
+    rpc.mockImplementation(async () => ({ data: [{ status: "busy", job_id: null, token: null }], error: null }));
+    const response = await post({ email: "visitor@example.com" });
+    expect(response.status).toBe(429);
+    expect(emailCalls()).toHaveLength(0);
   });
 });
