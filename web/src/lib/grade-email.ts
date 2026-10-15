@@ -49,17 +49,25 @@ export type GradeEmailCaptureStatus =
   | "rate_limited"
   | "unavailable";
 
+/** Providers documented to deliver "name+tag" to "name". Elsewhere "+" can be a literal character. */
+const PLUS_ALIAS_DOMAINS = new Set([
+  "gmail.com", "googlemail.com", "outlook.com", "hotmail.com", "live.com",
+  "icloud.com", "me.com", "fastmail.com", "proton.me", "protonmail.com",
+]);
+
 /**
  * The mailbox an address really delivers to, used ONLY as the quota identity so aliases of
- * one inbox share one bucket. Strips a "+tag" everywhere; on Gmail also strips dots and folds
- * googlemail.com into gmail.com. The submitted address is still what mail is sent to.
+ * one inbox share one bucket. Strips a "+tag" only on providers known to treat it as an
+ * alias (folding it on other domains would merge unrelated mailboxes into one quota); on
+ * Gmail also strips dots and folds googlemail.com into gmail.com. The submitted address is
+ * still what mail is sent to.
  */
 export function canonicalMailbox(email: string): string {
   const at = email.lastIndexOf("@");
   let local = email.slice(0, at);
   let domain = email.slice(at + 1);
   const plus = local.indexOf("+");
-  if (plus > 0) local = local.slice(0, plus);
+  if (plus > 0 && PLUS_ALIAS_DOMAINS.has(domain)) local = local.slice(0, plus);
   if (domain === "googlemail.com") domain = "gmail.com";
   if (domain === "gmail.com") local = local.replace(/\./g, "");
   return `${local}@${domain}`;

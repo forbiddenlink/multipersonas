@@ -107,8 +107,9 @@ describe("canonicalMailbox (quota identity, not delivery address)", () => {
     expect(rk.size).toBe(1);
   });
 
-  it("strips +tags on any domain but keeps dots outside Gmail", () => {
-    expect(canonicalMailbox("a.b+news@example.com")).toBe("a.b@example.com");
+  it("strips +tags only on providers that treat them as aliases, and keeps dots outside Gmail", () => {
+    expect(canonicalMailbox("a.b+news@outlook.com")).toBe("a.b@outlook.com");
+    expect(canonicalMailbox("a.b+news@example.com")).toBe("a.b+news@example.com");
     expect(canonicalMailbox("a.b@example.com")).not.toBe(canonicalMailbox("ab@example.com"));
   });
 

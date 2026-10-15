@@ -110,7 +110,10 @@ export type GradeEmailOutcome = "sent" | "skipped" | "failed";
  * in the database, a failed send releases it for a retry, and Resend's idempotency key stops
  * a duplicate if a send landed but the release did not.
  */
-export async function sendGradeEmail(deps: GradeEmailDeps, token: string): Promise<GradeEmailOutcome> {
+export async function sendGradeEmail(deps: GradeEmailDeps, rawToken: string): Promise<GradeEmailOutcome> {
+  // One spelling everywhere: the idempotency key is derived from the token, and a caller may
+  // pass an uppercase UUID while the sweep reads the lowercase one from the database.
+  const token = rawToken.toLowerCase();
   const to = await deps.claim(token);
   if (!to) return "skipped";
 

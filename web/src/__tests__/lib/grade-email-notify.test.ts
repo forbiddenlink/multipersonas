@@ -142,6 +142,16 @@ describe("retry window", () => {
     expect(a).toEqual(b);
     expect(a!.idempotencyKey).toContain(TOKEN);
   });
+
+  it("keys an uppercase token the same as the lowercase one the sweep reads", async () => {
+    const { deps } = fakeStore();
+    vi.mocked(deps.send).mockResolvedValueOnce({ ok: false, error: "ack lost" });
+    const lower = "abcdef12-3456-4789-8abc-def012345678";
+    await sendGradeEmail(deps, lower.toUpperCase());
+    await sendGradeEmail(deps, lower);
+    const [a, b] = vi.mocked(deps.send).mock.calls.map(([m]) => m);
+    expect(a).toEqual(b);
+  });
 });
 
 describe("sweepGradeEmails", () => {
