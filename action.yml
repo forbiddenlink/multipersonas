@@ -1,5 +1,5 @@
 name: "Personaudit accessibility gate"
-description: "Keyless accessibility CI gate: fail the build only on NEW axe-core defects versus a committed baseline. No API key, no external service."
+description: "Keyless accessibility CI gate: fails only on NEW axe-core defects versus a committed baseline. No API key needed."
 author: "Elizabeth Stein"
 branding:
   icon: "check-circle"
