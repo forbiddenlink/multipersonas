@@ -213,15 +213,7 @@ export function GradeForm() {
             loading={loading}
             aria-disabled={!turnstileReady || undefined}
             aria-describedby={!turnstileReady ? waitId : undefined}
-            onClick={
-              !turnstileReady
-                ? (e) => {
-                    e.preventDefault();
-                    // A stalled check must never leave a dead button: pressing it retries.
-                    if (showStalled) retryChallenge();
-                  }
-                : undefined
-            }
+            onClick={!turnstileReady ? (e) => e.preventDefault() : undefined}
             className="h-12 shrink-0 px-6 aria-disabled:cursor-wait"
           >
             {!loading && !turnstileReady && !showStalled && !showNeedsClick ? <WaitSpinner /> : null}
@@ -229,9 +221,7 @@ export function GradeForm() {
               ? "Queuing grade"
               : !turnstileReady && !showStalled && !showNeedsClick
                 ? "Checking you\u2019re human\u2026"
-                : showStalled
-                  ? "Retry the human check"
-                  : "Grade this site"}
+                : "Grade this site"}
           </Button>
         </div>
         <p id={hintId} className="text-sm leading-relaxed text-muted-foreground">

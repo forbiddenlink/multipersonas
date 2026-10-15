@@ -142,7 +142,7 @@ describe("GradeForm while the human check is pending", () => {
 
     expect(await screen.findByText(/human check did not finish/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /read the sample report/i })).toHaveAttribute("href", "/sample-report");
-    expect(screen.getAllByRole("button", { name: "Retry the human check" }).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByRole("button", { name: "Retry the human check" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /checking you.re human/i })).not.toBeInTheDocument();
   });
 });
