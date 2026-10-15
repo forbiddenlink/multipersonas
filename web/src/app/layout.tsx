@@ -4,6 +4,7 @@ import { PALETTE, PALETTE_DARK } from "@/lib/og-palette";
 import { PostHogProvider } from "@/components/posthog-provider";
 import "./globals.css";
 import { siteOrigin } from "@/lib/site-url";
+import { PLANS } from "@/lib/plans";
 
 // Sans — UI, copy, CTAs. Plex reads as a technical document, not a SaaS default.
 const plexSans = IBM_Plex_Sans({
@@ -55,14 +56,20 @@ export const viewport: Viewport = {
   ],
 };
 
-// Honest structured data — identity only, no fabricated price/rating.
+// Honest structured data: identity plus the published plan prices (same constants the
+// pricing page and checkout use). No fabricated rating.
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   name: "Personaudit",
   applicationCategory: "DeveloperApplication",
   operatingSystem: "Web, macOS, Linux, Windows",
-  url: "https://personaudit.com",
+  url: siteOrigin(),
+  offers: [
+    { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD" },
+    { "@type": "Offer", name: "Solo", price: String(PLANS.solo.monthlyUsd), priceCurrency: "USD" },
+    { "@type": "Offer", name: "Agency", price: String(PLANS.founding.monthlyUsd), priceCurrency: "USD" },
+  ],
   description:
     "An accessibility scanner: a free public grade from axe-core, and a local CLI that runs axe-core at every state a signed-in crawl reaches (behind-login scanning runs locally with the CLI, not on the hosted site). Automated findings, plus UX personas that measure task success. Not a disability simulator.",
 };
