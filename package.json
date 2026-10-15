@@ -1,6 +1,6 @@
 {
   "name": "personaudit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Accessibility scanning that crawls behind a login and runs axe-core at every state it reaches. Keyless CI gate.",
   "type": "module",
   "main": "./dist/agent/orchestrator.js",
