@@ -726,7 +726,7 @@ export default async function AuditDetailPage({
                   </div>
                   <div>
                     <p className="text-lg font-semibold tabular-nums text-foreground">{persona.maxFrustration}</p>
-                    <p>friction</p>
+                    <p>effort</p>
                   </div>
                 </div>
               </Link>

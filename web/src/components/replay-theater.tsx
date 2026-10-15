@@ -310,7 +310,7 @@ export function ReplayTheater({
 
           {!taskCheck && <div>
             <p className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
-              inferred frustration
+              task effort
             </p>
             <div className="mt-1 flex items-center gap-2">
               <span className="font-mono text-sm tabular-nums" style={{ color: band.token }}>

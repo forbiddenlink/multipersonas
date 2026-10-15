@@ -24,6 +24,6 @@ it.each(["denied", "unavailable"])("reports clipboard %s with manual link copy g
 it("shows a task observation without a fabricated frustration score", () => {
   render(<ReplayTheater journeys={journeys} personaMeta={{}} findingsByUrl={{}} taskCheck />);
   expect(screen.getByText("text observed")).toBeInTheDocument();
-  expect(screen.queryByText("inferred frustration")).not.toBeInTheDocument();
+  expect(screen.queryByText("task effort")).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Jump to step 1, finish" })).toBeInTheDocument();
 });

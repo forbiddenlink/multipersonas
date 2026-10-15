@@ -91,4 +91,10 @@ describe("frustrationBand", () => {
     expect(frustrationBand(60).band).toBe("struggling");
     expect(frustrationBand(90).band).toBe("blocked");
   });
+
+  it("shows neutral task-state labels, never emotional ones", () => {
+    const labels = [10, 40, 60, 90].map((n) => frustrationBand(n).label);
+    expect(labels).toEqual(["on track", "slowing", "retrying", "goal not reached"]);
+    for (const l of labels) expect(l).not.toMatch(/calm|struggl|frustrat|blocked/i);
+  });
 });

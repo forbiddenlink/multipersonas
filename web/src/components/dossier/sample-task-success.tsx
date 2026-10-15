@@ -171,11 +171,11 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
               </p>
             </div>
 
-            {/* Inferred Frustration Gauge */}
+            {/* Task effort gauge */}
             <div className="border-t border-border pt-3">
               <div className="flex items-center justify-between text-xs font-mono">
                 <span className="text-muted-foreground uppercase tracking-wider text-xs">
-                  Inferred friction
+                  Task effort
                 </span>
                 <span className="font-bold tabular-nums" style={{ color: band.token }}>
                   {frame.frustration} / 100 ({band.label})

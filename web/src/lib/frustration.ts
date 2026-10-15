@@ -71,15 +71,16 @@ export function frustrationSeries(
 
 export type FrustrationBand = "calm" | "friction" | "struggling" | "blocked";
 
-/** Bucket a score into a labeled band. Colors reuse the verified-AA severity ramp as a
+/** Bucket a score into a labeled band. Labels are neutral task-state terms (what the walk did),
+ * never a claim about how a person felt; keys stay internal.  Colors reuse the verified-AA severity ramp as a
  * heat scale — this is a persona-side signal, so it is never rendered as a SeverityChip. */
 export function frustrationBand(score: number): {
   band: FrustrationBand;
   label: string;
   token: string;
 } {
-  if (score < 25) return { band: "calm", label: "calm", token: "var(--muted-foreground)" };
-  if (score < 50) return { band: "friction", label: "friction", token: "var(--severity-moderate)" };
-  if (score < 75) return { band: "struggling", label: "struggling", token: "var(--severity-serious)" };
-  return { band: "blocked", label: "blocked", token: "var(--severity-critical)" };
+  if (score < 25) return { band: "calm", label: "on track", token: "var(--muted-foreground)" };
+  if (score < 50) return { band: "friction", label: "slowing", token: "var(--severity-moderate)" };
+  if (score < 75) return { band: "struggling", label: "retrying", token: "var(--severity-serious)" };
+  return { band: "blocked", label: "goal not reached", token: "var(--severity-critical)" };
 }

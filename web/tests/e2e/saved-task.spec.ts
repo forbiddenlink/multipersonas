@@ -112,7 +112,7 @@ test("save a task, record a keyboard barrier, fix it, and compare the retest", a
     await expect(page.getByText(/Expected text observed in 1 of 1 profiles; previously 0 of 1/)).toBeVisible();
     await page.getByRole("link", { name: "View evidence", exact: true }).click();
     await expect(page.getByText(/observed: expected visible text/).first()).toBeVisible();
-    await expect(page.getByText("inferred frustration", { exact: false })).toHaveCount(0);
+    await expect(page.getByText("task effort", { exact: false })).toHaveCount(0);
     await page.goto(`/audits/${runIds[1]}/report`);
     await expect(page.getByText(task.goal, { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Task tested", exact: true })).toBeVisible();
