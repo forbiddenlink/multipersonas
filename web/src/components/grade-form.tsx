@@ -250,7 +250,7 @@ export function GradeForm() {
         </dl>
         {showNeedsClick && (
           <p className="text-sm text-foreground">
-            One more step: tick the \u201cVerify you are human\u201d box below, then press Grade.
+            One more step: tick the “Verify you are human” box below, then press Grade.
           </p>
         )}
         {showStalled && (
