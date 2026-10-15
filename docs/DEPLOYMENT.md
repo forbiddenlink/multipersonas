@@ -288,6 +288,11 @@ Expected production env names (presence only; never print values):
   `AUDIT_BROWSER_PROXY`, `AUDIT_REQUIRE_EGRESS_PROXY`, and optional
   `WORKER_ALERT_WEBHOOK`, `WORKER_POLL_MS`, `WORKER_JOB_TIMEOUT_SECONDS`,
   `WORKER_REAP_AFTER_SECONDS`, `WORKER_MAX_ATTEMPTS`.
+- Railway worker, optional "email me this grade" notification: `GRADE_NOTIFY_URL` (the web
+  origin, for example `https://personaudit.com`) and `CRON_SECRET` (same value as on Vercel).
+  Unset means the worker does not call the web app and the daily sweep delivers instead.
+  The web app also needs `RESEND_API_KEY` and `SCAN_EMAIL_FROM`, and migration
+  `20261016090000_grade_email_requests` applied; without either the field stays hidden.
 - Optional spend and abuse controls on Vercel (`web/src/lib/limits.ts`):
   `AUDIT_DAILY_CALL_CAP` (global daily model-call ceiling, default 5000),
   `AUDIT_CALLER_DAILY_CALL_CAP` (per-caller ceiling, default 250), and `AUDIT_KILL_SWITCH`

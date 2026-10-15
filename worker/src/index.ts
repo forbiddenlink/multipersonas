@@ -8,6 +8,7 @@ import { type TestResult } from "personaudit/orchestrator";
 import type { gradeScan } from "personaudit/grader";
 import { runJobProcess, ScanCleanupError } from "./job-process.js";
 import { isIntervalDue, positiveEnvInt } from "./config.js";
+import { notifyGradeFinished } from "./grade-notify.js";
 import { persistGradeResult, saveHistoryRun, withRunId, writeJobState } from "./job-write.js";
 import { createWorkerClient } from "./database.js";
 import { clampFindingCategory, clampSeverity } from "personaudit/domain/vocab";
@@ -366,6 +367,7 @@ async function claimAndRun(): Promise<boolean> {
       await persistGradeResult(supabase, claimed.id, result);
       await logWorkerEvent(claimed, "audit_job.completed", { pagesVisited: result.pagesVisited.length });
       console.log(`[worker] graded ${claimed.id}`);
+      await notifyGradeFinished(supabase, claimed.id);
     } catch (e) {
       if (e instanceof ScanCleanupError) throw e;
       const detail = e instanceof Error ? e.message : "Unknown error";
@@ -382,6 +384,7 @@ async function claimAndRun(): Promise<boolean> {
       Sentry.captureException(e, { tags: { jobId: claimed.id, kind: "grade" } });
       console.error(`[worker] grade failed ${claimed.id}: ${detail}`);
       await notify(`grade ${claimed.id} failed: ${detail}`);
+      await notifyGradeFinished(supabase, claimed.id);
     }
     return true; // grade jobs reserve no spend — no releaseReservation needed
   }
