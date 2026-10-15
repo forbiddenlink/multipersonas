@@ -12,7 +12,9 @@
 -- The row stays as a tombstone so a second request for the same grade is refused (one email
 -- per grade). A hard TTL deletes every row, tombstone or not, after 7 days; the request
 -- function refuses grades older than 1 day, so a deleted tombstone cannot be re-used.
--- A row whose send failed three times has its address nulled without being sent.
+-- A row whose send failed three times, or whose first attempt is older than 23 hours, has its
+-- address nulled without being sent: Resend dedupes retries for 24 hours only, so no automatic
+-- retry may happen after that or a send that landed could be sent twice.
 
 create table if not exists public.grade_email_requests (
   token uuid primary key references public.grader_scans(token) on delete cascade,
@@ -20,6 +22,7 @@ create table if not exists public.grade_email_requests (
   created_at timestamptz not null default now(),
   claimed_at timestamptz,
   sent_at timestamptz,
+  first_attempt_at timestamptz,
   attempts int not null default 0
 );
 
@@ -106,9 +109,25 @@ begin
 end;
 $$;
 
+-- The status the result page shows: the job's status when there is one, else the scan's.
+-- (web/src/lib/grade.ts gradeStatusFromJob.) The worker writes grader_scans before audit_jobs,
+-- and the stale-job reaper marks only audit_jobs failed, so neither row alone is the truth.
+create or replace function public.grade_effective_status(p_token uuid)
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(j.status, s.status)
+  from public.grader_scans s
+  left join public.audit_jobs j on j.id = s.job_id
+  where s.token = p_token;
+$$;
+
 -- Claim the address for one send attempt. Returns the address, or NULL when there is nothing
 -- to send: no request, already sent, grade not finished, another attempt in flight (10 minute
--- lease), or three attempts used (in which case the address is nulled).
+-- lease), or retries exhausted (three attempts, or 23 hours since the first; the address is nulled).
 create or replace function public.claim_grade_email(p_token uuid)
 returns text
 language plpgsql
@@ -120,26 +139,26 @@ declare
 begin
   update public.grade_email_requests
     set email = null
-    where token = p_token and email is not null and sent_at is null and attempts >= 3;
+    where token = p_token and email is not null and sent_at is null
+      and (attempts >= 3 or first_attempt_at < now() - interval '23 hours');
 
   update public.grade_email_requests r
-    set claimed_at = now(), attempts = r.attempts + 1
+    set claimed_at = now(), attempts = r.attempts + 1,
+        first_attempt_at = coalesce(r.first_attempt_at, now())
     where r.token = p_token
       and r.email is not null
       and r.sent_at is null
       and r.attempts < 3
       and (r.claimed_at is null or r.claimed_at < now() - interval '10 minutes')
-      and exists (
-        select 1 from public.grader_scans s
-        where s.token = r.token and s.status in ('completed', 'failed')
-      )
+      and public.grade_effective_status(r.token) in ('completed', 'failed')
     returning r.email into v_email;
   return v_email;
 end;
 $$;
 
--- Record the outcome of a claimed attempt. On success the address is erased.
-create or replace function public.finish_grade_email(p_token uuid, p_sent boolean)
+-- Record the outcome of a claimed attempt. On success the address is erased. p_refund gives the
+-- attempt back (the grade turned out not to be ready), so it does not count toward the limits.
+create or replace function public.finish_grade_email(p_token uuid, p_sent boolean, p_refund boolean default false)
 returns void
 language plpgsql
 security definer
@@ -149,6 +168,12 @@ begin
   if p_sent then
     update public.grade_email_requests
       set email = null, sent_at = now(), claimed_at = null
+      where token = p_token;
+  elsif p_refund then
+    update public.grade_email_requests
+      set claimed_at = null,
+          attempts = greatest(attempts - 1, 0),
+          first_attempt_at = case when attempts <= 1 then null else first_attempt_at end
       where token = p_token;
   else
     update public.grade_email_requests
@@ -168,10 +193,11 @@ set search_path = public
 as $$
   select r.token
   from public.grade_email_requests r
-  join public.grader_scans s on s.token = r.token
   where r.email is not null
     and r.sent_at is null
-    and s.status in ('completed', 'failed')
+    and r.attempts < 3
+    and (r.first_attempt_at is null or r.first_attempt_at > now() - interval '23 hours')
+    and public.grade_effective_status(r.token) in ('completed', 'failed')
     and (r.claimed_at is null or r.claimed_at < now() - interval '10 minutes')
   order by r.created_at
   limit greatest(1, least(coalesce(p_limit, 25), 100));
@@ -180,10 +206,12 @@ $$;
 revoke all on function public.prune_grade_email_requests() from public, anon, authenticated;
 revoke all on function public.request_grade_email(uuid, text, text, int, text, int, int) from public, anon, authenticated;
 revoke all on function public.claim_grade_email(uuid) from public, anon, authenticated;
-revoke all on function public.finish_grade_email(uuid, boolean) from public, anon, authenticated;
+revoke all on function public.grade_effective_status(uuid) from public, anon, authenticated;
+revoke all on function public.finish_grade_email(uuid, boolean, boolean) from public, anon, authenticated;
 revoke all on function public.pending_grade_email_tokens(int) from public, anon, authenticated;
 grant execute on function public.prune_grade_email_requests() to service_role;
 grant execute on function public.request_grade_email(uuid, text, text, int, text, int, int) to service_role;
 grant execute on function public.claim_grade_email(uuid) to service_role;
-grant execute on function public.finish_grade_email(uuid, boolean) to service_role;
+grant execute on function public.grade_effective_status(uuid) to service_role;
+grant execute on function public.finish_grade_email(uuid, boolean, boolean) to service_role;
 grant execute on function public.pending_grade_email_tokens(int) to service_role;

@@ -7,6 +7,8 @@ declare
   v_token2 uuid;
   v_status text;
   v_claimed text;
+  v_token3 uuid;
+  v_job3 uuid;
 begin
   -- Boundary: only the service role may touch the table or call the functions.
   if has_table_privilege('anon', 'public.grade_email_requests', 'select')
@@ -65,6 +67,7 @@ begin
 
   -- Finish the grade: exactly one claim wins, the second is refused while leased.
   update public.grader_scans set status = 'completed' where token = v_token;
+  update public.audit_jobs set status = 'completed' where id = (select job_id from public.grader_scans where token = v_token);
   if public.claim_grade_email(v_token) is distinct from 'a@example.com' then
     raise exception 'a finished grade must be claimable';
   end if;
@@ -93,6 +96,7 @@ begin
 
   -- Three failed attempts null the address without sending.
   update public.grader_scans set status = 'failed' where token = v_token2;
+  update public.audit_jobs set status = 'failed' where id = (select job_id from public.grader_scans where token = v_token2);
   delete from public.rate_limits where key in ('ip:t', 'to:a');
   perform public.request_grade_email(v_token2, 'd@example.com', 'ip:t', 5, 'to:d', 3, 86400);
   for i in 1..3 loop
@@ -104,6 +108,53 @@ begin
   end if;
   if (select email from public.grade_email_requests where token = v_token2) is not null then
     raise exception 'after three attempts the address must be dropped';
+  end if;
+
+  -- Reaper dead-letter: only audit_jobs is failed, the scan row stays running. Must still notify.
+  select token, job_id into v_token3, v_job3 from public.enqueue_grade_scan('https://example.invalid/e3', 'grade:email-test-a', 25, 100, 600);
+  perform public.request_grade_email(v_token3, 'e@example.com', 'ip:e', 5, 'to:e', 3, 86400);
+  update public.grader_scans set status = 'running' where token = v_token3;
+  update public.audit_jobs set status = 'running' where id = v_job3;
+  if public.claim_grade_email(v_token3) is not null then raise exception 'running grade must not be claimable'; end if;
+  update public.audit_jobs set status = 'failed' where id = v_job3;
+  if not exists (select 1 from public.pending_grade_email_tokens(10) where token = v_token3) then
+    raise exception 'a reaper-failed job must show up in the sweep';
+  end if;
+  if public.claim_grade_email(v_token3) is distinct from 'e@example.com' then
+    raise exception 'a job failed by the reaper must be claimable';
+  end if;
+  perform public.finish_grade_email(v_token3, false);
+
+  -- Completion race: scan row already completed, job row not yet. Not ready.
+  update public.grader_scans set status = 'completed' where token = v_token3;
+  update public.audit_jobs set status = 'running' where id = v_job3;
+  if public.claim_grade_email(v_token3) is not null then
+    raise exception 'scan completed but job still running must not be claimable';
+  end if;
+  if exists (select 1 from public.pending_grade_email_tokens(10) where token = v_token3) then
+    raise exception 'the sweep must use the same status source';
+  end if;
+  update public.audit_jobs set status = 'completed' where id = v_job3;
+
+  -- A refund gives the attempt back and clears the 23 hour clock if it was the only attempt.
+  update public.grade_email_requests set attempts = 0, first_attempt_at = null, claimed_at = null where token = v_token3;
+  perform public.claim_grade_email(v_token3);
+  perform public.finish_grade_email(v_token3, false, true);
+  if (select attempts from public.grade_email_requests where token = v_token3) <> 0
+     or (select first_attempt_at from public.grade_email_requests where token = v_token3) is not null then
+    raise exception 'a refund must restore attempts and the first-attempt clock';
+  end if;
+
+  -- 23 hour retry window: no automatic retry after Resend's idempotency window can lapse.
+  perform public.claim_grade_email(v_token3);
+  perform public.finish_grade_email(v_token3, false);
+  update public.grade_email_requests set first_attempt_at = now() - interval '24 hours' where token = v_token3;
+  if exists (select 1 from public.pending_grade_email_tokens(10) where token = v_token3) then
+    raise exception 'the sweep must not retry after 23 hours';
+  end if;
+  if public.claim_grade_email(v_token3) is not null then raise exception 'no claim after 23 hours'; end if;
+  if (select email from public.grade_email_requests where token = v_token3) is not null then
+    raise exception 'the address must be dropped once the retry window closes';
   end if;
 
   -- Hard TTL

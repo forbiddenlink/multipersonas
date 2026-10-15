@@ -21,7 +21,7 @@ const ADDRESS = "visitor@example.com";
 
 function fakeStore() {
   // Models the database contract: one address, leased on claim, erased on a successful finish.
-  const state = { email: ADDRESS as string | null, sent: false, leased: false, finished: [] as boolean[] };
+  const state = { email: ADDRESS as string | null, sent: false, leased: false, finished: [] as boolean[], refunded: false };
   const deps: GradeEmailDeps = {
     origin: "https://personaudit.com",
     async claim() {
@@ -29,15 +29,16 @@ function fakeStore() {
       state.leased = true;
       return state.email;
     },
-    async finish(_t, sent) {
+    async finish(_t, sent, options) {
       state.finished.push(sent);
+      state.refunded = options?.refund === true;
       state.leased = false;
       if (sent) {
         state.sent = true;
         state.email = null;
       }
     },
-    getScan: vi.fn(async () => ({ entryUrl: "https://example.com/", letter: "B" as string | null })),
+    getScan: vi.fn(async () => ({ entryUrl: "https://example.com/", letter: "B" as string | null, terminal: true })),
     send: vi.fn(async () => ({ ok: true as const })),
   };
   return { state, deps };
@@ -103,7 +104,7 @@ describe("sendGradeEmail", () => {
 
   it("emails a failed grade as a failure notice with no letter", async () => {
     const { deps } = fakeStore();
-    vi.mocked(deps.getScan).mockResolvedValueOnce({ entryUrl: "https://example.com/", letter: null });
+    vi.mocked(deps.getScan).mockResolvedValueOnce({ entryUrl: "https://example.com/", letter: null, terminal: true });
     await sendGradeEmail(deps, TOKEN);
     expect(vi.mocked(deps.send).mock.calls[0]![0].subject).toBe("We could not finish grading example.com");
   });
@@ -114,6 +115,32 @@ describe("sendGradeEmail", () => {
     expect(await sendGradeEmail(deps, TOKEN)).toBe("skipped");
     expect(deps.send).not.toHaveBeenCalled();
     expect(state.finished).toEqual([false]);
+  });
+});
+
+describe("completion race", () => {
+  it("does not send a failure notice, or consume the claim, while the grade is still running", async () => {
+    const { state, deps } = fakeStore();
+    vi.mocked(deps.getScan).mockResolvedValueOnce({ entryUrl: "https://example.com/", letter: null, terminal: false });
+    expect(await sendGradeEmail(deps, TOKEN)).toBe("skipped");
+    expect(deps.send).not.toHaveBeenCalled();
+    expect(state.email).toBe(ADDRESS);
+    expect(state.refunded).toBe(true);
+    expect(state.leased).toBe(false);
+    // Once it is really done, it sends.
+    expect(await sendGradeEmail(deps, TOKEN)).toBe("sent");
+  });
+});
+
+describe("retry window", () => {
+  it("sends an identical payload on every retry, keyed by the grade token", async () => {
+    const { deps } = fakeStore();
+    vi.mocked(deps.send).mockResolvedValueOnce({ ok: false, error: "Resend responded 500" });
+    await sendGradeEmail(deps, TOKEN);
+    await sendGradeEmail(deps, TOKEN);
+    const [a, b] = vi.mocked(deps.send).mock.calls.map(([m]) => m);
+    expect(a).toEqual(b);
+    expect(a!.idempotencyKey).toContain(TOKEN);
   });
 });
 

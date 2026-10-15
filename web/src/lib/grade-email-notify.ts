@@ -4,6 +4,7 @@ import * as Sentry from "@sentry/nextjs";
 import { buildGradeEmail } from "@/lib/grade-email-template";
 import {
   GRADE_EMAIL_LIMITS,
+  canonicalMailbox,
   type GradeEmailCaptureStatus,
 } from "@/lib/grade-email";
 import type { OutgoingEmail } from "@/lib/email";
@@ -37,9 +38,9 @@ export function isMissingMigration(error: { code?: string; message: string } | n
   return /could not find the (function|table)|does not exist/i.test(error.message);
 }
 
-/** Hash for the per-recipient cap, so rate_limits never stores the address itself. */
+/** Hash of the canonical mailbox for the per-recipient cap: aliases share a bucket and rate_limits never stores the address. */
 export function recipientKey(email: string): string {
-  return `gradeemail:to:${createHash("sha256").update(email).digest("hex")}`;
+  return `gradeemail:to:${createHash("sha256").update(canonicalMailbox(email)).digest("hex")}`;
 }
 
 const CAPTURE_STATUSES = new Set(["saved", "exists", "not_found", "expired", "rate_limited"]);
@@ -95,8 +96,10 @@ export interface GradeEmailDeps {
   /** The address, or null when there is nothing to send (none, sent, unfinished, leased). */
   claim(token: string): Promise<string | null>;
   /** Record the attempt. `sent: true` erases the address. */
-  finish(token: string, sent: boolean): Promise<void>;
-  getScan(token: string): Promise<{ entryUrl: string; letter: string | null } | null>;
+  /** `refund` gives the attempt back (the grade was not actually ready). */
+  finish(token: string, sent: boolean, options?: { refund?: boolean }): Promise<void>;
+  /** `terminal` is true only for an explicitly completed (letter set) or failed grade. */
+  getScan(token: string): Promise<{ entryUrl: string; letter: string | null; terminal: boolean } | null>;
   send(message: OutgoingEmail): Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
@@ -115,6 +118,12 @@ export async function sendGradeEmail(deps: GradeEmailDeps, token: string): Promi
     const scan = await deps.getScan(token);
     if (!scan) {
       await deps.finish(token, false);
+      return "skipped";
+    }
+    if (!scan.terminal) {
+      // Not finished as far as the readers of the result can tell (the worker writes the scan
+      // row before the job row). Give the attempt back; the next notify or sweep sends it.
+      await deps.finish(token, false, { refund: true });
       return "skipped";
     }
     const body = buildGradeEmail({
@@ -178,17 +187,21 @@ export function supabaseGradeEmailDeps(
       }
       return typeof data === "string" && data ? data : null;
     },
-    async finish(token, sent) {
-      const { error } = await db.rpc("finish_grade_email", { p_token: token, p_sent: sent });
+    async finish(token, sent, options) {
+      const { error } = await db.rpc("finish_grade_email", {
+        p_token: token,
+        p_sent: sent,
+        p_refund: options?.refund === true,
+      });
       if (error) throw new Error(error.message);
     },
     async getScan(token) {
       const scan = await getGraderScan(token);
       if (!scan) return null;
+      if (scan.status === "failed") return { entryUrl: scan.entry_url, letter: null, terminal: true };
+      // Anything but an explicit completed WITH a readable letter is "not ready", never a failure.
       const letter = scan.status === "completed" ? gradeLetterFromReport(scan.report as Json | null) : null;
-      // A "completed" grade with no readable letter must not go out as a failure notice.
-      if (scan.status === "completed" && !letter) return null;
-      return { entryUrl: scan.entry_url, letter };
+      return { entryUrl: scan.entry_url, letter, terminal: Boolean(letter) };
     },
     async listPending(limit) {
       const { data, error } = await db.rpc("pending_grade_email_tokens", { p_limit: limit });

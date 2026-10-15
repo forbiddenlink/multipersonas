@@ -48,3 +48,19 @@ export type GradeEmailCaptureStatus =
   | "expired"
   | "rate_limited"
   | "unavailable";
+
+/**
+ * The mailbox an address really delivers to, used ONLY as the quota identity so aliases of
+ * one inbox share one bucket. Strips a "+tag" everywhere; on Gmail also strips dots and folds
+ * googlemail.com into gmail.com. The submitted address is still what mail is sent to.
+ */
+export function canonicalMailbox(email: string): string {
+  const at = email.lastIndexOf("@");
+  let local = email.slice(0, at);
+  let domain = email.slice(at + 1);
+  const plus = local.indexOf("+");
+  if (plus > 0) local = local.slice(0, plus);
+  if (domain === "googlemail.com") domain = "gmail.com";
+  if (domain === "gmail.com") local = local.replace(/\./g, "");
+  return `${local}@${domain}`;
+}

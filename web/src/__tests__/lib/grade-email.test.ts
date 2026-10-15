@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GRADE_EMAIL_LIMITS, normalizeGradeEmail } from "@/lib/grade-email";
+import { GRADE_EMAIL_LIMITS, canonicalMailbox, normalizeGradeEmail } from "@/lib/grade-email";
 import { buildGradeEmail } from "@/lib/grade-email-template";
 import { recipientKey } from "@/lib/grade-email-notify";
 
@@ -95,5 +95,25 @@ describe("buildGradeEmail", () => {
   it("tells the truth about retention", () => {
     const mail = buildGradeEmail({ host: "example.com", letter: "A", permalink });
     expect(mail.text).toMatch(/deleted your address/);
+  });
+});
+
+describe("canonicalMailbox (quota identity, not delivery address)", () => {
+  it("collapses Gmail dots, +tags and googlemail.com into one mailbox", () => {
+    const variants = ["victim@gmail.com", "v.i.c.t.i.m@gmail.com", "victim+a@gmail.com", "vic.tim+zz@googlemail.com", "Victim@GMAIL.com"];
+    const keys = new Set(variants.map((v) => canonicalMailbox(normalizeGradeEmail(v)!)));
+    expect([...keys]).toEqual(["victim@gmail.com"]);
+    const rk = new Set(variants.map((v) => recipientKey(normalizeGradeEmail(v)!)));
+    expect(rk.size).toBe(1);
+  });
+
+  it("strips +tags on any domain but keeps dots outside Gmail", () => {
+    expect(canonicalMailbox("a.b+news@example.com")).toBe("a.b@example.com");
+    expect(canonicalMailbox("a.b@example.com")).not.toBe(canonicalMailbox("ab@example.com"));
+  });
+
+  it("keeps distinct mailboxes distinct and never changes the delivery address", () => {
+    expect(canonicalMailbox("one@gmail.com")).not.toBe(canonicalMailbox("two@gmail.com"));
+    expect(normalizeGradeEmail("V.ict+im@gmail.com")).toBe("v.ict+im@gmail.com");
   });
 });
