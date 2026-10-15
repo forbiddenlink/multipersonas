@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
@@ -212,7 +213,15 @@ export function GradeForm() {
             loading={loading}
             aria-disabled={!turnstileReady || undefined}
             aria-describedby={!turnstileReady ? waitId : undefined}
-            onClick={!turnstileReady ? (e) => e.preventDefault() : undefined}
+            onClick={
+              !turnstileReady
+                ? (e) => {
+                    e.preventDefault();
+                    // A stalled check must never leave a dead button: pressing it retries.
+                    if (showStalled) retryChallenge();
+                  }
+                : undefined
+            }
             className="h-12 shrink-0 px-6 aria-disabled:cursor-wait"
           >
             {!loading && !turnstileReady && !showStalled && !showNeedsClick ? <WaitSpinner /> : null}
@@ -220,7 +229,9 @@ export function GradeForm() {
               ? "Queuing grade"
               : !turnstileReady && !showStalled && !showNeedsClick
                 ? "Checking you\u2019re human\u2026"
-                : "Grade this site"}
+                : showStalled
+                  ? "Retry the human check"
+                  : "Grade this site"}
           </Button>
         </div>
         <p id={hintId} className="text-sm leading-relaxed text-muted-foreground">
@@ -250,14 +261,16 @@ export function GradeForm() {
         </dl>
         {showNeedsClick && (
           <p className="text-sm text-foreground">
-            One more step: tick the \u201cVerify you are human\u201d box below, then press Grade.
+            One more step: tick the “Verify you are human” box below, then press Grade.
           </p>
         )}
         {showStalled && (
           <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--redline)]">
             <p>
               <span aria-hidden="true" className="font-mono">■ </span>
-              The human check did not finish. If it keeps failing, turn off script blockers for this page.
+              The human check did not finish. Ad blockers and some privacy settings stop it from
+              loading. Turn them off for this page and retry, or{" "}
+              <Link href="/sample-report" className="text-link">read the sample report</Link> instead.
             </p>
             <button
               type="button"

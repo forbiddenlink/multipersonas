@@ -123,4 +123,26 @@ describe("GradeForm while the human check is pending", () => {
       /unlocks once the human check/i,
     );
   });
+
+  it("offers a retry button and the sample report when the check errors", async () => {
+    vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "test-site-key");
+    vi.resetModules();
+    vi.doMock("@marsidev/react-turnstile", async () => {
+      const React = await import("react");
+      return {
+        Turnstile: ({ onError }: { onError?: () => void }) => {
+          React.useEffect(() => onError?.(), [onError]);
+          return null;
+        },
+      };
+    });
+    const { GradeForm: FailedForm } = await import("@/components/grade-form");
+    render(<FailedForm />);
+    fireEvent.focus(screen.getByLabelText("Public website URL"));
+
+    expect(await screen.findByText(/human check did not finish/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /read the sample report/i })).toHaveAttribute("href", "/sample-report");
+    expect(screen.getAllByRole("button", { name: "Retry the human check" }).length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByRole("button", { name: /checking you.re human/i })).not.toBeInTheDocument();
+  });
 });
