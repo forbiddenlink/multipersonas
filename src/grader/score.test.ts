@@ -204,3 +204,52 @@ describe("computeGrade needs-review count", () => {
     expect(computeGrade([{ url: "a", ...base, incompleteNodes: 0 }]).needsReview).toBe(0);
   });
 });
+
+describe("computeGrade severity cap", () => {
+  const rule = (impact: "critical" | "serious" | "moderate", wcagAA = true): GradeRuleHit => ({
+    id: `${impact}-rule`, impact, nodes: 1, help: "h", wcagAA,
+  });
+  const clean = (url: string): PageAxe => ({ url, violationsByImpact: { ...emptyImpacts }, passCount: 200, wcagAAViolations: 0, rules: [] });
+
+  it("holds a site with a critical WCAG failure at C even when the score is in the A band (W3C bad demo)", () => {
+    const pages = [
+      ...Array.from({ length: 9 }, (_, i) => clean(`p${i}`)),
+      { url: "bad", violationsByImpact: { ...emptyImpacts, critical: 1 }, passCount: 200, wcagAAViolations: 1, rules: [rule("critical")] },
+    ];
+    const r = computeGrade(pages);
+    expect(r.score).toBeGreaterThanOrEqual(95);
+    expect(r.grade).toBe("C");
+    expect(r.cappedBy).toEqual({ impact: "critical", maxGrade: "C" });
+  });
+
+  it("holds a serious WCAG failure at B", () => {
+    const r = computeGrade([
+      { url: "a", violationsByImpact: { ...emptyImpacts, serious: 1 }, passCount: 400, wcagAAViolations: 1, rules: [rule("serious")] },
+    ]);
+    expect(r.grade).toBe("B");
+    expect(r.cappedBy?.impact).toBe("serious");
+  });
+
+  it("never raises a letter the score already put lower", () => {
+    const r = computeGrade([
+      { url: "a", violationsByImpact: { ...emptyImpacts, critical: 10 }, passCount: 10, wcagAAViolations: 10, rules: [{ ...rule("critical"), nodes: 10 }] },
+    ]);
+    expect(r.grade).toBe("F");
+    expect(r.cappedBy).toBeUndefined();
+  });
+
+  it("does not cap for best-practice rules or moderate WCAG failures", () => {
+    const r = computeGrade([
+      { url: "a", violationsByImpact: { ...emptyImpacts, critical: 1, moderate: 1 }, passCount: 400, wcagAAViolations: 1, rules: [rule("critical", false), rule("moderate")] },
+    ]);
+    expect(r.grade).toBe("A");
+    expect(r.cappedBy).toBeUndefined();
+  });
+
+  it("caps older pages without rule data from their WCAG counts", () => {
+    const r = computeGrade([
+      { url: "a", violationsByImpact: { ...emptyImpacts, critical: 1 }, passCount: 400, wcagAAViolations: 1 },
+    ]);
+    expect(r.grade).toBe("C");
+  });
+});

@@ -39,8 +39,9 @@ export function GradeCoverSheet({
           </h2>
           <p className="mt-2 max-w-xl text-[1.0625rem] leading-relaxed">
             The letter summarizes how many automated axe-core checks passed on the pages reached,
-            with each WCAG A/AA failure weighted by severity. It is a count of what a tool could
-            detect, not a finding about the whole site.
+            with each WCAG A/AA failure weighted by severity. A critical failure holds it at C
+            or below, a serious one at B or below. It is a count of what a tool could detect, not
+            a finding about the whole site.
           </p>
           <ul className="mt-4 space-y-2">
             {outcomes.map((o) => (

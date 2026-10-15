@@ -66,6 +66,16 @@ export function GradeMethodDisclosure({ report }: { report: GradeReport }) {
               </li>
             ))}
           </ul>
+          <p className="mt-2 max-w-2xl text-muted-foreground">
+            A failure axe rates critical holds the letter at C or below, and a serious one at B or
+            below, whatever the score: one blocked user is not averaged away by clean pages.
+          </p>
+          {report.cappedBy ? (
+            <p className="redline-note mt-2">
+              The score alone earns a higher letter. This grade is held at {report.cappedBy.maxGrade}{" "}
+              because at least one {report.cappedBy.impact} WCAG A/AA failure was found.
+            </p>
+          ) : null}
         </div>
       </div>
     </details>

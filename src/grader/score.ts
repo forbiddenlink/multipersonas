@@ -95,6 +95,11 @@ export interface GradeReport {
   needsReview?: number;
   /** "wcag-a-aa" when only WCAG A/AA findings drove the score. Absent on older reports. */
   scoring?: "wcag-a-aa";
+  /**
+   * Set when a WCAG A/AA failure held the letter below what the score alone earns.
+   * Absent on reports stored before the cap, and when nothing capped the letter.
+   */
+  cappedBy?: { impact: Impact; maxGrade: GradeReport["grade"] };
   perPage: { url: string; score: number; violations: number; wcagViolations?: number }[];
   /** Aggregated rule hits, most nodes first. Empty on older stored reports. */
   rules: GradeRuleHit[];
@@ -112,6 +117,43 @@ export const GRADE_BANDS: readonly { grade: GradeReport["grade"]; min: number }[
 
 function bandFor(score: number): GradeReport["grade"] {
   return GRADE_BANDS.find((b) => score >= b.min)?.grade ?? "F";
+}
+
+/**
+ * The best letter a site can hold while it has a WCAG A/AA failure of that severity.
+ * The score is a ratio over every passed check, so one broken page among many clean
+ * ones still averages into the A band: the W3C "bad" demo graded A 98 with three
+ * critical failures. An A must not sit next to a failure axe rates as blocking a user,
+ * so the severity of the worst failure bounds the letter. The score itself is unchanged.
+ */
+export const SEVERITY_CAPS: readonly { impact: Impact; maxGrade: GradeReport["grade"] }[] = [
+  { impact: "critical", maxGrade: "C" },
+  { impact: "serious", maxGrade: "B" },
+];
+
+const LETTERS: GradeReport["grade"][] = ["A", "B", "C", "D", "F"];
+
+/** Impacts with at least one WCAG A/AA failure, read the same way the weight is. */
+function wcagImpactsPresent(pages: PageAxe[]): Set<Impact> {
+  const present = new Set<Impact>();
+  for (const p of pages) {
+    if (p.rules) {
+      for (const r of p.rules) if (r.wcagAA && r.nodes > 0) present.add(r.impact);
+    } else if (p.wcagAAViolations > 0) {
+      for (const i of IMPACTS) if (p.violationsByImpact[i] > 0) present.add(i);
+    }
+  }
+  return present;
+}
+
+function applyCap(
+  band: GradeReport["grade"],
+  pages: PageAxe[],
+): { grade: GradeReport["grade"]; cappedBy?: GradeReport["cappedBy"] } {
+  const present = wcagImpactsPresent(pages);
+  const cap = SEVERITY_CAPS.find((c) => present.has(c.impact));
+  if (!cap || LETTERS.indexOf(band) >= LETTERS.indexOf(cap.maxGrade)) return { grade: band };
+  return { grade: cap.maxGrade, cappedBy: cap };
 }
 
 /**
@@ -216,8 +258,10 @@ export function computeGrade(pages: PageAxe[]): GradeReport {
 
   const recorded = pages.filter((p) => typeof p.incompleteNodes === "number");
 
+  const { grade, cappedBy } = applyCap(bandFor(score), pages);
+
   return {
-    grade: bandFor(score),
+    grade,
     score,
     pagesScanned: pages.length,
     totalViolations,
@@ -228,6 +272,7 @@ export function computeGrade(pages: PageAxe[]): GradeReport {
       ? { needsReview: recorded.reduce((n, p) => n + (p.incompleteNodes ?? 0), 0) }
       : {}),
     scoring: "wcag-a-aa",
+    ...(cappedBy ? { cappedBy } : {}),
     perPage,
     rules,
   };

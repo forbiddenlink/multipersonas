@@ -14,6 +14,11 @@ export const CHANGELOG_PR_BASE = "https://github.com/forbiddenlink/multipersonas
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-10-15",
+    text: "A site with a critical WCAG failure can no longer grade above C, or above B with a serious one. Earlier grades keep the letter they were given. The CI guide now shows a workflow GitHub accepts.",
+    pr: 187,
+  },
+  {
     date: "2026-10-09",
     text: "Fixed duplicate checkouts, and audits that did not finish are no longer claimed as complete.",
     pr: 160,
