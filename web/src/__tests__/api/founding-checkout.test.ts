@@ -2,8 +2,9 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getUser, createSession, retrieveSession, retrieveSubscription, readProfile, getAdmin } = vi.hoisted(() => ({
+const { getUser, createSession, retrieveSession, retrieveSubscription, listSubscriptions, readProfile, getAdmin } = vi.hoisted(() => ({
   getUser: vi.fn(),
+  listSubscriptions: vi.fn(),
   createSession: vi.fn(),
   retrieveSession: vi.fn(),
   retrieveSubscription: vi.fn(),
@@ -20,7 +21,7 @@ vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: getAdmin }));
 vi.mock("stripe", () => ({
   default: class Stripe {
     checkout = { sessions: { create: createSession, retrieve: retrieveSession } };
-    subscriptions = { retrieve: retrieveSubscription };
+    subscriptions = { retrieve: retrieveSubscription, list: listSubscriptions };
   },
 }));
 
@@ -251,6 +252,31 @@ describe("POST /api/checkout/founding", () => {
     expect((await POST(new Request("https://personaudit.com/api/checkout/founding"))).status).toBe(200);
     expect(createSession).toHaveBeenCalledWith(expect.objectContaining({ customer: "cus_synthetic" }), expect.objectContaining({ idempotencyKey: expect.any(String) }));
     expect(createSession.mock.calls[0]?.[0]).not.toHaveProperty("customer_email");
+  });
+
+  it("offers the trial on a first subscription", async () => {
+    vi.stubEnv("STRIPE_TRIAL_DAYS", "14");
+    readProfile.mockResolvedValue({ data: { plan: "free", stripe_customer_id: null }, error: null });
+    expect((await POST(new Request("https://personaudit.com/api/checkout/founding"))).status).toBe(200);
+    expect(listSubscriptions).not.toHaveBeenCalled();
+    expect(createSession.mock.calls[0]?.[0].subscription_data).toHaveProperty("trial_period_days", 14);
+  });
+
+  it("does not grant a second trial to a returning customer", async () => {
+    vi.stubEnv("STRIPE_TRIAL_DAYS", "14");
+    readProfile.mockResolvedValue({ data: { plan: "free", stripe_customer_id: "cus_synthetic" }, error: null });
+    listSubscriptions.mockResolvedValue({ data: [{ id: "sub_old", status: "canceled" }] });
+    expect((await POST(new Request("https://personaudit.com/api/checkout/founding"))).status).toBe(200);
+    expect(listSubscriptions).toHaveBeenCalledWith(expect.objectContaining({ customer: "cus_synthetic", status: "all" }));
+    expect(createSession.mock.calls[0]?.[0].subscription_data).not.toHaveProperty("trial_period_days");
+  });
+
+  it("withholds the trial when Stripe history cannot be read", async () => {
+    vi.stubEnv("STRIPE_TRIAL_DAYS", "14");
+    readProfile.mockResolvedValue({ data: { plan: "free", stripe_customer_id: "cus_synthetic" }, error: null });
+    listSubscriptions.mockRejectedValue(new Error("stripe down"));
+    expect((await POST(new Request("https://personaudit.com/api/checkout/founding"))).status).toBe(200);
+    expect(createSession.mock.calls[0]?.[0].subscription_data).not.toHaveProperty("trial_period_days");
   });
 
   it("returns a retryable response without leaking provider errors", async () => {

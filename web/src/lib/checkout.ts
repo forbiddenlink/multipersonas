@@ -90,6 +90,23 @@ async function openReservedCheckout(
 }
 
 /**
+ * The free trial is for a first subscription only. A customer who trialled, cancelled
+ * and came back would otherwise get a fresh 14 days on every checkout. A customer id is
+ * only stored once a subscription event has been processed, so a missing id means no
+ * prior subscription. If Stripe cannot be read, the trial is withheld rather than
+ * granted twice; the buyer still sees the exact terms on Stripe's page before paying.
+ */
+async function hadSubscription(stripe: Stripe, customerId: string | null | undefined): Promise<boolean> {
+  if (!customerId) return false;
+  try {
+    const page = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 1 });
+    return page.data.length > 0;
+  } catch {
+    return true;
+  }
+}
+
+/**
  * Open a Stripe Checkout session for one paid plan. Shared by every /api/checkout/*
  * route so the sign-in gate, the already-paid guard, and the metadata contract cannot
  * drift between tiers.
@@ -128,7 +145,7 @@ export async function startPlanCheckout(plan: PlanKey): Promise<Response> {
 
   const origin = siteOrigin();
   const metadata = { personaudit_plan: plan, supabase_user_id: user.id };
-  const trialDays = trialPeriodDays();
+  const trialDays = (await hadSubscription(stripe, profile.stripe_customer_id)) ? 0 : trialPeriodDays();
   const admin = createAdminClient();
   if (!admin) return Response.json({ error: "Checkout is not available yet." }, { status: 503 });
   try {
