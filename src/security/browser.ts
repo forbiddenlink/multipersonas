@@ -27,7 +27,7 @@ const BROWSER_ENV_BLOCKED =
 
 /** Copy of `source` without credential-shaped variables, for the Chromium process. */
 export function browserLaunchEnv(
-  source: NodeJS.ProcessEnv = process.env,
+  source: Readonly<Record<string, string | undefined>> = process.env,
 ): Record<string, string> {
   const env: Record<string, string> = {};
   for (const [name, value] of Object.entries(source)) {
