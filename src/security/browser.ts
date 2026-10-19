@@ -17,6 +17,26 @@ export function isBrowserMissingError(error: unknown): boolean {
 }
 
 /**
+ * Names that must never reach the Chromium process. Chromium runs against stranger-supplied
+ * pages, so anything credential-shaped in the launching process is withheld from its
+ * environment (SEC-001). The hosted worker already hands the scan child an allowlist; this
+ * is the second wall for the browser itself, and it also covers CLI/local launches.
+ */
+const BROWSER_ENV_BLOCKED =
+  /^(SUPABASE_|NEXT_PUBLIC_SUPABASE_|STRIPE_|RESEND_|SENTRY_|RAILWAY_|DATABASE_|POSTGRES|CRON_|WORKER_)|SERVICE_ROLE|SECRET|TOKEN|PASSWORD|API_KEY|PRIVATE_KEY|DSN|WEBHOOK|CREDENTIAL/i;
+
+/** Copy of `source` without credential-shaped variables, for the Chromium process. */
+export function browserLaunchEnv(
+  source: NodeJS.ProcessEnv = process.env,
+): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const [name, value] of Object.entries(source)) {
+    if (value !== undefined && !BROWSER_ENV_BLOCKED.test(name)) env[name] = value;
+  }
+  return env;
+}
+
+/**
  * Launch Chromium for an audit.
  *
  * `url-guard.ts` validates the RESOLVED address of every navigation and subresource, but
@@ -62,6 +82,8 @@ export function launchAuditBrowser(options: LaunchOptions = {}): Promise<Browser
     .launch({
       ...(sandbox ? { chromiumSandbox: true } : {}),
       ...options,
+      // Scrubbed even when the caller passes its own env: a secret never needs to reach the browser.
+      env: browserLaunchEnv(options.env ?? process.env),
       ...(proxyServer ? { proxy: { server: proxyServer } } : {}),
     })
     .catch((error: unknown) => {

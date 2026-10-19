@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { chromium, type Browser } from "playwright";
-import { launchAuditBrowser, isBrowserMissingError, BrowserMissingError } from "./browser.js";
+import { launchAuditBrowser, browserLaunchEnv, isBrowserMissingError, BrowserMissingError } from "./browser.js";
 
 /**
  * The fail-closed egress gate must refuse to launch when the hosted worker demands an
@@ -91,5 +91,43 @@ describe("launchAuditBrowser Chromium sandbox opt-in", () => {
     const launch = vi.spyOn(chromium, "launch").mockResolvedValue({} as Browser);
     await launchAuditBrowser({ chromiumSandbox: false });
     expect((launch.mock.calls[0]![0] as Record<string, unknown>).chromiumSandbox).toBe(false);
+  });
+});
+
+describe("launchAuditBrowser environment (SEC-001)", () => {
+  const secrets = {
+    SUPABASE_SERVICE_ROLE_KEY: "synthetic-service-role",
+    SUPABASE_URL: "https://x.invalid",
+    STRIPE_SECRET_KEY: "synthetic-stripe",
+    ANTHROPIC_API_KEY: "synthetic-model",
+    WORKER_ALERT_WEBHOOK: "https://hook.invalid",
+    SENTRY_DSN: "synthetic-dsn",
+    DATABASE_URL: "postgres://u:p@h/db",
+  };
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    for (const name of Object.keys(secrets)) delete process.env[name];
+  });
+
+  it("drops credential variables and keeps what Chromium needs", () => {
+    const env = browserLaunchEnv({ ...secrets, PATH: "/usr/bin", HOME: "/home/pwuser", DISPLAY: ":0", PLAYWRIGHT_BROWSERS_PATH: "/ms-playwright" });
+    expect(Object.keys(env).sort()).toEqual(["DISPLAY", "HOME", "PATH", "PLAYWRIGHT_BROWSERS_PATH"]);
+  });
+
+  it("passes chromium.launch an env without the service-role key", async () => {
+    Object.assign(process.env, secrets);
+    const launch = vi.spyOn(chromium, "launch").mockResolvedValue({} as Browser);
+    await launchAuditBrowser({ headless: true });
+    const env = (launch.mock.calls[0]![0] as { env: Record<string, string> }).env;
+    for (const name of Object.keys(secrets)) expect(env).not.toHaveProperty(name);
+    expect(env).toHaveProperty("PATH");
+  });
+
+  it("scrubs a caller-supplied env too", async () => {
+    const launch = vi.spyOn(chromium, "launch").mockResolvedValue({} as Browser);
+    await launchAuditBrowser({ env: { ...secrets, PATH: "/usr/bin" } });
+    const env = (launch.mock.calls[0]![0] as { env: Record<string, string> }).env;
+    expect(env).toEqual({ PATH: "/usr/bin" });
   });
 });
