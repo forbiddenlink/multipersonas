@@ -1,5 +1,8 @@
 // Shared error-event scrubbing for the web app and worker.
-const EMAIL_RE = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+// The lookbehind only lets a match start at the beginning of a local-part run, so
+// the engine never rescans that run from every offset (CodeQL js/polynomial-redos).
+// The bounds follow RFC 5321 lengths and cap per-start backtracking.
+const EMAIL_RE = /(?<![a-zA-Z0-9._%+-])[a-zA-Z0-9._%+-]{1,64}@[a-zA-Z0-9.-]{1,253}\.[a-zA-Z]{2,63}/g;
 
 /** Private result tokens live in the path: grade results and report share links. */
 function redactTokenPath(pathname: string): string {

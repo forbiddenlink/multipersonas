@@ -128,3 +128,18 @@ it("redacts report share tokens from paths", () => {
   expect(stripQuery(`https://example.com/r/${token}?x=1`)).toBe("https://example.com/r/[token]");
   expect(stripQuery(`/r/${token}#frag`)).toBe("/r/[token]");
 });
+
+describe("redactEmails cost", () => {
+  it("stays linear on a long run of local-part characters with no @", () => {
+    // CodeQL js/polynomial-redos: the unanchored local part retried from every
+    // offset, so 50k chars of "a." took seconds inside beforeSend.
+    const input = "a.".repeat(25_000) + "@";
+    const start = performance.now();
+    redactEmails(input);
+    expect(performance.now() - start).toBeLessThan(100);
+  });
+
+  it("still redacts addresses next to punctuation", () => {
+    expect(redactEmails("(jane.doe+x@example.co.uk), bob@a.io.")).toBe("([email]), [email].");
+  });
+});
