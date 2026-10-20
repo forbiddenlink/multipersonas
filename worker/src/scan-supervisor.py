@@ -33,6 +33,9 @@ def main():
     # PR_SET_CHILD_SUBREAPER: detached Chromium processes are adopted here, not PID 1.
     if libc.prctl(36, 1, 0, 0, 0) != 0:
         raise OSError(ctypes.get_errno(), "cannot enable scan subreaper")
+    # Under uid isolation (SEC-001) scan output lands in a setgid directory shared with the
+    # worker's group; keep it group-writable so the worker can delete it after the scan.
+    os.umask(0o007)
     channel = os.environ.get("NODE_CHANNEL_FD")
     passed = (int(channel),) if channel is not None else ()
     child = subprocess.Popen(sys.argv[1:], pass_fds=passed)

@@ -37,10 +37,12 @@ COPY --from=smokescreen /go/bin/smokescreen /usr/local/bin/smokescreen
 COPY worker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/smokescreen
 
-# Drop root: the Playwright base image ships a non-root `pwuser`. Chromium drives
-# attacker-supplied pages, so a renderer exploit must not land as root next to the
-# service-role + Anthropic keys. Chown the build output so the runtime user can read it.
-# smokescreen listens on 127.0.0.1:4750, an unprivileged port, so it needs no root either.
-RUN chown -R pwuser:pwuser /app
-USER pwuser
+# Separate uids (SEC-001). Chromium drives attacker-supplied pages, so a renderer exploit
+# must land neither as root nor as the uid holding the service-role key. The entrypoint
+# starts as root only to drop into: `mpworker` (the worker, holds the key), `pwuser` (the
+# Playwright image's user, runs every scan and its Chromium), and `nobody` (smokescreen).
+# `mpscan` is the one group the two share, for the per-job output directory.
+# /app stays root-owned: no runtime uid can rewrite the code another uid runs.
+RUN groupadd --system mpscan \
+  && useradd --system --create-home --home-dir /home/mpworker --shell /usr/sbin/nologin --groups mpscan mpworker
 CMD ["/usr/local/bin/entrypoint.sh"]

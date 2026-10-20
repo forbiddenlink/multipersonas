@@ -24,6 +24,25 @@ web /api/audit/[jobId] ──polls──> Postgres
 - `WORKER_REAP_INTERVAL_SECONDS` — optional, default 60. Minimum time between stale-job
   checks; they run between jobs even while the queue is busy.
 
+## Process identities (SEC-001)
+
+Chromium renders stranger-supplied pages, so it must not share a uid with the process that
+holds `SUPABASE_SERVICE_ROLE_KEY`: a same-uid renderer exploit can read the key from
+`/proc/<pid>/environ` or memory. `entrypoint.sh` starts as root only to split the image into:
+
+- `mpworker` runs the worker and holds the key. It keeps only `setuid`, `setgid` and `kill`,
+  enough to start each scan as `pwuser` and stop it.
+- `pwuser` runs every scan and its Chromium (`setpriv`, see `src/job-process.ts`) with no
+  capabilities, `no_new_privs`, and only the `mpscan` group, which owns the per-job output dir.
+- `nobody` runs smokescreen with an empty environment.
+
+At boot the worker starts a probe the same way it starts scans and exits unless that probe
+runs as a different uid with no capabilities and cannot read the worker's environment
+(`[worker] scans run as uid ...` in the logs means it passed). Screenshot paths the scan
+reports are only read when they resolve inside that job's output directory, so a compromised
+scan cannot get the worker to read and upload its own secrets. The container check is
+`worker/src/scan-isolation.container.test.ts`, run by the `Worker image` workflow.
+
 ## Run locally
 
 ```bash

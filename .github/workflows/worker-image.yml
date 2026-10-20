@@ -38,3 +38,13 @@ jobs:
           await import("personaudit/grader");
           await import("./src/job-process.ts");
           })();'
+
+      # SEC-001: through the real entrypoint, prove the scan and a browser-position descendant
+      # run as a separate, capability-free uid and cannot find a canary service-role key in any
+      # process. The key value is a per-run canary, never a real key.
+      - name: Verify scan uid isolation
+        run: >-
+          docker run --rm --network none
+          -e MP_SCAN_ISOLATION_TESTS=1 -e SUPABASE_SERVICE_ROLE_KEY="canary-${GITHUB_RUN_ID}"
+          personaudit-worker:test /usr/local/bin/entrypoint.sh
+          pnpm exec vitest run --configLoader runner worker/src/scan-isolation.container.test.ts

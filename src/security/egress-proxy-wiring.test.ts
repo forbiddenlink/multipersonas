@@ -40,22 +40,63 @@ const requiredDenyRanges = [
 ];
 
 describe("smokescreen egress-guard wiring", () => {
-  it.each([undefined, "", "0"])("entrypoint enforces proxy routing despite required-proxy setting %s", (required) => {
+  // Stubs for the root-only commands, so the entrypoint's logic runs on any host. The setpriv
+  // stub records its options and runs the wrapped command, as the real one does after dropping.
+  function stubBin(uid: string): string {
     const bin = mkdtempSync(join(tmpdir(), "personaudit-egress-"));
+    const scripts: Record<string, string> = {
+      smokescreen: "exit 0",
+      pnpm: 'printf "%s\\n%s\\n%s %s %s %s\\n" "$AUDIT_REQUIRE_EGRESS_PROXY" "$AUDIT_BROWSER_PROXY" "$AUDIT_REQUIRE_SCAN_ISOLATION" "$AUDIT_SCAN_UID" "$AUDIT_SCAN_GID" "$AUDIT_SCAN_HOME"',
+      id: `if [ "$#" -eq 1 ]; then echo ${uid}; else echo 1001; fi`,
+      getent: 'if [ "$1" = group ]; then echo "mpscan:x:999:mpworker"; else echo "pwuser:x:1001:1001::/home/pwuser:/bin/bash"; fi',
+      setpriv: `echo "$*" >> "${bin}/setpriv.log"; while [ "$1" != "--" ]; do shift; done; shift; exec "$@"`,
+    };
+    for (const [name, body] of Object.entries(scripts)) {
+      writeFileSync(join(bin, name), `#!/bin/sh\n${body}\n`);
+      chmodSync(join(bin, name), 0o700);
+    }
+    return bin;
+  }
+  const runEntrypoint = (bin: string, env: Record<string, string> = {}): string =>
+    execFileSync("/bin/sh", [fileURLToPath(new URL("../../worker/entrypoint.sh", import.meta.url))], {
+      env: { PATH: `${bin}:/usr/bin:/bin`, ...env }, encoding: "utf8", timeout: 15_000,
+    });
+
+  it.each([undefined, "", "0"])("entrypoint enforces proxy routing despite required-proxy setting %s", (required) => {
+    const bin = stubBin("0");
     try {
-      writeFileSync(join(bin, "smokescreen"), "#!/bin/sh\nexit 0\n");
-      writeFileSync(join(bin, "pnpm"), '#!/bin/sh\nprintf "%s\\n%s\\n" "$AUDIT_REQUIRE_EGRESS_PROXY" "$AUDIT_BROWSER_PROXY"\n');
-      chmodSync(join(bin, "smokescreen"), 0o700);
-      chmodSync(join(bin, "pnpm"), 0o700);
-      const output = execFileSync("/bin/sh", [fileURLToPath(new URL("../../worker/entrypoint.sh", import.meta.url))], {
-        env: { PATH: bin, ...(required === undefined ? {} : { AUDIT_REQUIRE_EGRESS_PROXY: required }), AUDIT_BROWSER_PROXY: "" },
-        encoding: "utf8", timeout: 5000,
-      });
-      expect(output.trim().split("\n")).toEqual(["1", "http://127.0.0.1:4750"]);
+      const output = runEntrypoint(bin, { ...(required === undefined ? {} : { AUDIT_REQUIRE_EGRESS_PROXY: required }), AUDIT_BROWSER_PROXY: "" });
+      expect(output.trim().split("\n")).toEqual(["1", "http://127.0.0.1:4750", "1 1001 999 /home/pwuser"]);
     } finally {
       rmSync(bin, { recursive: true, force: true });
     }
-  });
+  }, 20_000);
+
+  it("entrypoint drops root into separate worker, scan, and proxy identities (SEC-001)", () => {
+    const bin = stubBin("0");
+    try {
+      runEntrypoint(bin, { SUPABASE_SERVICE_ROLE_KEY: "synthetic-service" });
+      const calls = readFileSync(join(bin, "setpriv.log"), "utf8").trim().split("\n");
+      const proxy = calls.find((call) => call.includes("smokescreen"));
+      const worker = calls.find((call) => call.includes("pnpm --filter worker start"));
+      expect(proxy).toMatch(/--reuid=nobody .*--bounding-set=-all --no-new-privs -- env -i PATH=/);
+      expect(worker).toMatch(/--reuid=mpworker .*--init-groups/);
+      // The key holder keeps only what it needs to start and stop scans as another uid.
+      expect(worker).toContain("--ambient-caps=-all,+setuid,+setgid,+kill");
+      expect(worker).toContain("--bounding-set=-all,+setuid,+setgid,+kill");
+    } finally {
+      rmSync(bin, { recursive: true, force: true });
+    }
+  }, 20_000);
+
+  it("entrypoint refuses to start unless it can split the uids", () => {
+    const bin = stubBin("1001");
+    try {
+      expect(() => runEntrypoint(bin)).toThrow(/must start as root/);
+    } finally {
+      rmSync(bin, { recursive: true, force: true });
+    }
+  }, 20_000);
 
   it("direct worker scan execution refuses to launch without its required proxy", async () => {
     const scanModule = new URL("../../worker/src/scan-process.ts", import.meta.url).href;
@@ -82,12 +123,19 @@ describe("smokescreen egress-guard wiring", () => {
     expect(dockerfile).toMatch(/CMD \["\/usr\/local\/bin\/entrypoint\.sh"\]/);
   });
 
+  it("Dockerfile leaves the entrypoint root so it can split uids, and keeps /app unwritable to them", () => {
+    expect(dockerfile).not.toMatch(/^USER /m);
+    expect(dockerfile).not.toMatch(/chown -R pwuser/);
+    expect(dockerfile).toMatch(/useradd .*--groups mpscan mpworker/);
+  });
+
   it("entrypoint backgrounds smokescreen on localhost before execing the worker", () => {
     expect(entrypoint).toMatch(/smokescreen .*--listen-ip 127\.0\.0\.1.*&/);
     for (const range of requiredDenyRanges) {
       expect(entrypoint).toContain(`--deny-range ${range}`);
     }
-    expect(entrypoint).toMatch(/exec pnpm --filter worker start/);
+    expect(entrypoint).toMatch(/set -- pnpm --filter worker start/);
+    expect(entrypoint).toMatch(/exec setpriv --reuid=mpworker/);
   });
 
   it("the Railway IaC start command points at the entrypoint, not a bare worker start", () => {

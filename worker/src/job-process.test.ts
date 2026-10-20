@@ -1,8 +1,11 @@
 import { afterEach, expect, it } from "vitest";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { runJobProcess, scanChildEnv, ScanCleanupError } from "./job-process.js";
+import {
+  createScanOutputDir, isolationProbeFailures, runJobProcess, scanChildEnv, ScanCleanupError, scanEnv,
+  scanIsolationFromEnv, scanLaunch, type ScanIsolation,
+} from "./job-process.js";
 
 const dirs: string[] = [];
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
@@ -116,4 +119,61 @@ it("does not hand the database key to the real scan child", async () => {
   } finally {
     for (const name of [...Object.keys(secrets), "ANTHROPIC_API_KEY"]) delete process.env[name];
   }
+});
+
+const isolation: ScanIsolation = { uid: 1001, gid: 999, home: "/home/pwuser" };
+
+it("reads the scan identity, and refuses to run unisolated when isolation is required", () => {
+  expect(scanIsolationFromEnv({})).toBeNull();
+  expect(() => scanIsolationFromEnv({ AUDIT_REQUIRE_SCAN_ISOLATION: "1" })).toThrow(/AUDIT_SCAN_UID/);
+  expect(scanIsolationFromEnv({ AUDIT_SCAN_UID: "1001", AUDIT_SCAN_GID: "999", AUDIT_SCAN_HOME: "/home/pwuser" }))
+    .toEqual(isolation);
+  // Root, names, and partial config are errors, never a fallback to the worker's own uid.
+  expect(() => scanIsolationFromEnv({ AUDIT_SCAN_UID: "0", AUDIT_SCAN_GID: "999", AUDIT_SCAN_HOME: "/h" })).toThrow(/AUDIT_SCAN_UID/);
+  expect(() => scanIsolationFromEnv({ AUDIT_SCAN_UID: "pwuser", AUDIT_SCAN_GID: "999", AUDIT_SCAN_HOME: "/h" })).toThrow(/AUDIT_SCAN_UID/);
+  expect(() => scanIsolationFromEnv({ AUDIT_SCAN_UID: "1001", AUDIT_SCAN_HOME: "/h" })).toThrow(/AUDIT_SCAN_GID/);
+  expect(() => scanIsolationFromEnv({ AUDIT_SCAN_UID: "1001", AUDIT_SCAN_GID: "999" })).toThrow(/AUDIT_SCAN_HOME/);
+});
+
+it("starts an isolated scan through setpriv with no capabilities and no_new_privs", () => {
+  const launch = scanLaunch(isolation, "linux");
+  expect(launch.execPath).toBe("setpriv");
+  expect(launch.execArgv.slice(0, 9)).toEqual([
+    "--reuid=1001", "--regid=999", "--clear-groups", "--inh-caps=-all", "--ambient-caps=-all", "--no-new-privs", "--",
+    "python3", expect.stringMatching(/scan-supervisor\.py$/),
+  ]);
+  expect(launch.execArgv.slice(9)).toEqual([process.execPath, "--import", "tsx"]);
+  expect(scanLaunch(null, "linux").execPath).toBe("python3");
+  expect(() => scanLaunch(isolation, "darwin")).toThrow(/requires Linux/);
+});
+
+it("gives the isolated scan its own HOME and none of the worker's credentials", () => {
+  const env = scanEnv(isolation, {
+    PATH: "/usr/bin", HOME: "/home/mpworker", ANTHROPIC_API_KEY: "model-key",
+    SUPABASE_SERVICE_ROLE_KEY: "service", SUPABASE_URL: "https://x.invalid", SENTRY_DSN: "dsn",
+  });
+  expect(env).toEqual({ PATH: "/usr/bin", HOME: "/home/pwuser", ANTHROPIC_API_KEY: "model-key" });
+});
+
+it("accepts the isolation probe only for a capability-free, different uid that cannot read the worker", () => {
+  const good = "1001\nCapPrm:\t0000000000000000\nCapEff:\t0000000000000000\nCapAmb:\t0000000000000000\nNoNewPrivs:\t1\nenviron:denied\n";
+  expect(isolationProbeFailures(good, isolation, 998)).toEqual([]);
+  expect(isolationProbeFailures(good.replace("1001", "998"), { ...isolation, uid: 998 }, 998).join()).toMatch(/can read the worker/);
+  expect(isolationProbeFailures(good.replace("CapEff:\t0000000000000000", "CapEff:\t00000000000000c0"), isolation, 998).join())
+    .toMatch(/CapEff/);
+  expect(isolationProbeFailures(good.replace("NoNewPrivs:\t1", "NoNewPrivs:\t0"), isolation, 998).join()).toMatch(/no_new_privs/);
+  expect(isolationProbeFailures(good.replace("environ:denied", "environ:readable"), isolation, 998).join()).toMatch(/environ/);
+  expect(isolationProbeFailures("", isolation, 998).length).toBeGreaterThan(0);
+});
+
+it("creates a fresh private output dir, shared with the scan group only under isolation", () => {
+  const plain = createScanOutputDir(join(tmpdir(), "worker-out-"), null);
+  dirs.push(plain);
+  expect(statSync(plain).mode & 0o7777).toBe(0o700);
+  const gid = process.getgid?.();
+  if (gid === undefined) return;
+  const shared = createScanOutputDir(join(tmpdir(), "worker-out-"), { ...isolation, gid });
+  dirs.push(shared);
+  expect(statSync(shared).gid).toBe(gid);
+  expect(statSync(shared).mode & 0o7777).toBe(0o2770);
 });

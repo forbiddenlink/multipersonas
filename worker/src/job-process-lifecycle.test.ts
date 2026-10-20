@@ -50,3 +50,25 @@ it.each(["timeout", "error", "send", "message"])("preserves fatal teardown error
   child.emit("close", null, "SIGKILL");
   await assertion;
 });
+
+it("forks an isolated scan as the scan uid, without the service-role key in its environment", () => {
+  vi.stubGlobal("process", { ...process, platform: "linux" });
+  const child = Object.assign(new EventEmitter(), { send: vi.fn() });
+  fork.mockReturnValue(child);
+  const previousHome = process.env.HOME;
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "synthetic-service";
+  process.env.HOME = "/home/mpworker";
+  try {
+    void runJobProcess("scan.ts", {}, 60_000, { uid: 1001, gid: 999, home: "/home/pwuser" }).catch(() => {});
+  } finally {
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (previousHome === undefined) delete process.env.HOME;
+    else process.env.HOME = previousHome;
+  }
+  const options = fork.mock.calls[0]![2] as { execPath: string; execArgv: string[]; env: NodeJS.ProcessEnv };
+  expect(options.execPath).toBe("setpriv");
+  expect(options.execArgv).toEqual(expect.arrayContaining(["--reuid=1001", "--regid=999", "--no-new-privs", "--ambient-caps=-all"]));
+  expect(options.env).not.toHaveProperty("SUPABASE_SERVICE_ROLE_KEY");
+  expect(Object.values(options.env)).not.toContain("synthetic-service");
+  expect(options.env.HOME).toBe("/home/pwuser");
+});

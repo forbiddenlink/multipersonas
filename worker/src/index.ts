@@ -6,7 +6,10 @@ import { scrubEvent } from "personaudit/security/sentry-scrub";
 import { type SupabaseClient } from "@supabase/supabase-js";
 import { type TestResult } from "personaudit/orchestrator";
 import type { gradeScan } from "personaudit/grader";
-import { runJobProcess, ScanCleanupError } from "./job-process.js";
+import {
+  assertScanIsolation, createScanOutputDir, runJobProcess, ScanCleanupError, scanIsolationFromEnv, type ScanIsolation,
+} from "./job-process.js";
+import { readScanArtifact } from "./scan-artifact.js";
 import { isIntervalDue, positiveEnvInt } from "./config.js";
 import { notifyGradeFinished } from "./grade-notify.js";
 import { persistGradeResult, saveHistoryRun, withRunId, writeJobState } from "./job-write.js";
@@ -62,6 +65,25 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
   );
   process.exit(1);
 }
+
+// SEC-001: scans (and their Chromium) run as a separate uid that cannot read this process's
+// environment or memory, where the service-role key lives. The image entrypoint configures it
+// and requires it; prove the split on this host before claiming any work.
+function loadScanIsolation(): ScanIsolation | null {
+  try {
+    const isolation = scanIsolationFromEnv();
+    if (isolation) {
+      assertScanIsolation(isolation);
+      console.log(`[worker] scans run as uid ${isolation.uid}, isolated from the worker's credentials`);
+    }
+    return isolation;
+  } catch (e) {
+    console.error(`[worker] ${e instanceof Error ? e.message : String(e)}. Exiting.`);
+    process.exit(1);
+  }
+}
+
+const SCAN_ISOLATION = loadScanIsolation();
 
 const supabase: SupabaseClient = createWorkerClient(SUPABASE_URL, SERVICE_KEY);
 
@@ -293,17 +315,18 @@ async function persistHistory(
  * Best-effort — a failure here (bucket/table not yet created, a missing frame) is logged,
  * never fatal to the job. Worker scans are UNAUTHENTICATED, so every frame is of a PUBLIC
  * page; behind-login capture stays opt-in + private when it lands (see migration 014). */
-async function persistJourney(runId: string, result: TestResult): Promise<void> {
+async function persistJourney(runId: string, result: TestResult, outputDir: string): Promise<void> {
   for (const pr of result.personas) {
     for (const s of pr.agentResult.steps) {
       const nnn = String(s.step).padStart(3, "0");
       let screenshotPath: string | null = null;
 
       // Upload the frame if it is still on disk (the run's tmp dir is cleaned right after).
-      if (s.screenshotPath && fs.existsSync(s.screenshotPath)) {
+      // The path comes from the untrusted scan, so only a regular file inside outputDir is read.
+      const bytes = s.screenshotPath ? readScanArtifact(outputDir, s.screenshotPath) : null;
+      if (bytes) {
         const objectPath = `${runId}/${pr.persona.id}/step-${nnn}.png`;
         try {
-          const bytes = fs.readFileSync(s.screenshotPath);
           const { error: upErr } = await supabase.storage
             .from("journeys")
             .upload(objectPath, bytes, { contentType: "image/png", upsert: true });
@@ -362,7 +385,7 @@ async function claimAndRun(): Promise<boolean> {
     try {
       const result = await runJobProcess<Awaited<ReturnType<typeof gradeScan>>>(
         new URL("./scan-process.ts", import.meta.url),
-        { kind: claimed.kind, url: claimed.url, persona_ids: claimed.persona_ids }, JOB_TIMEOUT_MS,
+        { kind: claimed.kind, url: claimed.url, persona_ids: claimed.persona_ids }, JOB_TIMEOUT_MS, SCAN_ISOLATION,
       );
       await persistGradeResult(supabase, claimed.id, result);
       await logWorkerEvent(claimed, "audit_job.completed", { pagesVisited: result.pagesVisited.length });
@@ -389,11 +412,13 @@ async function claimAndRun(): Promise<boolean> {
     return true; // grade jobs reserve no spend — no releaseReservation needed
   }
 
-  const tmpDir = path.join(os.tmpdir(), `mp-worker-${claimed.id}`);
+  let tmpDir: string | undefined;
 
   try {
+    const outputDir = createScanOutputDir(path.join(os.tmpdir(), `mp-worker-${claimed.id}-`), SCAN_ISOLATION);
+    tmpDir = outputDir;
     const result = await runJobProcess<TestResult>(
-      new URL("./scan-process.ts", import.meta.url), { kind: claimed.kind, url: claimed.url, persona_ids: claimed.persona_ids, task_definition: claimed.task_definition, outputDir: tmpDir }, JOB_TIMEOUT_MS,
+      new URL("./scan-process.ts", import.meta.url), { kind: claimed.kind, url: claimed.url, persona_ids: claimed.persona_ids, task_definition: claimed.task_definition, outputDir }, JOB_TIMEOUT_MS, SCAN_ISOLATION,
     );
     const response = toResponse(result);
 
@@ -402,7 +427,7 @@ async function claimAndRun(): Promise<boolean> {
       runId = await persistHistory(claimed.user_id, response, claimed.project_id);
       // Replay Theater: persist the walk while the screenshots are still on disk (the
       // finally block wipes tmpDir). Best-effort; `result` carries the per-step records.
-      await persistJourney(runId, result);
+      await persistJourney(runId, result, outputDir);
     }
 
     await writeJobState(supabase
@@ -431,7 +456,7 @@ async function claimAndRun(): Promise<boolean> {
     await notify(`job ${claimed.id} failed: ${detail}`);
   } finally {
     try {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
+      if (tmpDir) fs.rmSync(tmpDir, { recursive: true, force: true });
     } catch {
       // ignore cleanup errors
     }

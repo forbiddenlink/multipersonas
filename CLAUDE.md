@@ -116,5 +116,6 @@ Re-check `.env.example` directly (outside this sandbox) for the complete, curren
 - The baseline/CI gate (`--baseline` / `--fail-on`) keys defects by a render-stable id so framework-generated element ids (e.g. `#mantine-…`) don't read as false regressions.
 - The Railway build uses the repo ROOT as Docker build context (not `worker/`) (the worker Dockerfile pulls in the root engine too).
 - The Railway worker's start command (`start:` in `.railway/railway.ts`) must point at `worker/entrypoint.sh` (which backgrounds smokescreen before exec'ing the worker) - overriding it skips the egress guard and silently falls back to an unguarded direct browser launch.
+- The worker image must start as root (no `USER` in `worker/Dockerfile`): `worker/entrypoint.sh` drops into separate uids so Chromium (`pwuser`) cannot read the service-role key held by the worker (`mpworker`), and the worker exits at boot if that split does not hold (SEC-001, `worker/README.md`).
 - `web/` has its own `AGENTS.md` and `CLAUDE.md`; this file governs the repo root and the `src/`/`worker/`/shared-tooling layer, not `web/`-specific conventions.
 - Session artifacts (`.mpersonas-session.json`, saved via `mpersonas auth`) are credential-equivalent; `mpersonas run` refuses to use one if other users can read it.
