@@ -29,6 +29,18 @@ export const PLANS: Record<PlanKey, PlanConfig> = {
 /** Rank used when a customer somehow holds more than one entitled subscription. */
 export const GRANT_RANK: Record<"free" | "pro" | "team", number> = { free: 0, pro: 1, team: 2 };
 
+/**
+ * Stripe subscription statuses that keep paid access. `past_due` stays entitled while
+ * Stripe retries the failed invoice (Smart Retries / dunning); access ends when Stripe
+ * moves the subscription to `unpaid`, `canceled` or `incomplete_expired` (or `paused`
+ * / `incomplete`, where nothing was ever paid). Single source for the webhook.
+ */
+const ENTITLED_SUBSCRIPTION_STATUSES: ReadonlySet<string> = new Set(["active", "trialing", "past_due"]);
+
+export function isEntitledSubscriptionStatus(status: string): boolean {
+  return ENTITLED_SUBSCRIPTION_STATUSES.has(status);
+}
+
 export const PLAN_KEYS = Object.keys(PLANS) as readonly PlanKey[];
 
 export function isPlanKey(value: string | null | undefined): value is PlanKey {

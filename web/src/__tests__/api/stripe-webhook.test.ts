@@ -227,7 +227,14 @@ describe("POST /api/stripe/webhook", () => {
     expect(update).toHaveBeenCalledWith({ plan: "team", stripe_customer_id: "cus_test", trial_ends_at: null });
   });
 
-  it.each(["canceled", "past_due", "unpaid", "incomplete", "incomplete_expired", "paused"])("does not grant access from a current %s subscription", async (status) => {
+  it("keeps access while Stripe retries a past_due invoice", async () => {
+    activeSubscriptions([{ id: "sub_retrying", metadata, status: "past_due" }]);
+    constructEvent.mockReturnValue({ type: "customer.subscription.updated", data: { object: { metadata, status: "past_due", customer: "cus_test" } } });
+    expect((await POST(request())).status).toBe(200);
+    expect(update).toHaveBeenCalledWith({ plan: "team", stripe_customer_id: "cus_test", trial_ends_at: null });
+  });
+
+  it.each(["canceled", "unpaid", "incomplete", "incomplete_expired", "paused"])("does not grant access from a current %s subscription", async (status) => {
     activeSubscriptions([{ id: "sub_inactive", metadata, status }]);
     expect((await POST(request())).status).toBe(200);
     expect(update).toHaveBeenCalledWith({ plan: "free", stripe_customer_id: "cus_test", trial_ends_at: null });

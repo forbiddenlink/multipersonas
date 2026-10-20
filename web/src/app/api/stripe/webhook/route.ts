@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { GRANT_RANK, PLANS, isPlanKey } from "@/lib/plans";
+import { GRANT_RANK, PLANS, isEntitledSubscriptionStatus, isPlanKey } from "@/lib/plans";
 import { captureServerEvent } from "@/lib/analytics-server";
 
 export const runtime = "nodejs";
@@ -44,12 +44,12 @@ async function syncPaidPlan(stripe: Stripe, userId: string, customerId: string):
   let anyActive = false;
   let latestTrialEnd: number | null = null;
   for await (const subscription of stripe.subscriptions.list({ customer: customerId, status: "all", limit: 100 })) {
-    const entitled = subscription.status === "active" || subscription.status === "trialing";
+    const entitled = isEntitledSubscriptionStatus(subscription.status);
     const key = subscription.metadata.personaudit_plan;
     if (entitled && isPlanKey(key) && subscription.metadata.supabase_user_id === userId) {
       const grant = PLANS[key].grants;
       if (GRANT_RANK[grant] > GRANT_RANK[plan]) plan = grant;
-      if (subscription.status === "active") anyActive = true;
+      if (subscription.status !== "trialing") anyActive = true;
       else if (typeof subscription.trial_end === "number") {
         latestTrialEnd = Math.max(latestTrialEnd ?? 0, subscription.trial_end);
       }
