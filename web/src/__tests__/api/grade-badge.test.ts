@@ -62,3 +62,17 @@ describe("GET /api/grade/[token]/badge", () => {
     expect(svg).toContain("grading…");
   });
 });
+
+describe("GET /api/grade/[token]/badge read failure", () => {
+  it("serves a neutral unknown badge with no-store when the read throws", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.mocked(gradeLib.getGraderScan).mockRejectedValueOnce(new Error("Could not load scan result."));
+    const res = await GET(new Request("https://personaudit.com/api/grade/tok/badge"), {
+      params: Promise.resolve({ token: "tok" }),
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type")).toBe("image/svg+xml");
+    expect(res.headers.get("Cache-Control")).toContain("no-store");
+    expect(await res.text()).toContain("unknown");
+  });
+});

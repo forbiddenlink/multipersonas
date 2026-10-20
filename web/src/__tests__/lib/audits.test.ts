@@ -20,4 +20,22 @@ describe("listAudits", () => {
     expect(query.eq).toHaveBeenCalledWith("status", "completed");
     expect(query.select).toHaveBeenCalledWith(expect.stringContaining("scan_coverage"));
   });
+
+  it("throws when the read fails instead of returning an empty list", async () => {
+    const query = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      order: vi.fn(),
+      limit: vi.fn(),
+      then: (resolve: (value: unknown) => unknown) =>
+        Promise.resolve({ data: null, error: { message: "boom" } }).then(resolve),
+    };
+    query.select.mockReturnValue(query);
+    query.eq.mockReturnValue(query);
+    query.order.mockReturnValue(query);
+    query.limit.mockReturnValue(query);
+    const supabase = { from: vi.fn(() => query) };
+
+    await expect(listAudits(supabase as never)).rejects.toThrow("Could not load audits: boom");
+  });
 });

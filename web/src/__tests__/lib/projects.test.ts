@@ -75,6 +75,11 @@ describe("listProjects", () => {
     const result = await listProjects(supabase as never);
     expect(result).toEqual([]);
   });
+
+  it("throws when the read fails instead of returning an empty list", async () => {
+    const supabase = makeSupabase({ data: null, error: { message: "permission denied" } });
+    await expect(listProjects(supabase as never)).rejects.toThrow("Could not load projects: permission denied");
+  });
 });
 
 describe("getProject", () => {
@@ -95,9 +100,14 @@ describe("getProject", () => {
   });
 
   it("returns null when missing or not owned (RLS)", async () => {
-    const supabase = makeSupabase({ data: null, error: { message: "no rows" } });
+    const supabase = makeSupabase({ data: null, error: { message: "no rows", code: "PGRST116" } as never });
     const result = await getProject(supabase as never, "missing");
     expect(result).toBeNull();
+  });
+
+  it("throws on a real read failure instead of reporting not found", async () => {
+    const supabase = makeSupabase({ data: null, error: { message: "connection refused", code: "08006" } as never });
+    await expect(getProject(supabase as never, "p1")).rejects.toThrow("Could not load project: connection refused");
   });
 });
 

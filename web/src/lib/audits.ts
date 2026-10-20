@@ -47,6 +47,8 @@ export async function listAudits(
     query = query.eq("project_id", projectId);
   }
 
-  const { data } = await query;
+  // Throw on a read failure so callers can tell a DB/RLS error from "no audits yet".
+  const { data, error } = await query;
+  if (error) throw new Error(`Could not load audits: ${error.message}`);
   return data ?? [];
 }

@@ -28,20 +28,31 @@ const DETAIL_COLUMNS = `${LIST_COLUMNS},user_id,task_definition`;
  * explicit `user_id` filter is needed here (mirrors lib/audits.ts).
  */
 export async function listProjects(supabase: SB): Promise<ProjectListItem[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("projects")
     .select(LIST_COLUMNS)
     .order("created_at", { ascending: false });
+  // Throw so a DB/RLS failure is not rendered as an empty project list.
+  if (error) throw new Error(`Could not load projects: ${error.message}`);
   return data ?? [];
 }
 
-/** Fetch a single project by id. Returns null if missing or not owned (RLS). */
+/** PostgREST code for `.single()` matching zero rows. */
+const NO_ROWS_CODE = "PGRST116";
+
+/**
+ * Fetch a single project by id. Returns null if missing or not owned (RLS).
+ * Throws on any other read failure so it is distinguishable from "not found".
+ */
 export async function getProject(supabase: SB, id: string): Promise<Project | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("projects")
     .select(DETAIL_COLUMNS)
     .eq("id", id)
     .single();
+  if (error && error.code !== NO_ROWS_CODE) {
+    throw new Error(`Could not load project: ${error.message}`);
+  }
   return data ?? null;
 }
 

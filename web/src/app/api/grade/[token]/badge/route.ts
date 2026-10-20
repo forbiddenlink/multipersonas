@@ -14,7 +14,19 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> },
 ) {
   const { token } = await params;
-  const scan = await getGraderScan(token);
+  let scan: Awaited<ReturnType<typeof getGraderScan>>;
+  try {
+    scan = await getGraderScan(token);
+  } catch (error) {
+    // A read failure must not break README embeds: serve a neutral, uncached badge.
+    console.error("grade badge read failed", error);
+    return new Response(renderSvg("accessibility", "unknown", PALETTE.muted, PALETTE.ink), {
+      headers: {
+        "Content-Type": "image/svg+xml",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
+    });
+  }
 
   if (!scan || scan.status !== "completed" || !scan.report) {
     const isRunning = scan?.status === "running" || scan?.status === "queued";
