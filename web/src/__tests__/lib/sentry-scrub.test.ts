@@ -139,6 +139,18 @@ describe("redactEmails cost", () => {
     expect(performance.now() - start).toBeLessThan(100);
   });
 
+  it("redacts an address whose local part and domain exceed RFC lengths", () => {
+    const long = `${"x".repeat(200)}@${"d".repeat(300)}.com`;
+    expect(redactEmails(`to ${long} now`)).toBe("to [email] now");
+  });
+
+  it("stays linear when the domain run is long and has no TLD", () => {
+    const input = "a@" + "b.".repeat(25_000);
+    const start = performance.now();
+    redactEmails(input);
+    expect(performance.now() - start).toBeLessThan(100);
+  });
+
   it("still redacts addresses next to punctuation", () => {
     expect(redactEmails("(jane.doe+x@example.co.uk), bob@a.io.")).toBe("([email]), [email].");
   });
