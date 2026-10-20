@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { GRANT_RANK, PLANS, isEntitledSubscriptionStatus, isPlanKey } from "@/lib/plans";
+import { GRANT_RANK, PLANS, isEntitledSubscriptionStatus, isPlanKey, pastDueGraceEndsAt } from "@/lib/plans";
 import { captureServerEvent } from "@/lib/analytics-server";
 
 export const runtime = "nodejs";
@@ -16,20 +16,23 @@ async function setPlan(
   plan: "free" | "pro" | "team",
   customerId?: string,
   trialEndsAt: string | null = null,
+  graceEndsAt: string | null = null,
 ): Promise<void> {
   const admin = createAdminClient();
   if (!admin) throw new Error("Admin client is not configured");
   // trial_ends_at lets the spend path cap trialing callers lower (lib/spend.ts).
+  // access_grace_ends_at is set only while access rests on a past_due subscription; plan
+  // reads treat the plan as free once it passes (lib/plans.ts planAfterGrace).
   const update = customerId
-    ? { plan, stripe_customer_id: customerId, trial_ends_at: trialEndsAt }
-    : { plan, trial_ends_at: trialEndsAt };
+    ? { plan, stripe_customer_id: customerId, trial_ends_at: trialEndsAt, access_grace_ends_at: graceEndsAt }
+    : { plan, trial_ends_at: trialEndsAt, access_grace_ends_at: graceEndsAt };
   let { data, error } = await admin.from("profiles").update(update).eq("id", userId).select("id").maybeSingle();
   // Deploy order: before migration 20261012120400 the column does not exist (Postgres 42703,
   // or PostgREST PGRST204 for an unknown column in the body). Entitlement must still be
   // saved, so retry without the trial marker rather than failing every subscription event.
   if (error && (error.code === "42703" || error.code === "PGRST204")) {
-    const withoutTrial = customerId ? { plan, stripe_customer_id: customerId } : { plan };
-    ({ data, error } = await admin.from("profiles").update(withoutTrial).eq("id", userId).select("id").maybeSingle());
+    const withoutMarkers = customerId ? { plan, stripe_customer_id: customerId } : { plan };
+    ({ data, error } = await admin.from("profiles").update(withoutMarkers).eq("id", userId).select("id").maybeSingle());
   }
   if (error || !data) throw new Error("Could not persist subscription access");
 }
@@ -40,15 +43,28 @@ async function syncPaidPlan(stripe: Stripe, userId: string, customerId: string):
   // Keep the STRONGEST entitled grant rather than the first one seen: a customer who
   // upgrades solo -> founding briefly holds both, and stopping at the first match
   // could downgrade them to the tier they just left.
-  let plan: "free" | "pro" | "team" = "free";
+  let firmPlan: "free" | "pro" | "team" = "free";
+  let gracedPlan: "free" | "pro" | "team" = "free";
+  let gracedEnd: number | null = null;
   let anyActive = false;
   let latestTrialEnd: number | null = null;
   for await (const subscription of stripe.subscriptions.list({ customer: customerId, status: "all", limit: 100 })) {
-    const entitled = isEntitledSubscriptionStatus(subscription.status);
+    // past_due keeps access only inside the grace window; Stripe may leave it past_due
+    // after retries end, so it must expire on its own (lib/plans.ts).
+    const graceEnd = subscription.status === "past_due"
+      ? pastDueGraceEndsAt(subscription.items?.data?.map((item) => item.current_period_start) ?? [])
+      : null;
+    const entitled = isEntitledSubscriptionStatus(subscription.status, graceEnd);
     const key = subscription.metadata.personaudit_plan;
     if (entitled && isPlanKey(key) && subscription.metadata.supabase_user_id === userId) {
       const grant = PLANS[key].grants;
-      if (GRANT_RANK[grant] > GRANT_RANK[plan]) plan = grant;
+      if (graceEnd !== null) {
+        if (GRANT_RANK[grant] > GRANT_RANK[gracedPlan]) {
+          gracedPlan = grant;
+          gracedEnd = graceEnd;
+        } else if (grant === gracedPlan) gracedEnd = Math.max(gracedEnd ?? 0, graceEnd);
+      } else if (GRANT_RANK[grant] > GRANT_RANK[firmPlan]) firmPlan = grant;
+      // A delinquent subscription has paid before, so it is the paid one and clears the trial marker.
       if (subscription.status !== "trialing") anyActive = true;
       else if (typeof subscription.trial_end === "number") {
         latestTrialEnd = Math.max(latestTrialEnd ?? 0, subscription.trial_end);
@@ -57,7 +73,10 @@ async function syncPaidPlan(stripe: Stripe, userId: string, customerId: string):
   }
   // Trialing only if nothing entitled is already paid; a paid subscription clears it.
   const trialEndsAt = !anyActive && latestTrialEnd !== null ? new Date(latestTrialEnd * 1000).toISOString() : null;
-  await setPlan(userId, plan, customerId, trialEndsAt);
+  // Grace limits access only when the strongest grant rests on a past_due subscription.
+  const onGrace = GRANT_RANK[gracedPlan] > GRANT_RANK[firmPlan] && gracedEnd !== null;
+  const graceEndsAt = onGrace && gracedEnd !== null ? new Date(gracedEnd).toISOString() : null;
+  await setPlan(userId, onGrace ? gracedPlan : firmPlan, customerId, trialEndsAt, graceEndsAt);
 }
 
 export async function POST(request: Request): Promise<Response> {

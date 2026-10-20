@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
+import { planAfterGrace } from "@/lib/plans";
 
 export type Plan = "free" | "pro" | "team";
 
@@ -34,6 +35,20 @@ export function planUpgradeSummary(): string {
 }
 
 /**
+ * The stored plan with an expired past_due grace window applied (planAfterGrace). Reads
+ * the grace column when it exists; before its migration (Postgres 42703 / PostgREST
+ * PGRST204) it falls back to the plain plan. Any other error resolves to "free".
+ */
+async function readStoredPlan(supabase: SupabaseClient<Database>, userId: string): Promise<string> {
+  const read = (columns: string) => supabase.from("profiles").select(columns).eq("id", userId).single();
+  let { data, error } = await read("plan,access_grace_ends_at");
+  if (error && (error.code === "42703" || error.code === "PGRST204")) ({ data, error } = await read("plan"));
+  if (error || !data) return "free";
+  const row = data as unknown as { plan: string; access_grace_ends_at?: string | null };
+  return planAfterGrace(row.plan, row.access_grace_ends_at);
+}
+
+/**
  * Read the caller's plan from profiles via the RLS-scoped server client. Anonymous callers,
  * a missing row, or any read error resolve to "free" so the gate fails closed (a pro user
  * briefly seeing the paywall is safe; the inverse would leak the paid layer). Never uses the
@@ -44,13 +59,8 @@ export async function getSessionPlan(
   userId: string | null,
 ): Promise<Plan> {
   if (!userId) return "free";
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("plan")
-    .eq("id", userId)
-    .single();
-  if (error || !data) return "free";
-  return planAllowsPersonas(data.plan) ? (data.plan as Plan) : "free";
+  const stored = await readStoredPlan(supabase, userId);
+  return planAllowsPersonas(stored) ? (stored as Plan) : "free";
 }
 
 /**
@@ -88,11 +98,6 @@ export async function getExactPlan(
   userId: string | null,
 ): Promise<Plan> {
   if (!userId) return "free";
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("plan")
-    .eq("id", userId)
-    .single();
-  if (error || !data) return "free";
-  return data.plan === "pro" || data.plan === "team" ? data.plan : "free";
+  const stored = await readStoredPlan(supabase, userId);
+  return stored === "pro" || stored === "team" ? stored : "free";
 }

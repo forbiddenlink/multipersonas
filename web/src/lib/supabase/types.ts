@@ -376,6 +376,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          access_grace_ends_at: string | null
           agency_name: string | null
           avatar_url: string | null
           created_at: string
@@ -388,6 +389,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          access_grace_ends_at?: string | null
           agency_name?: string | null
           avatar_url?: string | null
           created_at?: string
@@ -400,6 +402,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          access_grace_ends_at?: string | null
           agency_name?: string | null
           avatar_url?: string | null
           created_at?: string

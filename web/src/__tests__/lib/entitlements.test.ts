@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { PROJECT_LIMITS, planAllowsPersonas, planDisplayName, planUpgradeSummary } from "@/lib/entitlements";
+import { PROJECT_LIMITS, getExactPlan, getSessionPlan, planAllowsPersonas, planDisplayName, planUpgradeSummary } from "@/lib/entitlements";
+import { PAST_DUE_GRACE_DAYS, isEntitledSubscriptionStatus, pastDueGraceEndsAt, planAfterGrace } from "@/lib/plans";
 
 describe("planAllowsPersonas", () => {
   it("allows pro and team", () => {
@@ -34,5 +35,68 @@ describe("planUpgradeSummary", () => {
     expect(summary).toContain("Solo");
     expect(summary).toContain("Agency founding");
     expect(summary).not.toMatch(/\bPro\b/);
+  });
+});
+
+describe("past_due grace window", () => {
+  const DAY = 86_400_000;
+  const NOW = Date.parse("2026-10-20T12:00:00Z");
+  const iso = (offset: number): string => new Date(NOW + offset).toISOString();
+  const periodStart = (daysAgo: number): number => (NOW - daysAgo * DAY) / 1000;
+
+  it("entitles active and trialing always, past_due only inside the window", () => {
+    expect(isEntitledSubscriptionStatus("active")).toBe(true);
+    expect(isEntitledSubscriptionStatus("trialing")).toBe(true);
+    const end = pastDueGraceEndsAt([periodStart(PAST_DUE_GRACE_DAYS - 1)]);
+    expect(isEntitledSubscriptionStatus("past_due", end, NOW)).toBe(true);
+    const lapsed = pastDueGraceEndsAt([periodStart(PAST_DUE_GRACE_DAYS + 1)]);
+    expect(isEntitledSubscriptionStatus("past_due", lapsed, NOW)).toBe(false);
+    expect(isEntitledSubscriptionStatus("past_due", null, NOW)).toBe(false);
+  });
+
+  it.each(["unpaid", "canceled", "incomplete", "incomplete_expired", "paused"])("never entitles %s, even with a future grace end", (status) => {
+    expect(isEntitledSubscriptionStatus(status, NOW + DAY, NOW)).toBe(false);
+  });
+
+  it("anchors the window on the newest period start and fails closed without one", () => {
+    expect(pastDueGraceEndsAt([periodStart(10), periodStart(2)])).toBe(NOW - 2 * DAY + PAST_DUE_GRACE_DAYS * DAY);
+    expect(pastDueGraceEndsAt([])).toBeNull();
+    expect(pastDueGraceEndsAt([undefined, null])).toBeNull();
+  });
+
+  it("downgrades a stored paid plan to free once the grace end has passed", () => {
+    expect(planAfterGrace("team", iso(DAY), NOW)).toBe("team");
+    expect(planAfterGrace("team", iso(-DAY), NOW)).toBe("free");
+    expect(planAfterGrace("pro", iso(0), NOW)).toBe("free");
+    expect(planAfterGrace("pro", null, NOW)).toBe("pro");
+  });
+
+  function fakeSupabase(row: Record<string, unknown> | null, firstError: { code: string } | null = null) {
+    const selects: string[] = [];
+    const client = {
+      from: () => ({
+        select: (columns: string) => {
+          selects.push(columns);
+          const fail = firstError && selects.length === 1;
+          return { eq: () => ({ single: async () => (fail ? { data: null, error: firstError } : { data: row, error: null }) }) };
+        },
+      }),
+    };
+    return { client: client as never, selects };
+  }
+
+  it("gates the persona and tier reads on an expired grace window", async () => {
+    const lapsed = fakeSupabase({ plan: "team", access_grace_ends_at: new Date(Date.now() - DAY).toISOString() });
+    expect(await getSessionPlan(lapsed.client, "u1")).toBe("free");
+    expect(await getExactPlan(lapsed.client, "u1")).toBe("free");
+    const inside = fakeSupabase({ plan: "team", access_grace_ends_at: new Date(Date.now() + DAY).toISOString() });
+    expect(await getExactPlan(inside.client, "u1")).toBe("team");
+    expect(await getSessionPlan(inside.client, "u1")).toBe("team");
+  });
+
+  it("falls back to the plain plan before the grace column exists", async () => {
+    const legacy = fakeSupabase({ plan: "pro" }, { code: "42703" });
+    expect(await getExactPlan(legacy.client, "u1")).toBe("pro");
+    expect(legacy.selects).toEqual(["plan,access_grace_ends_at", "plan"]);
   });
 });
