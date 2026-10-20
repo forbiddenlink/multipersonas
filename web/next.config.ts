@@ -51,18 +51,13 @@ const sharedReportHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  // PostHog reverse proxy. Content blockers drop requests to us.i.posthog.com outright,
+  // PostHog reverse proxy lives in src/app/ingest/[...path]/route.ts, not a rewrite: a rewrite
+  // to an external host forwards the Cookie header (auth cookies) upstream. Content blockers
+  // drop requests to us.i.posthog.com outright,
   // which silently deletes the traffic product decisions are made from; a same-origin
   // path keeps it first-party. PostHog's API paths end in a slash, which is why the
   // trailing-slash redirect has to be off or Next rewrites them away first.
   skipTrailingSlashRedirect: true,
-  async rewrites() {
-    return [
-      { source: "/ingest/static/:path*", destination: "https://us-assets.i.posthog.com/static/:path*" },
-      { source: "/ingest/array/:path*", destination: "https://us-assets.i.posthog.com/array/:path*" },
-      { source: "/ingest/:path*", destination: "https://us.i.posthog.com/:path*" },
-    ];
-  },
   transpilePackages: ["personaudit"],
   async headers() {
     return [

@@ -89,6 +89,6 @@ export async function proxy(request: NextRequest) {
 // Supabase getUser() round trip. `(?:/|$)` keeps the exclusion to those exact path segments.
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/stripe/webhook(?:/|$)|api/health(?:/|$)|monitoring(?:/|$)|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|ingest/|favicon.ico|api/stripe/webhook(?:/|$)|api/health(?:/|$)|monitoring(?:/|$)|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
