@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import Stripe from "stripe";
+import type { Database } from "@/lib/supabase/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { GRANT_RANK, PLANS, isEntitledSubscriptionStatus, isPlanKey, pastDueGraceEndsAt } from "@/lib/plans";
 import { captureServerEvent } from "@/lib/analytics-server";
@@ -11,30 +12,45 @@ function stripeClient(): Stripe | null {
   return key ? new Stripe(key) : null;
 }
 
+const isMissingColumn = (error: { code?: string } | null): boolean => error?.code === "42703" || error?.code === "PGRST204";
+
 async function setPlan(
   userId: string,
   plan: "free" | "pro" | "team",
   customerId?: string,
   trialEndsAt: string | null = null,
   graceEndsAt: string | null = null,
+  fallbackPlan: "free" | "pro" | "team" = "free",
 ): Promise<void> {
   const admin = createAdminClient();
   if (!admin) throw new Error("Admin client is not configured");
-  // trial_ends_at lets the spend path cap trialing callers lower (lib/spend.ts).
-  // access_grace_ends_at is set only while access rests on a past_due subscription; plan
-  // reads treat the plan as free once it passes (lib/plans.ts planAfterGrace).
-  const update = customerId
-    ? { plan, stripe_customer_id: customerId, trial_ends_at: trialEndsAt, access_grace_ends_at: graceEndsAt }
-    : { plan, trial_ends_at: trialEndsAt, access_grace_ends_at: graceEndsAt };
-  let { data, error } = await admin.from("profiles").update(update).eq("id", userId).select("id").maybeSingle();
-  // Deploy order: before migration 20261012120400 the column does not exist (Postgres 42703,
-  // or PostgREST PGRST204 for an unknown column in the body). Entitlement must still be
-  // saved, so retry without the trial marker rather than failing every subscription event.
-  if (error && (error.code === "42703" || error.code === "PGRST204")) {
-    const withoutMarkers = customerId ? { plan, stripe_customer_id: customerId } : { plan };
-    ({ data, error } = await admin.from("profiles").update(withoutMarkers).eq("id", userId).select("id").maybeSingle());
+  const base = customerId ? { plan, stripe_customer_id: customerId } : { plan };
+  const write = async (values: Database["public"]["Tables"]["profiles"]["Update"]) =>
+    admin.from("profiles").update(values).eq("id", userId).select("id").maybeSingle();
+  // trial_ends_at lets the spend path cap trialing callers lower (lib/spend.ts);
+  // access_grace_ends_at limits a past_due plan (lib/plans.ts planAfterGrace).
+  let { data, error } = await write({ ...base, trial_ends_at: trialEndsAt, access_grace_ends_at: graceEndsAt, grace_fallback_plan: graceEndsAt && fallbackPlan !== "free" ? fallbackPlan : null });
+  // Deploy order: a marker column may not exist yet (Postgres 42703, or PostgREST PGRST204).
+  // Step down one column at a time so a missing grace column does not also drop the trial
+  // marker. Without the grace column a graced plan cannot expire, so only the still-paid
+  // fallback plan (or "free") is written (fail closed); a plain paid plan is unaffected.
+  if (isMissingColumn(error)) {
+    const safePlan = graceEndsAt ? fallbackPlan : plan;
+    const safeBase = customerId ? { plan: safePlan, stripe_customer_id: customerId } : { plan: safePlan };
+    ({ data, error } = await write({ ...safeBase, trial_ends_at: trialEndsAt }));
+    if (isMissingColumn(error)) ({ data, error } = await write(safeBase));
   }
   if (error || !data) throw new Error("Could not persist subscription access");
+}
+
+/** The grace end already stored for this user, so a later webhook cannot move it forward. */
+async function readStoredGraceEnd(userId: string): Promise<string | null> {
+  const admin = createAdminClient();
+  if (!admin) throw new Error("Admin client is not configured");
+  const { data, error } = await admin.from("profiles").select("access_grace_ends_at").eq("id", userId).maybeSingle();
+  if (isMissingColumn(error)) return null;
+  if (error) throw new Error("Could not read subscription grace state");
+  return (data as { access_grace_ends_at?: string | null } | null)?.access_grace_ends_at ?? null;
 }
 
 async function syncPaidPlan(stripe: Stripe, userId: string, customerId: string): Promise<void> {
@@ -75,8 +91,14 @@ async function syncPaidPlan(stripe: Stripe, userId: string, customerId: string):
   const trialEndsAt = !anyActive && latestTrialEnd !== null ? new Date(latestTrialEnd * 1000).toISOString() : null;
   // Grace limits access only when the strongest grant rests on a past_due subscription.
   const onGrace = GRANT_RANK[gracedPlan] > GRANT_RANK[firmPlan] && gracedEnd !== null;
-  const graceEndsAt = onGrace && gracedEnd !== null ? new Date(gracedEnd).toISOString() : null;
-  await setPlan(userId, onGrace ? gracedPlan : firmPlan, customerId, trialEndsAt, graceEndsAt);
+  // The window is fixed at the first past_due sync: renewal attempts shift the period start
+  // forward, so a stored value is kept as-is (even when already expired) until the account
+  // leaves past_due, at which point this branch is not taken and the column is cleared.
+  const graceEndsAt = onGrace && gracedEnd !== null
+    ? (await readStoredGraceEnd(userId)) ?? new Date(gracedEnd).toISOString()
+    : null;
+  const graceLapsed = graceEndsAt !== null && Date.parse(graceEndsAt) <= Date.now();
+  await setPlan(userId, graceLapsed ? firmPlan : onGrace ? gracedPlan : firmPlan, customerId, trialEndsAt, graceEndsAt, firmPlan);
 }
 
 export async function POST(request: Request): Promise<Response> {

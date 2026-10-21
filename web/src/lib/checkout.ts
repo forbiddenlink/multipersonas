@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/server";
 import { isFoundingCheckoutOpen, isPlanCheckoutOpen } from "@/lib/founding-checkout";
+import { readProfileWithEffectivePlan } from "@/lib/entitlements";
 import { PLANS, trialPeriodDays, type PlanKey } from "@/lib/plans";
 import { siteOrigin } from "@/lib/site-url";
 
@@ -131,11 +132,12 @@ export async function startPlanCheckout(plan: PlanKey): Promise<Response> {
     return Response.json({ error: "Checkout is not available yet." }, { status: 503 });
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("plan,stripe_customer_id")
-    .eq("id", user.id)
-    .single();
+  // Effective plan: a lapsed past_due grace window reads as free here too.
+  const { data: profile, error: profileError } = await readProfileWithEffectivePlan<{ plan: string; stripe_customer_id: string | null }>(
+    supabase,
+    user.id,
+    "plan,stripe_customer_id",
+  );
   if (profileError || !profile || !["free", "pro", "team"].includes(profile.plan)) {
     return Response.json({ error: "Could not verify your current plan. Please try again." }, { status: 503 });
   }

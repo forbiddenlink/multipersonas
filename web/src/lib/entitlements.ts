@@ -35,17 +35,28 @@ export function planUpgradeSummary(): string {
 }
 
 /**
- * The stored plan with an expired past_due grace window applied (planAfterGrace). Reads
- * the grace column when it exists; before its migration (Postgres 42703 / PostgREST
- * PGRST204) it falls back to the plain plan. Any other error resolves to "free".
+ * Read a profile row with an expired past_due grace window applied to `plan`
+ * (planAfterGrace). Selects the grace column alongside `columns` (which must include
+ * `plan`); before its migration (Postgres 42703 / PostgREST PGRST204) it falls back to
+ * the plain columns. Callers get `plan` already effective, so no reader can forget it.
  */
+export async function readProfileWithEffectivePlan<Row extends { plan: string }>(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  columns: string,
+): Promise<{ data: Row | null; error: { code?: string; message?: string } | null }> {
+  const read = (cols: string) => supabase.from("profiles").select(cols).eq("id", userId).single();
+  let { data, error } = await read(`${columns},access_grace_ends_at,grace_fallback_plan`);
+  if (error && (error.code === "42703" || error.code === "PGRST204")) ({ data, error } = await read(columns));
+  if (error || !data) return { data: null, error: error ?? { message: "no row" } };
+  const row = data as unknown as Row & { access_grace_ends_at?: string | null; grace_fallback_plan?: string | null };
+  const { access_grace_ends_at, grace_fallback_plan, ...rest } = row;
+  return { data: { ...(rest as unknown as Row), plan: planAfterGrace(row.plan, access_grace_ends_at, grace_fallback_plan) }, error: null };
+}
+
 async function readStoredPlan(supabase: SupabaseClient<Database>, userId: string): Promise<string> {
-  const read = (columns: string) => supabase.from("profiles").select(columns).eq("id", userId).single();
-  let { data, error } = await read("plan,access_grace_ends_at");
-  if (error && (error.code === "42703" || error.code === "PGRST204")) ({ data, error } = await read("plan"));
-  if (error || !data) return "free";
-  const row = data as unknown as { plan: string; access_grace_ends_at?: string | null };
-  return planAfterGrace(row.plan, row.access_grace_ends_at);
+  const { data } = await readProfileWithEffectivePlan<{ plan: string }>(supabase, userId, "plan");
+  return data?.plan ?? "free";
 }
 
 /**

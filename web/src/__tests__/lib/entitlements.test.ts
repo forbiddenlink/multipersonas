@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { PROJECT_LIMITS, getExactPlan, getSessionPlan, planAllowsPersonas, planDisplayName, planUpgradeSummary } from "@/lib/entitlements";
+import { PROJECT_LIMITS, getExactPlan, getSessionPlan, readProfileWithEffectivePlan, planAllowsPersonas, planDisplayName, planUpgradeSummary } from "@/lib/entitlements";
 import { PAST_DUE_GRACE_DAYS, isEntitledSubscriptionStatus, pastDueGraceEndsAt, planAfterGrace } from "@/lib/plans";
 
 describe("planAllowsPersonas", () => {
@@ -65,10 +65,12 @@ describe("past_due grace window", () => {
   });
 
   it("downgrades a stored paid plan to free once the grace end has passed", () => {
-    expect(planAfterGrace("team", iso(DAY), NOW)).toBe("team");
-    expect(planAfterGrace("team", iso(-DAY), NOW)).toBe("free");
-    expect(planAfterGrace("pro", iso(0), NOW)).toBe("free");
-    expect(planAfterGrace("pro", null, NOW)).toBe("pro");
+    expect(planAfterGrace("team", iso(DAY), null, NOW)).toBe("team");
+    expect(planAfterGrace("team", iso(-DAY), null, NOW)).toBe("free");
+    expect(planAfterGrace("pro", iso(0), null, NOW)).toBe("free");
+    expect(planAfterGrace("pro", null, null, NOW)).toBe("pro");
+    expect(planAfterGrace("team", iso(-DAY), "pro", NOW)).toBe("pro");
+    expect(planAfterGrace("team", iso(DAY), "pro", NOW)).toBe("team");
   });
 
   function fakeSupabase(row: Record<string, unknown> | null, firstError: { code: string } | null = null) {
@@ -97,6 +99,14 @@ describe("past_due grace window", () => {
   it("falls back to the plain plan before the grace column exists", async () => {
     const legacy = fakeSupabase({ plan: "pro" }, { code: "42703" });
     expect(await getExactPlan(legacy.client, "u1")).toBe("pro");
-    expect(legacy.selects).toEqual(["plan,access_grace_ends_at", "plan"]);
+    expect(legacy.selects).toEqual(["plan,access_grace_ends_at,grace_fallback_plan", "plan"]);
+  });
+
+  it("returns the requested columns with an effective plan for checkout and settings", async () => {
+    const lapsed = fakeSupabase({ plan: "pro", stripe_customer_id: "cus_1", access_grace_ends_at: new Date(Date.now() - DAY).toISOString() });
+    const res = await readProfileWithEffectivePlan<{ plan: string; stripe_customer_id: string }>(lapsed.client, "u1", "plan,stripe_customer_id");
+    expect(res.data).toEqual({ plan: "free", stripe_customer_id: "cus_1" });
+    const legacy = fakeSupabase({ plan: "pro", stripe_customer_id: "cus_1" }, { code: "PGRST204" });
+    expect((await readProfileWithEffectivePlan(legacy.client, "u1", "plan,stripe_customer_id")).data?.plan).toBe("pro");
   });
 });

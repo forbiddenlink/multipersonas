@@ -59,12 +59,20 @@ export function pastDueGraceEndsAt(periodStartsSeconds: readonly (number | null 
 /**
  * The plan to honour at read time. No Stripe event fires when a `past_due` grace window
  * simply runs out, so the webhook stores `access_grace_ends_at` and every plan read applies
- * it: a paid plan whose grace has passed is `free` until a webhook confirms recovery.
+ * it: a paid plan whose grace has passed drops to `grace_fallback_plan` (the strongest
+ * still-paid subscription) or `free`, until a webhook confirms recovery.
  */
-export function planAfterGrace<T extends string>(plan: T, graceEndsAt: string | null | undefined, now: number = Date.now()): T | "free" {
+export function planAfterGrace<T extends string>(
+  plan: T,
+  graceEndsAt: string | null | undefined,
+  fallbackPlan: string | null | undefined = null,
+  now: number = Date.now(),
+): T | "free" | "pro" | "team" {
   if (!graceEndsAt) return plan;
   const end = Date.parse(graceEndsAt);
-  return Number.isFinite(end) && now >= end ? "free" : plan;
+  if (!Number.isFinite(end) || now < end) return plan;
+  // Expired: drop to the strongest plan another subscription still pays for, else free.
+  return fallbackPlan === "pro" || fallbackPlan === "team" ? fallbackPlan : "free";
 }
 
 export const PLAN_KEYS = Object.keys(PLANS) as readonly PlanKey[];

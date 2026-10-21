@@ -6,7 +6,7 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { Badge } from "@/components/ui/badge";
 import { BoxDivider } from "@/components/forensic/divider";
 import { updateAgencyNameAction } from "./actions";
-import { planAllowsReportBranding, planDisplayName, planUpgradeSummary } from "@/lib/entitlements";
+import { planAllowsReportBranding, planDisplayName, planUpgradeSummary, readProfileWithEffectivePlan } from "@/lib/entitlements";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ManageBillingButton } from "@/components/manage-billing-button";
 import { CheckoutPlanWatcher } from "@/components/checkout-plan-watcher";
@@ -28,11 +28,11 @@ export default async function SettingsPage({
 
   if (!user) redirect("/auth/login?next=/settings");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("plan,agency_name,stripe_customer_id")
-    .eq("id", user.id)
-    .single();
+  const { data: profile } = await readProfileWithEffectivePlan<{ plan: string; agency_name: string | null; stripe_customer_id: string | null }>(
+    supabase,
+    user.id,
+    "plan,agency_name,stripe_customer_id",
+  );
   const reportBrandingAllowed = planAllowsReportBranding(profile?.plan);
   const hasBillingCustomer = Boolean(profile?.stripe_customer_id?.trim());
 

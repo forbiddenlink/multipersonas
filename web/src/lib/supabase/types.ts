@@ -382,6 +382,7 @@ export type Database = {
           created_at: string
           email: string
           full_name: string | null
+          grace_fallback_plan: string | null
           id: string
           plan: string
           stripe_customer_id: string | null
@@ -395,6 +396,7 @@ export type Database = {
           created_at?: string
           email: string
           full_name?: string | null
+          grace_fallback_plan?: string | null
           id: string
           plan?: string
           stripe_customer_id?: string | null
@@ -408,6 +410,7 @@ export type Database = {
           created_at?: string
           email?: string
           full_name?: string | null
+          grace_fallback_plan?: string | null
           id?: string
           plan?: string
           stripe_customer_id?: string | null
