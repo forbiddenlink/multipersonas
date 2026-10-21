@@ -99,14 +99,17 @@ async function syncPaidPlan(stripe: Stripe, userId: string, customerId: string):
   const storedEndMs = stored.end !== null && Number.isFinite(Date.parse(stored.end)) ? Date.parse(stored.end) : null;
   const anchors: Record<string, GraceAnchor> = {};
   const effective = pastDue.map((sub) => {
-    if (sub.end === null) return { ...sub, effEnd: null as number | null };
+    // No period start means no grace now, but the subscription is still anchored (at "now", already
+    // over), so a later sync that does carry a period start cannot open a fresh window for the
+    // same continuous delinquency.
+    const rawEnd = sub.end ?? Date.now();
     const own = stored.anchors?.[sub.id] ? Date.parse(stored.anchors[sub.id]!.ends_at) : NaN;
     // No per-subscription anchor stored (state written before anchors existed): the profile-level
     // deadline can still only shorten the window, never extend it.
     const cap = Number.isFinite(own) ? own : stored.anchors === null ? storedEndMs : null;
-    const effEnd = cap === null ? sub.end : Math.min(sub.end, cap);
+    const effEnd = cap === null ? rawEnd : Math.min(rawEnd, cap);
     if (sub.grant !== "free") anchors[sub.id] = { plan: sub.grant, ends_at: new Date(effEnd).toISOString() };
-    return { ...sub, effEnd };
+    return { ...sub, effEnd: effEnd as number | null };
   });
   // Each subscription earns grace only from its OWN unexpired deadline. The highest tier among
   // those wins, so an expired Agency window cannot lend its tier to a Solo still inside its own.

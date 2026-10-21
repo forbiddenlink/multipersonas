@@ -509,6 +509,21 @@ describe("POST /api/stripe/webhook", () => {
     expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ plan: "pro", access_grace_ends_at: soloEnd }));
   });
 
+  it("does not open a fresh window when a past_due subscription first had no period start", async () => {
+    // Sync 1: no period start, so no grace and no access, but the subscription is anchored at "now".
+    activeSubscriptions([{ id: "sub_agency", metadata, status: "past_due", items: { data: [] } } as never]);
+    expect((await POST(request())).status).toBe(200);
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ plan: "free" }));
+    const stored = update.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    expect(stored.access_grace_anchors).toEqual({ sub_agency: { plan: "team", ends_at: expect.any(String) } });
+    readGraceEnd.mockResolvedValue({ data: { access_grace_ends_at: stored.access_grace_ends_at, access_grace_anchors: stored.access_grace_anchors }, error: null });
+    update.mockClear();
+    // Sync 2: the period start now arrives; the same continuous delinquency must not get a new 7 days.
+    activeSubscriptions([{ id: "sub_agency", metadata, status: "past_due", items: { data: [{ current_period_start: nowSec() }] } } as never]);
+    expect((await POST(request())).status).toBe(200);
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ plan: "free" }));
+  });
+
   it("clears the stored window when the subscription returns to active", async () => {
     readGraceEnd.mockResolvedValue({ data: { access_grace_ends_at: new Date(Date.now() + DAY * 1000).toISOString() }, error: null });
     activeSubscriptions([{ id: "sub_current", metadata, status: "active" }]);
