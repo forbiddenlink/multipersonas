@@ -14,6 +14,12 @@
 
 alter table public.profiles add column if not exists access_grace_ends_at timestamptz;
 
+-- access_grace_anchors: {subscription_id: first deadline} for each subscription that is still
+-- past_due. Each subscription's window is fixed at its own first past_due sync, so a billing
+-- period advance on one cannot extend it and another's deadline cannot cap or restore it.
+-- Dropped entries clear when a subscription stops being past_due. Service-role-only.
+alter table public.profiles add column if not exists access_grace_anchors jsonb;
+
 -- grace_fallback_plan: the strongest plan still backed by a non-delinquent subscription while a
 -- stronger one is in grace (for example an active Solo plus a past_due Agency). When the grace
 -- window ends, effective_plan falls back to it instead of 'free'. Null means nothing else is

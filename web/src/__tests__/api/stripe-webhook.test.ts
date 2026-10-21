@@ -242,13 +242,13 @@ describe("POST /api/stripe/webhook", () => {
     const failedAt = nowSec() - 2 * DAY;
     activeSubscriptions([{ id: "sub_retrying", metadata, status: "past_due", items: { data: [{ current_period_start: failedAt }] } } as never]);
     expect((await POST(request())).status).toBe(200);
-    expect(update).toHaveBeenCalledWith({
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({
       plan: "team",
       stripe_customer_id: "cus_test",
       trial_ends_at: null,
       access_grace_ends_at: new Date((failedAt + PAST_DUE_GRACE_DAYS * DAY) * 1000).toISOString(),
       grace_fallback_plan: null,
-    });
+    }));
   });
 
   it("revokes access once the past_due grace window has passed", async () => {
@@ -367,13 +367,13 @@ describe("POST /api/stripe/webhook", () => {
       { id: "sub_team", metadata, status: "past_due", items: { data: [{ current_period_start: failedAt }] } } as never,
     ]);
     expect((await POST(request())).status).toBe(200);
-    expect(update).toHaveBeenLastCalledWith({
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({
       plan: "team",
       stripe_customer_id: "cus_test",
       trial_ends_at: null,
       access_grace_ends_at: new Date((failedAt + PAST_DUE_GRACE_DAYS * DAY) * 1000).toISOString(),
       grace_fallback_plan: "pro",
-    });
+    }));
     // Lapsed window: the stored plan becomes the fallback, never free while Solo is paid.
     update.mockClear();
     readGraceEnd.mockResolvedValue({ data: { access_grace_ends_at: new Date(Date.now() - DAY * 1000).toISOString() }, error: null });
@@ -390,13 +390,13 @@ describe("POST /api/stripe/webhook", () => {
     ]);
     expect((await POST(request())).status).toBe(200);
     // Agency's 7-day window ended 3 days ago: no `team`. Solo keeps `pro` until ITS deadline.
-    expect(update).toHaveBeenLastCalledWith({
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({
       plan: "pro",
       stripe_customer_id: "cus_test",
       trial_ends_at: null,
       access_grace_ends_at: new Date((soloFailedAt + PAST_DUE_GRACE_DAYS * DAY) * 1000).toISOString(),
       grace_fallback_plan: null,
-    });
+    }));
   });
 
   it("shortens the stored anchor to the remaining Agency deadline when the later-deadline subscription is canceled", async () => {
@@ -410,13 +410,13 @@ describe("POST /api/stripe/webhook", () => {
     activeSubscriptions([{ id: "sub_early", metadata, status: "past_due", items: { data: [{ current_period_start: early }] } } as never]);
     constructEvent.mockReturnValue({ type: "customer.subscription.deleted", data: { object: { metadata, status: "canceled", customer: "cus_test" } } });
     expect((await POST(request())).status).toBe(200);
-    expect(update).toHaveBeenLastCalledWith({
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({
       plan: "team",
       stripe_customer_id: "cus_test",
       trial_ends_at: null,
       access_grace_ends_at: earlyEnd,
       grace_fallback_plan: null,
-    });
+    }));
   });
 
   it("gives an Agency subscription with no period start no grace, even beside a Solo inside its window", async () => {
@@ -434,7 +434,7 @@ describe("POST /api/stripe/webhook", () => {
     readGraceEnd.mockResolvedValue({ data: { access_grace_ends_at: firstGraceEnd, grace_fallback_plan: null }, error: null });
     activeSubscriptions([pastDue(0)]); // a retry moved current_period_start to now
     expect((await POST(request())).status).toBe(200);
-    expect(update).toHaveBeenCalledWith({ plan: "team", stripe_customer_id: "cus_test", trial_ends_at: null, access_grace_ends_at: firstGraceEnd, grace_fallback_plan: null });
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ plan: "team", stripe_customer_id: "cus_test", trial_ends_at: null, access_grace_ends_at: firstGraceEnd, grace_fallback_plan: null }));
   });
 
   it("stays free after the stored window ended even if a newer period start would reopen it", async () => {
@@ -442,7 +442,7 @@ describe("POST /api/stripe/webhook", () => {
     readGraceEnd.mockResolvedValue({ data: { access_grace_ends_at: expired, grace_fallback_plan: null }, error: null });
     activeSubscriptions([pastDue(0)]);
     expect((await POST(request())).status).toBe(200);
-    expect(update).toHaveBeenCalledWith({ plan: "free", stripe_customer_id: "cus_test", trial_ends_at: null, access_grace_ends_at: expired, grace_fallback_plan: null });
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ plan: "free", stripe_customer_id: "cus_test", trial_ends_at: null, access_grace_ends_at: expired, grace_fallback_plan: null }));
   });
 
   it("keeps the expired deadline while still past_due, so a later period start cannot reopen access", async () => {
@@ -480,6 +480,28 @@ describe("POST /api/stripe/webhook", () => {
     expect((await POST(request())).status).toBe(200);
     expect(lastGraceEnd()).toBe(stored);
     expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ plan: "free" }));
+  });
+
+  it("does not restore an expired Agency window when its billing period advances beside a Solo still in grace", async () => {
+    const solo = { personaudit_plan: "solo", supabase_user_id: "user-1" };
+    const soloStart = nowSec() - 1 * DAY;
+    const soloEnd = new Date((soloStart + PAST_DUE_GRACE_DAYS * DAY) * 1000).toISOString();
+    const subs = (agencyStart: number) => [
+      { id: "sub_agency", metadata, status: "past_due", items: { data: [{ current_period_start: agencyStart }] } } as never,
+      { id: "sub_solo", metadata: solo, status: "past_due", items: { data: [{ current_period_start: soloStart }] } } as never,
+    ];
+    // Sync 1: Agency past_due long enough for its own window to be over, Solo still inside its own.
+    activeSubscriptions(subs(nowSec() - (PAST_DUE_GRACE_DAYS + 3) * DAY));
+    expect((await POST(request())).status).toBe(200);
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ plan: "pro", access_grace_ends_at: soloEnd }));
+    // Sync 2: Agency's billing period advances while it stays continuously past_due. The write
+    // from sync 1 is what the next webhook reads back.
+    const stored = update.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    readGraceEnd.mockResolvedValue({ data: { access_grace_ends_at: stored.access_grace_ends_at, access_grace_anchors: stored.access_grace_anchors }, error: null });
+    update.mockClear();
+    activeSubscriptions(subs(nowSec()));
+    expect((await POST(request())).status).toBe(200);
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ plan: "pro", access_grace_ends_at: soloEnd }));
   });
 
   it("clears the stored window when the subscription returns to active", async () => {
