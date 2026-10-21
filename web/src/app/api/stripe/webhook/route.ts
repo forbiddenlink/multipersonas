@@ -2,7 +2,7 @@ import * as Sentry from "@sentry/nextjs";
 import Stripe from "stripe";
 import type { Database } from "@/lib/supabase/types";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { GRANT_RANK, PLANS, isEntitledSubscriptionStatus, isPlanKey, pastDueGraceEndsAt } from "@/lib/plans";
+import { GRANT_RANK, PLANS, GraceAnchor, isEntitledSubscriptionStatus, isPlanKey, parseGraceAnchors, pastDueGraceEndsAt } from "@/lib/plans";
 import { captureServerEvent } from "@/lib/analytics-server";
 
 export const runtime = "nodejs";
@@ -21,7 +21,7 @@ async function setPlan(
   trialEndsAt: string | null = null,
   graceEndsAt: string | null = null,
   fallbackPlan: "free" | "pro" | "team" = "free",
-  graceAnchors?: Record<string, string> | null,
+  graceAnchors?: Record<string, GraceAnchor> | null,
 ): Promise<void> {
   const admin = createAdminClient();
   if (!admin) throw new Error("Admin client is not configured");
@@ -44,11 +44,11 @@ async function setPlan(
   if (error || !data) throw new Error("Could not persist subscription access");
 }
 
-type StoredGrace = { end: string | null; anchors: Record<string, string> | null };
+type StoredGrace = { end: string | null; anchors: Record<string, GraceAnchor> | null };
 
 /**
  * The grace state already stored for this user, so a later webhook cannot move a deadline
- * forward. `anchors` maps each past_due subscription id to ITS OWN first deadline; `end` is the
+ * forward. `anchors` maps each past_due subscription id to the tier it grants and ITS OWN first deadline; `end` is the
  * profile-level deadline, used only as a cap when no per-subscription anchors were stored yet.
  */
 async function readStoredGrace(userId: string): Promise<StoredGrace> {
@@ -57,8 +57,8 @@ async function readStoredGrace(userId: string): Promise<StoredGrace> {
   const { data, error } = await admin.from("profiles").select("access_grace_ends_at, access_grace_anchors").eq("id", userId).maybeSingle();
   if (isMissingColumn(error)) return { end: null, anchors: null };
   if (error) throw new Error("Could not read subscription grace state");
-  const row = data as { access_grace_ends_at?: string | null; access_grace_anchors?: Record<string, string> | null } | null;
-  return { end: row?.access_grace_ends_at ?? null, anchors: row?.access_grace_anchors ?? null };
+  const row = data as { access_grace_ends_at?: string | null; access_grace_anchors?: unknown } | null;
+  return { end: row?.access_grace_ends_at ?? null, anchors: parseGraceAnchors(row?.access_grace_anchors) };
 }
 
 async function syncPaidPlan(stripe: Stripe, userId: string, customerId: string): Promise<void> {
@@ -97,15 +97,15 @@ async function syncPaidPlan(stripe: Stripe, userId: string, customerId: string):
   // recovery followed by a new failure starts a new window.
   const stored = await readStoredGrace(userId);
   const storedEndMs = stored.end !== null && Number.isFinite(Date.parse(stored.end)) ? Date.parse(stored.end) : null;
-  const anchors: Record<string, string> = {};
+  const anchors: Record<string, GraceAnchor> = {};
   const effective = pastDue.map((sub) => {
     if (sub.end === null) return { ...sub, effEnd: null as number | null };
-    const own = stored.anchors?.[sub.id] ? Date.parse(stored.anchors[sub.id]!) : NaN;
+    const own = stored.anchors?.[sub.id] ? Date.parse(stored.anchors[sub.id]!.ends_at) : NaN;
     // No per-subscription anchor stored (state written before anchors existed): the profile-level
     // deadline can still only shorten the window, never extend it.
     const cap = Number.isFinite(own) ? own : stored.anchors === null ? storedEndMs : null;
     const effEnd = cap === null ? sub.end : Math.min(sub.end, cap);
-    anchors[sub.id] = new Date(effEnd).toISOString();
+    if (sub.grant !== "free") anchors[sub.id] = { plan: sub.grant, ends_at: new Date(effEnd).toISOString() };
     return { ...sub, effEnd };
   });
   // Each subscription earns grace only from its OWN unexpired deadline. The highest tier among

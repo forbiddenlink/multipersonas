@@ -497,6 +497,11 @@ describe("POST /api/stripe/webhook", () => {
     // Sync 2: Agency's billing period advances while it stays continuously past_due. The write
     // from sync 1 is what the next webhook reads back.
     const stored = update.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    // Each anchor carries the tier it grants, so read-time expiry can keep Solo after Agency lapses.
+    expect(stored.access_grace_anchors).toEqual({
+      sub_agency: { plan: "team", ends_at: expect.any(String) },
+      sub_solo: { plan: "pro", ends_at: soloEnd },
+    });
     readGraceEnd.mockResolvedValue({ data: { access_grace_ends_at: stored.access_grace_ends_at, access_grace_anchors: stored.access_grace_anchors }, error: null });
     update.mockClear();
     activeSubscriptions(subs(nowSec()));

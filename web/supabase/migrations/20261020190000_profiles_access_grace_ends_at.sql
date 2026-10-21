@@ -14,10 +14,13 @@
 
 alter table public.profiles add column if not exists access_grace_ends_at timestamptz;
 
--- access_grace_anchors: {subscription_id: first deadline} for each subscription that is still
--- past_due. Each subscription's window is fixed at its own first past_due sync, so a billing
--- period advance on one cannot extend it and another's deadline cannot cap or restore it.
--- Dropped entries clear when a subscription stops being past_due. Service-role-only.
+-- access_grace_anchors: {subscription_id: {"plan": "pro"|"team", "ends_at": first deadline}} for
+-- each subscription that is still past_due. Each subscription's window is fixed at its own first
+-- past_due sync, so a billing period advance on one cannot extend it and another's deadline cannot
+-- cap or restore it. The tier is stored with the deadline so effective_plan (and planAfterGrace)
+-- can pick the highest tier whose own window is still open, instead of dropping to free when the
+-- strongest tier's window ends while a lower tier's is still running. Dropped entries clear when a
+-- subscription stops being past_due. Service-role-only.
 alter table public.profiles add column if not exists access_grace_anchors jsonb;
 
 -- grace_fallback_plan: the strongest plan still backed by a non-delinquent subscription while a
@@ -27,18 +30,38 @@ alter table public.profiles add column if not exists access_grace_anchors jsonb;
 alter table public.profiles add column if not exists grace_fallback_plan text
   check (grace_fallback_plan is null or grace_fallback_plan in ('pro', 'team'));
 
--- effective_plan: the plan to honour in SQL. An expired access_grace_ends_at reads as
--- grace_fallback_plan (default 'free'), mirroring planAfterGrace in web/src/lib/plans.ts. Every SQL reader of
--- profiles.plan below goes through it, so a lapsed past_due account cannot keep
--- scheduled scans, a higher project cap or white-label share-link branding.
+-- effective_plan: the plan to honour in SQL, mirroring planAfterGrace in web/src/lib/plans.ts.
+-- With access_grace_ends_at null the stored plan stands. Otherwise, when anchors exist, it is the
+-- highest tier whose anchor window is still open, or grace_fallback_plan (the firm plan), never
+-- above the stored plan. Rows with no anchors keep the older rule: an expired access_grace_ends_at
+-- reads as grace_fallback_plan (default 'free'). Every SQL reader of profiles.plan below goes
+-- through it, so a lapsed past_due account cannot keep scheduled scans, a higher project cap or
+-- white-label share-link branding.
 create or replace function public.effective_plan(p public.profiles)
 returns text
 language sql
 stable
 as $$
   select case
-    when p.access_grace_ends_at is not null and p.access_grace_ends_at <= now()
-      then coalesce(p.grace_fallback_plan, 'free')
+    when p.access_grace_ends_at is null then p.plan
+    when jsonb_typeof(p.access_grace_anchors) = 'object' and exists (
+      select 1 from jsonb_each(p.access_grace_anchors) a
+      where jsonb_typeof(a.value) = 'object' and a.value->>'plan' in ('pro', 'team')
+    ) then (
+      select case least(b.best, case p.plan when 'team' then 2 when 'pro' then 1 else 0 end)
+        when 2 then 'team' when 1 then 'pro' else 'free' end
+      from (
+        select coalesce(max(r), 0) as best from (
+          select case a.value->>'plan' when 'team' then 2 else 1 end as r
+          from jsonb_each(p.access_grace_anchors) a
+          where jsonb_typeof(a.value) = 'object' and a.value->>'plan' in ('pro', 'team')
+            and (a.value->>'ends_at')::timestamptz > now()
+          union all
+          select case p.grace_fallback_plan when 'team' then 2 when 'pro' then 1 else 0 end
+        ) s
+      ) b
+    )
+    when p.access_grace_ends_at <= now() then coalesce(p.grace_fallback_plan, 'free')
     else p.plan
   end
 $$;

@@ -73,6 +73,23 @@ describe("past_due grace window", () => {
     expect(planAfterGrace("team", iso(DAY), "pro", NOW)).toBe("team");
   });
 
+  it("picks the highest tier whose own grace is still open once the strongest tier lapses", () => {
+    // Agency past_due from Oct 1 (grace to Oct 8), Solo past_due from Oct 5 (grace to Oct 12).
+    const anchors = { sub_agency: { plan: "team", ends_at: iso(-DAY) }, sub_solo: { plan: "pro", ends_at: iso(3 * DAY) } };
+    expect(planAfterGrace("team", iso(-DAY), null, NOW, anchors)).toBe("pro");
+    expect(planAfterGrace("team", iso(-DAY), null, NOW + 4 * DAY, anchors)).toBe("free");
+    expect(planAfterGrace("team", iso(-DAY), "pro", NOW + 4 * DAY, anchors)).toBe("pro");
+    const both = { sub_agency: { plan: "team", ends_at: iso(DAY) }, sub_solo: { plan: "pro", ends_at: iso(3 * DAY) } };
+    expect(planAfterGrace("team", iso(DAY), null, NOW, both)).toBe("team");
+    // Malformed or legacy string anchors are ignored: the legacy path decides.
+    expect(planAfterGrace("team", iso(-DAY), "pro", NOW, { a: iso(DAY) } as never)).toBe("pro");
+    expect(planAfterGrace("team", iso(-DAY), null, NOW, {})).toBe("free");
+  });
+
+  it("never lets an anchor raise the plan above the stored one", () => {
+    expect(planAfterGrace("pro", iso(-DAY), null, NOW, { s: { plan: "team", ends_at: iso(DAY) } })).toBe("pro");
+  });
+
   function fakeSupabase(row: Record<string, unknown> | null, firstError: { code: string } | null = null) {
     const selects: string[] = [];
     const client = {
@@ -96,10 +113,23 @@ describe("past_due grace window", () => {
     expect(await getSessionPlan(inside.client, "u1")).toBe("team");
   });
 
+  it("keeps a lower tier's open grace after the stronger tier's grace expires (getExactPlan)", async () => {
+    const row = {
+      plan: "team",
+      access_grace_ends_at: new Date(Date.now() - DAY).toISOString(),
+      grace_fallback_plan: null,
+      access_grace_anchors: {
+        sub_agency: { plan: "team", ends_at: new Date(Date.now() - DAY).toISOString() },
+        sub_solo: { plan: "pro", ends_at: new Date(Date.now() + 3 * DAY).toISOString() },
+      },
+    };
+    expect(await getExactPlan(fakeSupabase(row).client, "u1")).toBe("pro");
+  });
+
   it("falls back to the plain plan before the grace column exists", async () => {
     const legacy = fakeSupabase({ plan: "pro" }, { code: "42703" });
     expect(await getExactPlan(legacy.client, "u1")).toBe("pro");
-    expect(legacy.selects).toEqual(["plan,access_grace_ends_at,grace_fallback_plan", "plan"]);
+    expect(legacy.selects).toEqual(["plan,access_grace_ends_at,grace_fallback_plan,access_grace_anchors", "plan"]);
   });
 
   it("returns the requested columns with an effective plan for checkout and settings", async () => {

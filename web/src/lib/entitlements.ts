@@ -46,12 +46,12 @@ export async function readProfileWithEffectivePlan<Row extends { plan: string }>
   columns: string,
 ): Promise<{ data: Row | null; error: { code?: string; message?: string } | null }> {
   const read = (cols: string) => supabase.from("profiles").select(cols).eq("id", userId).single();
-  let { data, error } = await read(`${columns},access_grace_ends_at,grace_fallback_plan`);
+  let { data, error } = await read(`${columns},access_grace_ends_at,grace_fallback_plan,access_grace_anchors`);
   if (error && (error.code === "42703" || error.code === "PGRST204")) ({ data, error } = await read(columns));
   if (error || !data) return { data: null, error: error ?? { message: "no row" } };
-  const row = data as unknown as Row & { access_grace_ends_at?: string | null; grace_fallback_plan?: string | null };
-  const { access_grace_ends_at, grace_fallback_plan, ...rest } = row;
-  return { data: { ...(rest as unknown as Row), plan: planAfterGrace(row.plan, access_grace_ends_at, grace_fallback_plan) }, error: null };
+  const row = data as unknown as Row & { access_grace_ends_at?: string | null; grace_fallback_plan?: string | null; access_grace_anchors?: unknown };
+  const { access_grace_ends_at, grace_fallback_plan, access_grace_anchors, ...rest } = row;
+  return { data: { ...(rest as unknown as Row), plan: planAfterGrace(row.plan, access_grace_ends_at, grace_fallback_plan, Date.now(), access_grace_anchors) }, error: null };
 }
 
 async function readStoredPlan(supabase: SupabaseClient<Database>, userId: string): Promise<string> {
