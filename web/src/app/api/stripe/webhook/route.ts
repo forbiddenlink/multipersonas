@@ -62,6 +62,9 @@ async function syncPaidPlan(stripe: Stripe, userId: string, customerId: string):
   let firmPlan: "free" | "pro" | "team" = "free";
   let gracedPlan: "free" | "pro" | "team" = "free";
   let gracedEnd: number | null = null;
+  // Any owned past_due subscription, whichever tier currently grants access.
+  let anyPastDue = false;
+  let anyPastDueEnd: number | null = null;
   let anyActive = false;
   let latestTrialEnd: number | null = null;
   for await (const subscription of stripe.subscriptions.list({ customer: customerId, status: "all", limit: 100 })) {
@@ -76,6 +79,8 @@ async function syncPaidPlan(stripe: Stripe, userId: string, customerId: string):
     // keep its stored deadline even after the window ended (see below).
     if (subscription.status === "past_due" && isPlanKey(key) && subscription.metadata.supabase_user_id === userId) {
       const grant = PLANS[key].grants;
+      anyPastDue = true;
+      if (graceEnd !== null) anyPastDueEnd = Math.max(anyPastDueEnd ?? 0, graceEnd);
       if (GRANT_RANK[grant] > GRANT_RANK[gracedPlan]) {
         gracedPlan = grant;
         gracedEnd = graceEnd;
@@ -95,12 +100,13 @@ async function syncPaidPlan(stripe: Stripe, userId: string, customerId: string):
   const trialEndsAt = !anyActive && latestTrialEnd !== null ? new Date(latestTrialEnd * 1000).toISOString() : null;
   // Grace limits access only when the strongest grant rests on a past_due subscription.
   const delinquent = GRANT_RANK[gracedPlan] > GRANT_RANK[firmPlan];
-  // The window is fixed at the first past_due sync and never moved or cleared while the
-  // subscription stays past_due, even after it expires: a later period start must not grant
-  // a fresh window. It is cleared only when the account returns to active/trialing or ends
-  // (then `delinquent` is false). With no period start the deadline is "now" (fail closed).
-  const graceEndsAt = delinquent
-    ? (await readStoredGraceEnd(userId)) ?? new Date(gracedEnd ?? Date.now()).toISOString()
+  // The window is fixed at the first past_due sync and never moved or cleared while ANY
+  // owned subscription stays past_due, even after it expires and whichever subscription
+  // currently grants access (an overlapping trial must not reset it). A later period start
+  // must not grant a fresh window. It is cleared only when no owned subscription is past_due.
+  // With no period start the deadline is "now" (fail closed).
+  const graceEndsAt = anyPastDue
+    ? (await readStoredGraceEnd(userId)) ?? new Date(anyPastDueEnd ?? Date.now()).toISOString()
     : null;
   const graceLapsed = graceEndsAt !== null && Date.parse(graceEndsAt) <= Date.now();
   await setPlan(userId, delinquent && !graceLapsed ? gracedPlan : firmPlan, customerId, trialEndsAt, graceEndsAt, firmPlan);

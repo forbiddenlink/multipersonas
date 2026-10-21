@@ -266,7 +266,8 @@ describe("POST /api/stripe/webhook", () => {
   it("does not limit access by grace while an active subscription backs the same tier", async () => {
     activeSubscriptions([pastDue(1), { id: "sub_paid", metadata, status: "active" }]);
     expect((await POST(request())).status).toBe(200);
-    expect(update).toHaveBeenCalledWith({ plan: "team", stripe_customer_id: "cus_test", trial_ends_at: null, access_grace_ends_at: null, grace_fallback_plan: null });
+    // The deadline stays anchored (any past_due keeps it) but the fallback is the still-paid tier.
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ plan: "team", trial_ends_at: null, grace_fallback_plan: "team" }));
   });
 
   it("treats a future trial plus a delinquent paid subscription as paid: no trial marker, normal spending cap", async () => {
@@ -409,6 +410,28 @@ describe("POST /api/stripe/webhook", () => {
     activeSubscriptions([pastDue(0)]);
     expect((await POST(request())).status).toBe(200);
     expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ plan: "free", access_grace_ends_at: stored }));
+  });
+
+  it("keeps the deadline across an overlapping trial that is later canceled, never moving it forward", async () => {
+    const trialEnd = nowSec() + 14 * DAY;
+    const lastGraceEnd = () => (update.mock.calls.at(-1)?.[0] as { access_grace_ends_at: string | null }).access_grace_ends_at;
+    // 1. Expired past_due Team alongside a trialing Team: first sight stores an expired deadline.
+    activeSubscriptions([pastDue(PAST_DUE_GRACE_DAYS + 1), { id: "sub_trial", metadata, status: "trialing", trial_end: trialEnd } as never]);
+    expect((await POST(request())).status).toBe(200);
+    const stored = lastGraceEnd();
+    expect(stored).not.toBeNull();
+    expect(Date.parse(stored as string)).toBeLessThan(Date.now());
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ plan: "team", grace_fallback_plan: "team" }));
+    // 2. Trial overlaps again on a later webhook: deadline unchanged.
+    readGraceEnd.mockResolvedValue({ data: { access_grace_ends_at: stored }, error: null });
+    activeSubscriptions([pastDue(0), { id: "sub_trial", metadata, status: "trialing", trial_end: trialEnd } as never]);
+    expect((await POST(request())).status).toBe(200);
+    expect(lastGraceEnd()).toBe(stored);
+    // 3. Trial canceled, new period on the original past_due sub: still the same expired deadline, free.
+    activeSubscriptions([pastDue(0)]);
+    expect((await POST(request())).status).toBe(200);
+    expect(lastGraceEnd()).toBe(stored);
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ plan: "free" }));
   });
 
   it("clears the stored window when the subscription returns to active", async () => {
