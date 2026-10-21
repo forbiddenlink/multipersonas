@@ -254,13 +254,13 @@ describe("POST /api/stripe/webhook", () => {
   it("revokes access once the past_due grace window has passed", async () => {
     activeSubscriptions([pastDue(PAST_DUE_GRACE_DAYS + 1)]);
     expect((await POST(request())).status).toBe(200);
-    expect(update).toHaveBeenCalledWith({ plan: "free", stripe_customer_id: "cus_test", trial_ends_at: null, access_grace_ends_at: null, grace_fallback_plan: null });
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ plan: "free", trial_ends_at: null }));
   });
 
   it("fails closed when a past_due subscription carries no period start", async () => {
     activeSubscriptions([{ id: "sub_late", metadata, status: "past_due" } as never]);
     expect((await POST(request())).status).toBe(200);
-    expect(update).toHaveBeenCalledWith({ plan: "free", stripe_customer_id: "cus_test", trial_ends_at: null, access_grace_ends_at: null, grace_fallback_plan: null });
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({ plan: "free", trial_ends_at: null }));
   });
 
   it("does not limit access by grace while an active subscription backs the same tier", async () => {
@@ -394,6 +394,21 @@ describe("POST /api/stripe/webhook", () => {
     activeSubscriptions([pastDue(0)]);
     expect((await POST(request())).status).toBe(200);
     expect(update).toHaveBeenCalledWith({ plan: "free", stripe_customer_id: "cus_test", trial_ends_at: null, access_grace_ends_at: expired, grace_fallback_plan: null });
+  });
+
+  it("keeps the expired deadline while still past_due, so a later period start cannot reopen access", async () => {
+    // Webhook 1, after the window: lapsed past_due, nothing stored yet -> free, expired deadline stored.
+    activeSubscriptions([pastDue(PAST_DUE_GRACE_DAYS + 1)]);
+    expect((await POST(request())).status).toBe(200);
+    const stored = (update.mock.calls.at(-1)?.[0] as { access_grace_ends_at: string }).access_grace_ends_at;
+    expect(stored).not.toBeNull();
+    expect(Date.parse(stored)).toBeLessThan(Date.now());
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ plan: "free" }));
+    // Webhook 2: still past_due, new retry/period moved current_period_start to now. Deadline kept, still free.
+    readGraceEnd.mockResolvedValue({ data: { access_grace_ends_at: stored }, error: null });
+    activeSubscriptions([pastDue(0)]);
+    expect((await POST(request())).status).toBe(200);
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ plan: "free", access_grace_ends_at: stored }));
   });
 
   it("clears the stored window when the subscription returns to active", async () => {

@@ -72,14 +72,18 @@ async function syncPaidPlan(stripe: Stripe, userId: string, customerId: string):
       : null;
     const entitled = isEntitledSubscriptionStatus(subscription.status, graceEnd);
     const key = subscription.metadata.personaudit_plan;
+    // Track every owned past_due subscription, lapsed or not: continuous delinquency must
+    // keep its stored deadline even after the window ended (see below).
+    if (subscription.status === "past_due" && isPlanKey(key) && subscription.metadata.supabase_user_id === userId) {
+      const grant = PLANS[key].grants;
+      if (GRANT_RANK[grant] > GRANT_RANK[gracedPlan]) {
+        gracedPlan = grant;
+        gracedEnd = graceEnd;
+      } else if (grant === gracedPlan && graceEnd !== null) gracedEnd = Math.max(gracedEnd ?? 0, graceEnd);
+    }
     if (entitled && isPlanKey(key) && subscription.metadata.supabase_user_id === userId) {
       const grant = PLANS[key].grants;
-      if (graceEnd !== null) {
-        if (GRANT_RANK[grant] > GRANT_RANK[gracedPlan]) {
-          gracedPlan = grant;
-          gracedEnd = graceEnd;
-        } else if (grant === gracedPlan) gracedEnd = Math.max(gracedEnd ?? 0, graceEnd);
-      } else if (GRANT_RANK[grant] > GRANT_RANK[firmPlan]) firmPlan = grant;
+      if (graceEnd === null && GRANT_RANK[grant] > GRANT_RANK[firmPlan]) firmPlan = grant;
       // A delinquent subscription has paid before, so it is the paid one and clears the trial marker.
       if (subscription.status !== "trialing") anyActive = true;
       else if (typeof subscription.trial_end === "number") {
@@ -90,15 +94,16 @@ async function syncPaidPlan(stripe: Stripe, userId: string, customerId: string):
   // Trialing only if nothing entitled is already paid; a paid subscription clears it.
   const trialEndsAt = !anyActive && latestTrialEnd !== null ? new Date(latestTrialEnd * 1000).toISOString() : null;
   // Grace limits access only when the strongest grant rests on a past_due subscription.
-  const onGrace = GRANT_RANK[gracedPlan] > GRANT_RANK[firmPlan] && gracedEnd !== null;
-  // The window is fixed at the first past_due sync: renewal attempts shift the period start
-  // forward, so a stored value is kept as-is (even when already expired) until the account
-  // leaves past_due, at which point this branch is not taken and the column is cleared.
-  const graceEndsAt = onGrace && gracedEnd !== null
-    ? (await readStoredGraceEnd(userId)) ?? new Date(gracedEnd).toISOString()
+  const delinquent = GRANT_RANK[gracedPlan] > GRANT_RANK[firmPlan];
+  // The window is fixed at the first past_due sync and never moved or cleared while the
+  // subscription stays past_due, even after it expires: a later period start must not grant
+  // a fresh window. It is cleared only when the account returns to active/trialing or ends
+  // (then `delinquent` is false). With no period start the deadline is "now" (fail closed).
+  const graceEndsAt = delinquent
+    ? (await readStoredGraceEnd(userId)) ?? new Date(gracedEnd ?? Date.now()).toISOString()
     : null;
   const graceLapsed = graceEndsAt !== null && Date.parse(graceEndsAt) <= Date.now();
-  await setPlan(userId, graceLapsed ? firmPlan : onGrace ? gracedPlan : firmPlan, customerId, trialEndsAt, graceEndsAt, firmPlan);
+  await setPlan(userId, delinquent && !graceLapsed ? gracedPlan : firmPlan, customerId, trialEndsAt, graceEndsAt, firmPlan);
 }
 
 export async function POST(request: Request): Promise<Response> {
