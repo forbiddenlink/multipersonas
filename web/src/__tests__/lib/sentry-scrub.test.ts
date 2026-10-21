@@ -9,6 +9,21 @@ import {
   sharedReportSafeSampler,
 } from "@/lib/sentry-scrub";
 
+/**
+ * Fastest of several runs. A linear regex stays far under budget on every run, while
+ * catastrophic backtracking is slow on every run, so the minimum keeps the check
+ * meaningful but stops one CI load spike from failing it.
+ */
+function fastestRunMs(fn: () => unknown, runs = 5): number {
+  let best = Number.POSITIVE_INFINITY;
+  for (let i = 0; i < runs; i++) {
+    const start = performance.now();
+    fn();
+    best = Math.min(best, performance.now() - start);
+  }
+  return best;
+}
+
 describe("wiring", () => {
   it("PostHog skips init and drops events on share links; Sentry samples and scrubs", () => {
     const read = (f: string) => fs.readFileSync(`${process.cwd()}/src/${f}`, "utf8");
@@ -134,9 +149,7 @@ describe("redactEmails cost", () => {
     // CodeQL js/polynomial-redos: the unanchored local part retried from every
     // offset, so 50k chars of "a." took seconds inside beforeSend.
     const input = "a.".repeat(25_000) + "@";
-    const start = performance.now();
-    redactEmails(input);
-    expect(performance.now() - start).toBeLessThan(100);
+    expect(fastestRunMs(() => redactEmails(input))).toBeLessThan(100);
   });
 
   it("redacts an address whose local part and domain exceed RFC lengths", () => {
@@ -146,9 +159,7 @@ describe("redactEmails cost", () => {
 
   it("stays linear when the domain run is long and has no TLD", () => {
     const input = "a@" + "b.".repeat(25_000);
-    const start = performance.now();
-    redactEmails(input);
-    expect(performance.now() - start).toBeLessThan(100);
+    expect(fastestRunMs(() => redactEmails(input))).toBeLessThan(100);
   });
 
   it("still redacts addresses next to punctuation", () => {
