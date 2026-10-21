@@ -108,13 +108,17 @@ async function syncPaidPlan(stripe: Stripe, userId: string, customerId: string):
   const trialEndsAt = !anyActive && latestTrialEnd !== null ? new Date(latestTrialEnd * 1000).toISOString() : null;
   // Grace limits access only when the strongest grant rests on a past_due subscription.
   const delinquent = GRANT_RANK[gracedPlan] > GRANT_RANK[firmPlan];
-  // The stored anchor wins. Otherwise store the deadline of the plan actually granted, so the
-  // read-time expiry (planAfterGrace) cannot outlive that tier's own window. With nothing
-  // granted, keep the latest (lapsed) deadline; with no period start the deadline is "now".
+  // While access rests on grace, store the deadline of the tier actually granted (gracedEnd is
+  // already capped by the anchor, which can shorten a window but never extend it), so the
+  // read-time expiry (planAfterGrace) cannot outlive that tier's own window even after a
+  // later-deadline subscription is canceled. With nothing granted via grace, the stored anchor
+  // wins; with none, keep the latest (lapsed) deadline; with no period start the deadline is "now".
   const latestOwnEnd = pastDue.reduce<number | null>((m, sub) => (sub.end === null ? m : Math.max(m ?? 0, sub.end)), null);
   const graceEndsAt = pastDue.length === 0
     ? null
-    : storedGraceEnd ?? new Date(delinquent && gracedEnd !== null ? gracedEnd : latestOwnEnd ?? now).toISOString();
+    : delinquent && gracedEnd !== null
+      ? new Date(gracedEnd).toISOString()
+      : storedGraceEnd ?? new Date(latestOwnEnd ?? now).toISOString();
   await setPlan(userId, delinquent ? gracedPlan : firmPlan, customerId, trialEndsAt, graceEndsAt, firmPlan);
 }
 

@@ -399,6 +399,26 @@ describe("POST /api/stripe/webhook", () => {
     });
   });
 
+  it("shortens the stored anchor to the remaining Agency deadline when the later-deadline subscription is canceled", async () => {
+    // Two past_due Agency subscriptions: grace ends in 3 days (early) and in 7 days (late).
+    const early = nowSec() - 4 * DAY;
+    const late = nowSec();
+    const earlyEnd = new Date((early + PAST_DUE_GRACE_DAYS * DAY) * 1000).toISOString();
+    const lateEnd = new Date((late + PAST_DUE_GRACE_DAYS * DAY) * 1000).toISOString();
+    // The first sync stored the later deadline; the late subscription is then canceled.
+    readGraceEnd.mockResolvedValue({ data: { access_grace_ends_at: lateEnd }, error: null });
+    activeSubscriptions([{ id: "sub_early", metadata, status: "past_due", items: { data: [{ current_period_start: early }] } } as never]);
+    constructEvent.mockReturnValue({ type: "customer.subscription.deleted", data: { object: { metadata, status: "canceled", customer: "cus_test" } } });
+    expect((await POST(request())).status).toBe(200);
+    expect(update).toHaveBeenLastCalledWith({
+      plan: "team",
+      stripe_customer_id: "cus_test",
+      trial_ends_at: null,
+      access_grace_ends_at: earlyEnd,
+      grace_fallback_plan: null,
+    });
+  });
+
   it("gives an Agency subscription with no period start no grace, even beside a Solo inside its window", async () => {
     const solo = { personaudit_plan: "solo", supabase_user_id: "user-1" };
     activeSubscriptions([
