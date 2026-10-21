@@ -381,6 +381,34 @@ describe("POST /api/stripe/webhook", () => {
     expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ plan: "pro" }));
   });
 
+  it("gives Solo only its own window when an Agency subscription's grace already expired (no stored anchor)", async () => {
+    const solo = { personaudit_plan: "solo", supabase_user_id: "user-1" };
+    const soloFailedAt = nowSec() - 1 * DAY;
+    activeSubscriptions([
+      pastDue(PAST_DUE_GRACE_DAYS + 3),
+      { id: "sub_solo", metadata: solo, status: "past_due", items: { data: [{ current_period_start: soloFailedAt }] } } as never,
+    ]);
+    expect((await POST(request())).status).toBe(200);
+    // Agency's 7-day window ended 3 days ago: no `team`. Solo keeps `pro` until ITS deadline.
+    expect(update).toHaveBeenLastCalledWith({
+      plan: "pro",
+      stripe_customer_id: "cus_test",
+      trial_ends_at: null,
+      access_grace_ends_at: new Date((soloFailedAt + PAST_DUE_GRACE_DAYS * DAY) * 1000).toISOString(),
+      grace_fallback_plan: null,
+    });
+  });
+
+  it("gives an Agency subscription with no period start no grace, even beside a Solo inside its window", async () => {
+    const solo = { personaudit_plan: "solo", supabase_user_id: "user-1" };
+    activeSubscriptions([
+      { id: "sub_team", metadata, status: "past_due" } as never,
+      { id: "sub_solo", metadata: solo, status: "past_due", items: { data: [{ current_period_start: nowSec() - 1 * DAY }] } } as never,
+    ]);
+    expect((await POST(request())).status).toBe(200);
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ plan: "pro" }));
+  });
+
   it("does not extend the window when a later past_due webhook sees a newer period start", async () => {
     const firstGraceEnd = new Date(Date.now() + 3 * DAY * 1000).toISOString();
     readGraceEnd.mockResolvedValue({ data: { access_grace_ends_at: firstGraceEnd, grace_fallback_plan: null }, error: null });

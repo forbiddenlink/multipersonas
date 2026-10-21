@@ -60,56 +60,62 @@ async function syncPaidPlan(stripe: Stripe, userId: string, customerId: string):
   // upgrades solo -> founding briefly holds both, and stopping at the first match
   // could downgrade them to the tier they just left.
   let firmPlan: "free" | "pro" | "team" = "free";
-  let gracedPlan: "free" | "pro" | "team" = "free";
-  let gracedEnd: number | null = null;
-  // Any owned past_due subscription, whichever tier currently grants access.
-  let anyPastDue = false;
-  let anyPastDueEnd: number | null = null;
+  // Every owned past_due subscription with its OWN deadline (null = no period start, so no
+  // grace). Lapsed ones are kept: continuous delinquency must keep its stored deadline.
+  const pastDue: { grant: "free" | "pro" | "team"; end: number | null }[] = [];
   let anyActive = false;
   let latestTrialEnd: number | null = null;
   for await (const subscription of stripe.subscriptions.list({ customer: customerId, status: "all", limit: 100 })) {
-    // past_due keeps access only inside the grace window; Stripe may leave it past_due
-    // after retries end, so it must expire on its own (lib/plans.ts).
-    const graceEnd = subscription.status === "past_due"
-      ? pastDueGraceEndsAt(subscription.items?.data?.map((item) => item.current_period_start) ?? [])
-      : null;
-    const entitled = isEntitledSubscriptionStatus(subscription.status, graceEnd);
     const key = subscription.metadata.personaudit_plan;
-    // Track every owned past_due subscription, lapsed or not: continuous delinquency must
-    // keep its stored deadline even after the window ended (see below).
-    if (subscription.status === "past_due" && isPlanKey(key) && subscription.metadata.supabase_user_id === userId) {
-      const grant = PLANS[key].grants;
-      anyPastDue = true;
-      if (graceEnd !== null) anyPastDueEnd = Math.max(anyPastDueEnd ?? 0, graceEnd);
-      if (GRANT_RANK[grant] > GRANT_RANK[gracedPlan]) {
-        gracedPlan = grant;
-        gracedEnd = graceEnd;
-      } else if (grant === gracedPlan && graceEnd !== null) gracedEnd = Math.max(gracedEnd ?? 0, graceEnd);
-    }
-    if (entitled && isPlanKey(key) && subscription.metadata.supabase_user_id === userId) {
-      const grant = PLANS[key].grants;
-      if (graceEnd === null && GRANT_RANK[grant] > GRANT_RANK[firmPlan]) firmPlan = grant;
-      // A delinquent subscription has paid before, so it is the paid one and clears the trial marker.
+    if (!isPlanKey(key) || subscription.metadata.supabase_user_id !== userId) continue;
+    const grant = PLANS[key].grants;
+    if (subscription.status === "past_due") {
+      // past_due keeps access only inside the grace window; Stripe may leave it past_due
+      // after retries end, so it must expire on its own (lib/plans.ts).
+      pastDue.push({ grant, end: pastDueGraceEndsAt(subscription.items?.data?.map((item) => item.current_period_start) ?? []) });
+    } else if (isEntitledSubscriptionStatus(subscription.status)) {
+      if (GRANT_RANK[grant] > GRANT_RANK[firmPlan]) firmPlan = grant;
       if (subscription.status !== "trialing") anyActive = true;
       else if (typeof subscription.trial_end === "number") {
         latestTrialEnd = Math.max(latestTrialEnd ?? 0, subscription.trial_end);
       }
     }
   }
-  // Trialing only if nothing entitled is already paid; a paid subscription clears it.
-  const trialEndsAt = !anyActive && latestTrialEnd !== null ? new Date(latestTrialEnd * 1000).toISOString() : null;
-  // Grace limits access only when the strongest grant rests on a past_due subscription.
-  const delinquent = GRANT_RANK[gracedPlan] > GRANT_RANK[firmPlan];
   // The window is fixed at the first past_due sync and never moved or cleared while ANY
   // owned subscription stays past_due, even after it expires and whichever subscription
   // currently grants access (an overlapping trial must not reset it). A later period start
   // must not grant a fresh window. It is cleared only when no owned subscription is past_due.
-  // With no period start the deadline is "now" (fail closed).
-  const graceEndsAt = anyPastDue
-    ? (await readStoredGraceEnd(userId)) ?? new Date(anyPastDueEnd ?? Date.now()).toISOString()
-    : null;
-  const graceLapsed = graceEndsAt !== null && Date.parse(graceEndsAt) <= Date.now();
-  await setPlan(userId, delinquent && !graceLapsed ? gracedPlan : firmPlan, customerId, trialEndsAt, graceEndsAt, firmPlan);
+  const storedGraceEnd = pastDue.length > 0 ? await readStoredGraceEnd(userId) : null;
+  const storedMs = storedGraceEnd !== null && Number.isFinite(Date.parse(storedGraceEnd)) ? Date.parse(storedGraceEnd) : null;
+  // Each subscription earns grace only from its OWN unexpired deadline (capped by the stored
+  // anchor, which can shorten but never extend it). The highest tier among those wins, so an
+  // expired Agency window cannot lend its tier to a Solo that is still inside its own.
+  const now = Date.now();
+  let gracedPlan: "free" | "pro" | "team" = "free";
+  let gracedEnd: number | null = null;
+  for (const sub of pastDue) {
+    if (sub.end === null) continue;
+    const end = storedMs === null ? sub.end : Math.min(sub.end, storedMs);
+    if (end <= now) continue;
+    // A delinquent subscription has paid before, so it is the paid one and clears the trial marker.
+    anyActive = true;
+    if (GRANT_RANK[sub.grant] > GRANT_RANK[gracedPlan]) {
+      gracedPlan = sub.grant;
+      gracedEnd = end;
+    } else if (sub.grant === gracedPlan) gracedEnd = Math.max(gracedEnd ?? 0, end);
+  }
+  // Trialing only if nothing entitled is already paid; a paid subscription clears it.
+  const trialEndsAt = !anyActive && latestTrialEnd !== null ? new Date(latestTrialEnd * 1000).toISOString() : null;
+  // Grace limits access only when the strongest grant rests on a past_due subscription.
+  const delinquent = GRANT_RANK[gracedPlan] > GRANT_RANK[firmPlan];
+  // The stored anchor wins. Otherwise store the deadline of the plan actually granted, so the
+  // read-time expiry (planAfterGrace) cannot outlive that tier's own window. With nothing
+  // granted, keep the latest (lapsed) deadline; with no period start the deadline is "now".
+  const latestOwnEnd = pastDue.reduce<number | null>((m, sub) => (sub.end === null ? m : Math.max(m ?? 0, sub.end)), null);
+  const graceEndsAt = pastDue.length === 0
+    ? null
+    : storedGraceEnd ?? new Date(delinquent && gracedEnd !== null ? gracedEnd : latestOwnEnd ?? now).toISOString();
+  await setPlan(userId, delinquent ? gracedPlan : firmPlan, customerId, trialEndsAt, graceEndsAt, firmPlan);
 }
 
 export async function POST(request: Request): Promise<Response> {
