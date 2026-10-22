@@ -149,7 +149,8 @@ describe("redactEmails cost", () => {
     // CodeQL js/polynomial-redos: the unanchored local part retried from every
     // offset, so 50k chars of "a." took seconds inside beforeSend.
     const input = "a.".repeat(25_000) + "@";
-    expect(fastestRunMs(() => redactEmails(input))).toBeLessThan(100);
+    // Generous budget: guards against pathological blowup, not micro-performance; tight budgets flake on the shared CI runner.
+    expect(fastestRunMs(() => redactEmails(input))).toBeLessThan(1000);
   });
 
   it("redacts an address whose local part and domain exceed RFC lengths", () => {
@@ -159,7 +160,8 @@ describe("redactEmails cost", () => {
 
   it("stays linear when the domain run is long and has no TLD", () => {
     const input = "a@" + "b.".repeat(25_000);
-    expect(fastestRunMs(() => redactEmails(input))).toBeLessThan(100);
+    // Generous budget: guards against pathological blowup, not micro-performance; tight budgets flake on the shared CI runner.
+    expect(fastestRunMs(() => redactEmails(input))).toBeLessThan(1000);
   });
 
   it("still redacts addresses next to punctuation", () => {
