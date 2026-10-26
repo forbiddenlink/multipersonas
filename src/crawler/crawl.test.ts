@@ -92,6 +92,41 @@ describe("crawl — evidence honesty", () => {
       });
   });
 
+  it("fills the page budget from the entered sub-path before the rest of the site", async () => {
+    let currentUrl = "";
+    const linksByPage: Record<string, string[]> = {
+      "http://localhost:3010/demo/before/home.html": [
+        "http://localhost:3010/",
+        "http://localhost:3010/about/",
+        "http://localhost:3010/demo/before/news.html",
+        "http://localhost:3010/demo/before/survey.html",
+      ],
+    };
+    launchAuditBrowser.mockResolvedValueOnce({
+      close: vi.fn(),
+      newContext: vi.fn().mockResolvedValue({
+        route: vi.fn(),
+        newPage: vi.fn().mockResolvedValue({
+          goto: vi.fn(async (url: string) => {
+            currentUrl = url;
+            return { status: () => 200 };
+          }),
+          waitForTimeout: vi.fn(),
+          url: () => currentUrl,
+          evaluate: vi.fn(async () => linksByPage[currentUrl] ?? []),
+        }),
+      }),
+    });
+
+    const result = await crawl("http://localhost:3010/demo/before/home.html", { allowPrivate: true, maxPages: 3 });
+    expect(result.pagesVisited).toEqual([
+      "http://localhost:3010/demo/before/home.html",
+      "http://localhost:3010/demo/before/news.html",
+      "http://localhost:3010/demo/before/survey.html",
+    ]);
+    expect(result.skipped).toEqual(["http://localhost:3010/", "http://localhost:3010/about/"]);
+  });
+
   it.each([0, -1, NaN, Infinity, 1.5])("rejects invalid page budget %s", async (maxPages) => {
     launchAuditBrowser.mockResolvedValue({
       close: vi.fn(),

@@ -47,7 +47,12 @@ export async function crawl(entryUrl: string, options: CrawlOptions = {}): Promi
   const findings: Finding[] = [];
   const visited: string[] = [];
   const seen = new Set<string>([normalise(entry.href)]);
-  const queue: string[] = [entry.href];
+  // An entry on a sub-path (`/demos/bad/`) asks about that section, so its pages fill
+  // the budget first and the rest of the origin takes what is left. Same rule as the
+  // hosted grader (grader/scan.ts). Two plain queues keep each enqueue O(1).
+  let scopePath = scopeOf(entry);
+  const inScopeQueue: string[] = [entry.href];
+  const outOfScopeQueue: string[] = [];
 
   try {
     const context = await browser.newContext(sessionFile ? { storageState: sessionFile } : {});
@@ -66,8 +71,8 @@ export async function crawl(entryUrl: string, options: CrawlOptions = {}): Promi
 
     const page = await context.newPage();
 
-    while (queue.length > 0 && visited.length < maxPages) {
-      const url = queue.shift()!;
+    while (inScopeQueue.length + outOfScopeQueue.length > 0 && visited.length < maxPages) {
+      const url = inScopeQueue.length > 0 ? inScopeQueue.shift()! : outOfScopeQueue.shift()!;
 
       // Re-validate each hop. A same-origin link can still resolve to a private
       // address via a redirect, and this now runs on stranger-supplied URLs.
@@ -89,7 +94,11 @@ export async function crawl(entryUrl: string, options: CrawlOptions = {}): Promi
         throw new Error(`Could not load ${label} ${url}: ${detail}`, { cause: error });
       }
 
-      if (visited.length === 0) origin = new URL(page.url()).origin;
+      if (visited.length === 0) {
+        const settled = new URL(page.url());
+        origin = settled.origin;
+        scopePath = scopeOf(settled);
+      }
       seen.add(normalise(page.url()));
       onPage?.(page.url(), visited.length);
       visited.push(page.url());
@@ -111,16 +120,25 @@ export async function crawl(entryUrl: string, options: CrawlOptions = {}): Promi
         const key = normalise(target.href);
         if (seen.has(key)) continue;
         seen.add(key);
-        queue.push(target.href);
+        (target.pathname.startsWith(scopePath) ? inScopeQueue : outOfScopeQueue).push(target.href);
       }
     }
 
     // Merge across every state, so one broken component is one defect with the
     // list of states it appeared in — not one per page.
-    return { findings: mergeAxeFindings(findings), pagesVisited: visited, skipped: queue };
+    return {
+      findings: mergeAxeFindings(findings),
+      pagesVisited: visited,
+      skipped: [...inScopeQueue, ...outOfScopeQueue],
+    };
   } finally {
     await browser.close();
   }
+}
+
+/** The directory an entry URL sits in: `/a/b/page.html` -> `/a/b/`, `/` -> `/`. */
+function scopeOf(url: URL): string {
+  return url.pathname.slice(0, url.pathname.lastIndexOf("/") + 1);
 }
 
 /** Same crawl target. Keeps query/hash routes, drops ordinary document anchors. */
