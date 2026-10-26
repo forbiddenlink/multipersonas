@@ -116,7 +116,7 @@
   "pnpm": {
     "overrides": {
       "next": ">=16.4.1 <17",
-      "undici": ">=8.10.2 <9",
+      "undici": ">=8.12.2 <9",
       "vite": ">=8.3.3 <9",
       "postcss": ">=8.5.18 <9",
       "@hono/node-server": ">=2.0.5 <3",
@@ -124,7 +124,7 @@
       "nanoid": ">=3.3.17 <7",
       "sharp": ">=0.35.0 <1",
       "js-yaml": ">=4.3.0 <6",
-      "fast-uri": ">=3.1.8 <4",
+      "fast-uri": ">=3.1.9 <4",
       "brace-expansion@5": ">=5.0.12 <6",
       "dompurify": ">=3.4.17 <4",
       "ip-address": ">=10.7.4 <11",
@@ -132,7 +132,8 @@
       "@modelcontextprotocol/sdk": ">=1.31.0 <2",
       "source-map-js": ">=1.2.2 <2",
       "proxy-addr": ">=2.0.8 <3",
-      "postcss-selector-parser": ">=7.1.6 <8"
+      "postcss-selector-parser": ">=7.1.6 <8",
+      "body-parser": ">=2.4.0 <3"
     }
   },
   "homepage": "https://personaudit.com",
