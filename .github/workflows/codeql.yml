@@ -45,13 +45,13 @@ jobs:
           persist-credentials: false
       # No build step: CodeQL extracts JS/TS and workflow YAML directly, so the
       # pnpm workspace never has to install to be analysed.
-      - uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4
+      - uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
         with:
           languages: ${{ matrix.language }}
           # No `queries:` input, so this runs the `default` suite - the same one
           # default setup reports (`query_suite: default`). security-extended is
           # deliberately not used: semgrep already runs advisory-only here, and a
           # second noisy scanner buries the findings worth acting on.
-      - uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4
+      - uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
         with:
           category: /language:${{ matrix.language }}

@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     container:
-      image: semgrep/semgrep:1.174.0
+      image: semgrep/semgrep:1.182.1@sha256:451b3d875c00dac7ed5db5293e584a07de11449a409c10b3c2d2652f429630b6
     if: (github.actor != 'dependabot[bot]')
     steps:
       - name: Harden runner (audit egress)
@@ -37,7 +37,7 @@ jobs:
         run: semgrep ci --config=auto --sarif --output=semgrep.sarif
         env:
           SEMGREP_RULES: p/default p/security-audit p/secrets p/nextjs p/typescript p/react p/javascript
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: semgrep-sarif
