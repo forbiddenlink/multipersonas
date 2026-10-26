@@ -75,5 +75,19 @@ jobs:
       - name: Test
         run: pnpm test
 
+      # A release can be Action-only (v0.2.1 re-tagged action.yml with package.json still
+      # at 0.2.0); npm rejects a version that exists, which turned that release red.
+      - name: Check whether this version is already on npm
+        id: npm-version
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if npm view "personaudit@${version}" version >/dev/null 2>&1; then
+            echo "::notice::personaudit@${version} is already on npm; skipping publish."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish with provenance (trusted publishing)
+        if: steps.npm-version.outputs.exists != 'true'
         run: npm publish --provenance --access public
