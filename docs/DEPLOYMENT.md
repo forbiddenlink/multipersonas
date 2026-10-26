@@ -308,7 +308,7 @@ values or delivery; see the continuation review for current verification evidenc
 pnpm install
 cp .env.example .env          # ANTHROPIC_API_KEY is needed only for `run` and `generate`
 pnpm exec playwright install chromium
-pnpm dev -- scan <url>        # CLI; `scan` is keyless, the CLI has no default command
+pnpm dev scan <url>        # CLI; `scan` is keyless, the CLI has no default command
 ```
 
 For the web app, copy `.env.example` to `web/.env.local` and `cd web && pnpm dev`.

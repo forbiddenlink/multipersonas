@@ -20,7 +20,7 @@ This is a pnpm workspace monorepo: the CLI/engine at the repo root, plus `web/` 
 Root (CLI/engine):
 ```bash
 pnpm install
-pnpm dev -- <cmd>          # run CLI from source, e.g. pnpm dev -- scan https://example.com
+pnpm dev <cmd>          # run CLI from source, e.g. pnpm dev scan https://example.com
 pnpm build                 # tsc build to dist/
 pnpm lint                  # eslint .
 pnpm test                  # vitest run

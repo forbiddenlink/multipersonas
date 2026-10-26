@@ -16,12 +16,12 @@ welcome; there is no formal process yet, so open an issue first for anything non
 pnpm install
 pnpm exec playwright install chromium
 # scan needs no API key:
-pnpm dev -- scan https://example.com
+pnpm dev scan https://example.com
 # run/generate use personas and need ANTHROPIC_API_KEY in .env:
-pnpm dev -- run https://example.com --count 3
+pnpm dev run https://example.com --count 3
 ```
 
-Two entry points: `pnpm dev -- <cmd>` runs from source; after `npm i -g personaudit`
+Two entry points: `pnpm dev <cmd>` runs from source; after `npm i -g personaudit`
 the installed binary is `personaudit <cmd>` (the legacy alias `mpersonas` also works).
 
 ## Before opening a PR

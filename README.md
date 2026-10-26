@@ -163,7 +163,7 @@ model-call cap before enqueueing.
 pnpm install
 cp .env.example .env                    # ANTHROPIC_API_KEY only for `run`/`generate`
 pnpm exec playwright install chromium
-pnpm dev -- scan https://example.com    # run the CLI from source
+pnpm dev scan https://example.com    # run the CLI from source
 pnpm test                               # CLI/engine tests (vitest)
 pnpm exec tsc --noEmit
 cd web && pnpm test && pnpm lint
