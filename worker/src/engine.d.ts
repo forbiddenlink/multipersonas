@@ -49,7 +49,7 @@ declare module "personaudit/orchestrator" {
     scanCoverage?: import("personaudit/engine").ScanCoverage;
     task?: import("personaudit/tasks").TaskDefinition;
     url: string;
-    taskSuccess: { achieved: number; total: number };
+    taskSuccess: { achieved: number; total: number; errored: number };
     personas: EnginePersonaResult[];
     axeFindings: {
       severity: string;

@@ -56,6 +56,17 @@ const importedPersonaSchema = z.object({
   systemPrompt: z.string().optional(),
 });
 
+// Without a key every persona errors at its first model call, and the run used to
+// finish as "0/N achieved" with exit 0, which reads as a verdict on the site.
+function requireModelKey(command: "run" | "generate"): void {
+  if (process.env.ANTHROPIC_API_KEY?.trim()) return;
+  console.error("");
+  console.error(chalk.red(`  \`${command}\` calls Anthropic and needs ANTHROPIC_API_KEY.`));
+  console.error(chalk.dim("  Set it in your shell or a .env file. `scan` and `grade` need no key."));
+  console.error("");
+  process.exit(1);
+}
+
 const program = new Command();
 
 program
@@ -420,6 +431,8 @@ program
     session?: string;
     blockDestructiveActions?: boolean;
   }) => {
+    requireModelKey("run");
+
     // Vet the target first. runMultiPersonaTest checks again, but persona
     // generation runs before it and costs model calls — no reason to spend them
     // on a URL we are going to refuse.
@@ -623,7 +636,7 @@ program
 
     // Lead with task success: it is the number that means something and the
     // one that moves when the site improves.
-    const { achieved, total } = result.taskSuccess;
+    const { achieved, total, errored } = result.taskSuccess;
     const uxFindings = result.personas.flatMap((p) => p.agentResult.findings);
     const states = new Set(result.personas.flatMap((p) => p.agentResult.pagesVisited));
     const sev = (list: typeof uxFindings, s: string) => list.filter((f) => f.severity === s).length;
@@ -631,6 +644,9 @@ program
     console.log("");
     const successColour = achieved === total ? chalk.green : achieved === 0 ? chalk.red : chalk.yellow;
     console.log(successColour(`  Task success: ${achieved}/${total} personas achieved their goal`));
+    if (errored > 0) {
+      console.log(chalk.red(`  ${errored} persona run${errored === 1 ? "" : "s"} errored before a first step; see the report.`));
+    }
     console.log(chalk.dim(`  States reached: ${states.size}`));
     // Count distinct rules, matching the report. Counting elements says "94
     // defects" where the report says 15, and two numbers for one thing is how a
@@ -647,6 +663,8 @@ program
     );
     console.log(chalk.dim(`  Report: ${result.reportPath}`));
     console.log("");
+    // Every run broke: that is a failed command, not a site where nobody succeeded.
+    if (total > 0 && errored === total) process.exit(1);
   });
 
 // --- Generate command ---
@@ -661,6 +679,7 @@ program
   .option("--session <file>", "Saved session from `personaudit auth`, so personas are derived from the signed-in app.")
   .option("--save", "Write the personas into ./mpersonas/ so you can edit and commit them")
   .action(async (url: string, options: { count: string; describe?: string; allowPrivate?: boolean; session?: string; save?: boolean }) => {
+    requireModelKey("generate");
     const count = parseInt(options.count, 10);
     const spinner = ora(`Generating ${count} personas...`).start();
 

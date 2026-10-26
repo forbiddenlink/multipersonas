@@ -4,6 +4,7 @@ import * as path from "path";
 import type { Persona } from "../personas/types.js";
 import { runPersonaAgent, PersonaAgentError, type ScanCoverage, type AgentResult, type Finding } from "./engine.js";
 import { mergeAxeFindings } from "./axe-scan.js";
+import { runErroredBeforeStart } from "./run-errored.js";
 import { generateMarkdownReport, type PersonaReport } from "../report/generator.js";
 import { assertUrlAllowed } from "../security/url-guard.js";
 import { resolveBlockDestructiveActions } from "../security/action-guard.js";
@@ -83,12 +84,15 @@ export interface PersonaConflict {
 export interface TaskSuccess {
   achieved: number;
   total: number;
+  /** Runs that broke before their first step. An execution failure, not a task outcome. */
+  errored: number;
 }
 
 function computeTaskSuccess(results: PersonaTestResult[]): TaskSuccess {
   return {
     achieved: results.filter((r) => r.agentResult.goalCompleted).length,
     total: results.length,
+    errored: results.filter((r) => runErroredBeforeStart(r.agentResult)).length,
   };
 }
 

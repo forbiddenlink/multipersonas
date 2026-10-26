@@ -420,6 +420,13 @@ async function claimAndRun(): Promise<boolean> {
     const result = await runJobProcess<TestResult>(
       new URL("./scan-process.ts", import.meta.url), { kind: claimed.kind, url: claimed.url, persona_ids: claimed.persona_ids, task_definition: claimed.task_definition, outputDir }, JOB_TIMEOUT_MS, SCAN_ISOLATION,
     );
+    // Every persona broke before a step (bad key, no credits, model outage). Saving that
+    // as a completed "0/N achieved" run tells a paying user their site failed every task
+    // and raises nothing. Fail the job so it lands in Sentry and the failure notifier.
+    const { errored, total } = result.taskSuccess;
+    if (total > 0 && errored === total) {
+      throw new Error(`Every persona run errored before its first step (${errored}/${total})`);
+    }
     const response = toResponse(result);
 
     let runId: string | null = null;

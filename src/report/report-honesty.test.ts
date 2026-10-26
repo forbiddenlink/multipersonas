@@ -78,6 +78,23 @@ describe("the report must not inflate what it found", () => {
     expect(md).toContain("No persona finished what they came to do");
   });
 
+  it("never reports a run that errored before trying as a failed task", () => {
+    const errored = result({
+      goalCompleted: false,
+      totalSteps: 0,
+      scanCoverage: { checks: [], executionFailures: [{ url: "https://x.test/", error: "Anthropic API key is missing." }] },
+    });
+    const md = generateMarkdownReport("https://x.test", [
+      { persona: persona("a"), agentResult: errored },
+      { persona: persona("b"), agentResult: errored },
+    ]);
+    expect(md).not.toContain("No persona finished what they came to do");
+    expect(md).toContain("No persona run completed");
+    expect(md).toContain("**0/2 personas** (2 errored)");
+    expect(md).not.toMatch(/\| ❌ \|/);
+    expect(md).toMatch(/\| errored \|/);
+  });
+
   it("still renders when the model omitted fields", () => {
     const broken = { title: "x", pageUrl: "https://x.test/" } as unknown as Finding;
     expect(() =>

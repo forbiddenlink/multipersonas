@@ -1,4 +1,5 @@
 import type { Finding, AgentResult, ScanCoverage } from "../agent/engine.js";
+import { runErroredBeforeStart } from "../agent/run-errored.js";
 import { SEVERITIES, severityRank as domainSeverityRank } from "../domain/vocab.js";
 import type { Persona } from "../personas/types.js";
 import type { Suppression, SuppressionOutcome } from "../crawler/suppressions.js";
@@ -251,6 +252,7 @@ export function generateMarkdownReport(
   };
   const hasTaskEvidence = reports.some((report) => report.agentResult.taskEvidence);
   const achieved = reports.filter((r) => r.agentResult.goalCompleted).length;
+  const erroredCount = reports.filter((r) => runErroredBeforeStart(r.agentResult)).length;
   const uxFindings = reports.flatMap((r) => deduplicateFindings(r.agentResult.findings));
   const axeGroups = groupAxeByRule(axeFindings);
 
@@ -271,14 +273,17 @@ export function generateMarkdownReport(
   lines.push(`| ${hasTaskEvidence ? (reports.some((report) => report.agentResult.taskEvidence?.checks) ? "Configured checks observed" : "Expected text observed") : "Task success"} | States reached | Accessibility defects | UX observations |`);
   lines.push(`|:---:|:---:|:---:|:---:|`);
   lines.push(
-    `| **${achieved}/${reports.length} personas** | ${states.size} | ${axeGroups.length} | ${uxFindings.length} |`,
+    `| **${achieved}/${reports.length} personas**${erroredCount ? ` (${erroredCount} errored)` : ""} | ${states.size} | ${axeGroups.length} | ${uxFindings.length} |`,
   );
   lines.push("");
   lines.push(`- **Accessibility defects** (${severityLine(axeGroups)}) — axe-core rule violations across ${axeFindings.length} elements. Deterministic.`);
   lines.push(`- **UX observations** (${severityLine(uxFindings)}) — what the personas reported. AI judgement; treat as a lead to check, not a verdict.`);
   lines.push("");
 
-  if (reports.length > 0 && achieved === 0) {
+  if (reports.length > 0 && erroredCount === reports.length) {
+    lines.push("> **No persona run completed.** Every run errored before it could try its goal, so this says nothing about the site. The errors are listed under Accessibility defects below.");
+    lines.push("");
+  } else if (reports.length > 0 && achieved === 0) {
     lines.push(hasTaskEvidence
       ? "> **The saved task checks were not verified in any profile.** This does not prove the site is broken."
       : `> **No persona finished what they came to do.** Their goals and what stopped them are below.`);
@@ -290,7 +295,7 @@ export function generateMarkdownReport(
   for (const r of reports) {
     const n = deduplicateFindings(r.agentResult.findings).length;
     lines.push(
-      `| ${r.persona.name} (${r.persona.id}) | ${r.agentResult.goalCompleted ? "✅" : "❌"} | ${r.agentResult.totalSteps} | ${r.agentResult.pagesVisited.length} | ${n} |`,
+      `| ${r.persona.name} (${r.persona.id}) | ${r.agentResult.goalCompleted ? "✅" : runErroredBeforeStart(r.agentResult) ? "errored" : "❌"} | ${r.agentResult.totalSteps} | ${r.agentResult.pagesVisited.length} | ${n} |`,
     );
   }
   lines.push("");
