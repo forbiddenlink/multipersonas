@@ -281,6 +281,17 @@ program
     console.log("");
   });
 
+// --- MCP server ---
+
+program
+  .command("mcp")
+  .description("Run an MCP server over stdio so a coding agent can scan and check the baseline gate (deterministic, no AI)")
+  .action(async () => {
+    // stdout is the protocol channel: nothing else may print to it from here on.
+    const { serveStdio } = await import("./mcp.js");
+    await serveStdio(pkg.version);
+  });
+
 // --- Grade command (Fast, keyless, Deque-weighted public score) ---
 
 program

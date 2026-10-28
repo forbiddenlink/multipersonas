@@ -55,6 +55,21 @@ The baseline keys defects by a render-stable id, so framework-generated element 
 
 Exit codes: `0` clean, `1` error (bad input, blocked URL, missing browser), `2` gate failed.
 
+### Use it from a coding agent (MCP)
+
+`personaudit mcp` runs a local MCP server over stdio, so an agent can check its own UI change against your baseline before you review it. Add it to Claude Code:
+
+```bash
+claude mcp add personaudit -- npx -y personaudit mcp
+```
+
+Two tools, both deterministic (no model calls, no API key):
+
+- `scan_site`: crawl and run axe-core. With `baseline`, defects are marked new or known and fixed ones are listed. With `failOn`, it reports whether the CI gate would pass.
+- `update_baseline`: rescan and overwrite the baseline. Marked destructive, because it accepts the current backlog.
+
+The same guards as `scan` apply. Localhost needs `allowPrivate: true`. A session file is passed by path and its contents never enter the conversation. Baseline files must be `.json` inside the directory the server was started in.
+
 ### Grade a public page
 
 ```bash
