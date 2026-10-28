@@ -14,6 +14,21 @@ export const CHANGELOG_PR_BASE = "https://github.com/forbiddenlink/multipersonas
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: "2026-10-28",
+    text: "New: personaudit mcp runs a local MCP server, so a coding agent can scan a site and check it against your baseline before you review the change. Deterministic, no API key.",
+    pr: 223,
+  },
+  {
+    date: "2026-10-28",
+    text: "The GitHub Action no longer fails at setup in your repository, and reuses its downloaded dependencies between runs.",
+    pr: 225,
+  },
+  {
+    date: "2026-10-28",
+    text: "One dead link no longer stops a CLI scan. Same-site links that return an error are listed under Broken links in the report and the pull-request comment, and the rest of the site is still scanned.",
+    pr: 222,
+  },
+  {
     date: "2026-10-15",
     text: "A site with a critical WCAG failure can no longer grade above C, or above B with a serious one. Earlier grades keep the letter they were given. The CI guide now shows a workflow GitHub accepts.",
     pr: 187,
