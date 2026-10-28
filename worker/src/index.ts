@@ -1,3 +1,4 @@
+import { assertSomePersonaRan } from "./run-outcome.js";
 import * as os from "node:os";
 import * as path from "node:path";
 import * as fs from "node:fs";
@@ -423,10 +424,7 @@ async function claimAndRun(): Promise<boolean> {
     // Every persona broke before a step (bad key, no credits, model outage). Saving that
     // as a completed "0/N achieved" run tells a paying user their site failed every task
     // and raises nothing. Fail the job so it lands in Sentry and the failure notifier.
-    const { errored, total } = result.taskSuccess;
-    if (total > 0 && errored === total) {
-      throw new Error(`Every persona run errored before its first step (${errored}/${total})`);
-    }
+    assertSomePersonaRan(result.taskSuccess);
     const response = toResponse(result);
 
     let runId: string | null = null;
