@@ -3,6 +3,7 @@ import type { Finding } from "../agent/engine.js";
 import { defectKey } from "../agent/defect-key.js";
 import type { Severity } from "../domain/vocab.js";
 import type { Suppression, SuppressionOutcome } from "../crawler/suppressions.js";
+import type { BrokenLink } from "../crawler/crawl.js";
 
 /** Bumped on any breaking change to the shape below. */
 export const SCAN_JSON_VERSION = 1;
@@ -31,7 +32,8 @@ export interface ScanJson {
   axeCoreVersion: string;
   target: string;
   timestamp: string;
-  states: { scanned: string[]; skipped: string[] };
+  /** `brokenLinks`: same-origin links that answered 4xx. Not scanned, reported as site problems. Added without a version bump; absent in older files. */
+  states: { scanned: string[]; skipped: string[]; brokenLinks?: BrokenLink[] };
   /** Baseline file used for the new/fixed split, or null when none was loaded. */
   baseline: string | null;
   summary: { total: number; new: number; fixed: number; stillOpen: number; suppressed: number; expired: number };
@@ -59,6 +61,7 @@ export interface BuildScanJsonInput {
   findings: Finding[];
   pagesVisited: string[];
   skipped: string[];
+  brokenLinks?: BrokenLink[];
   /** Keys in the baseline, or null when no baseline was loaded. */
   baselineKeys: Set<string> | null;
   baselinePath?: string;
@@ -93,7 +96,7 @@ export function buildScanJson(i: BuildScanJsonInput): ScanJson {
     axeCoreVersion: axeCoreVersion(),
     target: i.url,
     timestamp: (i.now ?? new Date()).toISOString(),
-    states: { scanned: i.pagesVisited, skipped: i.skipped },
+    states: { scanned: i.pagesVisited, skipped: i.skipped, brokenLinks: i.brokenLinks ?? [] },
     baseline: i.baselineKeys ? (i.baselinePath ?? null) : null,
     summary: {
       total: defects.length,

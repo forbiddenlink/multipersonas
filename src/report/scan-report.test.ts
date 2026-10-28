@@ -17,3 +17,18 @@ describe("generateScanReport suppressions", () => {
     expect(generateScanReport("https://x/", [], ["https://x/"])).not.toMatch(/uppress/);
   });
 });
+
+describe("generateScanReport broken links", () => {
+  it("lists dead same-site links apart from the defect count", () => {
+    const md = generateScanReport("https://x/", [], ["https://x/"], [], undefined, [
+      { url: "https://x/old-page", status: 404, foundOn: "https://x/" },
+    ]);
+    expect(md).toMatch(/## Broken links \(1\)/);
+    expect(md).toMatch(/\| `\/old-page` \| 404 \| `\/` \|/);
+    expect(md).toContain("| 1 | **0** | 0 |");
+  });
+
+  it("adds no broken-link section when every link loaded", () => {
+    expect(generateScanReport("https://x/", [], ["https://x/"])).not.toMatch(/Broken links/);
+  });
+});

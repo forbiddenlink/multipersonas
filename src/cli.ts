@@ -196,7 +196,7 @@ program
 
     fs.mkdirSync(options.output, { recursive: true });
     const reportPath = path.join(options.output, "scan.md");
-    fs.writeFileSync(reportPath, generateScanReport(url, result.findings, result.pagesVisited, result.skipped, options.suppressions ? gate.suppressions : undefined));
+    fs.writeFileSync(reportPath, generateScanReport(url, result.findings, result.pagesVisited, result.skipped, options.suppressions ? gate.suppressions : undefined, result.brokenLinks));
     const jsonPath = path.join(options.output, "scan.json");
     fs.writeFileSync(
       jsonPath,
@@ -207,6 +207,7 @@ program
           findings: result.findings,
           pagesVisited: result.pagesVisited,
           skipped: result.skipped,
+          brokenLinks: result.brokenLinks,
           baselineKeys: baseline ? new Set(baseline.keys) : null,
           baselinePath: options.baseline,
           fixed: gate.fixed,
@@ -222,6 +223,9 @@ program
     // rules, so it says rules: calling both "defects" printed 10 here and 19 on the gate line.
     console.log(`  Accessibility: ${groups.length} failing rule${groups.length === 1 ? "" : "s"}` +
       chalk.dim(` (${groupSev("critical")} critical, ${groupSev("serious")} serious) across ${result.findings.length} elements`));
+    if (result.brokenLinks.length > 0) {
+      console.log(chalk.yellow(`  Broken links: ${result.brokenLinks.length} same-site link(s) returned an error (listed in the report)`));
+    }
     if (result.skipped.length > 0) {
       console.log(chalk.yellow(`  Budget reached: ${result.skipped.length} more states not scanned (raise --max-pages)`));
     }

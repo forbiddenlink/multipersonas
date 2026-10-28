@@ -89,6 +89,7 @@ describe("crawl — evidence honesty", () => {
         findings: [],
         pagesVisited: ["http://localhost:3010/"],
         skipped: ["http://localhost:3010/next"],
+        brokenLinks: [],
       });
   });
 
@@ -152,7 +153,7 @@ describe("crawl — evidence honesty", () => {
         route: vi.fn(),
         newPage: vi.fn().mockResolvedValue({
           goto: vi.fn().mockResolvedValueOnce({ status: () => 200 })
-            .mockRejectedValueOnce(new Error("connection refused")),
+            .mockRejectedValue(new Error("connection refused")),
           waitForTimeout: vi.fn(),
           url: () => "http://localhost:3010/",
           evaluate: vi.fn().mockResolvedValue(["http://localhost:3010/broken"]),
@@ -162,6 +163,62 @@ describe("crawl — evidence honesty", () => {
 
     await expect(crawl("http://localhost:3010", { allowPrivate: true }))
       .rejects.toThrow("Could not load URL http://localhost:3010/broken: connection refused");
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  function siteWith(statusByUrl: Record<string, number[]>, linksByPage: Record<string, string[]>) {
+    let currentUrl = "";
+    const goto = vi.fn(async (url: string) => {
+      currentUrl = url;
+      const queue = statusByUrl[url];
+      const status = queue && queue.length > 0 ? queue.shift()! : 200;
+      return { status: () => status };
+    });
+    const close = vi.fn();
+    launchAuditBrowser.mockResolvedValueOnce({
+      close,
+      newContext: vi.fn().mockResolvedValue({
+        route: vi.fn(),
+        newPage: vi.fn().mockResolvedValue({
+          goto,
+          waitForTimeout: vi.fn(),
+          url: () => currentUrl,
+          evaluate: vi.fn(async () => linksByPage[currentUrl] ?? []),
+        }),
+      }),
+    });
+    return { goto, close };
+  }
+
+  it("records a dead link on a later page and keeps the evidence from the rest of the site", async () => {
+    const { goto } = siteWith(
+      { "http://localhost:3010/gone": [404] },
+      { "http://localhost:3010/": ["http://localhost:3010/gone", "http://localhost:3010/about"] },
+    );
+    const result = await crawl("http://localhost:3010/", { allowPrivate: true });
+    expect(result.pagesVisited).toEqual(["http://localhost:3010/", "http://localhost:3010/about"]);
+    expect(result.brokenLinks).toEqual([{ url: "http://localhost:3010/gone", status: 404, foundOn: "http://localhost:3010/" }]);
+    // A 4xx answers the same way twice, so it is not retried.
+    expect(goto.mock.calls.filter(([u]) => u === "http://localhost:3010/gone")).toHaveLength(1);
+  });
+
+  it("retries a transient failure once and scans the page when it recovers", async () => {
+    siteWith(
+      { "http://localhost:3010/flaky": [503, 200] },
+      { "http://localhost:3010/": ["http://localhost:3010/flaky"] },
+    );
+    const result = await crawl("http://localhost:3010/", { allowPrivate: true });
+    expect(result.pagesVisited).toEqual(["http://localhost:3010/", "http://localhost:3010/flaky"]);
+    expect(result.brokenLinks).toEqual([]);
+  });
+
+  it.each([429, 503])("still aborts when HTTP %s persists, since a server error is missing evidence", async (status) => {
+    const { close } = siteWith(
+      { "http://localhost:3010/down": [status, status] },
+      { "http://localhost:3010/": ["http://localhost:3010/down"] },
+    );
+    await expect(crawl("http://localhost:3010/", { allowPrivate: true }))
+      .rejects.toThrow(`Could not load URL http://localhost:3010/down: HTTP ${status}`);
     expect(close).toHaveBeenCalledOnce();
   });
 

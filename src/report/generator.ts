@@ -1,4 +1,5 @@
 import type { Finding, AgentResult, ScanCoverage } from "../agent/engine.js";
+import type { BrokenLink } from "../crawler/crawl.js";
 import { runErroredBeforeStart } from "../agent/run-errored.js";
 import { SEVERITIES, severityRank as domainSeverityRank } from "../domain/vocab.js";
 import type { Persona } from "../personas/types.js";
@@ -356,6 +357,7 @@ export function generateScanReport(
   pagesVisited: string[],
   skipped: string[] = [],
   suppressions?: SuppressionOutcome,
+  brokenLinks: BrokenLink[] = [],
 ): string {
   const groups = groupAxeByRule(axeFindings);
   const lines: string[] = [];
@@ -379,6 +381,16 @@ export function generateScanReport(
     lines.push(`> Page budget reached. ${skipped.length} more states were found but not scanned; raise \`--max-pages\` to cover them.`);
   }
   lines.push("");
+  if (brokenLinks.length > 0) {
+    lines.push(`## Broken links (${brokenLinks.length})`);
+    lines.push("");
+    lines.push("These same-site links returned an error, so there was nothing to scan. They are not counted as accessibility defects.");
+    lines.push("");
+    lines.push("| Link | Status | Linked from |");
+    lines.push("|---|:---:|---|");
+    for (const b of brokenLinks) lines.push(`| \`${shortPath(b.url)}\` | ${b.status} | \`${shortPath(b.foundOn)}\` |`);
+    lines.push("");
+  }
   if (suppressions) lines.push(...renderSuppressions(suppressions));
 
   lines.push("---");

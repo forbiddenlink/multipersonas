@@ -31,6 +31,30 @@ export interface CrawlResult {
   pagesVisited: string[];
   /** Discovered but not visited because the page budget ran out. Reported, not hidden. */
   skipped: string[];
+  /**
+   * Same-origin links that answered with a 4xx. A client error is deterministic (the
+   * page is gone or closed to this session), so it is reported as a site problem and
+   * the crawl carries on. Transient failures (429, 5xx, timeouts) still abort.
+   */
+  brokenLinks: BrokenLink[];
+}
+
+export interface BrokenLink {
+  url: string;
+  status: number;
+  /** The first scanned page that linked to it. */
+  foundOn: string;
+}
+
+/** 4xx except 408 and 429, which are about timing rather than the page itself. */
+export function isDeterministicClientError(status: number): boolean {
+  return status >= 400 && status < 500 && status !== 408 && status !== 429;
+}
+
+class HttpStatusError extends Error {
+  constructor(readonly status: number) {
+    super(`HTTP ${status}`);
+  }
 }
 
 export async function crawl(entryUrl: string, options: CrawlOptions = {}): Promise<CrawlResult> {
@@ -46,6 +70,8 @@ export async function crawl(entryUrl: string, options: CrawlOptions = {}): Promi
   const browser = await launchAuditBrowser({ headless: true });
   const findings: Finding[] = [];
   const visited: string[] = [];
+  const brokenLinks: BrokenLink[] = [];
+  const foundOn = new Map<string, string>();
   const seen = new Set<string>([normalise(entry.href)]);
   // An entry on a sub-path (`/demos/bad/`) asks about that section, so its pages fill
   // the budget first and the rest of the origin takes what is left. Same rule as the
@@ -78,17 +104,32 @@ export async function crawl(entryUrl: string, options: CrawlOptions = {}): Promi
       // address via a redirect, and this now runs on stranger-supplied URLs.
       if (!(await isUrlAllowed(url, { allowPrivate }))) continue;
 
-      try {
+      const load = async (): Promise<void> => {
         const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
         await assertLandedUrlAllowed(page, (u, t) => assertRequestAllowed(u, t, { allowPrivate }));
-        if (response && response.status() >= 400) {
-          throw new Error(`HTTP ${response.status()}`);
+        if (response && response.status() >= 400) throw new HttpStatusError(response.status());
+      };
+      try {
+        try {
+          await load();
+        } catch (error) {
+          // One retry for a later page: a CI gate should not go red on a single
+          // dropped connection. A 4xx will answer the same way, so skip the wait.
+          if (visited.length === 0 || (error instanceof HttpStatusError && isDeterministicClientError(error.status))) throw error;
+          await page.waitForTimeout(2000);
+          await load();
         }
         // SPA routes render after load; scanning too early would undercount.
         await page.waitForTimeout(1500);
       } catch (error) {
-        // Missing pages are not clean evidence. Fail before a caller can pass
-        // the CI gate or replace its baseline with an incomplete scan.
+        // A dead link elsewhere on the site is a finding about the site, not a gap in
+        // the evidence: record it and keep crawling. The entry URL stays fatal.
+        if (visited.length > 0 && error instanceof HttpStatusError && isDeterministicClientError(error.status)) {
+          brokenLinks.push({ url, status: error.status, foundOn: foundOn.get(normalise(url)) ?? visited[0] ?? entry.href });
+          continue;
+        }
+        // Anything else is missing evidence, not clean evidence. Fail before a caller
+        // can pass the CI gate or replace its baseline with an incomplete scan.
         const detail = error instanceof Error ? error.message : String(error);
         const label = visited.length === 0 ? "entry URL" : "URL";
         throw new Error(`Could not load ${label} ${url}: ${detail}`, { cause: error });
@@ -120,6 +161,7 @@ export async function crawl(entryUrl: string, options: CrawlOptions = {}): Promi
         const key = normalise(target.href);
         if (seen.has(key)) continue;
         seen.add(key);
+        foundOn.set(key, page.url());
         (target.pathname.startsWith(scopePath) ? inScopeQueue : outOfScopeQueue).push(target.href);
       }
     }
@@ -130,6 +172,7 @@ export async function crawl(entryUrl: string, options: CrawlOptions = {}): Promi
       findings: mergeAxeFindings(findings),
       pagesVisited: visited,
       skipped: [...inScopeQueue, ...outOfScopeQueue],
+      brokenLinks,
     };
   } finally {
     await browser.close();
