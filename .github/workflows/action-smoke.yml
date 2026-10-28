@@ -1,7 +1,7 @@
 name: Action smoke
 
 # Runs the packaged GitHub Action the way an adopter does (`uses: ./`), twice:
-# the first job builds and saves the cache, the second must restore it. Nothing
+# the first job installs and saves the pnpm store, the second must restore it. Nothing
 # else in CI exercises action.yml end to end.
 on:
   pull_request:
