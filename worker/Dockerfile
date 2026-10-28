@@ -11,7 +11,7 @@
 FROM golang:1.27-bookworm@sha256:972b4110ba0f47539a975c31e52c64765e1ff19f2d74469ae4a595c6676e80a5 AS smokescreen
 RUN go install github.com/stripe/smokescreen@v0.0.5-0.20260819101244-f03c477dc9f4
 
-FROM mcr.microsoft.com/playwright:v1.64.0-jammy@sha256:c064e7f355d2dda32f669801a1b09e86a1e9252395c844d2cfbbe5c44acb9b79
+FROM mcr.microsoft.com/playwright:v1.64.1-jammy@sha256:6075bd984554db82aee96bcdde53197f091dfe8c4b89322c61da77b86308b810
 
 WORKDIR /app
 # Process containment needs Linux subreaper support and process-tree inspection.

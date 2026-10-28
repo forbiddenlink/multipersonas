@@ -51,7 +51,7 @@ importers:
         specifier: ^9.4.1
         version: 9.4.1
       playwright:
-        specifier: ^1.64.0
+        specifier: ^1.64.1
         version: 1.64.1
       zod:
         specifier: ^4.4.3
