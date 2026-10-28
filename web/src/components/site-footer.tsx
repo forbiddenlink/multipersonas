@@ -13,6 +13,7 @@ const GROUPS: { title: string; links: { href: string; label: string; external?: 
       { href: "/pricing", label: "Pricing" },
       { href: "/for-agencies", label: "For agencies" },
       { href: "/docs", label: "CLI docs" },
+      { href: "/compare", label: "Compare" },
     ],
   },
   {
