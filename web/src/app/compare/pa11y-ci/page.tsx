@@ -133,8 +133,8 @@ export default function ComparePa11yCiPage() {
             You want the pull request to carry the result as one comment that updates in place.
           </li>
           <li>
-            The pages you care about sit behind a login. Save a session once with the CLI and the
-            crawl reuses it. The pa11y-ci README sections checked for this page do not cover it.
+            The pages you care about sit behind a login. Pa11y can script login steps with its
+            actions option; with the Personaudit CLI you save a session once and the crawl reuses it.
           </li>
         </ul>
         <p>
