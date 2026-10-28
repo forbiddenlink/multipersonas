@@ -59,26 +59,23 @@ runs:
         node-version: "22"
     # pnpm/action-setup resolves package_json_file against the workspace, so pointing it
     # at the action's own package.json failed with "No pnpm version is specified" in every
-    # adopter repo. Corepack reads packageManager from the action's folder instead, and
-    # never touches whatever pnpm the adopter's own workflow set up.
-    - name: Enable pnpm via Corepack
-      shell: bash
-      run: |
-        bin_dir="${RUNNER_TEMP}/personaudit-bin"
-        corepack enable --install-directory "$bin_dir" pnpm
-        printf '%s\n' "$bin_dir" >> "$GITHUB_PATH"
-        printf 'COREPACK_ENABLE_DOWNLOAD_PROMPT=0\n' >> "$GITHUB_ENV"
-    # Every run used to download every dependency before scanning a page. Only the pnpm
-    # store is cached: pnpm checks each package against the lockfile's integrity hash, so
-    # a tampered entry cannot run. dist/ is rebuilt and Chromium is downloaded fresh each
-    # run, because caching executables across runs is a poisoning path.
+    # adopter repo. `corepack pnpm` reads packageManager from the action's folder, and no
+    # step writes PATH or env for the rest of the adopter's job.
+    #
+    # Only the pnpm store is cached: pnpm checks each package against the lockfile's
+    # integrity hash, so a tampered entry cannot run. dist/ is rebuilt and Chromium is
+    # downloaded fresh each run, because caching executables across runs is a poisoning path.
     - name: Key the dependency cache
       id: key
       shell: bash
       working-directory: ${{ github.action_path }}
+      env:
+        COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
       run: |
-        echo "store-path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
-        echo "deps=personaudit-pnpm-store-${RUNNER_OS}-$(sha256sum pnpm-lock.yaml | cut -c1-16)" >> "$GITHUB_OUTPUT"
+        store=$(corepack pnpm store path --silent)
+        lock=$(sha256sum pnpm-lock.yaml | cut -c1-16)
+        printf 'store-path=%s\n' "$store" >> "$GITHUB_OUTPUT"
+        printf 'deps=personaudit-pnpm-store-%s-%s\n' "$RUNNER_OS" "$lock" >> "$GITHUB_OUTPUT"
     - name: Restore the pnpm store
       id: deps-cache
       uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -88,7 +85,9 @@ runs:
     - name: Install dependencies
       shell: bash
       working-directory: ${{ github.action_path }}
-      run: pnpm install --frozen-lockfile
+      env:
+        COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+      run: corepack pnpm install --frozen-lockfile
     # Saved straight after install, before anything else touches the runner.
     - name: Save the pnpm store
       if: steps.deps-cache.outputs.cache-hit != 'true'
@@ -99,9 +98,11 @@ runs:
     - name: Build the Personaudit CLI
       shell: bash
       working-directory: ${{ github.action_path }}
+      env:
+        COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
       run: |
-        pnpm build
-        pnpm exec playwright install --with-deps chromium
+        corepack pnpm build
+        corepack pnpm exec playwright install --with-deps chromium
     - name: Run the accessibility gate
       id: gate
       shell: bash
