@@ -68,7 +68,7 @@ Two tools, both deterministic (no model calls, no API key):
 - `scan_site`: crawl and run axe-core. With `baseline`, defects are marked new or known and fixed ones are listed. With `failOn`, it reports whether the CI gate would pass.
 - `update_baseline`: rescan and overwrite the baseline. Marked destructive, because it accepts the current backlog.
 
-The same guards as `scan` apply. Localhost needs `allowPrivate: true`. A session file is passed by path and its contents never enter the conversation. Baseline files must be `.json` inside the directory the server was started in.
+The same guards as `scan` apply. Localhost and private-network targets are refused unless you start the server with `personaudit mcp --allow-private`; the agent cannot turn that on, because it reads page text that could carry injected instructions. A session file is passed by path and its contents never enter the conversation. Baseline and suppression files must be `.json` inside the directory the server was started in, and symlinks are refused.
 
 ### Grade a public page
 

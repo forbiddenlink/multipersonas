@@ -286,10 +286,11 @@ program
 program
   .command("mcp")
   .description("Run an MCP server over stdio so a coding agent can scan and check the baseline gate (deterministic, no AI)")
-  .action(async () => {
+  .option("--allow-private", "Let the tools scan localhost / private-network targets. Your choice at start-up, never the agent's.")
+  .action(async (options: { allowPrivate?: boolean }) => {
     // stdout is the protocol channel: nothing else may print to it from here on.
     const { serveStdio } = await import("./mcp.js");
-    await serveStdio(pkg.version);
+    await serveStdio(pkg.version, { allowPrivate: options.allowPrivate });
   });
 
 // --- Grade command (Fast, keyless, Deque-weighted public score) ---

@@ -33,7 +33,8 @@ describe("toMcpResult", () => {
 });
 
 describe("resolveWorkspacePath", () => {
-  const root = path.join(os.tmpdir(), "pa-mcp-root");
+  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "pa-mcp-root-")));
+  fs.mkdirSync(path.join(root, "ci"));
 
   it("accepts a JSON file inside the working directory", () => {
     expect(resolveWorkspacePath("ci/baseline.json", root)).toBe(path.join(root, "ci/baseline.json"));
@@ -41,6 +42,15 @@ describe("resolveWorkspacePath", () => {
 
   it.each(["../escape.json", "/etc/passwd.json", "baseline.txt", "."])("refuses %s", (file) => {
     expect(() => resolveWorkspacePath(file, root)).toThrow();
+  });
+
+  it("refuses a symlinked file and a symlinked directory that lead outside", () => {
+    const outside = fs.mkdtempSync(path.join(os.tmpdir(), "pa-mcp-outside-"));
+    fs.writeFileSync(path.join(outside, "target.json"), "{}");
+    fs.symlinkSync(path.join(outside, "target.json"), path.join(root, "link.json"));
+    fs.symlinkSync(outside, path.join(root, "linkdir"));
+    expect(() => resolveWorkspacePath("link.json", root)).toThrow(/symlink/);
+    expect(() => resolveWorkspacePath("linkdir/new.json", root)).toThrow(/outside/);
   });
 });
 

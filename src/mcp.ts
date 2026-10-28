@@ -15,9 +15,12 @@ import { SEVERITIES, type Severity } from "./domain/vocab.js";
  *
  * Same engine and same guards as `personaudit scan`: the SSRF check runs on every
  * navigation, a session file is passed by path and never read into the model's
- * context, and nothing here calls a model. It runs locally over stdio, so
- * `allowPrivate` (scan your own dev server) is the CLI's choice to offer, never the
- * hosted service's.
+ * context, and nothing here calls a model.
+ *
+ * Private targets (your own dev server) are allowed only by the person starting the
+ * server (`personaudit mcp --allow-private`), never by a tool argument: the agent
+ * reads page text, and injected text must not be able to point the browser at the
+ * local network.
  */
 
 /** Defects returned per call. The rest are counted, not dropped silently. */
@@ -57,15 +60,25 @@ export function toMcpResult(scan: ScanJson, gate: { failOn: Severity; passed: bo
   };
 }
 
-/** Baseline files are read and written only inside the directory the server was started in. */
+function isInside(root: string, target: string): boolean {
+  const rel = path.relative(root, target);
+  return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
+}
+
+/**
+ * Baseline and suppression files are read and written only inside the directory the
+ * server was started in. Checked on real paths, and a symlinked file is refused, so a
+ * link inside the workspace cannot carry a write outside it.
+ */
 export function resolveWorkspacePath(file: string, root: string = process.cwd()): string {
-  const resolved = path.resolve(root, file);
-  const rel = path.relative(root, resolved);
-  if (rel === "" || rel.startsWith("..") || path.isAbsolute(rel)) {
-    throw new Error(`${file} is outside the working directory ${root}`);
-  }
+  const realRoot = fs.realpathSync(root);
+  const resolved = path.resolve(realRoot, file);
+  if (!isInside(realRoot, resolved)) throw new Error(`${file} is outside the working directory ${realRoot}`);
   if (path.extname(resolved) !== ".json") throw new Error(`${file} must be a .json file`);
-  return resolved;
+  const parent = fs.realpathSync(path.dirname(resolved));
+  if (parent !== realRoot && !isInside(realRoot, parent)) throw new Error(`${file} is outside the working directory ${realRoot}`);
+  if (fs.existsSync(resolved) && fs.lstatSync(resolved).isSymbolicLink()) throw new Error(`${file} is a symlink`);
+  return path.join(parent, path.basename(resolved));
 }
 
 export function readBaseline(file: string): Baseline | null {
@@ -82,7 +95,6 @@ const scanInput = {
   url: z.string().describe("Page to start the crawl from. Same-origin links are followed."),
   maxPages: z.number().int().min(1).max(100).optional().describe("States to crawl. Default 20."),
   session: z.string().optional().describe("Path to a session file saved with `personaudit auth`, to scan behind a login. Passed by path; its contents never enter this conversation."),
-  allowPrivate: z.boolean().optional().describe("Allow localhost and private-network targets, for your own dev server. Default false."),
 };
 
 function text(value: unknown) {
@@ -93,12 +105,17 @@ function failure(error: unknown) {
   return { content: [{ type: "text" as const, text: error instanceof Error ? error.message : String(error) }], isError: true };
 }
 
-async function runScan(input: { url: string; maxPages?: number; session?: string; allowPrivate?: boolean }) {
-  const sessionFile = input.session ? resolveSessionFile(input.session) : undefined;
-  return crawl(input.url, { sessionFile, maxPages: input.maxPages ?? 20, allowPrivate: input.allowPrivate ?? false });
+export interface ServerOptions {
+  /** Set only from the `--allow-private` start flag. */
+  allowPrivate?: boolean;
 }
 
-export function createServer(version: string): McpServer {
+export function createServer(version: string, options: ServerOptions = {}): McpServer {
+  const runScan = async (input: { url: string; maxPages?: number; session?: string }) => {
+    const sessionFile = input.session ? resolveSessionFile(input.session) : undefined;
+    return crawl(input.url, { sessionFile, maxPages: input.maxPages ?? 20, allowPrivate: options.allowPrivate ?? false });
+  };
+
   const server = new McpServer({ name: "personaudit", version });
 
   server.registerTool(
@@ -110,7 +127,7 @@ export function createServer(version: string): McpServer {
       inputSchema: {
         ...scanInput,
         baseline: z.string().optional().describe("Baseline JSON in the working directory, e.g. personaudit-baseline.json."),
-        suppressions: z.string().optional().describe("Suppressions JSON (accepted defects with reason, owner, expiry)."),
+        suppressions: z.string().optional().describe("Suppressions JSON in the working directory (accepted defects with reason, owner, expiry)."),
         failOn: z.enum(SEVERITIES).optional().describe("Evaluate the CI gate at this severity."),
       },
       annotations: { readOnlyHint: true, openWorldHint: true },
@@ -119,7 +136,7 @@ export function createServer(version: string): McpServer {
       try {
         const baselinePath = input.baseline ? resolveWorkspacePath(input.baseline) : undefined;
         const baseline = baselinePath ? readBaseline(baselinePath) : null;
-        const suppressions = input.suppressions ? loadSuppressions(input.suppressions) : [];
+        const suppressions = input.suppressions ? loadSuppressions(resolveWorkspacePath(input.suppressions)) : [];
         const result = await runScan(input);
         const gate = evaluateGate(result.findings, { failOn: input.failOn ?? "minor", baseline, suppressions });
         const scan = buildScanJson({
@@ -169,6 +186,6 @@ export function createServer(version: string): McpServer {
   return server;
 }
 
-export async function serveStdio(version: string): Promise<void> {
-  await createServer(version).connect(new StdioServerTransport());
+export async function serveStdio(version: string, options: ServerOptions = {}): Promise<void> {
+  await createServer(version, options).connect(new StdioServerTransport());
 }
