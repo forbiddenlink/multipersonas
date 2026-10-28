@@ -53,14 +53,21 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Set up pnpm
-      uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-      with:
-        package_json_file: ${{ github.action_path }}/package.json
     - name: Set up Node
       uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
       with:
         node-version: "22"
+    # pnpm/action-setup resolves package_json_file against the workspace, so pointing it
+    # at the action's own package.json failed with "No pnpm version is specified" in every
+    # adopter repo. Corepack reads packageManager from the action's folder instead, and
+    # never touches whatever pnpm the adopter's own workflow set up.
+    - name: Enable pnpm via Corepack
+      shell: bash
+      run: |
+        bin_dir="${RUNNER_TEMP}/personaudit-bin"
+        corepack enable --install-directory "$bin_dir" pnpm
+        printf '%s\n' "$bin_dir" >> "$GITHUB_PATH"
+        printf 'COREPACK_ENABLE_DOWNLOAD_PROMPT=0\n' >> "$GITHUB_ENV"
     # Every run used to download every dependency before scanning a page. Only the pnpm
     # store is cached: pnpm checks each package against the lockfile's integrity hash, so
     # a tampered entry cannot run. dist/ is rebuilt and Chromium is downloaded fresh each
