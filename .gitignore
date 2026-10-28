@@ -43,3 +43,8 @@ web/playwright-report/
 
 # Redesign research screenshots (kept local; only markdown and curated webp are committed)
 design-research/screens/
+
+# Audit run output (keep written .md reports)
+docs/audits/*/prompts/
+docs/audits/*/*.json
+functional-review/evidence/**/*.json

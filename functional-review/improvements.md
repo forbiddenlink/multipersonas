@@ -1,0 +1,19 @@
+# Improvements and decisions — 2026-09-29
+
+Only items tied to observed behavior or an existing product promise are included.
+
+| Class | Problem and evidence | Users / proposed response | Benefit / dependencies / tradeoff | Decision |
+|---|---|---|---|---|
+| A | Worker Dockerfile selected a nonexistent workspace; image build could pass without engine output. Offline startup then required a pnpm download. | Hosted scan users: correct selector, fail on no match, share Corepack cache and smoke-test real runtime imports. | Reliable packaging; verified locally in Docker without network at runtime. Does not prove production deploy configuration. | Implemented and verified |
+| A | Health returned healthy for stranded queued work; dependency calls had no explicit deadline. | Operators and waiting scan users: detect queued age and bound database requests. | Detects delay; empty queues still cannot prove liveness. | Implemented and verified |
+| A | Project cap rejection silently hid its error. | Free/Pro users: display the existing allowance messages safely. | Clear recovery; caps and permission rules unchanged. Browser test covers actual persistence and deletion. | Implemented and verified |
+| A | High dependency advisory and incompatible Supabase peer range. | All deployments: patch fast-uri; align Supabase; state Node minimum for hosted workspaces. | Verified dependency graph, SQL/auth/E2E regression coverage. | Implemented and verified |
+| A | Sample report suggested the agency tier supplied hosted behind-login scanning. | Prospective buyers: use the CLI boundary already stated on pricing. | Removes a false implication without inventing functionality or changing offers. | Implemented and verified |
+| B | A successful image build was the only worker packaging gate. | Maintainers: offline non-root runtime-import smoke in existing CI. | Proves required modules load; deliberately not a cloud-deployment claim. | Implemented and verified |
+| C | Empty-queue health does not prove worker liveness. This is a demonstrated monitoring limit, not evidence of a current outage. | Operators: consider a durable worker heartbeat with an explicit alert threshold. | Requires schema/retention/deployment choices and idle/restart semantics; avoids waiting for user jobs to expose an outage. | Product/operational decision before implementation |
+| C | Unit-tested billing sync does not establish ongoing provider/database agreement. No real customer data was inspected. | Paying users/operators: design a test-mode reconciliation exercise, then decide whether a recurring reconciliation job is needed. | Requires dedicated Stripe sandbox and synthetic accounts; no production write or scheduled automation authorized here. | Validate first |
+| C | Demand and retention remain unknown; two synthetic experiment targets do not establish agency adoption. | Agency buyers: run the already-defined paid demand test, observe saved-task → evidence → retest → export, and measure repeat use and delivery costs. | Needs consenting buyers and actual payment evidence. Existing gate is a small continuation signal, not product-market fit. No outreach sent. | Validate before adding major features |
+
+Visual direction and sales copy strategy remain routed to Claude. No redesign, new pricing, hosted credential pipeline, or business-policy change was introduced.
+
+Continuation implemented three additional repairs: authoritative job status and visible failure handling for saved-grade history; recovery counts that include retried work; and worker HTTP deadlines covering database and screenshot storage. Added a guarded real-database contention test to CI and changed disposable CI teardown to discard volumes. A local restore rehearsal passed, while the hosted backup decision remains open. See coverage and evidence for exact limits.

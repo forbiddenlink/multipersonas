@@ -1,0 +1,101 @@
+# AI features, AI red-team, abuse, cost audit (combined)
+
+Modules: ai-features, ai-redteam, abuse, costaudit. Mode: audit-only. Target: local code at HEAD 52782e9 (branch main; working tree has untracked audit/report folders only, no modified tracked files per session git status). No model calls, no prod calls, no project edits. One scratchpad experiment outside the repo (see AIR-001 verification).
+
+## Run context
+
+| Item | Value | Source |
+|---|---|---|
+| Stack | pnpm monorepo: CLI/engine (root), `web/` Next 16, `worker/` | CLAUDE.md |
+| AI SDK | `ai@7.0.127`, `@ai-sdk/anthropic@4.0.71` | pnpm-lock.yaml:212, :2082 |
+| AI provider | Anthropic only (no second provider wired) | src/agent/engine.ts:913 |
+| Model id | `claude-sonnet-5` default, env override `PERSONAUDIT_MODEL` / `MULTIPERSONAS_MODEL` | src/agent/engine.ts:180-184 |
+| Hosted AI surface | worker runs `runMultiPersonaTest` on built-in personas only, enqueued by `/api/audit` (paid plans only) | worker/src/scan-process.ts:12-18, web/src/app/api/audit/route.ts:79-91 |
+| Free surface | `/api/grade`: axe only, no model | web/src/app/api/grade/route.ts:11-12 |
+| Payments | Stripe, Solo $39/mo, Agency founding $199/mo, 14-day trial default | web/src/lib/plans.ts:24-25, :55-60 |
+| Daily spend tolerance | UNKNOWN (not given). Findings below report whether a cap and kill switch exist, not whether the threshold is right. | n/a |
+| Anthropic-console spend limit / alerts | UNKNOWN (outside repo) | n/a |
+| Prior audits | none read for this module | n/a |
+
+## Findings
+
+| ID | Severity | Confidence | Exploitability | Location | Problem | Impact | Fix | Verification |
+|---|---|---|---|---|---|---|---|---|
+| AIR-001 (LLM01 -> LLM05 output handling) | Medium | High (sink), Medium (model compliance) | Attacker controls the text of a page the victim scans with `generate <url> --save`; the model must emit a traversal `id`. CLI only. | src/personas/generator.ts:44 (`id: z.string()`), src/cli.ts:680 (`saveCustomPersona(persona)`), src/personas/custom.ts:59 (`path.join(dir, \`${persona.id}.json\`)`) | The persona `id` is model output derived from scanned page text and is used unsanitised as a file name. `id: "../package"` writes persona JSON to `<cwd>/package.json`. `toKebabCase` (cli.ts:763) only protects the interactive `persona add` path. | Overwrites a project file ending in `.json` (package.json, tsconfig.json, other config) with persona JSON. Content is constrained to persona fields, so this is destructive, not code execution. | Constrain `id` in `personaSchema` to `^[a-z0-9][a-z0-9-]{0,63}$` and, in `saveCustomPersona`/`deleteCustomPersona`, reject any id whose resolved path is not inside `projectDir`. Fixes the import path (cli.ts:816) too. | Rung 4 on the sink: called `saveCustomPersona({id:"../package",...}, <scratch>/proj)` from `tsx` in the scratchpad; it replaced `<scratch>/proj/package.json`. Rung 2 only for "model will emit it": no live model call made. |
+| AIR-002 (LLM01, LLM03) | Medium | Medium | Same attacker as AIR-001; CLI only (`generate`, `run --count`). Hosted runs use built-in personas, so no hosted reach. | src/personas/generator.ts:172-184 (page title, meta, headings, nav, main text, form names concatenated raw into the prompt, no untrusted fence), :59 (`maxSteps` up to 50 while the prompt asks 10-30), :221-229 (output goes straight to `generateSystemPrompt`), src/cli.ts:680 (persisted to `./mpersonas/`) | Page text is injected unfenced into a prompt whose output becomes the persona's system prompt and is saved into the repo. The constraints "no persona claims a disability, none is asked for a WCAG verdict" are enforced by `framing.test.ts` only for the static library, not for generated personas; for generated ones the only control is prose in the prompt (generator.ts:195-200). | A hostile page can steer persona goals/description/prompt, including a disability claim, and raise `maxSteps` to 50 (about 2x the library maximum of 25). The result persists and gets committed. | Fence the signals as untrusted data like engine.ts:854. After generation, run the `SIMULATION_PATTERNS`/`VERDICT_PATTERNS` checks (framing.test.ts:20-50) as a runtime validator and clamp `maxSteps` to the documented 10-30. | Rung 2 (code read). Not run: needs a live model. |
+| AIF-001 (LLM06 unbounded consumption) | Medium | High (absence), Medium (impact) | n/a (operational) | src/agent/engine.ts:912-919 (only `maxOutputTokens: 1024`), web/src/lib/limits.ts:31, :44-47 (caps count calls), grep over src/web/worker for `usage`/`totalUsage`/`inputTokens`: no hits | No component records token usage or cost. All spend control is a call count (default 5000 global, 250 per caller). The per-call cost is unbounded by any control the repo owns except the 4000-char snapshot cap (engine.ts:172) and 1024 output tokens: switching `PERSONAUDIT_MODEL` on the worker to a pricier model changes spend 1:1 with no cap change, and AI SDK `maxRetries` defaults to 2 (ai/dist/index.js:2574) so failed requests can triple raw API calls without touching the counter. | You cannot see real spend, spot drift, or tune the cap in dollars. A model-id change or provider price change goes unnoticed until the invoice. | Read `result.usage` after each `generateText`, sum it into the job result and a `usage_counters` token column, add a daily token cap beside the call cap, and set a spend limit/alert in the Anthropic console (HUMAN INPUT: the acceptable daily dollar figure). | Rung 4 on absence: grep for `usage`, `totalUsage`, `inputTokens`, `cacheControl`, `providerOptions` returned no engine or worker hit. |
+| ABU-001 (shared queue starvation) | Medium | Medium | Anonymous caller who can pass Turnstile (documented ON) and rotate IPs; per-IP key is the full address (IPv6 gives a caller many addresses). | web/supabase/migrations/005_audit_jobs_queue.sql:49-57 (`claim_audit_job` orders by `created_at` only), web/supabase/migrations/028_atomic_grade_enqueue.sql:24-27 (cap 25 queued grades), web/src/app/api/grade/route.ts:60-69 | Free anonymous grade jobs and paid persona audits share one FIFO queue with no priority or kind separation. A full grade queue (25 jobs, each up to the 300 s job timeout, worker/src/index.ts:33) sits ahead of any later paid audit. The cap makes new grades return "busy", which hides the flood from users but does not prioritise paying ones. | Paid users' audits wait behind free grades; a sustained flood delays them by up to 25 x grade runtime. The 15-minute stale-queued alert in `/api/health` (health/route.ts:5) is the only detector. | Add `priority`/`kind` ordering in `claim_audit_job` (audits first, or a separate grade worker), keep the 25 cap. | Rung 2: migrations read, no `priority` column anywhere (`grep -l priority web/supabase/migrations/*` empty). Not run against a database. |
+| ABU-002 (global cap drained by trial accounts) | Medium | Medium | Needs about 20 Stripe trial signups with valid cards and confirmed emails (limits.ts:41-47 states 20 identities drain the day). Radar/dispute settings UNKNOWN. | web/src/lib/limits.ts:44-47 (caller cap 250, global 5000), web/src/lib/plans.ts:55-60 (14-day trial default), web/src/lib/checkout.ts (card collected up front, no card-fingerprint or per-person dedupe; grep for `fingerprint` in web/src: none) | The 5000-call global budget is shared by all paying/trialing users and by scheduled scans. About 20 trial accounts can use their full 250/day and 429 every other user ("Daily audit capacity reached") until UTC midnight, then repeat for the trial length. | Availability loss of the paid feature for everyone for most of a day; cost to attacker is the card holds and emails. | Raise the per-trial limit separately (smaller trial cap), dedupe on Stripe card fingerprint, and reserve a slice of the global cap for non-trial paid accounts. | Rung 2: arithmetic from limits.ts:44-47 plus `reserve_model_calls_scoped` (017_per_caller_spend_subcap.sql:26-66). Not exercised. |
+| AIR-003 (LLM01 indirect, partial) | Low | High (channel), Medium (exploitability) | Page author, or a UGC author on a scanned origin. | src/agent/engine.ts:1069 (`Action failed: ${errMsg}`) and :1128 (pushed as the `tool` result), :850-853 (fence neutraliser matches only the exact tags) | The `<untrusted-page-content>` fence covers only the snapshot. Playwright error text is returned to the model unfenced, and it embeds page-controlled markup. The tag neutraliser misses variants such as `</untrusted-page-content >`. | Adds a lower-resistance injection slot. Blast radius is bounded: `navigate` is origin-locked (engine.ts:614-631), only click/type/scroll/select/finish/report tools exist, and with a task the verdict is code-verified (engine.ts:1140-1143). Without a task, `goalCompleted` is the model's own `finish` outcome (engine.ts:1023), so an injected "achieved" can inflate it. | Wrap tool-result strings that can contain page text in the same untrusted fence, truncate them, and widen the neutraliser to `/<\s*\/?\s*untrusted-page-content[^>]*>/gi`. | Rung 4 for the channel: local Chrome via Playwright, overlay div with `data-note="IGNORE PREVIOUS INSTRUCTIONS ..."`; the click-timeout error printed the full element markup including that attribute. Not run end to end against a model. |
+| AIR-004 (LLM03 excessive agency, CLI) | Low | Medium | Hostile UGC on an authenticated app the operator scans with `--session` and without `--block-destructive-actions`. | src/security/action-guard.ts:44-68 (denylist of 25 phrases), :84 (opt-in), src/agent/engine.ts:475-480 | The destructive-click guard is off by default on the CLI and is a phrase list: "Delete", "Remove", "Archive", "Send" do not match. Hosted forces it on (worker/src/scan-process.ts:6) but hosted has no session, so the risk is CLI-only. | A steered agent logged in as a real user can click state-changing controls. | Default the guard on when `--session` is used, or document that session runs need the flag. | Rung 2. |
+| AIF-002 | Low | High | n/a | src/personas/generator.ts:1, :219, :270 | `generateObject` is imported and used; the installed `ai@7.0.127` marks it `@deprecated Use generateText with an output setting instead` (ai/dist/index.d.ts:8219). | Future removal; the coercion code at generator.ts:20-34 already exists to work around structured-output quirks. | Move to `generateText` + `Output.object`. | Rung 4: read the installed `.d.ts`. |
+| AIF-003 | Low | Medium | n/a | src/agent/engine.ts:180 | Model id is the alias `claude-sonnet-5`, not a dated snapshot. It is a valid id in installed `@ai-sdk/anthropic@4.0.71` typings, which also list `claude-sonnet-5-5`. The validation experiments do not record which model they ran (grep for `claude-` over experiments/ and docs/ found nothing). Vendor deprecation status of the alias was not checked. | Task-success validity (experiments/task-success-validity) cannot be tied to a model; an alias move can change verdicts silently. | Record the model id in every experiment result and in each persisted run; pin a snapshot id in the worker env; re-run the validity set when changing it. | Rung 4 for id presence in typings; UNKNOWN for vendor lifecycle. |
+| AIF-004 | Low | High | n/a | src/agent/engine.test.ts:355-361; no promptfoo or injection fixture anywhere (`find` for promptfoo/injection/redteam: only this audit's prompt) | The only injection test checks that axe text is placed after the fence in the source string. No behavioural test feeds a hostile page to the agent, and no eval gates a model-id or prompt change. | Prompt-injection posture and the persona-framing constraint cannot be regression-tested against model changes. | Add a local fixture page with injection text and assert no off-origin navigation and no forged `finish`; run it per model change. | Rung 4 on absence (file search). |
+| AIF-005 | Low | High | n/a | web/src/lib/limits.ts:59-62, docs/DEPLOYMENT.md:307-309, worker/src (no `KILL` reference) | The kill switch is read only in the web routes and needs a redeploy to take effect. The worker never checks it, so already-queued reserved jobs still run. | After a spend alarm there is a delay plus the queued reserved budget (bounded by the daily cap) before spend stops. | Have the worker re-read the switch (env or a DB flag) before each claim. | Rung 4: grep of worker/src for KILL. |
+| COST-001 | Low | Low (hypothesis; price UNKNOWN) | n/a | web/src/lib/plans.ts:24, web/src/lib/limits.ts:44-47 | Maximum per-user model use is 250 calls/day (about 7,500/month) against a $39 Solo price. Real use is far below the cap, but no figure in the repo ties the cap to the price. | Margin unknown if heavy users approach the cap. Rate for `claude-sonnet-5` is not in the repo. | HUMAN INPUT: current per-token price and target margin; then set the per-user cap from them. | Not computable: price UNKNOWN. |
+
+Refuted and dropped (checked, not findings):
+- Free and anonymous users cannot reach the model: `/api/audit` returns 402 before any rate-limit or spend step (audit/route.ts:79-91).
+- Step budget is bounded: loop `for step <= persona.maxSteps` with one `generateText` per iteration (engine.ts:836, :912), hosted personas capped at the library maximum 25 (limits.ts:19-21). `stopWhen` defaults to one step and tools have no `execute`, so the SDK cannot loop on its own.
+- Reaper cannot multiply model cost: reserved jobs fail instead of requeue (migrations 026 and 20260929125009: `reserved_calls > 0` goes to failed); failed jobs keep their reservation (worker/src/index.ts:419-424).
+- Known-axe text fed outside the fence is axe rule text, not page text (known-axe.ts:61-64, axe-scan.ts:46-47).
+- Report header CSS: `runningHeaderCss` strips quotes, backslashes and angle brackets (report-scope.ts:54-58).
+- Scan digest email escapes every interpolated value (scan-digest.ts:42-155).
+- Worker child process drops `SUPABASE_SERVICE_ROLE_KEY` and `WORKER_ALERT_WEBHOOK` before running the browser (job-process.ts:35-37).
+- AI disclosure exists in the app UI (components/audit-results.tsx:239, site-footer.tsx:91, terms/page.tsx:55) and CLI report (report/generator.ts:313).
+
+## Worst-case 24h model use (derivation)
+
+Hosted, all callers combined (the cap that applies):
+- Calls: global cap `AUDIT_DAILY_CALL_CAP` default 5000 (limits.ts:44). Reservation is `personas x 25`, which is at or above real calls, since each step makes at most one call.
+- Input per call, upper bound: system prompt (persona text, about 1k tokens, estimate) + tool schemas (about 0.7k, estimate) + window of 12 messages = about 4 steps, each with one snapshot capped at 4000 chars plus about 400 chars of header (engine.ts:172, :854) at 3 to 4 chars/token = about 1.1k to 1.5k tokens, plus tool call/result text. Roughly 7k to 10k input tokens. These token figures are estimates, not measured (no usage logging, see AIF-001).
+- Output per call: at most 1024 (engine.ts:917).
+- Totals per UTC day: about 35M to 50M input tokens and at most 5.1M output tokens.
+- Per paying user: 250 calls/day, about 1.75M to 2.5M input and at most 0.26M output tokens.
+- Dollars: UNKNOWN. The price for `claude-sonnet-5` is not in the repo; multiply the token totals by the current published rates. Retries on failed requests add up to 2 more attempts per call (not counted in the reservation).
+- CLI (user's own key): bounded by `maxSteps` only, up to 50 for generated personas (AIR-002) and unbounded for hand-edited persona files (cli.ts:54 `maxSteps: z.number()`).
+
+## Output blocks
+
+- Direct injection: Not applicable to hosted (no free-text prompt from users). Task goal/successText are user text interpolated into the persona system prompt (tasks/definition.ts:54-56), length-capped 1000/240 chars (definition.ts:5-6); it steers the user's own run only. Blocked/low risk.
+- Indirect injection surface: Present. Scanned page snapshot (engine.ts:854, fenced, partial), tool-error text (engine.ts:1069, unfenced, AIR-003), persona-generation signals (generator.ts:172, unfenced, AIR-002).
+- System prompt: Safe. Persona prompts hold no secrets (types.ts:100-190).
+- Tool scope: Minimum-necessary for hosted: navigate origin-locked and URL-guarded (engine.ts:614-640), destructive clicks refused (scan-process.ts:6), no file, shell, network or DB tools. CLI with `--session` is looser (AIR-004).
+- Output handling: Safe in the hosted UI (React escaping; email escaped; no markdown renderer in web). One model-controlled file-name sink in the CLI (AIR-001). The CLI markdown report embeds model text as is; a viewer that renders markdown could show injected links or images (hypothesis, not tested).
+- Cost controls: Partial. Capped: calls (global, per caller), steps, output tokens, snapshot size, job runtime 300 s, plan gate, rate limits, durable and fail-closed reservation. Uncapped: tokens and dollars, retries, per-call model price (AIF-001).
+- Resilience: no fallback model/provider, no circuit breaker, no non-AI fallback (single Anthropic dependency). Model failure fails the persona step. Provider-outage UX is owned by errorrecovery.
+- Long-running agent state: no checkpointing; a crashed run is failed, not resumed (026 migration), which avoids re-spend but loses the run. Side effects limited to the scanned site.
+- Ranked attack paths: (1) AIR-001 hostile page -> `generate --save` -> file overwrite (CLI, needs model compliance); (2) ABU-002 trial-account drain of the shared cap (authed, paid card); (3) ABU-001 anonymous grade flood delaying paid audits; (4) AIR-002/AIR-003 page-steered agent output.
+
+## Coverage matrix
+
+| Area | Status | Reason |
+|---|---|---|
+| Engine agent loop, tools, fence, window, token caps | inspected | engine.ts:172-200, :540-571, :836-1135 |
+| Model id currency vs installed SDK | verified (typings) / partial | typings list the id; vendor lifecycle not checked |
+| `generateText` retry/step defaults on installed `ai` | verified | ai/dist/index.js:2574, :5148 |
+| Persona generation (indirect injection, id sink) | verified | generator.ts, custom.ts, scratch test |
+| Hosted enqueue, plan gate, rate limit, reservation, kill switch | inspected | audit/route.ts, limits.ts, spend.ts |
+| Reaper and retry cost multiplication | inspected | migrations 026, 20260929125009; worker/src/index.ts |
+| Grade abuse (Turnstile, queue cap, rate limit) | inspected / partial | code read; live Turnstile state not probed |
+| Trial and signup abuse | inspected / partial | checkout.ts, plans.ts; Stripe Radar and Supabase signup settings UNKNOWN |
+| Scheduled scans spend | inspected | migration 024 |
+| Output rendering of model text | inspected / partial | grep for HTML sinks, email, report CSS; every page component not read |
+| AI disclosure | inspected / partial | UI strings found; public share page `/r` content not read |
+| AI evals / injection tests | inspected | none exist beyond source-string test |
+| Vercel Fluid billing, service inventory, idle resources | not covered | no billing or dashboard access |
+| Provider spend alerts, Anthropic console limits | not covered | outside repo |
+
+## NOT covered
+
+- Live behaviour: no model calls, no browser-through-engine run, no probe of production (a tokenless `POST /api/grade` to prod would enqueue a job if Turnstile were off, so it was not sent).
+- Turnstile production state: docs/DEPLOYMENT.md:6 says production keys are pending, :95 says set and verified. The two lines disagree; treat as UNVERIFIED.
+- Real spend, invoices, service costs, idle resources, Vercel plan and Fluid setting, Railway cost, Supabase tier (costaudit service-inventory table cannot be filled: no billing access; all monthly figures UNKNOWN / HUMAN INPUT).
+- EU AI Act Art 50 scope and dates: not evaluated against official sources; only the presence of disclosure strings was checked.
+- Data retention for screenshots, journeys and model text, and user deletion of them (owned by data modules).
+- `.env*` files (guard blocked reads); env var names taken from code and docs only.
+- Jailbreak probes (require a model; staging-only per module).
+
+## Smallest next action
+
+Fix AIR-001 at the sink (validate `id` in `saveCustomPersona` and `personaSchema`): one function, no behavior change for valid ids, and it also closes the import path.
