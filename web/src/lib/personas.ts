@@ -7,6 +7,7 @@ const PERSONA_ROLES = {
   "first-time-visitor": "First-time visitor",
   "keyboard-traversal": "Reachability harness",
   "mobile-slow-connection": "Mobile / slow connection",
+  "ai-agent-visitor": "Automated AI visitor",
   "elderly-user": "Retired, low-tech",
   "non-native-english": "Non-native English",
   "power-user-developer": "Developer / power user",

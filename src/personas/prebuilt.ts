@@ -78,6 +78,42 @@ export const keyboardTraversal: Persona = buildPersona({
   patienceLevel: "high",
 });
 
+/**
+ * Automated visitor: can an AI agent finish the site's main task?
+ *
+ * Shopping and booking assistants now browse on people's behalf, and readiness
+ * checkers score prerequisites (llms.txt, a clean accessibility tree) without ever
+ * trying the task. The engine here already is such an agent, so this profile asks
+ * the direct question and reports task success: done, or the exact step it stopped.
+ * A traversal profile, not a person, and it never judges accessibility.
+ */
+export const aiAgentVisitor: Persona = buildPersona({
+  id: "ai-agent-visitor",
+  name: "AI agent visitor",
+  description:
+    "an automated AI agent sent to complete the site's main task for someone, the way a shopping or booking assistant would",
+  kind: "traversal",
+  goals: [
+    "Identify the site's primary task (buy a product, book, sign up, or contact) from the page alone",
+    "Carry that task as far as it goes without a human: choose options, fill required fields with obviously fake test data, and advance each step",
+    "Stop before any irreversible action (paying, deleting, cancelling, sending a real message) and record the last step reached",
+    "If the task cannot continue, record the exact step and the control or wall that stopped it (unlabelled control, CAPTCHA, required login, ambiguous button)",
+  ],
+  frustrations: [
+    "Controls with no accessible name, so the agent cannot tell what they do",
+    "Two controls with the same label that do different things",
+    "Steps that only work with a hover or a drag",
+    "Bot walls and CAPTCHAs that stop an automated visitor outright",
+  ],
+  techProficiency: 5,
+  viewport: { width: 1440, height: 900 },
+  isMobile: false,
+  connectionSpeed: "fast",
+  inputModality: "pointer",
+  maxSteps: 25,
+  patienceLevel: "high",
+});
+
 export const mobileSlowConnection: Persona = buildPersona({
   id: "mobile-slow-connection",
   name: "Maria",
@@ -110,6 +146,7 @@ export const prebuiltPersonas: Record<string, Persona> = {
   "first-time-visitor": firstTimeVisitor,
   "keyboard-traversal": keyboardTraversal,
   "mobile-slow-connection": mobileSlowConnection,
+  "ai-agent-visitor": aiAgentVisitor,
 };
 
 /**

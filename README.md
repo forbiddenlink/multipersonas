@@ -75,6 +75,14 @@ npx personaudit list
 
 `run` reports task success (how many personas achieved their goal), usability observations, and the same axe defects `scan` produces. Personas live in `./mpersonas/` in your repo (the directory name predates the rename), so they are diffable and reviewable. Set the model with `PERSONAUDIT_MODEL` (`MULTIPERSONAS_MODEL` still works as a fallback).
 
+Can an AI agent finish your main task? Shopping and booking assistants now browse for people, and readiness checkers only score prerequisites. The `ai-agent-visitor` profile tries the task itself and reports done, or the exact step and control that stopped it. It is told to stop before paying, deleting or sending anything real; on a live site, also pass `--block-destructive-actions` so those clicks are refused outright:
+
+```bash
+npx personaudit run https://shop.example.com --personas ai-agent-visitor --block-destructive-actions
+```
+
+This is task success for an automated visitor, not an accessibility result.
+
 If Chromium is missing, run `npx playwright install chromium`.
 
 ## GitHub Action

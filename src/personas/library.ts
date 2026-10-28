@@ -3,6 +3,7 @@ import {
   firstTimeVisitor,
   keyboardTraversal,
   mobileSlowConnection,
+  aiAgentVisitor,
 } from "./prebuilt.js";
 
 function buildPersona(partial: Omit<Persona, "systemPrompt">): Persona {
@@ -298,6 +299,7 @@ export const personaLibrary = {
   "first-time-visitor": firstTimeVisitor,
   "keyboard-traversal": keyboardTraversal,
   "mobile-slow-connection": mobileSlowConnection,
+  "ai-agent-visitor": aiAgentVisitor,
   "elderly-user": elderlyUser,
   "non-native-english": nonNativeEnglish,
   "power-user-developer": powerUserDeveloper,
@@ -335,6 +337,7 @@ export const personaDisplayRegistry: {
 export const personasByCategory: Record<string, string[]> = {
   reachability: [
     "keyboard-traversal",
+    "ai-agent-visitor",
   ],
   mobile: [
     "mobile-slow-connection",
