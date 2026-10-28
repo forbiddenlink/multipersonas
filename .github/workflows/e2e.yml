@@ -90,9 +90,19 @@ jobs:
           pnpm exec vitest run src/security/redirect-guard.test.ts 2>&1 | tee redirect-guard.log
           if grep -q 'skipped' redirect-guard.log; then echo "::error::redirect-guard tests skipped"; exit 1; fi
 
+      # ghcr.io rate-limits image pulls (toomanyrequests) and the CLI retries only
+      # within seconds, which reddened main twice on 2026-10-28. Pull only what the
+      # tests use, and retry the whole start with backoff.
       - name: Start local Supabase stack
         working-directory: web
-        run: supabase start
+        run: |
+          for attempt in 1 2 3 4; do
+            if supabase start -x studio,logflare,vector,edge-runtime,imgproxy,postgres-meta; then exit 0; fi
+            echo "::warning::supabase start failed (attempt $attempt), retrying"
+            supabase stop --no-backup || true
+            sleep $((attempt * 30))
+          done
+          exit 1
 
       - name: Test database security boundaries
         working-directory: web
