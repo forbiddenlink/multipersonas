@@ -75,6 +75,22 @@ npx personaudit list
 
 `run` reports task success (how many personas achieved their goal), usability observations, and the same axe defects `scan` produces. Personas live in `./mpersonas/` in your repo (the directory name predates the rename), so they are diffable and reviewable. Set the model with `PERSONAUDIT_MODEL` (`MULTIPERSONAS_MODEL` still works as a fallback).
 
+#### Gate on task success
+
+`run` can fail a build when a persona goal that achieved in a saved baseline no longer achieves. This reports whether a goal was reached. It is not an accessibility result.
+
+```bash
+# One time: snapshot each persona's outcome (achieved or blocked) and commit it
+npx personaudit run https://app.example.com --session session.json \
+  --task-baseline personaudit-task-baseline.json --update-task-baseline
+
+# In CI: exit 2 if a goal that achieved in the baseline is now blocked
+npx personaudit run https://app.example.com --session session.json \
+  --task-baseline personaudit-task-baseline.json --fail-on-task-regression
+```
+
+Exit codes: `0` no goal regressed, `2` a goal regressed, `1` error or incomplete. An errored run (no API key, model or browser failure before the first step) is neither a pass nor a regression. If a persona that achieved in the baseline errored, the gate exits `1`. Errored runs are never written to the baseline.
+
 If Chromium is missing, run `npx playwright install chromium`.
 
 ## GitHub Action
