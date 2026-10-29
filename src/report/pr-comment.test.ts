@@ -101,4 +101,12 @@ describe("upsertComment", () => {
     expect(await upsertComment(target, COMMENT_MARKER, fakeFetch(page).impl)).toBe("created");
     expect(await upsertComment({ ...target, author: "other-app[bot]" }, COMMENT_MARKER, fakeFetch(page).impl)).toBe("updated");
   });
+
+  it("mentions dead same-site links, and stays quiet for an older scan.json without the field", () => {
+    const body = buildCommentBody(scan([], { brokenLinks: [{ url: "https://x/gone", status: 404, foundOn: "https://x/" }] }));
+    expect(body).toContain("1 same-site link returned an error");
+    const legacy = scan([]);
+    delete legacy.states.brokenLinks;
+    expect(buildCommentBody(legacy)).not.toContain("same-site link");
+  });
 });

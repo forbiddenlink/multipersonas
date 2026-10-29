@@ -43,6 +43,10 @@ export function buildCommentBody(scan: ScanJson, gateOutcome?: string): string {
     lines.push("");
   }
 
+  const broken = scan.states.brokenLinks ?? [];
+  if (broken.length > 0) {
+    lines.push(`> ${broken.length} same-site link${broken.length === 1 ? "" : "s"} returned an error and could not be scanned (see scan.md).`, "");
+  }
   if (scan.states.skipped.length > 0) {
     lines.push(`> ${scan.states.skipped.length} more states were found but not scanned (page budget reached).`, "");
   }

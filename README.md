@@ -55,6 +55,21 @@ The baseline keys defects by a render-stable id, so framework-generated element 
 
 Exit codes: `0` clean, `1` error (bad input, blocked URL, missing browser), `2` gate failed.
 
+### Use it from a coding agent (MCP)
+
+`personaudit mcp` runs a local MCP server over stdio, so an agent can check its own UI change against your baseline before you review it. Add it to Claude Code:
+
+```bash
+claude mcp add personaudit -- npx -y personaudit mcp
+```
+
+Two tools, both deterministic (no model calls, no API key):
+
+- `scan_site`: crawl and run axe-core. With `baseline`, defects are marked new or known and fixed ones are listed. With `failOn`, it reports whether the CI gate would pass.
+- `update_baseline`: rescan and overwrite the baseline. Marked destructive, because it accepts the current backlog.
+
+The same guards as `scan` apply. Localhost and private-network targets are refused unless you start the server with `personaudit mcp --allow-private`; the agent cannot turn that on, because it reads page text that could carry injected instructions. A session file is passed by path and its contents never enter the conversation. Baseline and suppression files must be `.json` inside the directory the server was started in, and symlinks are refused.
+
 ### Grade a public page
 
 ```bash
@@ -82,6 +97,22 @@ npx personaudit run https://shop.example.com --personas ai-agent-visitor --block
 ```
 
 This is task success for an automated visitor, not an accessibility result.
+
+#### Gate on task success
+
+`run` can fail a build when a persona goal that achieved in a saved baseline no longer achieves. This reports whether a goal was reached. It is not an accessibility result.
+
+```bash
+# One time: snapshot each persona's outcome (achieved or blocked) and commit it
+npx personaudit run https://app.example.com --session session.json \
+  --task-baseline personaudit-task-baseline.json --update-task-baseline
+
+# In CI: exit 2 if a goal that achieved in the baseline is now blocked
+npx personaudit run https://app.example.com --session session.json \
+  --task-baseline personaudit-task-baseline.json --fail-on-task-regression
+```
+
+Exit codes: `0` no goal regressed, `2` a goal regressed, `1` error or incomplete. An errored run (no API key, model or browser failure before the first step) is neither a pass nor a regression. If a persona that achieved in the baseline errored, the gate exits `1`. Errored runs are never written to the baseline.
 
 If Chromium is missing, run `npx playwright install chromium`.
 

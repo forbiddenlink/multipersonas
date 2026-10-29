@@ -1,6 +1,6 @@
 {
   "name": "personaudit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Accessibility scanning that crawls behind a login and runs axe-core at every state it reaches. Keyless CI gate.",
   "type": "module",
   "main": "./dist/agent/orchestrator.js",
@@ -96,6 +96,7 @@
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.45",
     "@axe-core/playwright": "^4.13.0",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "ai": "^7.0.84",
     "chalk": "^6.0.0",
     "commander": "^15.0.0",
@@ -119,7 +120,7 @@
       "undici": ">=8.12.2 <9",
       "vite": ">=8.3.3 <9",
       "postcss": ">=8.5.18 <9",
-      "@hono/node-server": ">=2.0.5 <3",
+      "@hono/node-server": ">=2.1.3 <3",
       "hono": ">=4.13.7 <5",
       "nanoid": ">=3.3.17 <7",
       "sharp": ">=0.35.0 <1",
@@ -134,7 +135,8 @@
       "source-map-js": ">=1.2.2 <2",
       "proxy-addr": ">=2.0.8 <3",
       "postcss-selector-parser": ">=7.1.6 <8",
-      "body-parser": ">=2.4.0 <3"
+      "body-parser": ">=2.4.0 <3",
+      "systeminformation": ">=5.33.14 <6"
     }
   },
   "homepage": "https://personaudit.com",

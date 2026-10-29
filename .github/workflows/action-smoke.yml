@@ -1,0 +1,63 @@
+name: Action smoke
+
+# Runs the packaged GitHub Action the way an adopter does (`uses: ./`), twice:
+# the first job installs and saves the pnpm store, the second must restore it. Nothing
+# else in CI exercises action.yml end to end.
+on:
+  pull_request:
+    paths:
+      - action.yml
+      - src/**
+      - package.json
+      - pnpm-lock.yaml
+      - .github/workflows/action-smoke.yml
+  workflow_dispatch:
+
+concurrency:
+  group: action-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  cold:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run the action
+        id: gate
+        uses: ./
+        with:
+          url: https://example.com/
+          max-pages: "1"
+          fail-on: critical
+      - name: Check outputs
+        env:
+          NEW_DEFECTS: ${{ steps.gate.outputs.new-defects }}
+          REPORT: ${{ steps.gate.outputs.report-path }}
+        run: |
+          test -s "$REPORT"
+          test -s personaudit-report/scan.json
+          echo "new-defects=$NEW_DEFECTS"
+
+  warm:
+    needs: cold
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run the action from cache
+        id: gate
+        uses: ./
+        with:
+          url: https://example.com/
+          max-pages: "1"
+          fail-on: critical
+      - name: Check the report
+        env:
+          REPORT: ${{ steps.gate.outputs.report-path }}
+        run: test -s "$REPORT"

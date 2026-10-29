@@ -14,6 +14,7 @@ import { runMultiPersonaTest, type ProgressEvent } from "./agent/orchestrator.js
 import { crawl } from "./crawler/crawl.js";
 import { gradeScan } from "./grader/scan.js";
 import { evaluateGate, baselineFromFindings, type Baseline, type Severity } from "./crawler/gate.js";
+import { evaluateTaskGate, taskBaselineFromResults, taskBaselineSchema, taskStatuses, type TaskBaseline } from "./agent/task-gate.js";
 import { groupAxeByRule, generateScanReport } from "./report/generator.js";
 import { loadSuppressions, SuppressionsError, type Suppression } from "./crawler/suppressions.js";
 import { buildScanJson } from "./report/json.js";
@@ -89,6 +90,10 @@ Exit codes:
   0  clean (scan finished; gate passed or no --fail-on)
   1  error (bad input, blocked URL, missing browser, crash)
   2  gate failed: new defects at/above --fail-on
+
+\`run --fail-on-task-regression\` uses the same codes: 0 no persona goal regressed,
+2 a goal that achieved in --task-baseline is now blocked, 1 error or incomplete
+(a persona that achieved in the baseline errored, so the result is unknown).
 
 \`scan\` and \`grade\` are deterministic and need no API key.
 \`run\` and \`generate\` call Anthropic and need ANTHROPIC_API_KEY.
@@ -196,7 +201,7 @@ program
 
     fs.mkdirSync(options.output, { recursive: true });
     const reportPath = path.join(options.output, "scan.md");
-    fs.writeFileSync(reportPath, generateScanReport(url, result.findings, result.pagesVisited, result.skipped, options.suppressions ? gate.suppressions : undefined));
+    fs.writeFileSync(reportPath, generateScanReport(url, result.findings, result.pagesVisited, result.skipped, options.suppressions ? gate.suppressions : undefined, result.brokenLinks));
     const jsonPath = path.join(options.output, "scan.json");
     fs.writeFileSync(
       jsonPath,
@@ -207,6 +212,7 @@ program
           findings: result.findings,
           pagesVisited: result.pagesVisited,
           skipped: result.skipped,
+          brokenLinks: result.brokenLinks,
           baselineKeys: baseline ? new Set(baseline.keys) : null,
           baselinePath: options.baseline,
           fixed: gate.fixed,
@@ -222,6 +228,9 @@ program
     // rules, so it says rules: calling both "defects" printed 10 here and 19 on the gate line.
     console.log(`  Accessibility: ${groups.length} failing rule${groups.length === 1 ? "" : "s"}` +
       chalk.dim(` (${groupSev("critical")} critical, ${groupSev("serious")} serious) across ${result.findings.length} elements`));
+    if (result.brokenLinks.length > 0) {
+      console.log(chalk.yellow(`  Broken links: ${result.brokenLinks.length} same-site link(s) returned an error (listed in the report)`));
+    }
     if (result.skipped.length > 0) {
       console.log(chalk.yellow(`  Budget reached: ${result.skipped.length} more states not scanned (raise --max-pages)`));
     }
@@ -275,6 +284,18 @@ program
     }
 
     console.log("");
+  });
+
+// --- MCP server ---
+
+program
+  .command("mcp")
+  .description("Run an MCP server over stdio so a coding agent can scan and check the baseline gate (deterministic, no AI)")
+  .option("--allow-private", "Let the tools scan localhost / private-network targets. Your choice at start-up, never the agent's.")
+  .action(async (options: { allowPrivate?: boolean }) => {
+    // stdout is the protocol channel: nothing else may print to it from here on.
+    const { serveStdio } = await import("./mcp.js");
+    await serveStdio(pkg.version, { allowPrivate: options.allowPrivate });
   });
 
 // --- Grade command (Fast, keyless, Deque-weighted public score) ---
@@ -419,6 +440,9 @@ program
     "--block-destructive-actions",
     "Refuse irreversible clicks (place order, pay, delete account). Pass this when testing a real site you do not want personas transacting against."
   )
+  .option("--task-baseline <file>", "Compare task success against this baseline: a persona goal that achieved in it must still achieve")
+  .option("--update-task-baseline", "Write each persona's outcome (achieved or blocked; errored runs are omitted) to --task-baseline (or ./personaudit-task-baseline.json) and exit 0")
+  .option("--fail-on-task-regression", "Exit 2 if a persona goal that achieved in --task-baseline is now blocked; exit 1 if that persona errored. For CI.")
   .action(async (url: string, options: {
     personas: string;
     output: string;
@@ -430,8 +454,30 @@ program
     allowPrivate?: boolean;
     session?: string;
     blockDestructiveActions?: boolean;
+    taskBaseline?: string;
+    updateTaskBaseline?: boolean;
+    failOnTaskRegression?: boolean;
   }) => {
     requireModelKey("run");
+
+    if (options.failOnTaskRegression && !options.taskBaseline) {
+      console.error(chalk.red("  --fail-on-task-regression needs --task-baseline <file>"));
+      process.exit(1);
+    }
+    // Validated before any model call so a malformed file fails in seconds, not after the run.
+    let taskBaseline: TaskBaseline | null = null;
+    if (!options.updateTaskBaseline && options.taskBaseline && fs.existsSync(options.taskBaseline)) {
+      try {
+        taskBaseline = taskBaselineSchema.parse(JSON.parse(fs.readFileSync(options.taskBaseline, "utf8")));
+      } catch (error) {
+        console.error("");
+        console.error(chalk.red(`  Could not read task baseline ${options.taskBaseline}`));
+        console.error(chalk.dim(`  ${error instanceof z.ZodError ? error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`).join("; ") : error instanceof Error ? error.message : String(error)}`));
+        console.error(chalk.dim('  Expected { "tasks": { "<personaId>": "achieved" | "blocked" } }. Recreate it with --update-task-baseline.'));
+        console.error("");
+        process.exit(1);
+      }
+    }
 
     // Vet the target first. runMultiPersonaTest checks again, but persona
     // generation runs before it and costs model calls — no reason to spend them
@@ -665,6 +711,45 @@ program
     console.log("");
     // Every run broke: that is a failed command, not a site where nobody succeeded.
     if (total > 0 && errored === total) process.exit(1);
+
+    // --update-task-baseline: snapshot current outcomes, exit clean.
+    if (options.updateTaskBaseline) {
+      const baselinePath = options.taskBaseline ?? "./personaudit-task-baseline.json";
+      const snapshot = taskBaselineFromResults(result.personas, { url, createdAt: new Date().toISOString() });
+      fs.writeFileSync(baselinePath, JSON.stringify(snapshot, null, 2));
+      console.log(chalk.green(`  Task baseline written to ${baselinePath} (${Object.keys(snapshot.tasks).length} persona goals)`));
+      if (errored > 0) console.log(chalk.yellow(`  ${errored} errored run(s) left out of the baseline.`));
+      console.log("");
+      return;
+    }
+
+    // --fail-on-task-regression: the CI gate. Fail only when a goal that achieved in the baseline no longer does.
+    if (options.failOnTaskRegression) {
+      if (!taskBaseline) {
+        console.log(chalk.yellow(`  No task baseline at ${options.taskBaseline} yet, so nothing can regress. Create one with --update-task-baseline.`));
+        console.log("");
+        return;
+      }
+      const gate = evaluateTaskGate(taskStatuses(result.personas), taskBaseline);
+      if (gate.newlyAchieved.length > 0) {
+        console.log(chalk.green(`  ${gate.newlyAchieved.length} persona goal(s) newly achieved since the baseline: ${gate.newlyAchieved.join(", ")}`));
+      }
+      if (gate.passed) {
+        console.log(chalk.green("  Task gate passed: no persona goal regressed"));
+        console.log("");
+        return;
+      }
+      if (gate.regressed.length > 0) {
+        console.log(chalk.red(`  Task gate FAILED: ${gate.regressed.length} persona goal${gate.regressed.length === 1 ? "" : "s"} regressed: ${gate.regressed.join(", ")}`));
+      }
+      if (gate.incomplete) {
+        const blockers = gate.errored.filter((id) => taskBaseline.tasks[id] === "achieved");
+        console.log(chalk.red(`  Task gate INCOMPLETE: ${blockers.length} persona${blockers.length === 1 ? "" : "s"} that achieved in the baseline errored, so the result is unknown: ${blockers.join(", ")}`));
+        console.log(chalk.dim("    Fix the run error and re-run. An errored run is neither a pass nor a regression."));
+      }
+      console.log("");
+      process.exit(gate.exitCode);
+    }
   });
 
 // --- Generate command ---
