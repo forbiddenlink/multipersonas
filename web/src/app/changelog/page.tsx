@@ -5,7 +5,10 @@ import { ContentArticle } from "@/components/dossier/content-article";
 import { CHANGELOG, CHANGELOG_PR_BASE, changelogIds, type ChangelogEntry } from "@/lib/changelog";
 
 export const metadata: Metadata = {
-  alternates: { canonical: "/changelog" },
+  alternates: {
+    canonical: "/changelog",
+    types: { "application/rss+xml": [{ url: "/changelog/feed.xml", title: "Personaudit changelog" }] },
+  },
   title: "Changelog",
   description: "User-visible changes to Personaudit, by month, taken from merged pull requests.",
 };
@@ -66,7 +69,10 @@ export default function ChangelogPage() {
       >
         <p>
           User-visible changes, newest first, taken from merged pull requests. Dependency
-          updates and internal changes are left out. Each entry links to its pull request.
+          updates and internal changes are left out. Each entry links to its pull request.{" "}
+          <a href="/changelog/feed.xml" className="text-link">
+            RSS feed
+          </a>
         </p>
 
         {months.map((g) => (
