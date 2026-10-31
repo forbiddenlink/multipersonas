@@ -10,6 +10,19 @@ export type ChangelogEntry = {
   pr: number;
 };
 
+/**
+ * Stable in-page anchor ids, one per entry, in entry order: `pr-<number>`. If a PR number ever
+ * appears twice, later occurrences get `-2`, `-3`, ... so ids stay unique and deterministic.
+ */
+export function changelogIds(entries: ChangelogEntry[]): string[] {
+  const seen = new Map<number, number>();
+  return entries.map((e) => {
+    const n = (seen.get(e.pr) ?? 0) + 1;
+    seen.set(e.pr, n);
+    return n === 1 ? `pr-${e.pr}` : `pr-${e.pr}-${n}`;
+  });
+}
+
 export const CHANGELOG_PR_BASE = "https://github.com/forbiddenlink/multipersonas/pull";
 
 export const CHANGELOG: ChangelogEntry[] = [
