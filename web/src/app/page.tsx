@@ -16,11 +16,15 @@ import { SampleTaskSuccess } from "@/components/dossier/sample-task-success";
 import { PROBE_LEDGER } from "@/lib/probe-ledger";
 import { PLANS } from "@/lib/plans";
 import { isSoloCheckoutOpen } from "@/lib/founding-checkout";
+import { LatestUpdate } from "@/components/latest-update";
 
 // Canonical only — title/description are inherited from the root layout default.
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
+
+// Re-render daily so the 90-day hide on the latest-update line cannot go stale between deploys.
+export const revalidate = 86400;
 
 const PROCEDURE = [
   {
@@ -98,6 +102,7 @@ export default function Home() {
                 <Link href="/sample-report" className="text-link">Read a sample client report</Link>.
                 {SOLO_OPEN ? ` Grading is free. The hosted workspace starts at $${PLANS.solo.monthlyUsd} a month.` : null}
               </p>
+              <LatestUpdate className="mt-4 max-w-[34rem]" />
             </div>
 
             <PersonaPaneStrip className="mx-auto min-w-0 w-full max-w-[34rem] lg:mr-0" />
