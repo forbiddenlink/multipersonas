@@ -44,6 +44,7 @@ describe("latestUpdate", () => {
     expect(latestUpdate(entries, new Date("2026-10-31T00:00:00Z"))).toEqual({
       date: "Oct 28",
       text: "personaudit mcp runs a local MCP server",
+      id: "pr-223",
     });
   });
 

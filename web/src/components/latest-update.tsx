@@ -7,7 +7,7 @@ export function LatestUpdate({ className = "" }: { className?: string }) {
   if (!update) return null;
   return (
     <p className={`text-sm leading-relaxed text-muted-foreground ${className}`}>
-      <Link href="/changelog" className="text-link">
+      <Link href={`/changelog#${update.id}`} className="text-link">
         <span className="font-mono">{update.date}</span>: {update.text}
       </Link>
     </p>

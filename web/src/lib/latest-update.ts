@@ -1,4 +1,4 @@
-import { CHANGELOG, type ChangelogEntry } from "@/lib/changelog";
+import { CHANGELOG, changelogIds, type ChangelogEntry } from "@/lib/changelog";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DAY_MS = 86_400_000;
@@ -37,12 +37,12 @@ export function shortenUpdate(text: string, max = 72): string {
 export function latestUpdate(
   entries: ChangelogEntry[] = CHANGELOG,
   now: Date = new Date(),
-): { date: string; text: string } | null {
+): { date: string; text: string; id: string } | null {
   const entry = entries[0];
   const p = entry ? parseIso(entry.date) : null;
   if (!entry || !p) return null;
   const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
   const ageDays = Math.floor((today - Date.UTC(p.y, p.m - 1, p.d)) / DAY_MS);
   if (ageDays > MAX_AGE_DAYS) return null;
-  return { date: formatUpdateDate(entry.date), text: shortenUpdate(entry.text) };
+  return { date: formatUpdateDate(entry.date), text: shortenUpdate(entry.text), id: changelogIds(entries)[0] ?? "" };
 }
