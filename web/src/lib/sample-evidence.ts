@@ -102,3 +102,31 @@ export const SAMPLE_SEVERITY_COUNTS = {
   moderate: 0,
   minor: 0,
 } as const;
+
+/**
+ * Hero persona panes: one sample page (the SauceDemo checkout validation error) shown once
+ * per persona. Findings are the real probe result for that state (SAMPLE_VERDICTS[0],
+ * experiments/net-new-violations). axe-core is deterministic, so the count is the same in
+ * every pane; the personas differ in viewport and input, which decide whether a crawl
+ * reaches the state at all. Persona names and viewports come from the engine definitions.
+ */
+export const SAMPLE_PANE_PERSONAS = [
+  "first-time-visitor",
+  "keyboard-traversal",
+  "mobile-slow-connection",
+  "ai-agent-visitor",
+] as const;
+
+export const SAMPLE_PANE_PAGE = {
+  host: "saucedemo.com",
+  path: "/checkout (error)",
+  findings: [
+    {
+      ruleId: SAMPLE_VERDICTS[0].ruleId,
+      severity: SAMPLE_VERDICTS[0].severity,
+      wcag: SAMPLE_VERDICTS[0].wcag,
+    },
+  ],
+  findingNote:
+    "axe-core gives the same verdict for every persona. Personas change how a crawl reaches this state, not what axe finds in it.",
+} as const;

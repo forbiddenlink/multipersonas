@@ -4,7 +4,7 @@
 The token layer lives in `src/app/globals.css` and the fonts in `src/app/layout.tsx`. If this
 file and the code disagree, the code wins and this file gets updated.
 
-Reference implementation: `src/app/page.tsx` (home), `src/components/dossier/evidence-sheet.tsx`,
+Reference implementation: `src/app/page.tsx` (home), `src/components/dossier/persona-pane-strip.tsx`,
 `src/components/site-header.tsx`, and `src/components/site-footer.tsx`. Match them.
 
 ## Idea

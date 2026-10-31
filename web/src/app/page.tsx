@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { GradeForm } from "@/components/grade-form";
 import { ContentCodeBlock } from "@/components/dossier/content-code-block";
-import { EvidenceSheet } from "@/components/dossier/evidence-sheet";
+import { PersonaPaneStrip } from "@/components/dossier/persona-pane-strip";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { FocusGradeLink } from "@/components/focus-grade-link";
 import { ExhibitHead } from "@/components/dossier/exhibit-head";
@@ -69,7 +69,7 @@ export default function Home() {
       <SiteHeader />
 
       <main id="main" className="exhibits flex-1">
-        {/* ── Hero: the claim and the free grade on the left, the finished case file on the right. ── */}
+        {/* ── Hero: the claim and the free grade on the left, one sample page shown for four personas on the right. ── */}
         <section id="scan" aria-labelledby="hero-heading" className="grain relative scroll-mt-20 overflow-hidden border-b border-border">
           <div className="frame relative z-10 grid gap-12 pt-12 pb-14 lg:grid-cols-[minmax(0,1.18fr)_minmax(0,0.82fr)] lg:items-center lg:gap-14 lg:pt-14 lg:pb-16">
             <div className="min-w-0">
@@ -100,7 +100,7 @@ export default function Home() {
               </p>
             </div>
 
-            <EvidenceSheet className="mx-auto hidden w-full max-w-[34rem] md:block lg:mr-0" />
+            <PersonaPaneStrip className="mx-auto min-w-0 w-full max-w-[34rem] lg:mr-0" />
           </div>
         </section>
 
