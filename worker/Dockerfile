@@ -19,7 +19,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 procps 
 # Build and runtime users must share the pinned package-manager download.
 ENV COREPACK_HOME=/opt/corepack
 # Node 25+ no longer bundles corepack, and the Playwright image now ships Node 26.
-RUN npm install -g corepack@0.36.0 && corepack enable
+# The image's global yarn owns /usr/bin/yarn, which corepack needs for its shim.
+RUN npm uninstall -g yarn && npm install -g corepack@0.36.0 && corepack enable
 
 # Install deps against the lockfile first for layer caching.
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
