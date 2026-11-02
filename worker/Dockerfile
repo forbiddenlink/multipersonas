@@ -17,8 +17,11 @@ WORKDIR /app
 # Process containment needs Linux subreaper support and process-tree inspection.
 RUN apt-get update && apt-get install -y --no-install-recommends python3 procps && rm -rf /var/lib/apt/lists/*
 # Build and runtime users must share the pinned package-manager download.
+# Node 25+ no longer bundles corepack, and the Playwright image now ships Node 26, so
+# install it explicitly (--force: its yarn shims collide with the image's yarn). Corepack then
+# provisions the pnpm pinned in `packageManager`.
 ENV COREPACK_HOME=/opt/corepack
-RUN corepack enable
+RUN npm install -g --force corepack@0.36.0 && corepack enable
 
 # Install deps against the lockfile first for layer caching.
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
