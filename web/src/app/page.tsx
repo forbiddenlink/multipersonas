@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { GradeForm } from "@/components/grade-form";
 import { ContentCodeBlock } from "@/components/dossier/content-code-block";
-import { PersonaPaneStrip } from "@/components/dossier/persona-pane-strip";
+import { PersonaLineup } from "@/components/dossier/persona-lineup";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { FocusGradeLink } from "@/components/focus-grade-link";
 import { ExhibitHead } from "@/components/dossier/exhibit-head";
@@ -73,39 +73,44 @@ export default function Home() {
       <SiteHeader />
 
       <main id="main" className="exhibits flex-1">
-        {/* ── Hero: the claim and the free grade on the left, one sample page shown for four personas on the right. ── */}
-        <section id="scan" aria-labelledby="hero-heading" className="grain relative scroll-mt-20 overflow-hidden border-b border-border">
-          <div className="frame relative z-10 grid gap-12 pt-12 pb-14 lg:grid-cols-[minmax(0,1.18fr)_minmax(0,0.82fr)] lg:items-center lg:gap-14 lg:pt-14 lg:pb-16">
-            <div className="min-w-0">
-              <p className="label-mono">For agencies, freelancers, and dev teams</p>
-              {/* LCP element: the sweep animates a background only, never the text. */}
-              <h1 id="hero-heading" className="display mt-4 text-[clamp(2.2rem,4.4vw,3.6rem)] leading-[1.03] sm:mt-5">
-                <span className="block">Grade your client&apos;s website.</span>
-                <span className="block">Know <span className="mark-sweep">what to fix first.</span></span>
-              </h1>
-              <p className="mt-4 max-w-[34rem] text-lg leading-relaxed text-muted-foreground sm:mt-6">
+        {/* ── Hero: the claim and the free grade across the top, then one example page seen by each persona, with the letter grade under it. ── */}
+        <section id="scan" aria-labelledby="hero-heading" className="scroll-mt-20 border-b-[3px] border-foreground">
+          <div className="frame pt-10 pb-12 lg:pt-14 lg:pb-16">
+            <p className="label-mono">For agencies, freelancers, and dev teams</p>
+            {/* LCP element: plain text, no animation. */}
+            <h1 id="hero-heading" className="display mt-4 text-[clamp(2.5rem,6.4vw,5.5rem)] leading-[1.02]">
+              <span className="block">Grade your client&apos;s website.</span>
+              <span className="block">Know what to fix first.</span>
+            </h1>
+            <div className="mt-6 grid gap-6 lg:mt-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-start lg:gap-12">
+              <p className="max-w-[34rem] text-xl leading-relaxed">
                 Paste a web address. In under a minute you get an accessibility grade, what to fix
                 first, and a page to show your client. Your first grade is free, with no account.
               </p>
-              <div className="mt-6 max-w-[34rem] sm:mt-8">
+              <div className="min-w-0 border-[3px] border-foreground p-4 sm:p-5">
                 <GradeForm />
               </div>
-              <p className="mt-6 max-w-[34rem] text-sm leading-relaxed text-muted-foreground">
-                Pages are checked with <span className="font-medium text-foreground">axe-core</span>,
+            </div>
+
+            <PersonaLineup className="mt-10 lg:mt-14" />
+
+            <div className="mt-8 grid gap-4 lg:grid-cols-2 lg:gap-12">
+              <p className="max-w-[34rem] text-base leading-relaxed text-muted-foreground">
+                Pages are checked with <span className="font-bold text-foreground">axe-core</span>,
                 a widely used open-source accessibility engine that Google Lighthouse also uses,
                 against WCAG 2.2 A and AA, the web accessibility standard that laws and RFPs
                 commonly point to. Automated checks find part of the problems; a person still has to
                 review the rest.
               </p>
-              <p className="mt-4 max-w-[34rem] text-sm leading-relaxed text-muted-foreground">
-                Want to see a finished report first?{" "}
-                <Link href="/sample-report" className="text-link">Read a sample client report</Link>.
-                {SOLO_OPEN ? ` Grading is free. The hosted workspace starts at $${PLANS.solo.monthlyUsd} a month.` : null}
-              </p>
-              <LatestUpdate className="mt-4 max-w-[34rem]" />
+              <div>
+                <p className="max-w-[34rem] text-base leading-relaxed text-muted-foreground">
+                  Want to see a finished report first?{" "}
+                  <Link href="/sample-report" className="text-link">Read a sample client report</Link>.
+                  {SOLO_OPEN ? ` Grading is free. The hosted workspace starts at $${PLANS.solo.monthlyUsd} a month.` : null}
+                </p>
+                <LatestUpdate className="mt-4 max-w-[34rem]" />
+              </div>
             </div>
-
-            <PersonaPaneStrip className="mx-auto min-w-0 w-full max-w-[34rem] lg:mr-0" />
           </div>
         </section>
 

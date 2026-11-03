@@ -9,9 +9,10 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
-  --font-serif: var(--font-serif);
-  /* Headings are the Newsreader display serif; UI + copy are Plex Sans; evidence is Plex Mono. */
-  --font-heading: var(--font-serif);
+  /* One face for display, UI and copy: Atkinson Hyperlegible Next (loaded as --font-sans in
+     layout.tsx). Evidence is Atkinson Hyperlegible Mono. */
+  --font-serif: var(--font-sans);
+  --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -58,105 +59,103 @@
 }
 
 /* ============================================================================
- * EVIDENCE DOSSIER — token system (web/DESIGN.md, 2026-09-26).
- * Light-first: warm manila desk, near-white sheets, blue-black fountain-pen ink.
- * Ink-blue (--primary) carries CTAs + links. Redline (--redline) is the annotation
- * and stamp color, and it IS severity-critical on purpose: a critical finding is a
- * redline. Highlighter (--highlight) marks evidence inline. Severity is always
- * color + glyph + text. Every text pair verified >= WCAG AA (scripts in DESIGN.md).
- * Dark = "night desk" variant of the same system.
+ * HIGH CONTRAST — token system (web/DESIGN.md, 2026-11-03).
+ * Accessibility as the aesthetic: pure #0a0a0a ink on #ffffff (AAA), one accent, electric
+ * blue #1d4ed8, for focus, links and the primary action, and a 3px focus ring on every
+ * focusable element. Redline (--redline) is the critical-severity red. Severity is always
+ * color + glyph + text. Dark is the same system inverted: white on #0a0a0a.
  * ==========================================================================*/
 :root,
 .report-paper-surface {
-  --background: oklch(0.967 0.013 86);      /* desk / manila */
-  --foreground: oklch(0.22 0.025 262);      /* ink */
-  --card: oklch(0.993 0.004 90);            /* sheet */
-  --card-foreground: oklch(0.22 0.025 262);
-  --popover: oklch(0.993 0.004 90);
-  --popover-foreground: oklch(0.22 0.025 262);
-  --primary: oklch(0.38 0.13 264);          /* carbon ink blue */
-  --primary-foreground: oklch(0.985 0.004 90);
-  --secondary: oklch(0.935 0.016 86);
-  --secondary-foreground: oklch(0.26 0.025 262);
-  --muted: oklch(0.935 0.016 86);
-  --muted-foreground: oklch(0.46 0.022 262);
-  --accent: oklch(0.925 0.03 264);
-  --accent-foreground: oklch(0.26 0.025 262);
-  --destructive: oklch(0.5 0.19 28);
-  --border: oklch(0.855 0.02 84);           /* ruled line */
-  --input: oklch(0.56 0.022 262);
-  --ring: oklch(0.38 0.13 264);
-  --redline: oklch(0.5 0.19 28);
-  --highlight: oklch(0.925 0.1 98);         /* highlighter yellow — ink text on it */
-  --stamp: oklch(0.5 0.19 28);
-  --chart-1: oklch(0.38 0.13 264);
-  --chart-2: oklch(0.52 0.14 55);
-  --chart-3: oklch(0.52 0.11 85);
-  --chart-4: oklch(0.47 0.03 262);
-  --chart-5: oklch(0.5 0.19 28);
-  --radius: 0.1875rem;
-  --sidebar: oklch(0.955 0.015 86);
-  --sidebar-foreground: oklch(0.22 0.025 262);
-  --sidebar-primary: oklch(0.38 0.13 264);
-  --sidebar-primary-foreground: oklch(0.985 0.004 90);
-  --sidebar-accent: oklch(0.925 0.03 264);
-  --sidebar-accent-foreground: oklch(0.26 0.025 262);
-  --sidebar-border: oklch(0.855 0.02 84);
-  --sidebar-ring: oklch(0.38 0.13 264);
-  /* Severity on paper. Minor is slate (low urgency), never ink-blue, so a minor
-     finding can't be mistaken for a link or CTA. */
-  --severity-critical: oklch(0.5 0.19 28);
-  --severity-serious: oklch(0.52 0.12 52);
-  --severity-moderate: oklch(0.5 0.095 82);
-  --severity-minor: oklch(0.47 0.035 262);
+  --background: #ffffff;
+  --foreground: #0a0a0a;                     /* 19.8:1 on white (AAA) */
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --popover: #ffffff;
+  --popover-foreground: #0a0a0a;
+  --primary: #1d4ed8;                        /* the one accent: focus, links, CTA. 6.7:1 on white */
+  --primary-foreground: #ffffff;
+  --secondary: #f2f2f2;
+  --secondary-foreground: #0a0a0a;
+  --muted: #f2f2f2;
+  --muted-foreground: #404040;               /* 10.4:1 on white, 9.1:1 on --muted */
+  --accent: #dbeafe;
+  --accent-foreground: #0a0a0a;
+  --destructive: #b91c1c;
+  --border: #0a0a0a;
+  --input: #0a0a0a;
+  --ring: #1d4ed8;
+  --redline: #b91c1c;                        /* 6.5:1 on white */
+  --highlight: #dbeafe;                      /* ink on it is 16:1 */
+  --stamp: #b91c1c;
+  --chart-1: #1d4ed8;
+  --chart-2: #9a3412;
+  --chart-3: #854d0e;
+  --chart-4: #404040;
+  --chart-5: #b91c1c;
+  --radius: 0.125rem;
+  --sidebar: #f2f2f2;
+  --sidebar-foreground: #0a0a0a;
+  --sidebar-primary: #1d4ed8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #dbeafe;
+  --sidebar-accent-foreground: #0a0a0a;
+  --sidebar-border: #0a0a0a;
+  --sidebar-ring: #1d4ed8;
+  /* Severity on white, all >= 6.5:1. Minor is neutral grey, never the accent blue, so a
+     minor finding can't be mistaken for a link or CTA. */
+  --severity-critical: #b91c1c;
+  --severity-serious: #9a3412;
+  --severity-moderate: #854d0e;
+  --severity-minor: #404040;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --shadow-sheet: 0 1px 0 oklch(0.8 0.02 84), 0 18px 40px -24px oklch(0.3 0.04 262 / 0.35);
+  --focus-ring: 3px;
+  /* CSS modules read --font-serif; it is the same single face. */
+  --font-serif: var(--font-sans);
+  --shadow-sheet: none;
 }
 
 .dark {
-  --background: oklch(0.175 0.014 262);     /* night desk */
-  --foreground: oklch(0.94 0.012 88);       /* paper-white ink */
-  --card: oklch(0.215 0.016 262);
-  --card-foreground: oklch(0.94 0.012 88);
-  --popover: oklch(0.215 0.016 262);
-  --popover-foreground: oklch(0.94 0.012 88);
-  --primary: oklch(0.8 0.09 258);
-  --primary-foreground: oklch(0.18 0.03 262);
-  --secondary: oklch(0.26 0.016 262);
-  --secondary-foreground: oklch(0.94 0.012 88);
-  --muted: oklch(0.26 0.016 262);
-  --muted-foreground: oklch(0.72 0.018 88);
-  --accent: oklch(0.28 0.03 262);
-  --accent-foreground: oklch(0.94 0.012 88);
-  --destructive: oklch(0.7 0.16 28);
-  --border: oklch(0.94 0.012 88 / 13%);
-  --input: oklch(0.58 0.02 262);   /* 3:1 on the night card (WCAG 1.4.11); 22% alpha was ~1.3:1 */
-  --ring: oklch(0.8 0.09 258);
-  --redline: oklch(0.72 0.15 28);
-  /* Warm amber marker, paper-white ink on it at 5.5:1. The old oklch(.42 .07 98) was a
-     green-grey olive that read as mud. Ink stays light so the unhighlighted top of a glyph
-     (the mark covers only the lower 62%) is still legible on the night desk. */
-  --highlight: oklch(0.48 0.12 80);
-  --stamp: oklch(0.72 0.15 28);
-  --chart-1: oklch(0.8 0.09 258);
-  --chart-2: oklch(0.76 0.13 55);
-  --chart-3: oklch(0.8 0.11 85);
-  --chart-4: oklch(0.72 0.03 262);
-  --chart-5: oklch(0.72 0.15 28);
-  --sidebar: oklch(0.195 0.015 262);
-  --sidebar-foreground: oklch(0.94 0.012 88);
-  --sidebar-primary: oklch(0.8 0.09 258);
-  --sidebar-primary-foreground: oklch(0.18 0.03 262);
-  --sidebar-accent: oklch(0.28 0.03 262);
-  --sidebar-accent-foreground: oklch(0.94 0.012 88);
-  --sidebar-border: oklch(0.94 0.012 88 / 13%);
-  --sidebar-ring: oklch(0.8 0.09 258);
-  --severity-critical: oklch(0.72 0.15 28);
-  --severity-serious: oklch(0.77 0.13 55);
-  --severity-moderate: oklch(0.82 0.11 85);
-  --severity-minor: oklch(0.74 0.03 262);
-  --shadow-sheet: 0 1px 0 oklch(0.1 0.01 262), 0 18px 40px -24px oklch(0 0 0 / 0.6);
+  --background: #0a0a0a;
+  --foreground: #ffffff;
+  --card: #0a0a0a;
+  --card-foreground: #ffffff;
+  --popover: #0a0a0a;
+  --popover-foreground: #ffffff;
+  --primary: #8aadff;                        /* 8.6:1 on #0a0a0a */
+  --primary-foreground: #0a0a0a;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #ffffff;
+  --muted: #1a1a1a;
+  --muted-foreground: #d4d4d4;
+  --accent: #172554;
+  --accent-foreground: #ffffff;
+  --destructive: #ff8a80;
+  --border: #ffffff;
+  --input: #ffffff;
+  --ring: #8aadff;
+  --redline: #ff8a80;
+  --highlight: #172554;
+  --stamp: #ff8a80;
+  --chart-1: #8aadff;
+  --chart-2: #fdba74;
+  --chart-3: #facc15;
+  --chart-4: #d4d4d4;
+  --chart-5: #ff8a80;
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #8aadff;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #172554;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #ffffff;
+  --sidebar-ring: #8aadff;
+  --severity-critical: #ff8a80;
+  --severity-serious: #fdba74;
+  --severity-moderate: #facc15;
+  --severity-minor: #d4d4d4;
+  --shadow-sheet: none;
 }
 
 /* A paper surface (`.report-paper-surface`: the sample report sheet, the home hero case
@@ -177,12 +176,31 @@
     @apply font-sans;
     overflow-x: clip;
     text-rendering: optimizeLegibility;
-    font-feature-settings: "ss02", "cv05";
+  }
+  body {
+    font-size: 1.125rem;
+    line-height: 1.7;
+  }
+  /* No italics anywhere: Atkinson Hyperlegible ships upright only here, and a browser's
+     synthesized slant hurts the letterforms the face was drawn to keep distinct. */
+  *, *::before, *::after {
+    font-style: normal !important;
   }
   ::selection {
     background: var(--highlight);
     color: var(--foreground);
   }
+}
+
+/* The focus ring: 3px, accent blue, offset 3px, on every focusable element. Unlayered on
+   purpose: it outranks the per-component `focus-visible:outline-2` utilities, so no
+   component can ship a thinner or invisible ring. On a black band the ring turns white. */
+:focus-visible {
+  outline: var(--focus-ring) solid var(--ring);
+  outline-offset: 3px;
+}
+.bg-foreground :focus-visible {
+  outline-color: var(--background);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -202,9 +220,10 @@
 }
 .label-mono {
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.75rem;
-  line-height: 1rem;
-  letter-spacing: 0.09em;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
@@ -215,10 +234,9 @@
 
 /* Display serif — upright always (no italic headings), optical sizing on. */
 .display {
-  font-family: var(--font-serif), ui-serif, Georgia, serif;
-  font-weight: 500;
-  letter-spacing: -0.022em;
-  font-optical-sizing: auto;
+  font-family: var(--font-serif), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.025em;
   text-wrap: balance;
   overflow-wrap: break-word;
   hyphens: manual;
@@ -229,7 +247,7 @@
 .sheet {
   background: var(--card);
   color: var(--card-foreground);
-  border: 1px solid var(--border);
+  border: 2px solid var(--foreground);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sheet);
 }
@@ -279,7 +297,7 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   line-height: 1.1;
-  transform: rotate(-4deg);
+  transform: none;
 }
 :root:not(.dark) .stamp,
 .report-paper-surface .stamp {
@@ -400,30 +418,10 @@
   .exhibit-serial { display: none; }
 }
 
-/* Signature move 2: THE HIGHLIGHTER PASS. One claim phrase per page H1 gets the
- * same yellow pass the evidence sheet uses. It sweeps in once; reduced-motion
- * users get the finished state (the global reduced-motion rule ends it at once). */
+/* Retired: the highlighted single-word headline trick. The class stays so existing
+ * headings keep compiling, and it now renders as plain text. */
 .mark-sweep {
-  background-image: linear-gradient(
-    to top,
-    transparent 0,
-    transparent 9%,
-    var(--highlight) 9%,
-    var(--highlight) 58%,
-    transparent 58%
-  );
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  padding-inline: 0.12em;
-  margin-inline: -0.06em;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
   color: inherit;
-  animation: mark-sweep 700ms 250ms var(--ease-out) both;
-}
-@keyframes mark-sweep {
-  from { background-size: 0% 100%; }
-  to { background-size: 100% 100%; }
 }
 
 /* The verdict stamp lands once on the hero sheet. */
@@ -431,8 +429,8 @@
   animation: stamp-land 320ms 500ms var(--ease-out) both;
 }
 @keyframes stamp-land {
-  from { opacity: 0; transform: rotate(-4deg) scale(1.35); }
-  to { opacity: 1; transform: rotate(-4deg) scale(1); }
+  from { opacity: 0; transform: scale(1.35); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 /* Standard page frame: one left edge for every section on every page. */
@@ -459,17 +457,14 @@
 .text-link {
   color: var(--primary);
   text-decoration: underline;
-  text-decoration-thickness: 1px;
+  text-decoration-thickness: 2px;
   text-underline-offset: 0.2em;
   border-radius: 2px;
+  font-weight: 600;
   transition: text-decoration-thickness 150ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
 }
 .text-link:hover {
-  text-decoration-thickness: 2px;
-}
-.text-link:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
+  text-decoration-thickness: 4px;
 }
 
 /* Theme toggle / state change — 150ms color only (motion budget). */
@@ -477,23 +472,9 @@
   transition: background-color 150ms var(--ease-out), color 150ms var(--ease-out), border-color 150ms var(--ease-out);
 }
 
-/* Grain — subtle fractal-noise overlay to stop banding on large dark fills. Sits
- * BEHIND content on its own layer; text lives on solid card backgrounds above it,
- * so grain never lowers text contrast below the verified AA values. Apply `.grain`
- * to a `position: relative` container; give real content `position: relative; z-index: 1`. */
+/* Grain: retired with the paper look. Flat white only. */
 .grain::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.05;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-}
-:root:not(.dark) .grain::before {
-  opacity: 0.06;
-  mix-blend-mode: multiply;
+  content: none;
 }
 
 /* Report export (audits/[id]/report): print only the report document, never the app

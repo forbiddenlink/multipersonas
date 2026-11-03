@@ -1,30 +1,30 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans, Newsreader } from "next/font/google";
+import { Atkinson_Hyperlegible_Mono, Atkinson_Hyperlegible_Next } from "next/font/google";
 import { PALETTE, PALETTE_DARK } from "@/lib/og-palette";
 import { PostHogProvider } from "@/components/posthog-provider";
 import "./globals.css";
 import { siteOrigin } from "@/lib/site-url";
 import { PLANS } from "@/lib/plans";
 
-// Sans — UI, copy, CTAs. Plex reads as a technical document, not a SaaS default.
-const plexSans = IBM_Plex_Sans({
+// Atkinson Hyperlegible Next: display, UI and body. The Braille Institute drew it so that
+// similar characters (1 I l, 0 O) stay distinct. It is upright only here; the site has no
+// italics. --font-sans and --font-serif both point at it, so every `font-serif` and
+// `.display` use in the app picks it up without per-file edits.
+const atkinson = Atkinson_Hyperlegible_Next({
   variable: "--font-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  style: "normal",
+  // next/font has no fallback metrics for this family yet, so it cannot size-match the
+  // fallback. The font is preloaded; `swap` keeps text visible meanwhile.
+  adjustFontFallback: false,
 });
 
-// Mono — the evidence face: rule IDs, file numbers, counts, stamps, commands.
-const plexMono = IBM_Plex_Mono({
+// Atkinson Hyperlegible Mono: the evidence face for rule IDs, WCAG codes, counts, commands.
+const atkinsonMono = Atkinson_Hyperlegible_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-
-// Serif — display headings and the document voice (report body, guide prose).
-const newsreader = Newsreader({
-  variable: "--font-serif",
-  subsets: ["latin"],
-  axes: ["opsz"],
+  style: "normal",
+  adjustFontFallback: false,
 });
 
 export const metadata: Metadata = {
@@ -82,7 +82,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${plexSans.variable} ${plexMono.variable} ${newsreader.variable} antialiased`}
+      className={`${atkinson.variable} ${atkinsonMono.variable} antialiased`}
       suppressHydrationWarning
     >
       <body className="theme-transition min-h-dvh bg-background text-foreground font-sans">

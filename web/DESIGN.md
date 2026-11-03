@@ -1,21 +1,33 @@
-# Personaudit design system: Evidence Dossier
+# Personaudit design system: High Contrast
 
-**Canonical, locked 2026-09-26; signature moves added 2026-10-01 (v2 redesign).** Replaces the retired "Forensic Evidence Terminal" system.
+**2026-11-03 update: the colour, type and hero layers below changed to "accessibility as the
+aesthetic".** Pure `#0a0a0a` on `#ffffff` (AAA), one accent `#1d4ed8`, a 3px focus ring on every
+focusable element, and Atkinson Hyperlegible Next for display and body. Where an older section
+below still says manila, Newsreader, IBM Plex, the highlighter pass or a rotated stamp, the
+code wins: `globals.css` and `layout.tsx` are current. The case-file devices that survive are
+exhibit tabs, Bates serials and the `.sheet` (now a 2px black frame, no shadow).
+
 The token layer lives in `src/app/globals.css` and the fonts in `src/app/layout.tsx`. If this
 file and the code disagree, the code wins and this file gets updated.
 
-Reference implementation: `src/app/page.tsx` (home), `src/components/dossier/persona-pane-strip.tsx`,
+Reference implementation: `src/app/page.tsx` (home), `src/components/dossier/persona-lineup.tsx`,
 `src/components/site-header.tsx`, and `src/components/site-footer.tsx`. Match them.
 
-## Idea
+## Idea (2026-11-03)
 
-The product sells evidence an agency hands to a client. So the brand is the **case file**:
+The product grades accessibility, so the site is built the way an accessible site should be:
+maximum contrast, big type, a focus ring you cannot miss, no italics, and no decoration that
+needs a colour to be understood. The signature object is `PersonaLineup`: one small example page
+(`src/lib/example-page.ts`) seen by each persona the engine really has (Sarah, Keyboard
+traversal, AI agent visitor, Maria), with a huge sample letter grade under it, computed by the
+engine's own scorer. It is labelled "Example page, sample grade" and is not a disability
+simulator: the AI agent visitor reads a text outline, it is not a screen reader.
+
+## Idea (earlier, 2026-09-26: Evidence Dossier)
+
+The product sells evidence an agency hands to a client. So the brand was the **case file**:
 warm manila desk, near-white sheets of paper, blue-black ink, a redline annotator, a
-highlighter, a rubber stamp. It must never look like a dark dev-tool terminal or a
-gradient SaaS template. The standard to hit: "this looks like a document I'd trust in a legal
-file", not "an AI made this".
-
-Genre: editorial. Light-first. Dark ("night desk") is a supported secondary theme.
+highlighter, a rubber stamp.
 
 ## Tokens (use names, never raw values)
 
