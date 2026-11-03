@@ -75,7 +75,7 @@ export default function Home() {
       <main id="main" className="exhibits flex-1">
         {/* ── Hero: the claim and the free grade across the top, then one example page seen by each persona, with the letter grade under it. ── */}
         <section id="scan" aria-labelledby="hero-heading" className="scroll-mt-20 border-b-[3px] border-foreground">
-          <div className="frame pt-10 pb-12 lg:pt-14 lg:pb-16">
+          <div className="frame break-words pt-10 pb-12 lg:pt-14 lg:pb-16">
             <p className="label-mono">For agencies, freelancers, and dev teams</p>
             {/* LCP element: plain text, no animation. */}
             <h1 id="hero-heading" className="display mt-4 text-[clamp(2.5rem,6.4vw,5.5rem)] leading-[1.02]">
@@ -262,7 +262,7 @@ export default function Home() {
           <div className="frame">
             <ExhibitHead label="Persona layer · Solo and up" />
           <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
-            <div>
+            <div className="min-w-0">
               <h2 id="persona-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
                 The grade says what broke. A persona run says whether the job got done.
               </h2>
@@ -274,7 +274,7 @@ export default function Home() {
               </p>
               <dl className="mt-8 max-w-md space-y-5">
                 <div className="border-t-2 border-foreground pt-4">
-                  <dt className="flex items-center justify-between gap-3 font-semibold">
+                  <dt className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 font-semibold">
                     Findings <SeverityChip severity="critical" ruleId="4.1.2" />
                   </dt>
                   <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">
@@ -283,7 +283,7 @@ export default function Home() {
                   </dd>
                 </div>
                 <div className="border-t-2 border-dashed border-[var(--redline)] pt-4">
-                  <dt className="flex items-center justify-between gap-3 font-semibold">
+                  <dt className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 font-semibold">
                     Persona notes <span className="redline-note uppercase tracking-[0.1em]">Opinion · AI</span>
                   </dt>
                   <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">

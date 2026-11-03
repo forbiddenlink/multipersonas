@@ -176,7 +176,7 @@ export function PersonaLineup({ className = "" }: { className?: string }) {
         role="region"
         tabIndex={0}
         aria-label="Persona panels, scroll sideways"
-        className="mt-3 min-w-0 overflow-x-auto pb-3 lg:overflow-visible lg:pb-0"
+        className="relative mt-3 min-w-0 overflow-x-auto pb-3 lg:overflow-visible lg:pb-0"
       >
         <ul className="flex snap-x gap-4 lg:grid lg:grid-cols-4">
           {SAMPLE_PANE_PERSONAS.map((id) => {

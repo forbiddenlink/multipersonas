@@ -143,14 +143,26 @@ test("printed verdict stamp keeps AA contrast on white in dark mode", async ({ p
 });
 
 // The redesign's signature moves must survive refactors: one highlighted claim phrase in
-// the page H1, and exhibit tabs on marketing and long-form pages.
-for (const route of ["/", "/pricing", "/for-agencies", "/grade", "/docs", "/guides/wcag-checklist"]) {
+// the page H1, and exhibit tabs on marketing and long-form pages. The home page has no
+// highlighter: its signature is the persona lineup (next test).
+for (const route of ["/pricing", "/for-agencies", "/grade", "/docs", "/guides/wcag-checklist"]) {
   test(`${route} keeps the signature moves`, async ({ page }) => {
     await page.goto(route, { waitUntil: "load" });
     await expect(page.locator("h1 .mark-sweep")).toHaveCount(1);
     await expect(page.locator(".exhibit-tab").first()).toBeVisible();
   });
 }
+
+// The home hero's signature: one example page seen by each persona, with the sample grade
+// under it, labelled as an example, plus the exhibit tabs further down the page.
+test("/ keeps the persona lineup and sample grade", async ({ page }) => {
+  await page.goto("/", { waitUntil: "load" });
+  await expect(page.locator("h1 .mark-sweep")).toHaveCount(0);
+  await expect(page.getByText("Example page, sample grade")).toBeVisible();
+  await expect(page.getByRole("listitem").filter({ hasText: "Keyboard traversal" })).toHaveCount(1);
+  await expect(page.getByText("Sample grade: C")).toBeAttached();
+  await expect(page.locator(".exhibit-tab").first()).toBeVisible();
+});
 
 // The main action (grading a URL) is in the first screen of the home page on a phone.
 test("home grade field and button are above the fold at 390px", async ({ page }) => {
@@ -166,10 +178,30 @@ test("home grade field and button are above the fold at 390px", async ({ page })
 test("reduced motion ends the highlighter sweep at once", async ({ browser }) => {
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();
-  await page.goto("/", { waitUntil: "load" });
+  await page.goto("/pricing", { waitUntil: "load" });
   const duration = await page
     .locator("h1 .mark-sweep")
     .evaluate((el) => getComputedStyle(el).animationDuration);
   expect(Number.parseFloat(duration)).toBeLessThan(0.01);
+  await context.close();
+});
+
+// The home hero must not animate under reduced motion: nothing in it may run a
+// transition or animation longer than a frame.
+test("reduced motion leaves the home hero still", async ({ browser }) => {
+  const context = await browser.newContext({ reducedMotion: "reduce" });
+  const page = await context.newPage();
+  await page.goto("/", { waitUntil: "load" });
+  const moving = await page.locator("#scan *").evaluateAll((els) =>
+    els
+      .filter((el) => {
+        const s = getComputedStyle(el);
+        const anim = s.animationName !== "none" && Number.parseFloat(s.animationDuration) >= 0.01;
+        const trans = Number.parseFloat(s.transitionDuration) >= 0.01;
+        return anim || trans;
+      })
+      .map((el) => `${el.tagName.toLowerCase()}.${String(el.className).slice(0, 40)}`),
+  );
+  expect(moving).toEqual([]);
   await context.close();
 });

@@ -25,7 +25,7 @@ export function SiteHeader({ intent = "audit" }: { intent?: HeaderIntent } = {})
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/92 backdrop-blur-[6px] supports-[backdrop-filter]:bg-background/85">
-      <div className="frame flex h-16 items-center justify-between gap-4">
+      <div className="frame flex min-h-16 flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2">
         <Link
           href="/"
           className="rounded-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ring)]"
