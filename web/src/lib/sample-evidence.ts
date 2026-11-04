@@ -130,3 +130,37 @@ export const SAMPLE_PANE_PAGE = {
   findingNote:
     "axe-core gives the same verdict for every persona. Personas change how a crawl reaches this state, not what axe finds in it.",
 } as const;
+
+/**
+ * Hero example: one goal tried by five personas from the library. ILLUSTRATIVE, not a customer
+ * result and not a stored run. The stuck moment reuses the real SauceDemo probe state
+ * (SAMPLE_REPLAY_FRAMES[2]); the other outcomes are written for the example and labelled so
+ * everywhere they render. `opinion` is the persona's own words (a labelled AI hypothesis,
+ * never a WCAG verdict).
+ */
+export const SAMPLE_RUN = {
+  goal: "Buy one item as a guest",
+  site: "Example store",
+  personas: [
+    {
+      id: "first-time-visitor",
+      outcome: "stuck",
+      where: "Checkout, after the postal code error",
+      opinion: SAMPLE_REPLAY_FRAMES[2].thought,
+    },
+    {
+      id: "anxious-first-timer",
+      outcome: "stuck",
+      where: "Cart, before entering a card",
+      opinion: "I can't see what shipping costs yet. I'm not typing a card number until I do.",
+    },
+    { id: "mobile-slow-connection", outcome: "reached", where: "Order confirmation", opinion: null },
+    { id: "impatient-executive", outcome: "reached", where: "Order confirmation", opinion: null },
+    { id: "power-user-developer", outcome: "reached", where: "Order confirmation", opinion: null },
+  ],
+} as const;
+
+export function sampleRunTally(): { reached: number; total: number } {
+  const total = SAMPLE_RUN.personas.length;
+  return { reached: SAMPLE_RUN.personas.filter((p) => p.outcome === "reached").length, total };
+}

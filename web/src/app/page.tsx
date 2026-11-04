@@ -13,6 +13,7 @@ import { ProcedureSteps } from "@/components/dossier/procedure-steps";
 import { ResponsiveDisclosure } from "@/components/dossier/responsive-disclosure";
 import { StateFlowTrail } from "@/components/dossier/state-flow-trail";
 import { SampleTaskSuccess } from "@/components/dossier/sample-task-success";
+import { SampleRunLedger, SampleStuckMoment } from "@/components/dossier/sample-run";
 import { PROBE_LEDGER } from "@/lib/probe-ledger";
 import { PLANS } from "@/lib/plans";
 import { isSoloCheckoutOpen } from "@/lib/founding-checkout";
@@ -73,43 +74,144 @@ export default function Home() {
       <SiteHeader />
 
       <main id="main" className="exhibits flex-1">
-        {/* ── Hero: the claim and the free grade across the top, then one example page seen by each persona, with the letter grade under it. ── */}
+        {/* ── Hero: the question and the stuck moment first; the free grade sits beside an honest scope line. ── */}
         <section id="scan" aria-labelledby="hero-heading" className="scroll-mt-20 border-b-[3px] border-foreground">
           <div className="frame break-words pt-10 pb-12 lg:pt-14 lg:pb-16">
-            <p className="label-mono">For agencies, freelancers, and dev teams</p>
-            {/* LCP element: plain text, no animation. */}
-            <h1 id="hero-heading" className="display mt-4 text-[clamp(2.5rem,6.4vw,5.5rem)] leading-[1.02]">
-              <span className="block">Grade your client&apos;s website.</span>
-              <span className="block">Know what to fix first.</span>
-            </h1>
-            <div className="mt-6 grid gap-6 lg:mt-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-start lg:gap-12">
-              <p className="max-w-[34rem] text-xl leading-relaxed">
-                Paste a web address. In under a minute you get an accessibility grade, what to fix
-                first, and a page to show your client. Your first grade is free, with no account.
-              </p>
-              <div className="min-w-0 border-[3px] border-foreground p-4 sm:p-5">
-                <GradeForm />
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:items-start lg:gap-12">
+              <div className="min-w-0">
+                <p className="label-mono">AI persona walkthroughs, for agencies and dev teams</p>
+                {/* LCP element: plain text, no animation. */}
+                <h1 id="hero-heading" className="display mt-4 text-[clamp(2.25rem,4.4vw,4rem)] leading-[1.04]">
+                  See where a first-time visitor gets stuck on your site.
+                </h1>
+                <p className="mt-5 max-w-[34rem] text-lg leading-relaxed sm:text-xl">
+                  AI personas browse your site toward a goal, like finding pricing or checking
+                  out. When one stalls, you get the screenshot and what it said at that moment.
+                </p>
+                <div className="mt-6 border-[3px] border-foreground p-4 sm:p-5">
+                  <GradeForm />
+                  <p className="mt-4 max-w-[34rem] text-base leading-relaxed text-muted-foreground">
+                    The free grade is an accessibility check of your public pages from{" "}
+                    <span className="font-bold text-foreground">axe-core</span>, with no account.
+                    Persona walkthroughs are on Solo and up.{" "}
+                    <Link href="/pricing" className="text-link">See plans</Link>.
+                  </p>
+                </div>
+                <p className="mt-4 max-w-[34rem] text-base leading-relaxed text-muted-foreground">
+                  What personas are for: finding where a goal stalls. They do not find accessibility
+                  defects. That is axe-core&apos;s job, and it runs underneath every report.
+                </p>
+              </div>
+              <SampleStuckMoment className="min-w-0" />
+            </div>
+          </div>
+        </section>
+
+        {/* ── Persona runs: the verdict, who stalled and why, and whether to trust it. ── */}
+        <section id="runs" aria-labelledby="persona-heading" className="section-y scroll-mt-20">
+          <div className="frame">
+            <ExhibitHead label="Persona runs · Solo and up" />
+            <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
+              <div className="min-w-0">
+                <h2 id="persona-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+                  Who got through, and where the rest stalled.
+                </h2>
+                <p className="mt-5 max-w-md leading-relaxed text-muted-foreground">
+                  You pick a goal, like finding the pricing page or buying as a guest. Each persona
+                  browses your real site toward it and reports whether it got there. For every one
+                  that stalls you get the screenshot at the stuck step and the persona&apos;s own
+                  words. Clients don&apos;t act on a rule ID. They act on &ldquo;a first-time
+                  visitor never found pricing.&rdquo;
+                </p>
+                <dl className="mt-8 max-w-md space-y-5">
+                  <div className="border-t-2 border-dashed border-[var(--redline)] pt-4">
+                    <dt className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 font-semibold">
+                      Task success and persona notes <span className="redline-note uppercase tracking-[0.1em]">Opinion · AI</span>
+                    </dt>
+                    <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      What each persona reports about its own run. Labeled as AI opinion, never mixed
+                      into the findings. A persona is an AI agent, not a stand-in for a real
+                      customer, and not for a person with a disability. For real people, test with
+                      them through{" "}
+                      <a href="https://makeitfable.com/" target="_blank" rel="noopener noreferrer" className="text-link">Fable</a>.
+                    </dd>
+                  </div>
+                  <div className="border-t-2 border-foreground pt-4">
+                    <dt className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 font-semibold">
+                      Findings <SeverityChip severity="critical" ruleId="4.1.2" />
+                    </dt>
+                    <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      From axe-core. Run it twice, get the same answer. Cited to WCAG. The only
+                      thing that goes into the evidence report.
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+              <div className="min-w-0 space-y-8">
+                <SampleRunLedger />
+                <ResponsiveDisclosure summary="Open the sample replay: saucedemo.com, 3 steps" className="min-w-0">
+                  <SampleTaskSuccess />
+                </ResponsiveDisclosure>
               </div>
             </div>
 
-            <PersonaLineup className="mt-10 lg:mt-14" />
+            <div className="mt-12 grid gap-4 border-t-2 border-foreground pt-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
+              <h3 className="display text-[clamp(1.4rem,2.2vw,1.8rem)] leading-[1.12]">
+                Can an AI persona&apos;s verdict be trusted?
+              </h3>
+              <div className="min-w-0 space-y-3 leading-relaxed">
+                <p>
+                  We checked before building on it. On two sites with known answers, personas
+                  never reported success on a goal that was impossible (0 of 10), and matched the
+                  truth on 18 of 20 goals. Both misses were a persona giving up on a goal it could
+                  have reached, not claiming a win it had not earned.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  A small test: 20 goals, each run once, on a self-hosted Metabase and the
+                  SauceDemo store. It shows the verdict is worth building on, not that it is
+                  always right. A persona that says &ldquo;blocked&rdquo; can mean the site blocks
+                  the goal or that it could not find the way.{" "}
+                  <a
+                    href="https://github.com/forbiddenlink/multipersonas/tree/main/experiments/task-success-validity"
+                    className="text-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Read the method and results
+                  </a>
+                  .
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-            <div className="mt-8 grid gap-4 lg:grid-cols-2 lg:gap-12">
-              <p className="max-w-[34rem] text-base leading-relaxed text-muted-foreground">
+        {/* ── Evidence layer: the deterministic scan under every run, with the example page and its grade. ── */}
+        <section id="evidence" aria-labelledby="evidence-heading" className="section-y scroll-mt-20 border-y border-border bg-card">
+          <div className="frame">
+            <ExhibitHead label="Evidence layer" />
+            <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-end">
+              <h2 id="evidence-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
+                Under every run, a scan that gives the same answer twice.
+              </h2>
+              <p className="max-w-xl text-[1.0625rem] leading-relaxed text-muted-foreground lg:justify-self-end">
                 Pages are checked with <span className="font-bold text-foreground">axe-core</span>,
                 a widely used open-source accessibility engine that Google Lighthouse also uses,
                 against WCAG 2.2 A and AA, the web accessibility standard that laws and RFPs
                 commonly point to. Automated checks find part of the problems; a person still has to
                 review the rest.
               </p>
-              <div>
-                <p className="max-w-[34rem] text-base leading-relaxed text-muted-foreground">
-                  Want to see a finished report first?{" "}
-                  <Link href="/sample-report" className="text-link">Read a sample client report</Link>.
-                  {SOLO_OPEN ? ` Grading is free. The hosted workspace starts at $${PLANS.solo.monthlyUsd} a month.` : null}
-                </p>
-                <LatestUpdate className="mt-4 max-w-[34rem]" />
-              </div>
+            </div>
+
+            <PersonaLineup className="mt-8 lg:mt-10" />
+
+            <div className="mt-8 max-w-[34rem]">
+              <p className="text-base leading-relaxed text-muted-foreground">
+                Want to see a finished report first?{" "}
+                <Link href="/sample-report" className="text-link">Read a sample client report</Link>.
+                {SOLO_OPEN ? ` Grading is free. The hosted workspace starts at $${PLANS.solo.monthlyUsd} a month.` : null}
+              </p>
+              <LatestUpdate className="mt-4" />
             </div>
           </div>
         </section>
@@ -228,7 +330,7 @@ export default function Home() {
           <div className="frame grid gap-10 lg:grid-cols-[minmax(0,42rem)_minmax(0,1fr)] lg:gap-20">
             <div className="min-w-0">
               <h2 id="deliverable-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
-                Built for the handoff, not the screenshot.
+                Built for the handoff, not the demo.
               </h2>
               <p className="mt-5 font-serif text-[1.125rem] leading-relaxed text-muted-foreground">
                 A violation list is where the work starts. Each scan becomes something a client can
@@ -257,51 +359,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Persona layer: task success, the client story. ── */}
-        <section aria-labelledby="persona-heading" className="section-y">
-          <div className="frame">
-            <ExhibitHead label="Persona layer · Solo and up" />
-          <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
-            <div className="min-w-0">
-              <h2 id="persona-heading" className="display text-[clamp(1.9rem,3.4vw,2.6rem)] leading-[1.08]">
-                The grade says what broke. A persona run says whether the job got done.
-              </h2>
-              <p className="mt-5 max-w-md leading-relaxed text-muted-foreground">
-                A persona task-success run sends an AI agent to try a task on your site, like
-                finding the pricing page, and records whether it got there. Clients don&apos;t act
-                on a rule ID. They act on &ldquo;the agent never found pricing.&rdquo; You get that
-                sentence, with the run to back it up.
-              </p>
-              <dl className="mt-8 max-w-md space-y-5">
-                <div className="border-t-2 border-foreground pt-4">
-                  <dt className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 font-semibold">
-                    Findings <SeverityChip severity="critical" ruleId="4.1.2" />
-                  </dt>
-                  <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    From axe-core. Run it twice, get the same answer. Cited to WCAG. The only
-                    thing that goes into the evidence report.
-                  </dd>
-                </div>
-                <div className="border-t-2 border-dashed border-[var(--redline)] pt-4">
-                  <dt className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 font-semibold">
-                    Persona notes <span className="redline-note uppercase tracking-[0.1em]">Opinion · AI</span>
-                  </dt>
-                  <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    Labeled as AI opinion, never mixed into the findings. A persona is an AI agent,
-                    not a stand-in for a person with a disability. For that, test with real people
-                    through{" "}
-                    <a href="https://makeitfable.com/" target="_blank" rel="noopener noreferrer" className="text-link">Fable</a>.
-                  </dd>
-                </div>
-              </dl>
-            </div>
-            <ResponsiveDisclosure summary="Open the sample replay: saucedemo.com, 3 steps" className="min-w-0">
-              <SampleTaskSuccess />
-            </ResponsiveDisclosure>
-          </div>
-          </div>
-        </section>
-
         {/* ── Why now: one line; the dated table lives on /for-agencies. ── */}
         <section aria-label="Why this year" className="border-t border-border bg-card">
           <p className="frame py-6 text-[0.9375rem] leading-relaxed">
@@ -318,11 +375,11 @@ export default function Home() {
           <div className="frame flex flex-col items-start gap-8 py-10 md:flex-row md:items-end md:justify-between md:py-20">
             <div>
               <h2 id="close-heading" className="display max-w-2xl text-[clamp(2.2rem,4.6vw,3.5rem)] leading-[1.02]">
-                Open a case file on your next client.
+                See where your next client&apos;s visitors get stuck.
               </h2>
               <p className="mt-4 max-w-lg leading-relaxed text-muted-foreground">
-                Grade the public site now. Run the CLI behind the login, locally, tonight. Hand over the
-                report tomorrow.{" "}
+                Grade the public site free now. Add persona runs on a paid plan to see who gets through.
+                Run the CLI behind the login, locally, tonight. Hand over the report tomorrow.{" "}
                 {SOLO_OPEN
                   ? `Enterprise platforms sell annual contracts; Solo is $${PLANS.solo.monthlyUsd} a month, and the CLI is free.`
                   : "The CLI is free."}

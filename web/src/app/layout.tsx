@@ -32,10 +32,10 @@ export const metadata: Metadata = {
     siteOrigin()
   ),
   title: {
-    default: "Personaudit: axe-core accessibility evidence for agencies and dev teams",
+    default: "Personaudit: see where visitors get stuck on your site",
     template: "%s | Personaudit",
   },
-  description: "Free public accessibility grade from axe-core. The free CLI scans behind a login locally, at every state a signed-in crawl reaches (carts, checkouts, error screens), and writes an evidence report an agency can hand a client. The password never leaves your machine. Not an overlay.",
+  description: "AI personas browse your site toward a goal and show you where they got stuck, with the screenshot and their own words. A free axe-core accessibility grade backs it, and the free CLI scans behind a login locally (behind-login scanning runs locally with the CLI), so the password never leaves your machine. Not an overlay.",
   openGraph: {
     type: "website",
     siteName: "Personaudit",

@@ -15,7 +15,7 @@ describe("marketing copy stays honest about hosted vs CLI", () => {
     const src = read("src/app/page.tsx");
     expect(src).not.toMatch(/Behind-login crawls and persona task-success are the/);
     expect(src).toMatch(/Scan signed-in flows with the free CLI; the session\s+never leaves your machine/);
-    expect(src).toMatch(/Persona layer · Solo and up/);
+    expect(src).toMatch(/Persona runs · Solo and up/);
   });
 
   it("does not promise that signup records persona task-success for free accounts", () => {
@@ -354,7 +354,7 @@ describe("W5 messaging: one meaning of persona, legal facts carry the disclaimer
   });
 
   it("explains persona as an AI agent that tries a task, on home", () => {
-    expect(read("src/app/page.tsx")).toMatch(/sends an AI agent to try a task/);
+    expect(read("src/app/page.tsx")).toMatch(/AI personas browse your site toward a goal/);
   });
 });
 

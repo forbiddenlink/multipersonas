@@ -20,11 +20,11 @@ export function generateMetadata(): Metadata {
   return {
     alternates: { canonical: "/pricing" },
     title: soloOpen
-      ? "Pricing: free CLI, hosted workspace from $39"
-      : "Pricing: free CLI, hosted workspace not open yet",
+      ? "Pricing: persona runs from $39, free CLI"
+      : "Pricing: free CLI, persona runs not open yet",
     description: soloOpen
-      ? "The keyless CLI and the CI accessibility gate are free forever. Hosted projects, scheduled re-scans and persona task-success start at $39/month. Agency founding access adds white-label reports."
-      : "The keyless CLI and the CI accessibility gate are free forever. Hosted projects, scheduled re-scans and persona task-success are not open for purchase yet.",
+      ? "Persona runs show where visitors get stuck, with the screenshot and their own words. They start at $39/month with hosted projects and scheduled re-scans. The keyless CLI and CI accessibility gate are free forever. Agency founding access adds white-label reports."
+      : "Persona runs show where visitors get stuck, with the screenshot and their own words. They are not open for purchase yet. The keyless CLI and CI accessibility gate are free forever.",
   };
 }
 
@@ -65,16 +65,16 @@ const TIERS: Tier[] = [
     name: "Solo",
     price: "$39",
     cadence: "per month",
-    who: "One developer or freelancer carrying a handful of sites.",
+    who: "One developer or freelancer who wants to see where visitors get stuck on a handful of sites.",
     features: [
       "Everything in Free",
+      "Persona runs on public flows: who reached the goal, where the rest stalled, with the screenshot and their words",
       `${PROJECT_LIMITS.pro} hosted projects with scan history`,
       "Scheduled re-scans on a cron, not a button you remember",
-      "Persona task-success runs on public flows",
       "Compare retests: new, cleared, and still-open findings",
       "Exportable evidence report (axe-core findings only)",
     ],
-    limits: "Reports carry the Personaudit header, not your own.",
+    limits: "Reports carry the Personaudit header, not your own. Hosted persona runs cover public pages and do not log in.",
   },
   {
     id: "agency",
@@ -103,6 +103,7 @@ type Availability = "yes" | "no" | "roadmap" | string;
  * with no gate behind it is the same defect as a gate the page does not mention.
  */
 const CAPABILITY_LEDGER: { capability: string; note?: string; plans: Record<Tier["id"], Availability> }[] = [
+  { capability: "Persona runs", note: "Public flows, hosted. Task success and stuck moments, labeled AI opinion", plans: { free: "no", solo: "yes", agency: "yes" } },
   { capability: "Public-page axe-core grade", note: "Hosted, no signup", plans: { free: "yes", solo: "yes", agency: "yes" } },
   { capability: "Behind-login axe-core scan", note: "CLI only; the session stays on your machine", plans: { free: "yes", solo: "yes", agency: "yes" } },
   { capability: "CI gate on new defects only", note: "Baseline + fail-on, keyless", plans: { free: "yes", solo: "yes", agency: "yes" } },
@@ -115,7 +116,6 @@ const CAPABILITY_LEDGER: { capability: string; note?: string; plans: Record<Tier
     },
   },
   { capability: "Scheduled re-scans", plans: { free: "no", solo: "yes", agency: "yes" } },
-  { capability: "Persona task-success", note: "Public flows", plans: { free: "no", solo: "yes", agency: "yes" } },
   { capability: "White-label evidence report", plans: { free: "no", solo: "no", agency: "yes" } },
   { capability: "Hosted behind-login scan", note: "Not built. Agency founding funds it.", plans: { free: "roadmap", solo: "roadmap", agency: "roadmap" } },
 ];
@@ -143,9 +143,19 @@ function AvailabilityCell({ value }: { value: Availability }) {
 
 const PRICING_FAQS = [
   {
+    question: "What does a persona run give me?",
+    answer:
+      "You pick a goal, such as finding pricing or buying as a guest. Each persona browses your site toward it and reports whether it got there. For a persona that stalls, you get the screenshot at that step and its own words about what confused it. That is an AI's account, labeled as opinion. It catches common friction, not every view a real customer would have. Hosted runs cover public pages and are on Solo and up.",
+  },
+  {
+    question: "Can I trust what a persona says about getting stuck?",
+    answer:
+      "We tested it before building on it. On two sites with known answers (a self-hosted Metabase and the SauceDemo store), personas never reported success on a goal that was impossible (0 of 10) and matched the truth on 18 of 20 goals. The two misses were a persona giving up on a goal it could have reached. It is a small test, with each goal run once, and the method and results are in experiments/task-success-validity in the open-source repo.",
+  },
+  {
     question: "Is the CLI really free?",
     answer:
-      "Yes, and it is the part that does the scanning. scan runs axe-core with no API key and no account, including behind a login using a session saved on your own machine. Paying is for the hosted workspace around it: history, schedules, and the exported report.",
+      "Yes, and it is the part that does the scanning. scan runs axe-core with no API key and no account, including behind a login using a session saved on your own machine. Paying is for the hosted workspace around it: persona runs, history, schedules, and the exported report.",
   },
   {
     question: "Do you scan behind a login on your servers?",
@@ -165,7 +175,7 @@ const PRICING_FAQS = [
   {
     question: "Does a persona decide whether my site is accessible?",
     answer:
-      "Never. Only axe-core produces accessibility findings, and it is deterministic and citable. Personas report task success and labeled opinion. We do not simulate disabled users, and nothing here replaces testing with them.",
+      "Never. Only axe-core produces accessibility findings, and it is deterministic and citable. Personas report where a goal stalled, in their own words, as labeled opinion. They do not find accessibility defects better than a plain scan. We do not simulate disabled users, and nothing here replaces testing with them.",
   },
   {
     question: "How is this different from WAVE, Lighthouse CI, or pa11y-ci?",
@@ -197,13 +207,16 @@ export default function PricingPage() {
             <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center lg:gap-16">
               <div className="min-w-0">
                 <h1 className="display max-w-2xl text-[clamp(2.2rem,4.6vw,3.5rem)] leading-[1.05]">
-                  The part that produces the evidence <span className="mark-sweep">is free.</span>
+                  Persona runs show where visitors get stuck. The scan under them{" "}
+                  <span className="mark-sweep">is free.</span>
                 </h1>
                 <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-                  The CLI runs axe-core, a widely used open-source accessibility engine that Google
+                  On Solo and up, AI personas browse your site toward a goal and show you the
+                  screenshot and their own words where they stall. The evidence under that is free:
+                  the CLI runs axe-core, a widely used open-source accessibility engine that Google
                   Lighthouse also uses, at every state it reaches, including behind a login, with
-                  no API key and no account. You pay when you want that evidence kept, scheduled,
-                  and exportable for a client, not for the scan itself.
+                  no API key and no account. You pay for persona runs, history, and reports a
+                  client can read, not for the scan itself.
                 </p>
                 <Link href="/grade" className={`${PRIMARY_CTA} mt-8`}>
                   Grade a site free

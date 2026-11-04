@@ -11,7 +11,7 @@ import { SAMPLE_REPLAY_FRAMES, SAMPLE_TARGET } from "@/lib/sample-evidence";
  * Technical state wireframe with a highlighted redline inspection box
  * over the DOM element where axe-core flagged a defect.
  */
-function FrameViewport({ index }: { index: number }) {
+export function FrameViewport({ index }: { index: number }) {
   if (index === 0) {
     // 01: /login (error)
     return (
