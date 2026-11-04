@@ -64,7 +64,7 @@ export function pickEvidenceStep(journey: OutcomeJourney): EvidenceStep | null {
 
 function cleanQuote(text: string | null | undefined): string {
   const flat = (text ?? "")
-    .replace(/\s*[—–]\s*/g, ", ")
+    .replace(/\s*[\u2014\u2013]\s*/g, ", ")
     .replace(/\s+/g, " ")
     .trim();
   if (flat.length <= QUOTE_MAX_CHARS) return flat;
