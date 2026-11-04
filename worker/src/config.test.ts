@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { isIntervalDue, positiveEnvInt } from "./config.js";
+import { isIntervalDue, killSwitchEnabled, positiveEnvInt } from "./config.js";
 it("does not turn a positive fraction into an immediate timeout or busy poll", () => {
   expect(positiveEnvInt("0.5", 3000)).toBe(3000);
 });
@@ -20,4 +20,11 @@ it("schedules stale-job recovery before claiming work, not only while idle", () 
   expect(reap).toBeGreaterThan(-1);
   expect(reap).toBeLessThan(claim);
   expect(reap).toBeLessThan(idleBranch);
+});
+
+it("reads the same kill switch values as the web app", () => {
+  expect(killSwitchEnabled({ AUDIT_KILL_SWITCH: "1" })).toBe(true);
+  expect(killSwitchEnabled({ AUDIT_KILL_SWITCH: "true" })).toBe(true);
+  expect(killSwitchEnabled({ AUDIT_KILL_SWITCH: "0" })).toBe(false);
+  expect(killSwitchEnabled({})).toBe(false);
 });

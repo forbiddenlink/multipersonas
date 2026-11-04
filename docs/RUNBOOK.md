@@ -33,8 +33,11 @@ merge as a release.
 
 The flag is read from the environment (`web/src/lib/limits.ts:59`), so **changing it needs a
 redeploy**: set it in Vercel -> the web project -> Settings -> Environment Variables
-(Production), then redeploy. It does not stop jobs already in the queue or running on the
-worker. To stop those too, see "Drain or pause the worker".
+(Production), then redeploy. On Vercel alone it does not stop jobs already queued.
+Set the same variable on the Railway worker too (`railway variables --set
+AUDIT_KILL_SWITCH=1`, which redeploys it): the worker then stops claiming jobs and leaves the
+queue untouched until the switch is off (`worker/src/config.ts`). A job already running
+finishes or hits its timeout; to stop it sooner, see "Drain or pause the worker".
 
 To end the freeze, remove the variable (or set it to `0`) and redeploy.
 

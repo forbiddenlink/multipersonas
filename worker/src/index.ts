@@ -11,7 +11,7 @@ import {
   assertScanIsolation, createScanOutputDir, runJobProcess, ScanCleanupError, scanIsolationFromEnv, type ScanIsolation,
 } from "./job-process.js";
 import { readScanArtifact } from "./scan-artifact.js";
-import { isIntervalDue, positiveEnvInt } from "./config.js";
+import { isIntervalDue, killSwitchEnabled, positiveEnvInt } from "./config.js";
 import { notifyGradeFinished } from "./grade-notify.js";
 import { persistGradeResult, saveHistoryRun, withRunId, writeJobState } from "./job-write.js";
 import { createWorkerClient } from "./database.js";
@@ -368,7 +368,15 @@ async function persistJourney(runId: string, result: TestResult, outputDir: stri
   }
 }
 
+let killSwitchLogged = false;
 async function claimAndRun(): Promise<boolean> {
+  // Kill switch: leave queued jobs untouched (they run once the switch is off).
+  if (killSwitchEnabled()) {
+    if (!killSwitchLogged) console.log("[worker] AUDIT_KILL_SWITCH is on; not claiming jobs.");
+    killSwitchLogged = true;
+    return false;
+  }
+  killSwitchLogged = false;
   const { data: job, error } = await supabase.rpc("claim_audit_job");
   if (error) {
     console.error("[worker] claim failed:", error.message);
