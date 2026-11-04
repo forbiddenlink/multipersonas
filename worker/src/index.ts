@@ -13,6 +13,9 @@ import {
 import { readScanArtifact } from "./scan-artifact.js";
 import { isIntervalDue, killSwitchEnabled, positiveEnvInt } from "./config.js";
 import { notifyGradeFinished } from "./grade-notify.js";
+import {
+  GRADE_PERSONA_ID, gradePersonaPlan, summarizeGradePersona, type GradePersonaSummary,
+} from "./grade-persona.js";
 import { persistGradeResult, saveHistoryRun, withRunId, writeJobState } from "./job-write.js";
 import { createWorkerClient } from "./database.js";
 import { clampFindingCategory, clampSeverity } from "personaudit/domain/vocab";
@@ -36,6 +39,9 @@ const POLL_MS = positiveEnvInt(process.env.WORKER_POLL_MS, 3000);
 // whole (single-worker) queue. Terminate the scan process tree before marking
 // the job failed or acknowledging completion.
 const JOB_TIMEOUT_MS = positiveEnvInt(process.env.WORKER_JOB_TIMEOUT_SECONDS, 300) * 1000;
+// The optional free-grade persona walk runs after the grade is already saved, so this only
+// bounds how long it can hold the worker; it can never fail or delay the grade itself.
+const GRADE_PERSONA_TIMEOUT_MS = positiveEnvInt(process.env.WORKER_GRADE_PERSONA_TIMEOUT_SECONDS, 120) * 1000;
 // Backstop for a CRASHED worker (where the in-process timeout never fires): the reaper
 // only touches jobs stuck well past the in-process cap, so it never races a run the
 // worker is itself about to time out.
@@ -368,6 +374,90 @@ async function persistJourney(runId: string, result: TestResult, outputDir: stri
   }
 }
 
+/** Take one slot from the shared daily counter for persona-included grades. false = cap hit. */
+async function consumeGradePersonaSlot(cap: number): Promise<boolean> {
+  const { data, error } = await supabase.rpc("consume_rate_limit", {
+    p_key: "grade-persona:daily",
+    p_max: cap,
+    p_window_seconds: 24 * 60 * 60,
+  });
+  if (error) throw new Error(`persona cap check failed: ${error.message}`);
+  return data === true;
+}
+
+/**
+ * Optional free-grade persona walk. Runs after the grade is saved and never throws (except
+ * ScanCleanupError, which the worker treats as fatal everywhere). Writes the outcome into
+ * audit_jobs.result.persona; the grade letter, score and report are not touched.
+ * Frames are of a PUBLIC page (unauthenticated scan); only the stuck frame is kept.
+ */
+async function runGradePersona(job: AuditJob, base: Record<string, unknown>): Promise<void> {
+  const startedAt = new Date().toISOString();
+  let persona: Record<string, unknown>;
+  let tmpDir: string | undefined;
+  try {
+    const outputDir = createScanOutputDir(path.join(os.tmpdir(), `mp-gradepersona-${job.id}-`), SCAN_ISOLATION);
+    tmpDir = outputDir;
+    const result = await runJobProcess<TestResult>(
+      new URL("./scan-process.ts", import.meta.url),
+      { kind: "grade-persona", url: job.url, persona_ids: [GRADE_PERSONA_ID], outputDir }, GRADE_PERSONA_TIMEOUT_MS, SCAN_ISOLATION,
+    );
+    const pr = result.personas[0];
+    if (!pr) throw new Error("grade persona returned no result");
+    const summary: GradePersonaSummary = summarizeGradePersona({
+      persona: pr.persona,
+      goalCompleted: pr.agentResult.goalCompleted,
+      totalSteps: pr.agentResult.totalSteps,
+      steps: pr.agentResult.steps,
+    });
+
+    let stuckScreenshotPath: string | null = null;
+    if (summary.stuckStep) {
+      const bytes = readScanArtifact(outputDir, summary.stuckStep.screenshotPath);
+      if (bytes) {
+        const objectPath = `grade/${job.id}/stuck.png`;
+        const { error: upErr } = await supabase.storage
+          .from("journeys")
+          .upload(objectPath, bytes, { contentType: "image/png", upsert: true });
+        if (upErr) console.error(`[worker] grade persona: upload failed (${job.id}): ${upErr.message}`);
+        else stuckScreenshotPath = objectPath;
+      }
+    }
+    persona = {
+      status: "completed",
+      startedAt,
+      finishedAt: new Date().toISOString(),
+      personaName: pr.persona.name,
+      personaDescription: pr.persona.description,
+      outcome: summary.outcome,
+      totalSteps: summary.totalSteps,
+      quotes: summary.quotes,
+      stuckScreenshotPath,
+      stuckPageUrl: summary.stuckStep?.pageUrl ?? null,
+    };
+  } catch (e) {
+    if (e instanceof ScanCleanupError) throw e;
+    Sentry.captureException(e, { level: "warning", tags: { jobId: job.id, kind: "grade-persona" } });
+    console.error(`[worker] grade persona failed ${job.id}:`, e instanceof Error ? e.message : e);
+    persona = { status: "failed", startedAt, finishedAt: new Date().toISOString() };
+  } finally {
+    try {
+      if (tmpDir) fs.rmSync(tmpDir, { recursive: true, force: true });
+    } catch {
+      // ignore cleanup errors
+    }
+  }
+  try {
+    const { error } = await supabase
+      .from("audit_jobs")
+      .update({ result: { ...base, persona } })
+      .eq("id", job.id).eq("status", "completed");
+    if (error) console.error(`[worker] grade persona save failed (${job.id}): ${error.message}`);
+  } catch (e) {
+    console.error(`[worker] grade persona save failed (${job.id}):`, e instanceof Error ? e.message : e);
+  }
+}
+
 let killSwitchLogged = false;
 async function claimAndRun(): Promise<boolean> {
   // Kill switch: leave queued jobs untouched (they run once the switch is off).
@@ -391,15 +481,24 @@ async function claimAndRun(): Promise<boolean> {
   // Public grader jobs (kind='grade') are axe-only: no personas, no model spend,
   // no session, results to the public grader_scans row. Handled inline then done.
   if (claimed.kind === "grade") {
+    // Set only when the flag is on, the daily cap allowed it, and the grade itself saved.
+    let personaBase: Record<string, unknown> | null = null;
     try {
       const result = await runJobProcess<Awaited<ReturnType<typeof gradeScan>>>(
         new URL("./scan-process.ts", import.meta.url),
         { kind: claimed.kind, url: claimed.url, persona_ids: claimed.persona_ids }, JOB_TIMEOUT_MS, SCAN_ISOLATION,
       );
-      await persistGradeResult(supabase, claimed.id, result);
+      // Off by default (GRADE_PERSONA_ENABLED). When on, mark the walk as running in the same
+      // write that completes the grade, so the page can show it as pending without a second state.
+      const personaPlan = await gradePersonaPlan(process.env, consumeGradePersonaSlot);
+      const stored = personaPlan === "run"
+        ? { ...result, persona: { status: "running", startedAt: new Date().toISOString() } }
+        : result;
+      await persistGradeResult(supabase, claimed.id, stored);
       await logWorkerEvent(claimed, "audit_job.completed", { pagesVisited: result.pagesVisited.length });
       console.log(`[worker] graded ${claimed.id}`);
       await notifyGradeFinished(supabase, claimed.id);
+      if (personaPlan === "run") personaBase = { ...stored };
     } catch (e) {
       if (e instanceof ScanCleanupError) throw e;
       const detail = e instanceof Error ? e.message : "Unknown error";
@@ -418,6 +517,8 @@ async function claimAndRun(): Promise<boolean> {
       await notify(`grade ${claimed.id} failed: ${detail}`);
       await notifyGradeFinished(supabase, claimed.id);
     }
+    // After the grade is saved and announced: a persona failure or timeout cannot fail it.
+    if (personaBase) await runGradePersona(claimed, personaBase);
     return true; // grade jobs reserve no spend — no releaseReservation needed
   }
 

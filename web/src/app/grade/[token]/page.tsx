@@ -8,6 +8,8 @@ import { ClaimGrades } from "@/components/claim-grades";
 import { SiteFooter } from "@/components/site-footer";
 import { notFound } from "next/navigation";
 import { getGraderScan } from "@/lib/grade";
+import { getGradePersona, type LoadedGradePersona } from "@/lib/grade-persona-load";
+import { GradePersonaBlock } from "@/components/grade-persona-block";
 import { buttonVariants } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { GradePoll } from "@/components/grade-poll";
@@ -84,6 +86,8 @@ export default async function GradeResultPage({
   const host = hostOf(scan.entry_url);
   const completedReport =
     scan.status === "completed" && scan.report ? (scan.report as unknown as GradeReport) : null;
+  // Optional AI-visitor walk (worker flag GRADE_PERSONA_ENABLED). Null unless one was planned.
+  const persona = completedReport ? await getGradePersona(scan.job_id) : null;
 
   return (
     <div className="grade-print-root flex min-h-dvh flex-col pb-[env(safe-area-inset-bottom)]">
@@ -156,6 +160,7 @@ export default async function GradeResultPage({
                     entryUrl={scan.entry_url}
                     createdAt={scan.created_at}
                     report={completedReport}
+                    persona={persona}
                   />
                 )}
               </div>
@@ -186,6 +191,7 @@ function GradeReportView({
   entryUrl,
   createdAt,
   report,
+  persona,
 }: {
   token: string;
   host: string;
@@ -193,6 +199,7 @@ function GradeReportView({
   entryUrl: string;
   createdAt: string;
   report: GradeReport;
+  persona: LoadedGradePersona | null;
 }) {
   const fixFirstIds = new Set(rankFixFirst(report.rules).map((i) => i.ruleId));
   const retestMinutes = RATE_LIMITS.grade.windowSeconds / 60;
@@ -306,6 +313,8 @@ function GradeReportView({
           </table>
         </section>
       )}
+
+      {persona && <GradePersonaBlock persona={persona} />}
 
       <section id="method" aria-labelledby="method-heading" className="scroll-mt-6 space-y-6">
         <h2 id="method-heading" className="display text-2xl sm:text-3xl">
