@@ -213,22 +213,6 @@ export default async function AuditDetailPage({
       [...byPersona].map(([id, list]) => [id, list.map((f) => f.title)]),
     ),
   });
-  const personaImpact = journeys.map((j) => {
-    const pagesWithVerdicts = new Set(
-      j.steps
-        .map((step) => step.pageUrl)
-        .filter((url): url is string => typeof url === "string" && (findingsByUrl[url]?.length ?? 0) > 0),
-    );
-    return {
-      personaId: j.personaId,
-      name: personaMeta[j.personaId]?.name ?? j.personaId,
-      role: personaMeta[j.personaId]?.role ?? "",
-      goalCompleted: j.goalCompleted,
-      steps: j.steps.length,
-      verdictStates: pagesWithVerdicts.size,
-      maxFrustration: Math.max(0, ...j.steps.map((step) => step.frustration)),
-    };
-  });
   const journeyRows = journeys.flatMap((journey) =>
     journey.steps.map((step) => ({
       personaId: journey.personaId,
@@ -683,7 +667,7 @@ export default async function AuditDetailPage({
 
 
       {/* AI opinion: everything from persona runs. Kept after, and apart from, the axe verdicts. */}
-      {(journeys.length > 0 || personaImpact.length > 0 || byPersona.size > 0) && (
+      {(journeys.length > 0 || byPersona.size > 0) && (
         <section aria-labelledby="ai-opinion-heading" className="space-y-8 border-t-2 border-foreground pt-6">
           <div className="space-y-1.5">
             <span className="redline-note uppercase tracking-[0.1em]">Opinion · AI</span>
@@ -712,54 +696,6 @@ export default async function AuditDetailPage({
             initialStep={initialStep}
             taskCheck={Boolean(run.task_definition)}
           />
-        </div>
-      )}
-
-      {/* Persona impact — the client story before the raw evidence. */}
-      {personaImpact.length > 0 && (
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <p className="label-mono">Client story</p>
-            <h3 className="display text-xl leading-tight">Persona impact</h3>
-            <p className="max-w-2xl text-sm text-muted-foreground">
-              {run.task_definition
-                ? "Which profiles matched the text check, and where evidence was captured."
-                : "Who got through, who got blocked, and where proof appeared."}
-            </p>
-          </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            {personaImpact.map((persona) => (
-              <Link
-                key={persona.personaId}
-                href={`/audits/${run.id}?persona=${encodeURIComponent(persona.personaId)}&step=0`}
-                className="sheet p-4 transition-colors hover:border-foreground/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-medium">{persona.name}</p>
-                    <p className="text-xs text-muted-foreground">{persona.role}</p>
-                  </div>
-                  <span className={`rounded-sm border px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide ${persona.goalCompleted ? "border-[var(--severity-minor)] text-[var(--severity-minor)]" : "border-[var(--severity-critical)] text-[var(--severity-critical)]"}`}>
-                    {run.task_definition ? (persona.goalCompleted ? "text observed" : "not verified") : (persona.goalCompleted ? "reached" : "blocked")}
-                  </span>
-                </div>
-                <div className="mt-4 grid grid-cols-3 gap-2 font-mono text-xs text-muted-foreground">
-                  <div>
-                    <p className="text-lg font-semibold tabular-nums text-foreground">{persona.steps}</p>
-                    <p>steps</p>
-                  </div>
-                  <div>
-                    <p className="text-lg font-semibold tabular-nums text-foreground">{persona.verdictStates}</p>
-                    <p>states</p>
-                  </div>
-                  <div>
-                    <p className="text-lg font-semibold tabular-nums text-foreground">{persona.maxFrustration}</p>
-                    <p>effort</p>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
         </div>
       )}
 
