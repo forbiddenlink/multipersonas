@@ -12,7 +12,7 @@ import { DEFAULT_PERSONA_IDS, MAX_PERSONAS } from "@/lib/personas";
 import { killSwitchEnabled, estimatedCallsFor } from "@/lib/limits";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { reserveSpend, releaseSpend } from "@/lib/spend";
-import { getClientIP } from "@/lib/client-ip";
+import { getClientIP, rateLimitIP } from "@/lib/client-ip";
 import { enqueueAuditJob } from "@/lib/audit-jobs";
 import { logAuditEvent } from "@/lib/audit-log";
 
@@ -158,7 +158,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const rateLimitKey = user?.id || `anon:${getClientIP(request)}`;
+  const rateLimitKey = user?.id || `anon:${rateLimitIP(getClientIP(request))}`;
   const rateLimitType = user ? "authenticated" : "anonymous";
 
   const rateLimit = await consumeRateLimit(rateLimitKey, rateLimitType);

@@ -4,7 +4,7 @@ import { assertUrlAllowed, BlockedUrlError } from "@engine/security/url-guard";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { killSwitchEnabled, positiveEnvInt, RATE_LIMITS } from "@/lib/limits";
-import { getClientIP } from "@/lib/client-ip";
+import { getClientIP, rateLimitIP } from "@/lib/client-ip";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { logAuditEvent } from "@/lib/audit-log";
 import { emailConfigured } from "@/lib/email";
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
   const { data, error: enqueueError } = await admin.rpc("enqueue_grade_scan", {
     p_url: entryUrl,
     p_queue_cap: MAX_QUEUED_GRADES,
-    p_rate_key: `grade:${ip}`,
+    p_rate_key: `grade:${rateLimitIP(ip)}`,
     p_rate_max: RATE_LIMITS.grade.max,
     p_rate_window_seconds: RATE_LIMITS.grade.windowSeconds,
   });

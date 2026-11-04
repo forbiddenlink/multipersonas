@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumeRateLimit } from "@/lib/rate-limit";
-import { getClientIP } from "@/lib/client-ip";
+import { getClientIP, rateLimitIP } from "@/lib/client-ip";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { isAttributionValue } from "@/lib/waitlist-note";
 
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Waitlist is not configured." }, { status: 503 });
   }
 
-  const rate = await consumeRateLimit(`waitlist:${ip}`, "waitlist");
+  const rate = await consumeRateLimit(`waitlist:${rateLimitIP(ip)}`, "waitlist");
   if (rate.unavailable) {
     return NextResponse.json(
       { error: "This service is temporarily unavailable. Please try again shortly." },

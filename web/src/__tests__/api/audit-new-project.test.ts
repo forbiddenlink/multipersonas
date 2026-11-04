@@ -60,7 +60,7 @@ vi.mock("@/lib/spend", () => ({
     state.released += 1;
   },
 }));
-vi.mock("@/lib/client-ip", () => ({ getClientIP: () => "1.1.1.1" }));
+vi.mock("@/lib/client-ip", () => ({ getClientIP: () => "1.1.1.1", rateLimitIP: (ip: string) => ip }));
 vi.mock("@/lib/audit-log", () => ({ logAuditEvent: async () => {} }));
 vi.mock("@/lib/audit-jobs", () => ({
   enqueueAuditJob: async (_c: unknown, input: { projectId?: string | null }) => {

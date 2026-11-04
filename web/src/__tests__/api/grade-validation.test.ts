@@ -36,7 +36,7 @@ vi.mock("@engine/security/url-guard", () => ({
   assertUrlAllowed: async () => new URL("https://example.invalid/"),
   BlockedUrlError: class extends Error {},
 }));
-vi.mock("@/lib/client-ip", () => ({ getClientIP: () => "unknown" }));
+vi.mock("@/lib/client-ip", () => ({ getClientIP: () => "unknown", rateLimitIP: (ip: string) => ip }));
 vi.mock("@/lib/rate-limit", () => ({ consumeRateLimit }));
 vi.mock("@/lib/turnstile", () => ({ verifyTurnstile: async () => ({ ok: true }) }));
 vi.mock("@/lib/audit-log", () => ({ logAuditEvent: async () => {} }));

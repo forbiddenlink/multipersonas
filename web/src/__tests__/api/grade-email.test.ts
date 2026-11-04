@@ -8,7 +8,7 @@ const { rpc, verifyTurnstile, sendEmail, captureMessage } = vi.hoisted(() => ({
 }));
 vi.mock("@sentry/nextjs", () => ({ captureMessage, captureException: vi.fn() }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({ rpc }) }));
-vi.mock("@/lib/client-ip", () => ({ getClientIP: () => "203.0.113.7" }));
+vi.mock("@/lib/client-ip", () => ({ getClientIP: () => "203.0.113.7", rateLimitIP: (ip: string) => ip }));
 vi.mock("@/lib/turnstile", () => ({ verifyTurnstile }));
 vi.mock("@/lib/grade", () => ({
   isGradeToken: (t: unknown) => typeof t === "string" && /^[0-9a-f-]{36}$/i.test(t),

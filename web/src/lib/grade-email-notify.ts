@@ -10,6 +10,7 @@ import {
 import type { OutgoingEmail } from "@/lib/email";
 import { gradeLetterFromReport, getGraderScan } from "@/lib/grade";
 import { hostOf } from "@/lib/grade-share";
+import { rateLimitIP } from "@/lib/client-ip";
 import type { Json } from "@/lib/supabase/types";
 
 // The grade_email_requests table and its functions come from migration
@@ -57,7 +58,7 @@ export async function captureGradeEmail(
     const { data, error } = await admin.rpc("request_grade_email", {
       p_token: input.token,
       p_email: input.email,
-      p_ip_key: `gradeemail:ip:${input.ip}`,
+      p_ip_key: `gradeemail:ip:${rateLimitIP(input.ip)}`,
       p_ip_max: GRADE_EMAIL_LIMITS.perCaller.max,
       p_to_key: recipientKey(input.email),
       p_to_max: GRADE_EMAIL_LIMITS.perRecipient.max,
