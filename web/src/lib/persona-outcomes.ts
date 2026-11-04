@@ -42,7 +42,10 @@ export function isGiveUp(step: OutcomeStep): boolean {
  * is preferred, walking back from the preferred step; if none has one, the preferred step
  * is returned anyway so the card can still show its page and words.
  */
-export function pickEvidenceStep(journey: OutcomeJourney): OutcomeStep | null {
+/** The step plus its position in `journey.steps`, which is what the replay deep link takes. */
+export type EvidenceStep = OutcomeStep & { index: number };
+
+export function pickEvidenceStep(journey: OutcomeJourney): EvidenceStep | null {
   const { steps } = journey;
   if (steps.length === 0) return null;
   const last = steps[steps.length - 1]!;
@@ -54,9 +57,9 @@ export function pickEvidenceStep(journey: OutcomeJourney): OutcomeStep | null {
   }
 
   for (let i = preferredIndex; i >= 0; i--) {
-    if (steps[i]!.screenshotUrl) return steps[i]!;
+    if (steps[i]!.screenshotUrl) return { ...steps[i]!, index: i };
   }
-  return steps[preferredIndex]!;
+  return { ...steps[preferredIndex]!, index: preferredIndex };
 }
 
 function cleanQuote(text: string | null | undefined): string {
@@ -182,7 +185,7 @@ export interface PersonaOutcomeCard extends PersonaCardMeta {
   personaId: string;
   goalCompleted: boolean | null;
   badge: OutcomeBadge;
-  evidence: OutcomeStep | null;
+  evidence: EvidenceStep | null;
   quotes: string[];
   steps: number;
   peakFrustration: number;

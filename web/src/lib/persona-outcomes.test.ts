@@ -48,6 +48,8 @@ describe("pickEvidenceStep", () => {
       }),
     ]);
     expect(pickEvidenceStep(j)?.step).toBe(3);
+    // Engine step numbers start at 1; the replay deep link takes the array index.
+    expect(pickEvidenceStep(j)?.index).toBe(2);
   });
 
   it("uses the last non-finish step before a blocked finish", () => {

@@ -33,7 +33,7 @@ function PersonaCard({ card, auditId }: { card: PersonaOutcomeCard; auditId: str
       {ev ? (
         <div className="border-b-2 border-foreground">
           <p className="border-b-2 border-foreground px-3 py-1 font-mono text-xs font-bold uppercase tracking-[0.08em]">
-            {stuck ? "Where they got stuck" : "Where they finished"} · step {ev.step + 1}
+            {stuck ? "Where they got stuck" : "Where they finished"} · step {ev.step}
           </p>
           {ev.screenshotUrl ? (
             <div className="h-56 overflow-hidden bg-muted">
@@ -41,7 +41,7 @@ function PersonaCard({ card, auditId }: { card: PersonaOutcomeCard; auditId: str
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={ev.screenshotUrl}
-                alt={`${card.name}, step ${ev.step + 1}${where ? ` on ${where}` : ""}`}
+                alt={`${card.name}, step ${ev.step}${where ? ` on ${where}` : ""}`}
                 loading="lazy"
                 className="h-full w-full object-cover object-top"
               />
@@ -81,7 +81,7 @@ function PersonaCard({ card, auditId }: { card: PersonaOutcomeCard; auditId: str
             {card.steps} {card.steps === 1 ? "step" : "steps"} · effort {card.peakFrustration}
           </span>
           <Link
-            href={`/audits/${auditId}?persona=${encodeURIComponent(card.personaId)}&step=${ev.step}`}
+            href={`/audits/${auditId}?persona=${encodeURIComponent(card.personaId)}&step=${ev.index}`}
             className="rounded-sm text-foreground underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
           >
             Replay this walk
