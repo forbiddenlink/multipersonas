@@ -17,7 +17,7 @@ vi.mock("@/lib/supabase/admin", () => ({
 }));
 
 vi.mock("@/lib/admin-access", () => ({
-  isAdminEmail: (email: string | null | undefined) => email === "owner@example.com",
+  isAdminUser: (user: { email?: string | null } | null | undefined) => user?.email === "owner@example.com",
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));

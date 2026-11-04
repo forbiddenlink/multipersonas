@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isAdminEmail } from "@/lib/admin-access";
+import { isAdminUser } from "@/lib/admin-access";
 import { isFollowUpStatus } from "@/lib/waitlist-note";
 
 export async function setWaitlistLeadStatusAction(formData: FormData): Promise<void> {
@@ -12,7 +12,7 @@ export async function setWaitlistLeadStatusAction(formData: FormData): Promise<v
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!isAdminEmail(user?.email)) redirect("/dashboard");
+  if (!isAdminUser(user)) redirect("/dashboard");
 
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const status = String(formData.get("status") ?? "");

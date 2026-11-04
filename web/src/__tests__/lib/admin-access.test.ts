@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { isAdminEmail } from "@/lib/admin-access";
+import { isAdminEmail, isAdminUser } from "@/lib/admin-access";
 
 describe("isAdminEmail", () => {
   const original = process.env.ADMIN_EMAILS;
@@ -38,5 +38,16 @@ describe("isAdminEmail", () => {
     expect(isAdminEmail("b@y.com")).toBe(true);
     expect(isAdminEmail("c@z.com")).toBe(true);
     expect(isAdminEmail("d@w.com")).toBe(false);
+  });
+});
+
+describe("isAdminUser", () => {
+  const env = { ADMIN_EMAILS: "owner@example.com" } as unknown as NodeJS.ProcessEnv;
+  it("requires a confirmed email on the allowlist", () => {
+    expect(isAdminUser({ email: "owner@example.com", email_confirmed_at: "2026-01-01T00:00:00Z" }, env)).toBe(true);
+    expect(isAdminUser({ email: "owner@example.com", email_confirmed_at: null }, env)).toBe(false);
+    expect(isAdminUser({ email: "owner@example.com" }, env)).toBe(false);
+    expect(isAdminUser({ email: "x@example.com", email_confirmed_at: "2026-01-01T00:00:00Z" }, env)).toBe(false);
+    expect(isAdminUser(null, env)).toBe(false);
   });
 });

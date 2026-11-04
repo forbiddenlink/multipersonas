@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isAdminEmail } from "@/lib/admin-access";
+import { isAdminUser } from "@/lib/admin-access";
 import { BoxDivider } from "@/components/forensic/divider";
 import { EmptyPrompt } from "@/components/forensic/empty-prompt";
 import { FOLLOW_UP_STATUSES, parseWaitlistSignals } from "@/lib/waitlist-note";
@@ -21,7 +21,7 @@ export default async function WaitlistPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!isAdminEmail(user?.email)) notFound();
+  if (!isAdminUser(user)) notFound();
 
   const admin = createAdminClient();
   if (!admin) {

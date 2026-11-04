@@ -17,3 +17,16 @@ export function isAdminEmail(
   if (!email) return false;
   return adminEmailList(env).includes(email.trim().toLowerCase());
 }
+
+/**
+ * Admin check for a signed-in user. The email must be on the allowlist AND confirmed:
+ * if signup ever stops requiring confirmation, an unconfirmed account that claims an
+ * allowlisted address must not see admin pages.
+ */
+export function isAdminUser(
+  user: { email?: string | null; email_confirmed_at?: string | null } | null | undefined,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  if (!user?.email_confirmed_at) return false;
+  return isAdminEmail(user.email, env);
+}
