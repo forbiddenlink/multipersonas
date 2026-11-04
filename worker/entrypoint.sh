@@ -9,9 +9,9 @@ set -e
 #
 # Backgrounded on localhost only (127.0.0.1), never exposed outside the
 # container. The worker's browser egress routes through it via
-# AUDIT_BROWSER_PROXY=http://127.0.0.1:4750 (src/security/browser.ts). If this
-# process dies, the browser cannot connect, so audits fail CLOSED rather than
-# silently bypassing the guard.
+# AUDIT_BROWSER_PROXY=http://127.0.0.1:4750 (src/security/browser.ts). While it
+# is down, the browser cannot connect, so audits fail CLOSED rather than
+# silently bypassing the guard; the supervisor loop below restarts it.
 DENY_RANGES="
   --deny-range 0.0.0.0/8
   --deny-range 10.0.0.0/8
@@ -61,8 +61,36 @@ AUDIT_SCAN_HOME="$(getent passwd pwuser | cut -d: -f6)"
 export AUDIT_SCAN_UID AUDIT_SCAN_GID AUDIT_SCAN_HOME
 export AUDIT_REQUIRE_SCAN_ISOLATION=1
 
-setpriv --reuid=nobody --regid=nogroup --clear-groups --inh-caps=-all --bounding-set=-all --no-new-privs -- \
-  env -i PATH="$PATH" smokescreen --listen-ip 127.0.0.1 --listen-port 4750 $DENY_RANGES &
+# OPS-009: supervise smokescreen. A one-shot background start left the worker running with
+# no guard after a proxy crash (every audit then failed closed until the container restarted).
+# The loop below restarts it as the same unprivileged identity, with exponential backoff
+# (1s doubling to 30s, reset after a run of 30s or more). After 20 consecutive quick failures it
+# gives up and the browser keeps refusing to launch (fail closed). It exits when this script's
+# pid, which becomes the worker via exec below, is gone. Only this loop stays root, and it
+# never touches the worker; each smokescreen start still drops to nobody with an empty env.
+ENTRYPOINT_PID=$$
+(
+  delay=1
+  quick_failures=0
+  while kill -0 "$ENTRYPOINT_PID" 2>/dev/null; do
+    started=$(date +%s)
+    setpriv --reuid=nobody --regid=nogroup --clear-groups --inh-caps=-all --bounding-set=-all --no-new-privs -- \
+      env -i PATH="$PATH" smokescreen --listen-ip 127.0.0.1 --listen-port 4750 $DENY_RANGES || true
+    if [ $(( $(date +%s) - started )) -ge 30 ]; then
+      delay=1
+      quick_failures=0
+    else
+      quick_failures=$((quick_failures + 1))
+      if [ "$quick_failures" -ge 20 ]; then
+        echo "[entrypoint] smokescreen failed $quick_failures times in a row; giving up (browser launches stay refused)" >&2
+        exit 1
+      fi
+    fi
+    echo "[entrypoint] smokescreen exited; restarting in ${delay}s" >&2
+    sleep "$delay"
+    delay=$(( delay * 2 > 30 ? 30 : delay * 2 ))
+  done
+) &
 
 # Arguments replace the worker command under the same identity (the image's isolation check
 # in CI uses this). Railway's start command passes none.

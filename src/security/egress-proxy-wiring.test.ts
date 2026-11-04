@@ -89,6 +89,20 @@ describe("smokescreen egress-guard wiring", () => {
     }
   }, 20_000);
 
+  it("entrypoint restarts smokescreen when it exits, as nobody, and stops once the worker is gone (OPS-009)", () => {
+    const bin = stubBin("0");
+    try {
+      // The stub proxy exits at once, so the supervisor must start it more than once while the worker runs.
+      writeFileSync(join(bin, "pnpm"), "#!/bin/sh\nsleep 3\n");
+      runEntrypoint(bin);
+      const proxyCalls = readFileSync(join(bin, "setpriv.log"), "utf8").trim().split("\n").filter((call) => call.includes("smokescreen"));
+      expect(proxyCalls.length).toBeGreaterThanOrEqual(2);
+      for (const call of proxyCalls) expect(call).toMatch(/--reuid=nobody .*--no-new-privs -- env -i PATH=/);
+    } finally {
+      rmSync(bin, { recursive: true, force: true });
+    }
+  }, 20_000);
+
   it("entrypoint refuses to start unless it can split the uids", () => {
     const bin = stubBin("1001");
     try {
@@ -129,8 +143,11 @@ describe("smokescreen egress-guard wiring", () => {
     expect(dockerfile).toMatch(/useradd .*--groups mpscan mpworker/);
   });
 
-  it("entrypoint backgrounds smokescreen on localhost before execing the worker", () => {
-    expect(entrypoint).toMatch(/smokescreen .*--listen-ip 127\.0\.0\.1.*&/);
+  it("entrypoint backgrounds a supervised smokescreen on localhost before execing the worker", () => {
+    expect(entrypoint).toMatch(/smokescreen .*--listen-ip 127\.0\.0\.1/);
+    // OPS-009: the proxy sits in a restart loop inside a backgrounded subshell, not a one-shot start.
+    expect(entrypoint).toMatch(/\(\n[\s\S]*while kill -0 "\$ENTRYPOINT_PID"[\s\S]*smokescreen [\s\S]*sleep "\$delay"[\s\S]*\n\) &\n/);
+    expect(entrypoint.indexOf("\n) &\n")).toBeLessThan(entrypoint.indexOf("exec setpriv --reuid=mpworker"));
     for (const range of requiredDenyRanges) {
       expect(entrypoint).toContain(`--deny-range ${range}`);
     }
