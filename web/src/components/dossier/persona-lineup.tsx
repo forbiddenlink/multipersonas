@@ -10,6 +10,7 @@ import {
   type ExampleNode,
 } from "@/lib/example-page";
 import { SeverityChip } from "@/components/forensic/severity-chip";
+import { describeDevice } from "@/lib/persona-outcomes";
 
 type ViewKind = "normal" | "keyboard" | "outline" | "narrow";
 
@@ -39,10 +40,7 @@ const VIEW: Record<(typeof SAMPLE_PANE_PERSONAS)[number], { kind: ViewKind; labe
 
 /** What the persona actually does differently, from its own definition. */
 function modalityLabel(id: PersonaId): string {
-  const p = prebuiltPersonas[id]!;
-  const input = p.inputModality === "keyboard" ? "keyboard" : p.isMobile ? "touch" : "pointer";
-  const net = p.connectionSpeed === "fast" ? null : p.connectionSpeed;
-  return [`${p.viewport.width} x ${p.viewport.height}`, input, net].filter(Boolean).join(" · ");
+  return describeDevice(prebuiltPersonas[id]!);
 }
 
 function FocusBadge({ n, fault = false, beside = false }: { n: number; fault?: boolean; beside?: boolean }) {

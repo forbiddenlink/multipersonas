@@ -9,6 +9,9 @@ import { getSessionPlan, planAllowsPersonas } from "@/lib/entitlements";
 import { RetestButton } from "@/components/retest-button";
 import { buttonVariants } from "@/components/ui/button";
 import { PERSONA_DATA } from "@/lib/personas";
+import { personaLibrary, isBuiltinPersonaId } from "@engine/personas/library";
+import { buildPersonaOutcomes, describeDevice } from "@/lib/persona-outcomes";
+import { PersonaFirstReport } from "@/components/persona-first-report";
 import { formatLocation } from "@/lib/format-location";
 import { formatShortDate } from "@/lib/format";
 import { SeverityChip } from "@/components/forensic/severity-chip";
@@ -195,6 +198,21 @@ export default async function AuditDetailPage({
     const meta = PERSONA_DATA[j.personaId as keyof typeof PERSONA_DATA];
     personaMeta[j.personaId] = { name: meta?.name ?? j.personaId, role: meta?.role ?? "" };
   }
+  const personaName = (id: string) => PERSONA_DATA[id as keyof typeof PERSONA_DATA]?.name ?? id;
+  const personaOutcomes = buildPersonaOutcomes({
+    personaIds: run.persona_ids ?? [],
+    journeys,
+    taskCheck: Boolean(run.task_definition),
+    runTotals: { achieved, total },
+    meta: (id) => ({
+      name: personaName(id),
+      role: PERSONA_DATA[id as keyof typeof PERSONA_DATA]?.role ?? "",
+      device: isBuiltinPersonaId(id) ? describeDevice(personaLibrary[id]) : "",
+    }),
+    notesByPersona: Object.fromEntries(
+      [...byPersona].map(([id, list]) => [id, list.map((f) => f.title)]),
+    ),
+  });
   const personaImpact = journeys.map((j) => {
     const pagesWithVerdicts = new Set(
       j.steps
@@ -368,6 +386,16 @@ export default async function AuditDetailPage({
             {errorMessage}
           </p>
         )}
+      </div>
+
+      <PersonaFirstReport outcomes={personaOutcomes} auditId={run.id} nameOf={personaName} />
+
+      <div className="space-y-1.5 border-t-2 border-foreground pt-6">
+        <p className="label-mono">Scan evidence · deterministic</p>
+        <h2 className="display text-2xl leading-tight">Accessibility scan</h2>
+        <p className="max-w-2xl text-sm text-muted-foreground">
+          Everything below comes from the axe-core scan, task checks and persona replay.
+        </p>
       </div>
 
       <ScanCoveragePanel coverage={scanCoverage} />
