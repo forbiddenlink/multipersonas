@@ -91,6 +91,14 @@ export function readBaseline(file: string): Baseline | null {
   return parsed as Baseline;
 }
 
+/**
+ * `update_baseline` overwrites its target. Refuse unless the file is absent or already a
+ * Personaudit baseline, so a steered call cannot replace package.json or an MCP config.
+ */
+export function assertBaselineTarget(file: string): void {
+  readBaseline(file);
+}
+
 const scanInput = {
   url: z.string().describe("Page to start the crawl from. Same-origin links are followed."),
   maxPages: z.number().int().min(1).max(100).optional().describe("States to crawl. Default 20."),
@@ -173,6 +181,7 @@ export function createServer(version: string, options: ServerOptions = {}): McpS
     async (input) => {
       try {
         const baselinePath = resolveWorkspacePath(input.baseline ?? "personaudit-baseline.json");
+        assertBaselineTarget(baselinePath);
         const result = await runScan(input);
         const snapshot = baselineFromFindings(result.findings, { url: input.url, createdAt: new Date().toISOString() });
         fs.writeFileSync(baselinePath, JSON.stringify(snapshot, null, 2));

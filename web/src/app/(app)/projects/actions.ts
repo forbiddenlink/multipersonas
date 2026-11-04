@@ -19,9 +19,10 @@ function readProjectFields(formData: FormData) {
   return { name, url, description: description || null };
 }
 
-/** Accept only http(s) URLs, normalized to their canonical form (same spirit as the
- * audit route's URL guard, minus the SSRF/private-network checks — a project's site
- * is only ever used as a display value + the audit form's prefill, never fetched here). */
+/** Accept only http(s) URLs, normalized to their canonical form. No SSRF check here:
+ * nothing fetches the URL at save time. Scheduled scans and audits do fetch it later,
+ * and the worker runs the URL guard on every navigation, so that is where private and
+ * metadata addresses are refused. */
 function normalizeUrl(url: string): string | null {
   try {
     const parsed = new URL(url);

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { toMcpResult, resolveWorkspacePath, readBaseline, MAX_DEFECTS } from "./mcp.js";
+import { toMcpResult, resolveWorkspacePath, readBaseline, assertBaselineTarget, MAX_DEFECTS } from "./mcp.js";
 import { buildScanJson } from "./report/json.js";
 import type { Finding } from "./agent/engine.js";
 
@@ -64,5 +64,20 @@ describe("readBaseline", () => {
     const good = path.join(dir, "good.json");
     fs.writeFileSync(good, JSON.stringify({ keys: ["a|1"] }));
     expect(readBaseline(good)?.keys).toEqual(["a|1"]);
+  });
+});
+
+describe("assertBaselineTarget", () => {
+  it("allows a missing file or an existing baseline, and refuses any other JSON file untouched", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pa-mcp-"));
+    expect(() => assertBaselineTarget(path.join(dir, "new.json"))).not.toThrow();
+    const baseline = path.join(dir, "baseline.json");
+    fs.writeFileSync(baseline, JSON.stringify({ keys: ["a|1"] }));
+    expect(() => assertBaselineTarget(baseline)).not.toThrow();
+    const pkg = path.join(dir, "package.json");
+    const bytes = JSON.stringify({ name: "x", scripts: { test: "vitest" } });
+    fs.writeFileSync(pkg, bytes);
+    expect(() => assertBaselineTarget(pkg)).toThrow(/not a Personaudit baseline/);
+    expect(fs.readFileSync(pkg, "utf8")).toBe(bytes);
   });
 });

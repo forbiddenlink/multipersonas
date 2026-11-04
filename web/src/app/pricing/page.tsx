@@ -132,7 +132,7 @@ function AvailabilityCell({ value }: { value: Availability }) {
   if (value === "no") {
     return (
       <>
-        <span aria-hidden="true" className="text-muted-foreground">&mdash;</span>
+        <span aria-hidden="true" className="inline-block h-0.5 w-3 bg-muted-foreground align-middle" />
         <span className="sr-only">Not included</span>
       </>
     );
