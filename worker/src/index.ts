@@ -404,6 +404,11 @@ async function runGradePersona(job: AuditJob, base: Record<string, unknown>): Pr
     );
     const pr = result.personas[0];
     if (!pr) throw new Error("grade persona returned no result");
+    // The engine reports a failed walk as a partial result, not a throw. Log why, or a
+    // 0-step "inconclusive" walk is impossible to diagnose from the worker logs.
+    for (const f of pr.agentResult.scanCoverage?.executionFailures ?? []) {
+      console.error(`[worker] grade persona execution failure ${job.id}: ${f.error.slice(0, 300)}`);
+    }
     const summary: GradePersonaSummary = summarizeGradePersona({
       persona: pr.persona,
       goalCompleted: pr.agentResult.goalCompleted,
