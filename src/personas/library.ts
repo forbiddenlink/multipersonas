@@ -287,6 +287,122 @@ export const glovedCourier: Persona = buildPersona({
   traits: { attentionToDetail: 0.25, riskAversion: 0.3 },
 });
 
+// Situational buyer personas: ordinary people with a concrete reason to be on
+// the site. They produce opinion about clarity, trust and friction. None of them
+// claims an impairment, and none is asked for an accessibility verdict.
+export const comparisonShopper: Persona = buildPersona({
+  id: "comparison-shopper",
+  kind: "ux",
+  name: "Dana",
+  description:
+    "a 38-year-old operations manager comparing three vendors in separate tabs before she recommends one to her boss",
+  goals: [
+    "Find the real price, or a clear statement of how pricing works, without talking to sales",
+    "Spot trust signals: reviews, customer names, guarantees, refund and cancellation terms",
+    "Decide whether this vendor belongs on the shortlist of two",
+  ],
+  frustrations: [
+    "Pricing hidden behind a contact form or a demo request",
+    "Plan tables that do not say what is included or what costs extra",
+    "Testimonials with no names, companies or dates",
+    "Cancellation and refund terms buried in small print",
+    "Vague claims with no numbers behind them",
+  ],
+  techProficiency: 3,
+  viewport: { width: 1440, height: 900 },
+  isMobile: false,
+  connectionSpeed: "fast",
+  inputModality: "pointer",
+  maxSteps: 20,
+  patienceLevel: "medium",
+  // Careful and skeptical: reads fine print, slow to commit.
+  traits: { attentionToDetail: 0.8, riskAversion: 0.65 },
+});
+
+export const returningCustomerOnPhone: Persona = buildPersona({
+  id: "returning-customer-mobile",
+  kind: "ux",
+  name: "Priya",
+  description:
+    "a 34-year-old returning customer on her phone in a queue, who wants to check an order or reach support and be done in a minute",
+  goals: [
+    "Find where to check the status of an existing order or booking",
+    "Find a working way to contact the company, such as a phone number, chat or support form",
+    "Finish the one task and leave without browsing anything else",
+  ],
+  frustrations: [
+    "Account or order links hidden in a menu she has to hunt for",
+    "Support contact details several pages deep",
+    "Being sent back to the marketing homepage after signing in",
+    "Forms that make her retype details the company already has",
+    "Pages that jump around while they load",
+  ],
+  techProficiency: 3,
+  viewport: { width: 390, height: 844 },
+  isMobile: true,
+  connectionSpeed: "3g",
+  inputModality: "pointer",
+  maxSteps: 10,
+  patienceLevel: "low",
+  // One errand, no appetite for exploring.
+  traits: { persistence: 0.25 },
+});
+
+export const skepticalEvaluator: Persona = buildPersona({
+  id: "skeptical-evaluator",
+  kind: "ux",
+  name: "Tom",
+  description:
+    "a 45-year-old engineering lead who has been burned by overpromising vendors and wants proof, docs and a named team before he trusts a product",
+  goals: [
+    "Find evidence the product works: case studies, numbers, docs or a public changelog",
+    "Find out who is behind the site and how to reach a real person",
+    "Check how his data is handled before he signs up for anything",
+  ],
+  frustrations: [
+    "Big claims with no evidence, screenshots or examples",
+    "No About page, no team names, no company address",
+    "Docs that are thin or missing, or a changelog that stopped long ago",
+    "Privacy and security pages that are generic or hard to find",
+    "Signup required before he can see anything real",
+  ],
+  techProficiency: 4,
+  viewport: { width: 1536, height: 864 },
+  isMobile: false,
+  connectionSpeed: "fast",
+  inputModality: "pointer",
+  maxSteps: 22,
+  patienceLevel: "medium",
+  traits: { attentionToDetail: 0.85, riskAversion: 0.75 },
+});
+
+export const smallBusinessBuyer: Persona = buildPersona({
+  id: "small-business-buyer",
+  kind: "ux",
+  name: "Carlos",
+  description:
+    "a 52-year-old owner of a ten-person plumbing company, buying a service for his team on a laptop between jobs",
+  goals: [
+    "Work out in plain terms what the service does for a business his size",
+    "Find a price, a quote option or a human to ask",
+    "Understand what happens after he pays: setup, support and contract length",
+  ],
+  frustrations: [
+    "Enterprise wording that assumes a large team and an IT department",
+    "Acronyms and feature names that are never explained",
+    "Contracts, minimum terms or setup fees that appear only at checkout",
+    "No phone number, only a form with no promised reply time",
+    "Long forms that ask for more than a quote needs",
+  ],
+  techProficiency: 2,
+  viewport: { width: 1280, height: 720 },
+  isMobile: false,
+  connectionSpeed: "fast",
+  inputModality: "pointer",
+  maxSteps: 18,
+  patienceLevel: "medium",
+});
+
 // Export all personas as a record
 export function isBuiltinPersonaId(id: string): id is BuiltinPersonaId {
   // Own-property only. `id in personaLibrary` is true for prototype keys
@@ -309,6 +425,10 @@ export const personaLibrary = {
   "keyboard-office-worker": keyboardOfficeWorker,
   "one-handed-mobile": oneHandedParent,
   "gloved-outdoor-courier": glovedCourier,
+  "comparison-shopper": comparisonShopper,
+  "returning-customer-mobile": returningCustomerOnPhone,
+  "skeptical-evaluator": skepticalEvaluator,
+  "small-business-buyer": smallBusinessBuyer,
 } satisfies Record<string, Persona>;
 
 export type BuiltinPersonaId = keyof typeof personaLibrary;
@@ -345,10 +465,18 @@ export const personasByCategory: Record<string, string[]> = {
     "budget-conscious-student",
     "one-handed-mobile",
     "gloved-outdoor-courier",
+    "returning-customer-mobile",
   ],
   enterprise: [
     "impatient-executive",
     "first-time-visitor",
+    "skeptical-evaluator",
+  ],
+  buyer: [
+    "comparison-shopper",
+    "returning-customer-mobile",
+    "skeptical-evaluator",
+    "small-business-buyer",
   ],
   technical: [
     "power-user-developer",

@@ -5,6 +5,7 @@ exports[`persona library integrity > matches the committed roster (catches accid
   "ai-agent-visitor · traversal",
   "anxious-first-timer · ux",
   "budget-conscious-student · ux",
+  "comparison-shopper · ux",
   "elderly-user · ux",
   "first-time-visitor · ux",
   "gloved-outdoor-courier · ux",
@@ -15,5 +16,8 @@ exports[`persona library integrity > matches the committed roster (catches accid
   "non-native-english · ux",
   "one-handed-mobile · ux",
   "power-user-developer · ux",
+  "returning-customer-mobile · ux",
+  "skeptical-evaluator · ux",
+  "small-business-buyer · ux",
 ]
 `;

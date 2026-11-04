@@ -17,6 +17,10 @@ const PERSONA_ROLES = {
   "keyboard-office-worker": "Keyboard-only, situational",
   "one-handed-mobile": "One-handed, situational",
   "gloved-outdoor-courier": "Gloved touchscreen, situational",
+  "comparison-shopper": "Comparing vendors before buying",
+  "returning-customer-mobile": "Returning customer, one quick task",
+  "skeptical-evaluator": "Wants proof before trusting",
+  "small-business-buyer": "Small-business owner, plain terms",
 } satisfies Record<BuiltinPersonaId, string>;
 
 export type PersonaId = BuiltinPersonaId;
