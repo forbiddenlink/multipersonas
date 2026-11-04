@@ -50,6 +50,7 @@ describe("notifyFinishedScans", () => {
     expect(msg.subject).toBe("Acme: 1 new issue");
     expect(msg.text).toContain("https://personaudit.com/audits/r2");
     expect(msg.idempotencyKey).toBe("scan-result-s1-j2");
+    expect(msg.unsubscribeUrl).toMatch(/\/projects\/[^/]+$/);
   });
 
   it("waits while the job is still queued or running, without claiming it", async () => {

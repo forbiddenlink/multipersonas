@@ -110,6 +110,8 @@ export async function notifyFinishedScans(
         to,
         ...digest,
         idempotencyKey: `scan-result-${candidate.id}-${candidate.lastJobId}`,
+        // Scheduled results recur, so mail clients get a way out: the project page holds the schedule switch.
+        unsubscribeUrl: projectUrl,
       });
       if (sent.ok) {
         result.sent += 1;

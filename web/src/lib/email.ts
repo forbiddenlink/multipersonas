@@ -16,6 +16,8 @@ export interface OutgoingEmail {
   html: string;
   /** Resend dedupes retries that carry the same key for 24 hours. */
   idempotencyKey: string;
+  /** Page where the recipient turns this kind of email off, sent as List-Unsubscribe. */
+  unsubscribeUrl?: string;
 }
 
 export async function sendEmail(message: OutgoingEmail): Promise<{ ok: true } | { ok: false; error: string }> {
@@ -37,6 +39,7 @@ export async function sendEmail(message: OutgoingEmail): Promise<{ ok: true } | 
         subject: message.subject,
         text: message.text,
         html: message.html,
+        ...(message.unsubscribeUrl ? { headers: { "List-Unsubscribe": `<${message.unsubscribeUrl}>` } } : {}),
       }),
       signal: AbortSignal.timeout(10_000),
     });
