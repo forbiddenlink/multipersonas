@@ -19,10 +19,19 @@ web /api/audit/[jobId] ──polls──> Postgres
 - `SUPABASE_SERVICE_ROLE_KEY` — required. The worker claims/updates jobs and writes
   history with the service role (bypasses RLS). Server-side secret; never ship to a client.
 - `ANTHROPIC_API_KEY` — persona runs are model calls.
-- `WORKER_POLL_MS` — optional, default 3000. Idle poll interval; the queue drains
+- `WORKER_POLL_MS` — optional, default 3000. Base idle/retry interval; the queue drains
   back-to-back when busy.
+- `WORKER_IDLE_POLL_MAX_MS` — optional, default 15000 (never below `WORKER_POLL_MS`).
+  Consecutive successful empty claims wait 3s, 6s, 12s, then at most 15s with the defaults.
+  A completed job resets the backoff and the next claim is immediate. Claim errors,
+  unexpected loop errors, and the kill switch reset to the base retry interval.
+  The worker stays running; after sustained idleness, a new job may wait up to 15s
+  for its next claim attempt instead of 3s, plus request/maintenance time. Set this
+  equal to `WORKER_POLL_MS` to retain the fixed cadence.
 - `WORKER_REAP_INTERVAL_SECONDS` — optional, default 60. Minimum time between stale-job
-  checks; they run between jobs even while the queue is busy.
+  checks; they run between jobs even while the queue is busy. Idle waits are shortened
+  when maintenance is due. Shutdown interrupts an idle wait immediately, while a
+  running job is still allowed to finish.
 
 ## Process identities (SEC-001)
 

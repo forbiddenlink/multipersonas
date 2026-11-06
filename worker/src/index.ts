@@ -11,7 +11,8 @@ import {
   assertScanIsolation, createScanOutputDir, runJobProcess, ScanCleanupError, scanIsolationFromEnv, type ScanIsolation,
 } from "./job-process.js";
 import { readScanArtifact } from "./scan-artifact.js";
-import { isIntervalDue, killSwitchEnabled, positiveEnvInt } from "./config.js";
+import { killSwitchEnabled, positiveEnvInt } from "./config.js";
+import { runPollingLoop, type ClaimOutcome } from "./polling.js";
 import { notifyGradeFinished } from "./grade-notify.js";
 import {
   GRADE_PERSONA_ID, gradePersonaPlan, summarizeGradePersona, type GradePersonaSummary,
@@ -35,6 +36,9 @@ const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABAS
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const POLL_MS = positiveEnvInt(process.env.WORKER_POLL_MS, 3000);
+// Only consecutive empty claims back off. Never pause the worker or slow busy drain.
+// Setting the maximum equal to POLL_MS restores the fixed polling cadence.
+const IDLE_POLL_MAX_MS = Math.max(POLL_MS, positiveEnvInt(process.env.WORKER_IDLE_POLL_MAX_MS, 15_000));
 // In-process cap on a single run. A hung Playwright navigation must not freeze the
 // whole (single-worker) queue. Terminate the scan process tree before marking
 // the job failed or acknowledging completion.
@@ -162,11 +166,11 @@ function publicJobError(e: unknown): string {
 // Graceful shutdown: on a container redeploy (SIGTERM) or Ctrl-C (SIGINT), stop
 // claiming new work and let the current job finish (or hit its timeout) rather than
 // being SIGKILLed mid-run and stranded. The reaper covers a hard kill.
-let shuttingDown = false;
+const shutdown = new AbortController();
 for (const sig of ["SIGTERM", "SIGINT"] as const) {
   process.on(sig, () => {
-    if (shuttingDown) return;
-    shuttingDown = true;
+    if (shutdown.signal.aborted) return;
+    shutdown.abort();
     console.log(`[worker] ${sig} received — finishing current job, then exiting.`);
   });
 }
@@ -464,21 +468,21 @@ async function runGradePersona(job: AuditJob, base: Record<string, unknown>): Pr
 }
 
 let killSwitchLogged = false;
-async function claimAndRun(): Promise<boolean> {
+async function claimAndRun(): Promise<ClaimOutcome> {
   // Kill switch: leave queued jobs untouched (they run once the switch is off).
   if (killSwitchEnabled()) {
     if (!killSwitchLogged) console.log("[worker] AUDIT_KILL_SWITCH is on; not claiming jobs.");
     killSwitchLogged = true;
-    return false;
+    return "retry";
   }
   killSwitchLogged = false;
   const { data: job, error } = await supabase.rpc("claim_audit_job");
   if (error) {
     console.error("[worker] claim failed:", error.message);
-    return false;
+    return "retry";
   }
   const claimed = job as AuditJob | null;
-  if (!claimed || !claimed.id) return false; // empty queue
+  if (!claimed || !claimed.id) return "empty"; // empty queue
 
   console.log(`[worker] claimed ${claimed.id} — ${claimed.url}`);
   await logWorkerEvent(claimed, "audit_job.claimed", { attempt: claimed.attempts });
@@ -524,7 +528,7 @@ async function claimAndRun(): Promise<boolean> {
     }
     // After the grade is saved and announced: a persona failure or timeout cannot fail it.
     if (personaBase) await runGradePersona(claimed, personaBase);
-    return true; // grade jobs reserve no spend — no releaseReservation needed
+    return "ran"; // grade jobs reserve no spend — no releaseReservation needed
   }
 
   let tmpDir: string | undefined;
@@ -580,7 +584,7 @@ async function claimAndRun(): Promise<boolean> {
       // ignore cleanup errors
     }
   }
-  return true;
+  return "ran";
 }
 
 /** Requeue/dead-letter jobs a crashed worker left stuck in 'running' (P0 #2). */
@@ -605,19 +609,15 @@ async function reapStaleJobs(): Promise<void> {
 }
 
 async function loop(): Promise<void> {
-  console.log(`[worker] started; polling every ${POLL_MS}ms`);
-  let lastReapAt: number | null = null;
-  // Run continuously. Jobs drain back-to-back when busy, while maintenance remains
-  // time-based so an active queue cannot starve stale-job recovery.
-  while (!shuttingDown) {
-    let ranSomething = false;
-    try {
-      if (isIntervalDue(Date.now(), lastReapAt, REAP_INTERVAL_MS)) {
-        lastReapAt = Date.now();
-        await reapStaleJobs();
-      }
-      ranSomething = await claimAndRun();
-    } catch (e) {
+  console.log(`[worker] started; idle polling ${POLL_MS}-${IDLE_POLL_MAX_MS}ms, busy queue drains immediately`);
+  await runPollingLoop({
+    pollMs: POLL_MS,
+    idlePollMaxMs: IDLE_POLL_MAX_MS,
+    reapIntervalMs: REAP_INTERVAL_MS,
+    signal: shutdown.signal,
+    reapStaleJobs,
+    claimAndRun,
+    onError: async (e) => {
       if (e instanceof ScanCleanupError) {
         onFatal("scan cleanup")(e);
         await new Promise<never>(() => {}); // Exit before claiming more work.
@@ -626,12 +626,8 @@ async function loop(): Promise<void> {
       Sentry.captureException(e);
       console.error("[worker] loop error:", msg);
       await notify(`loop error: ${msg}`);
-    }
-    if (!ranSomething) {
-      if (shuttingDown) break;
-      await new Promise((r) => setTimeout(r, POLL_MS));
-    }
-  }
+    },
+  });
   console.log("[worker] stopped.");
   process.exit(0);
 }
