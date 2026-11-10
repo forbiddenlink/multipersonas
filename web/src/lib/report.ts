@@ -57,6 +57,8 @@ export interface PersonaImpact {
   personaId: string;
   goalCompleted: boolean;
   steps: number;
+  /** Page of the persona's last recorded step: where it stopped, or where it finished. */
+  lastPageUrl: string | null;
   verdictStates: number;
   blockedVerdictStates: number;
 }
@@ -263,10 +265,12 @@ function buildPersonaImpact(rows: JourneyRow[], findings: FindingRow[]): Persona
         .map((row) => row.page_url)
         .filter((url): url is string => typeof url === "string" && verdictUrls.has(url)),
     );
+    const last = list.reduce<JourneyRow | undefined>((latest, row) => (!latest || row.step > latest.step ? row : latest), undefined);
     return {
       personaId,
       goalCompleted,
       steps: new Set(list.map((row) => row.step)).size,
+      lastPageUrl: last?.page_url ?? null,
       verdictStates: states.size,
       blockedVerdictStates: goalCompleted ? 0 : states.size,
     };

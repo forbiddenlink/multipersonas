@@ -260,6 +260,9 @@ export function ReportDocument({
             <p className={styles.disclaimer}>
               Personas are user-outcome evidence, not accessibility findings. They show which
               real-shaped flows reached the states where deterministic axe verdicts were captured.
+              No task was saved for this run, so each persona tried its built-in goals (work out
+              what the site offers, find what it costs or how to start), not a flow chosen for this
+              site.
             </p>
             <div className={styles.summary}>
               {report.personaImpact.map((persona) => {
@@ -273,6 +276,11 @@ export function ReportDocument({
                     <div className={styles.countLabel}>
                       {name} · {role} · {persona.steps} steps · {persona.verdictStates} {persona.verdictStates === 1 ? "verdict state" : "verdict states"}
                     </div>
+                    {persona.lastPageUrl ? (
+                      <div className={styles.countLabel} data-testid="persona-last-page">
+                        {persona.goalCompleted ? "Finished at" : "Stopped at"} {reportPath(persona.lastPageUrl)}
+                      </div>
+                    ) : null}
                   </div>
                 );
               })}
@@ -490,4 +498,14 @@ export function ReportDocument({
         </footer>
       </article>
   );
+}
+
+/** Path and query of a URL for print, so long origins do not crowd the summary card. */
+function reportPath(url: string): string {
+  try {
+    const u = new URL(url);
+    return `${u.pathname}${u.search}` || "/";
+  } catch {
+    return url;
+  }
 }

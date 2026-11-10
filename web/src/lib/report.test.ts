@@ -113,6 +113,14 @@ describe("assembleReport", () => {
     expect(report.agencyName).toBe("Northwind Agency");
   });
 
+  it("records the page of each persona's last step, whatever order the rows arrive in", () => {
+    const report = assembleReport(run, [], [
+      { persona_id: "mobile-slow-connection", goal_completed: false, page_url: "https://client.example/pricing", step: 3 },
+      { persona_id: "mobile-slow-connection", goal_completed: false, page_url: "https://client.example/", step: 1 },
+    ]);
+    expect(report.personaImpact[0]?.lastPageUrl).toBe("https://client.example/pricing");
+  });
+
   it("summarizes persona impact and raises priority when a blocked persona hits the verdict state", () => {
     const report = assembleReport(
       run,
@@ -138,6 +146,7 @@ describe("assembleReport", () => {
         personaId: "elderly-user",
         goalCompleted: false,
         steps: 2,
+        lastPageUrl: "https://client.example/checkout",
         verdictStates: 1,
         blockedVerdictStates: 1,
       },
