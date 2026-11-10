@@ -1,4 +1,5 @@
 import { parseTaskDefinition } from "@engine/tasks/definition";
+import { TaskTemplates } from "@/components/task-templates";
 import { TaskEvidencePanel } from "@/components/task-evidence";
 import { taskComparison, TASK_INPUT_ERROR, TASK_ORIGIN_ERROR } from "@/lib/tasks";
 import type { Metadata } from "next";
@@ -299,6 +300,7 @@ export default async function ProjectDetailPage({
         <div className="min-w-0">
       <BoxDivider id="task-to-test" label="task to test" className="my-5 scroll-mt-6" />
       <form action={saveTask} className="sheet space-y-3 p-4">
+        <TaskTemplates />
         <div className="space-y-1.5">
           <Label htmlFor="task-goal">What should a visitor accomplish?</Label>
           <textarea id="task-goal" name="goal" defaultValue={savedTask?.goal ?? ""} minLength={10} maxLength={1000}
