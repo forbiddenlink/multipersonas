@@ -107,6 +107,7 @@ const CAPABILITY_LEDGER: { capability: string; note?: string; plans: Record<Tier
   { capability: "Public-page axe-core grade", note: "Hosted, no signup", plans: { free: "yes", solo: "yes", agency: "yes" } },
   { capability: "Behind-login axe-core scan", note: "CLI only; the session stays on your machine", plans: { free: "yes", solo: "yes", agency: "yes" } },
   { capability: "CI gate on new defects only", note: "Baseline + fail-on, keyless", plans: { free: "yes", solo: "yes", agency: "yes" } },
+  { capability: "CI gate on persona goals", note: "CLI run with your own Anthropic key; fails when a goal reached in the baseline is now blocked", plans: { free: "yes", solo: "yes", agency: "yes" } },
   {
     capability: "Hosted projects",
     plans: {

@@ -182,6 +182,32 @@ export default function DocsPage() {
           limitation.
         </ContentCallout>
 
+        <h3 id="task-gate">Gate a build on task success</h3>
+        <p>
+          <code>run</code> can fail CI when a persona goal that was reached in a saved baseline
+          is now blocked. Save a task on the project or pass the same personas each time, so
+          the comparison is like for like. This reports whether a goal was reached. It is not an
+          accessibility result.
+        </p>
+        <ContentCodeBlock
+          label="one time: snapshot each persona's outcome and commit it"
+          code={
+            "npx personaudit run https://app.example.com --session session.json \\\n  --task-baseline personaudit-task-baseline.json --update-task-baseline"
+          }
+        />
+        <ContentCodeBlock
+          label="in CI: exit 2 if a goal that was reached is now blocked"
+          code={
+            "npx personaudit run https://app.example.com --session session.json \\\n  --task-baseline personaudit-task-baseline.json --fail-on-task-regression"
+          }
+        />
+        <p>
+          Exit codes: <code>0</code> no goal regressed, <code>2</code> a goal regressed,{" "}
+          <code>1</code> error or incomplete. A persona that errored is never written to the
+          baseline, and if one that reached its goal in the baseline errors, the gate exits{" "}
+          <code>1</code> rather than guessing.
+        </p>
+
         <h2 id="troubleshooting">Troubleshooting</h2>
         <h3>&ldquo;Executable doesn&apos;t exist&rdquo; when a scan starts</h3>
         <p>

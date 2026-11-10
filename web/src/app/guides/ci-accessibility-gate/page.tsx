@@ -100,10 +100,15 @@ export default function CiGateGuidePage() {
 
         <h2 id="honesty">What the gate is (and isn&apos;t)</h2>
         <ContentCallout>
-          The gate runs on <strong>axe-core</strong> only: deterministic verdicts. Persona
-          notes measure task success in the product loop; they never enter the CI baseline and
-          never fail the build. Passing this gate does not replace testing with disabled
-          people.
+          This gate runs on <strong>axe-core</strong> only: deterministic verdicts. Persona
+          notes never enter this baseline. A separate, opt-in gate can fail a build when a
+          persona goal that was reached in a saved baseline is now blocked (
+          <code>run --fail-on-task-regression</code>, see{" "}
+          <Link href="/docs#task-gate" className="text-link">
+            the task-success gate
+          </Link>
+          ); it reports whether a goal was reached, never an accessibility result. Passing either
+          gate does not replace testing with disabled people.
         </ContentCallout>
 
         <h2 className="sr-only">Related</h2>
