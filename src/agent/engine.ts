@@ -139,6 +139,11 @@ export interface StepRecord {
    * the forced tool call. It is navigation narration, never a compliance verdict.
    */
   reasoning?: string;
+  /**
+   * window.scrollY after the action, rounded. Lets the stuck check tell a scroll that
+   * revealed new content from one that hit the bottom. Absent when it could not be read.
+   */
+  scrollY?: number;
 }
 
 export interface ScanCoverage {
@@ -706,16 +711,32 @@ async function getPageContext(page: Page): Promise<string> {
 
 // --- Stuck detection ---
 
-function isStuck(
-  steps: StepRecord[],
+/**
+ * Stuck = the same action repeated with nothing visibly changing: same action and
+ * target, same page, same scroll position. 2026-11-09: comparing only action and
+ * target ended Maria's myaqualog.com run after two "scroll down" steps that each
+ * revealed new content, because her low patience sets the threshold at 2.
+ */
+async function readScrollY(page: Page): Promise<number | undefined> {
+  try {
+    const y = await page.evaluate(() => Math.round(window.scrollY));
+    return typeof y === "number" ? y : undefined;
+  } catch {
+    return undefined; // closed page, navigation in flight, or a test double without evaluate
+  }
+}
+
+export function isStuck(
+  steps: Pick<StepRecord, "action" | "detail" | "pageUrl" | "scrollY">[],
   repeatThreshold: number = 3
 ): boolean {
   if (steps.length < repeatThreshold) return false;
   const recent = steps.slice(-repeatThreshold);
   const head = recent[0];
   if (!head) return false;
-  const first = `${head.action}:${head.detail}`;
-  return recent.every((s) => `${s.action}:${s.detail}` === first);
+  const key = (s: (typeof recent)[number]) => `${s.action}:${s.detail}@${s.pageUrl}#${s.scrollY ?? "?"}`;
+  const first = key(head);
+  return recent.every((s) => key(s) === first);
 }
 
 // --- Main agent loop ---
@@ -1121,6 +1142,7 @@ export async function runPersonaAgent(
                       ? `${String(input.selector)} (meant ${String(input.intended)})`
                       : (JSON.stringify(input) ?? toolName);
 
+      const scrollY = await readScrollY(page);
       steps.push({
         step,
         action: paused ? "confirm" : toolName,
@@ -1129,6 +1151,7 @@ export async function runPersonaAgent(
         screenshotPath,
         timestamp: Date.now(),
         reasoning,
+        ...(scrollY === undefined ? {} : { scrollY }),
       });
 
       // Feed the result back as a tool result message

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { Page } from "playwright";
-import { trimToWindow, HISTORY_WINDOW, executeAction, resolveModel, DEFAULT_MODEL } from "./engine.js";
+import { trimToWindow, HISTORY_WINDOW, executeAction, resolveModel, DEFAULT_MODEL, isStuck } from "./engine.js";
 
 /**
  * Minimal fake Page for the click path. `resolveElement` tries an aria-ref
@@ -421,5 +421,33 @@ describe("engine fences browser error text (AIR-003)", () => {
   it("routes Playwright error messages through the untrusted fence", () => {
     expect(src).toMatch(/Action failed[^\n]*\$\{fenceUntrusted\(/);
     expect(src).not.toMatch(/`Action failed: \$\{errMsg\}`/);
+  });
+});
+
+describe("isStuck", () => {
+  const step = (action: string, detail: string, scrollY?: number, pageUrl = "https://site.test/") =>
+    ({ action, detail, pageUrl, ...(scrollY === undefined ? {} : { scrollY }) });
+
+  it("does not count scrolls that moved the page as stuck (Maria, myaqualog.com 2026-10-20)", () => {
+    expect(isStuck([step("scroll", "down", 600), step("scroll", "down", 1200)], 2)).toBe(false);
+  });
+
+  it("counts scrolls that no longer move the page as stuck", () => {
+    expect(isStuck([step("scroll", "down", 2400), step("scroll", "down", 2400)], 2)).toBe(true);
+  });
+
+  it("does not count the same click on different pages as stuck", () => {
+    expect(isStuck([
+      step("click", "Next", 0, "https://site.test/p/1"),
+      step("click", "Next", 0, "https://site.test/p/2"),
+    ], 2)).toBe(false);
+  });
+
+  it("still counts an identical click on an unchanged page as stuck", () => {
+    expect(isStuck([step("click", "Buy", 0), step("click", "Buy", 0), step("click", "Buy", 0)], 3)).toBe(true);
+  });
+
+  it("falls back to action and target when scroll position is unknown", () => {
+    expect(isStuck([step("click", "Buy"), step("click", "Buy")], 2)).toBe(true);
   });
 });
