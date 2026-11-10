@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const LINK =
   "rounded-sm px-2.5 py-2 text-sm text-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
@@ -83,6 +84,10 @@ export function MobileNav({
             Sign in
           </Link>
         ) : null}
+        <div className="mt-1 flex items-center justify-between border-t border-border px-2.5 pt-2 text-sm sm:hidden">
+          <span className="text-muted-foreground">Theme</span>
+          <ThemeToggle />
+        </div>
       </nav>
     </details>
   );

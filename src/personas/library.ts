@@ -42,7 +42,9 @@ export const elderlyUser: Persona = buildPersona({
   // and needs comfortable contrast). Now a REAL imposed browser condition, so her
   // audit measures whether the site stays usable under forced-colors, not just a
   // stated preference. Cautious reader -> high attention/risk-aversion.
-  conditions: { reducedMotion: true, forcedColors: true },
+  // 2026-11-09: her brief says "large font settings", but nothing enlarged the page.
+  // pageZoom 200 makes that real: the layout she browses is the one a 200% zoom produces.
+  conditions: { reducedMotion: true, forcedColors: true, pageZoom: 200 },
   traits: { riskAversion: 0.7, attentionToDetail: 0.75 },
 });
 
@@ -322,7 +324,9 @@ export const comparisonShopper: Persona = buildPersona({
 export const returningCustomerOnPhone: Persona = buildPersona({
   id: "returning-customer-mobile",
   kind: "ux",
-  name: "Priya",
+  // Was also "Priya", the same name as one-handed-parent: two Priyas in one picker and
+  // one report could not be told apart.
+  name: "Nadia",
   description:
     "a 34-year-old returning customer on her phone in a queue, who wants to check an order or reach support and be done in a minute",
   goals: [

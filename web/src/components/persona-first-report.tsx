@@ -2,6 +2,9 @@ import Link from "next/link";
 import { formatLocation } from "@/lib/format-location";
 import type { PersonaOutcomeCard, PersonaOutcomes } from "@/lib/persona-outcomes";
 
+const EFFORT_EXPLAINED =
+  "How hard the walk looked at its worst step, 0 to 100, from observable behavior only: revisited pages, repeated actions, and how long the goal took. Not a model judgement.";
+
 const BADGE_STYLE: Record<PersonaOutcomeCard["badge"], string> = {
   reached: "border-[var(--severity-minor)] text-[var(--severity-minor)]",
   "text observed": "border-[var(--severity-minor)] text-[var(--severity-minor)]",
@@ -78,7 +81,10 @@ function PersonaCard({ card, auditId }: { card: PersonaOutcomeCard; auditId: str
       {ev ? (
         <div className="flex flex-wrap items-center justify-between gap-2 border-t-2 border-foreground px-3 py-2 font-mono text-xs text-muted-foreground">
           <span>
-            {card.steps} {card.steps === 1 ? "step" : "steps"} · effort {card.peakFrustration}
+            {card.steps} {card.steps === 1 ? "step" : "steps"} ·{" "}
+            <abbr title={EFFORT_EXPLAINED} className="cursor-help no-underline">
+              peak effort {card.peakFrustration}/100
+            </abbr>
           </span>
           <Link
             href={`/audits/${auditId}?persona=${encodeURIComponent(card.personaId)}&step=${ev.index}`}
@@ -151,7 +157,9 @@ export function PersonaFirstReport({
                   {p.blockedPersonaIds.length > 0 ? `, ${p.blockedPersonaIds.length} blocked` : ""}
                 </span>
                 <span className="font-mono text-xs text-muted-foreground">
-                  effort {p.peakFrustration}
+                  <abbr title={EFFORT_EXPLAINED} className="cursor-help no-underline">
+                    peak effort {p.peakFrustration}/100
+                  </abbr>
                 </span>
                 <span className="basis-full pl-8 text-xs text-muted-foreground">
                   {p.personaIds.map(nameOf).join(", ")}

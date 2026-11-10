@@ -47,8 +47,11 @@ export function HeaderActions({
   }, []);
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-      <ThemeToggle />
+    <div className="flex items-center gap-1.5 sm:gap-2">
+      {/* Below sm the toggle lives in the menu, so logo, CTA and menu fit one row at 375 px. */}
+      <span className="hidden sm:contents">
+        <ThemeToggle />
+      </span>
       {signedIn ? (
         <Link href="/dashboard" className={CTA_LINK}>
           Dashboard

@@ -92,6 +92,9 @@ export function GradeForm() {
   const turnstileReady = !TURNSTILE_SITE_KEY || turnstileToken !== null;
   const showStalled = !turnstileReady && challengeStalled;
   const showNeedsClick = !turnstileReady && challengeNeedsClick && !challengeStalled;
+  // Nothing is checking until the visitor engages (the widget mounts lazily, above), so
+  // the button only reads as busy once the check has actually started.
+  const showChecking = !turnstileReady && challengeArmed && !showStalled && !showNeedsClick;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -236,10 +239,10 @@ export function GradeForm() {
             onClick={!turnstileReady ? (e) => e.preventDefault() : undefined}
             className="h-12 shrink-0 px-6 aria-disabled:cursor-wait"
           >
-            {!loading && !turnstileReady && !showStalled && !showNeedsClick ? <WaitSpinner /> : null}
+            {!loading && showChecking ? <WaitSpinner /> : null}
             {loading
               ? "Queuing grade"
-              : !turnstileReady && !showStalled && !showNeedsClick
+              : showChecking
                 ? "Checking you\u2019re human\u2026"
                 : "Grade this site"}
           </Button>

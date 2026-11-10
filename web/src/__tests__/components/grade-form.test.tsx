@@ -116,6 +116,11 @@ describe("GradeForm while the human check is pending", () => {
     const { GradeForm: PendingForm } = await import("@/components/grade-form");
     render(<PendingForm />);
 
+    // Nothing checks before the visitor engages, so the button must not claim to be busy.
+    expect(screen.getByRole("button", { name: "Grade this site" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /checking you.re human/i })).not.toBeInTheDocument();
+    fireEvent.focus(screen.getByLabelText("Public website URL"));
+
     const button = screen.getByRole("button", { name: /checking you.re human/i });
     expect(button).toHaveAttribute("aria-disabled", "true");
     expect(button).not.toBeDisabled();

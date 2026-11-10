@@ -82,3 +82,10 @@ describe("persona library integrity", () => {
     expect(roster).toMatchSnapshot();
   });
 });
+
+describe("persona display names", () => {
+  it("are unique, so a picker or report never shows two people with one name", () => {
+    const names = Object.values(personaLibrary).map((p) => p.name);
+    expect(new Set(names).size).toBe(names.length);
+  });
+});
