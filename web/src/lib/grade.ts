@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/types";
+import { withCurrentSeverityCap, type GradeReport } from "@engine/grader/score";
 
 export type ClaimedGrade = {
   token: string;
@@ -9,9 +10,22 @@ export type ClaimedGrade = {
   created_at: string;
 };
 
+/**
+ * A stored report as it should read today. Reports saved before the severity cap kept the
+ * letter the average alone earned; every read path (page, badge, share image, history)
+ * goes through here so none of them can show that stale letter.
+ */
+export function currentGradeReport(report: Json | null): Json | null {
+  if (!report || typeof report !== "object" || Array.isArray(report)) return report;
+  const stored = report as unknown as GradeReport;
+  if (typeof stored.grade !== "string") return report;
+  return withCurrentSeverityCap(stored) as unknown as Json;
+}
+
 export function gradeLetterFromReport(report: Json | null): string | null {
-  if (!report || typeof report !== "object" || Array.isArray(report)) return null;
-  const letter = (report as { grade?: unknown }).grade;
+  const current = currentGradeReport(report);
+  if (!current || typeof current !== "object" || Array.isArray(current)) return null;
+  const letter = (current as { grade?: unknown }).grade;
   return typeof letter === "string" ? letter : null;
 }
 
@@ -64,6 +78,7 @@ export async function getGraderScan(token: string) {
 
   return {
     ...data,
+    report: currentGradeReport(data.report),
     status: gradeStatusFromJob({ scanStatus: data.status, jobStatus }),
     error: data.error ?? jobError,
   };

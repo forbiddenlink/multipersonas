@@ -100,6 +100,11 @@ export interface GradeReport {
    * Absent on reports stored before the cap, and when nothing capped the letter.
    */
   cappedBy?: { impact: Impact; maxGrade: GradeReport["grade"] };
+  /**
+   * Set (never stored) when a report saved before the severity cap is read back and its
+   * stored letter was lowered by the cap. The stored score is shown unchanged.
+   */
+  cappedOnRead?: true;
   perPage: { url: string; score: number; violations: number; wcagViolations?: number }[];
   /** Aggregated rule hits, most nodes first. Empty on older stored reports. */
   rules: GradeRuleHit[];
@@ -276,4 +281,22 @@ export function computeGrade(pages: PageAxe[]): GradeReport {
     perPage,
     rules,
   };
+}
+
+/**
+ * Apply today's severity cap to a stored report. Reports saved before the cap existed
+ * still carry the letter the average alone earned, so a public permalink showed an A
+ * beside three critical failures (W3C "bad" demo, graded 2026-10-06) while the same page
+ * explained that a critical failure holds the letter at C. The aggregated rules carry
+ * impact and WCAG tags, which is all the cap reads; the stored score is left as is.
+ */
+export function withCurrentSeverityCap<T extends Pick<GradeReport, "grade" | "rules" | "cappedBy">>(
+  report: T,
+): T & { cappedOnRead?: true } {
+  if (report.cappedBy || !Array.isArray(report.rules) || !LETTERS.includes(report.grade)) return report;
+  const present = new Set<Impact>();
+  for (const r of report.rules) if (r.wcagAA && r.nodes > 0) present.add(r.impact);
+  const cap = SEVERITY_CAPS.find((c) => present.has(c.impact));
+  if (!cap || LETTERS.indexOf(report.grade) >= LETTERS.indexOf(cap.maxGrade)) return report;
+  return { ...report, grade: cap.maxGrade, cappedBy: cap, cappedOnRead: true };
 }

@@ -36,7 +36,7 @@ export function GradeHistory({ grades }: { grades: ClaimedGrade[] }) {
       className="min-w-0 overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
     >
       <table className="w-full min-w-[26rem] border-collapse text-left text-sm">
-        <caption className="sr-only">Saved grades by host, date, status, and letter grade</caption>
+        <caption className="sr-only">Saved grades by host and path, date, status, and letter grade</caption>
         <thead>
           <tr className="border-b-2 border-foreground">
             <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
@@ -59,11 +59,16 @@ export function GradeHistory({ grades }: { grades: ClaimedGrade[] }) {
               <th scope="row" className="py-3 pr-4 font-normal">
                 <Link
                   href={`/grade/${grade.token}`}
-                  aria-label={`View the public grade for ${hostname(grade.entry_url)}`}
+                  aria-label={`View the public grade for ${hostname(grade.entry_url)}${pathOf(grade.entry_url) ?? ""}`}
                   className="text-link truncate"
                 >
                   {hostname(grade.entry_url)}
                 </Link>
+                {pathOf(grade.entry_url) ? (
+                  <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground" title={grade.entry_url}>
+                    {pathOf(grade.entry_url)}
+                  </p>
+                ) : null}
                 <p className="mt-0.5 truncate text-xs text-muted-foreground sm:hidden">
                   {new Date(grade.created_at).toLocaleDateString(undefined, {
                     year: "numeric",
@@ -93,4 +98,15 @@ export function GradeHistory({ grades }: { grades: ClaimedGrade[] }) {
       </table>
     </div>
   );
+}
+
+/** The graded path, when it is more than the site root, so two grades of one host read apart. */
+function pathOf(entryUrl: string): string | null {
+  try {
+    const { pathname, search } = new URL(entryUrl);
+    const path = `${pathname}${search}`;
+    return path === "/" ? null : path;
+  } catch {
+    return null;
+  }
 }

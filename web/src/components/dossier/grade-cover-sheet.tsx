@@ -43,6 +43,14 @@ export function GradeCoverSheet({
             or below, a serious one at B or below. It is a count of what a tool could detect, not
             a finding about the whole site.
           </p>
+          {report.cappedOnRead && report.cappedBy ? (
+            <p className="redline-note mt-3 max-w-xl" data-testid="grade-capped-on-read">
+              Graded before the severity rule existed. This report was first shown with a higher
+              letter; it is held at {report.cappedBy.maxGrade} today because it has a{" "}
+              {report.cappedBy.impact} WCAG A/AA failure. The score is unchanged. Re-grade for a
+              result under the current method.
+            </p>
+          ) : null}
           <ul className="mt-4 space-y-2">
             {outcomes.map((o) => (
               <li key={o.id} className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-x-2 text-[0.9375rem] leading-snug">

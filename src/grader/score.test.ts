@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeGrade, IMPACT_WEIGHT, type GradeRuleHit, type PageAxe } from "./score.js";
+import { computeGrade, IMPACT_WEIGHT, withCurrentSeverityCap, type GradeReport, type GradeRuleHit, type PageAxe } from "./score.js";
 
 const emptyImpacts = { critical: 0, serious: 0, moderate: 0, minor: 0 };
 
@@ -251,5 +251,50 @@ describe("computeGrade severity cap", () => {
       { url: "a", violationsByImpact: { ...emptyImpacts, critical: 1 }, passCount: 400, wcagAAViolations: 1 },
     ]);
     expect(r.grade).toBe("C");
+  });
+});
+
+describe("withCurrentSeverityCap (stored reports)", () => {
+  const rule = (impact: GradeRuleHit["impact"], wcagAA = true): GradeRuleHit =>
+    ({ id: `r-${impact}`, impact, nodes: 1, help: "h", wcagAA });
+  const stored = (grade: GradeReport["grade"], rules: GradeRuleHit[]) =>
+    ({ grade, rules } as Pick<GradeReport, "grade" | "rules" | "cappedBy">);
+
+  it("lowers a pre-cap A with a critical WCAG failure to C, marked as capped on read", () => {
+    // The 2026-10-06 W3C "bad" demo permalink: A 98 with critical image-alt, button-name, aria-allowed-attr.
+    const out = withCurrentSeverityCap(stored("A", [rule("critical"), rule("moderate", false)]));
+    expect(out.grade).toBe("C");
+    expect(out.cappedBy).toEqual({ impact: "critical", maxGrade: "C" });
+    expect(out.cappedOnRead).toBe(true);
+  });
+
+  it("holds a pre-cap A with only a serious failure at B", () => {
+    expect(withCurrentSeverityCap(stored("A", [rule("serious")])).grade).toBe("B");
+  });
+
+  it("ignores best-practice rules, which never move the letter", () => {
+    const out = withCurrentSeverityCap(stored("A", [rule("critical", false)]));
+    expect(out.grade).toBe("A");
+    expect(out.cappedOnRead).toBeUndefined();
+  });
+
+  it("never raises a letter that is already below the cap", () => {
+    expect(withCurrentSeverityCap(stored("D", [rule("critical")])).grade).toBe("D");
+  });
+
+  it("leaves reports that already recorded a cap untouched", () => {
+    const report = { ...stored("C", [rule("critical")]), cappedBy: { impact: "critical" as const, maxGrade: "C" as const } };
+    expect(withCurrentSeverityCap(report)).toBe(report);
+  });
+
+  it("matches what computeGrade would decide for the same failures", () => {
+    const page: PageAxe = {
+      url: "https://x.test/", passCount: 400, wcagAAViolations: 1,
+      violationsByImpact: { critical: 1, serious: 0, moderate: 0, minor: 0 },
+      rules: [rule("critical")],
+    };
+    const fresh = computeGrade([page]);
+    const legacy = withCurrentSeverityCap(stored("A", fresh.rules));
+    expect(legacy.grade).toBe(fresh.grade);
   });
 });
