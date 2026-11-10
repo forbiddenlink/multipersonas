@@ -34,15 +34,38 @@ describe.runIf(process.env.MP_BROWSER_TESTS === "1")("enforced keyboard conditio
   it("does not force focus onto a control outside the tab order", async () => {
     await page.setContent(`<button>Start</button><button tabindex="-1" onclick="this.textContent='Wrongly activated'">Unreachable</button>`);
     const result = await executeAction(page, "click", { selector: "Unreachable" }, keyboard);
-    expect(result).toMatch(/not reached.*Tab/i);
+    expect(result).toMatch(/not in the sequential Tab order/i);
     expect(await page.getByRole("button", { name: "Unreachable" }).count()).toBe(1);
   });
 
   it("records a bounded failure at a focus trap without escaping programmatically", async () => {
     await page.setContent(`<button onkeydown="if(event.key==='Tab') event.preventDefault()">Trap</button>
       <button onclick="this.textContent='Wrongly activated'">Beyond trap</button>`);
-    expect(await executeAction(page, "click", { selector: "Beyond trap" }, keyboard)).toMatch(/not reached.*Tab/i);
+    expect(await executeAction(page, "click", { selector: "Beyond trap" }, keyboard)).toMatch(/focus stopped moving/i);
     expect(await page.locator(":focus").textContent()).toBe("Trap");
+  });
+
+  it("reaches a skip link on the first Tab from a fresh page", async () => {
+    await page.setContent(`<a href="#main">Skip to content</a><nav><a href="/a">A</a><a href="/b">B</a></nav><main id="main">Hi</main>`);
+    const result = await executeAction(page, "click", { selector: "Skip to content" }, keyboard);
+    expect(result).toMatch(/after 1 Tab presses/);
+  });
+
+  it("reaches a control that sits past the old 60-stop budget", async () => {
+    const links = Array.from({ length: 90 }, (_, i) => `<a href="#l${i}">Link ${i}</a>`).join("");
+    await page.setContent(`${links}<button onclick="this.textContent='Done'">Far button</button>`);
+    const result = await executeAction(page, "click", { selector: "Far button" }, keyboard);
+    expect(result).toMatch(/after 91 Tab presses/);
+    expect(await page.getByRole("button", { name: "Done" }).count()).toBe(1);
+  });
+
+  it("finds a control that sits before the current focus by wrapping the Tab order", async () => {
+    await page.setContent(`<button>First</button><button>Second</button><button>Third</button>`);
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Tab");
+    const result = await executeAction(page, "click", { selector: "First" }, keyboard);
+    expect(result).toMatch(/Pressed Enter on "First"/);
   });
 
   it("types into the field through the keyboard after reaching it by Tab", async () => {

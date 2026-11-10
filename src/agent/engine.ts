@@ -530,8 +530,9 @@ export async function executeAction(
       }
 
       if (guard.inputModality === "keyboard") {
-        const tabs = await reachByKeyboard(page, el);
-        if (tabs === null) return keyboardReachFailure(selector);
+        const reach = await reachByKeyboard(page, el);
+        if (reach.kind !== "reached") return keyboardReachFailure(selector, reach);
+        const tabs = reach.presses;
         const focusedName = await readAccessibleName(el);
         if (guard.blockDestructiveActions && isDestructiveAction(focusedName)) {
           return destructiveActionRefusal(focusedName);
@@ -563,8 +564,9 @@ export async function executeAction(
         return jargonMisreadMessage(accessible || selector);
       }
       if (guard.inputModality === "keyboard") {
-        const tabs = await reachByKeyboard(page, el);
-        if (tabs === null) return keyboardReachFailure(selector);
+        const reach = await reachByKeyboard(page, el);
+        if (reach.kind !== "reached") return keyboardReachFailure(selector, reach);
+        const tabs = reach.presses;
         await typeByKeyboard(page, el, input.text as string);
         return `Typed into "${selector}" using the keyboard after ${tabs} Tab presses`;
       }
@@ -603,8 +605,9 @@ export async function executeAction(
         return jargonMisreadMessage(accessible || selector);
       }
       if (guard.inputModality === "keyboard") {
-        const tabs = await reachByKeyboard(page, el);
-        if (tabs === null) return keyboardReachFailure(selector);
+        const reach = await reachByKeyboard(page, el);
+        if (reach.kind !== "reached") return keyboardReachFailure(selector, reach);
+        const tabs = reach.presses;
         const selected = await selectByKeyboard(page, el, option);
         return selected
           ? `Selected "${option}" in "${selector}" using the keyboard after ${tabs} Tab presses`
