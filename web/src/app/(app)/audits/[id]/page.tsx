@@ -324,7 +324,12 @@ export default async function AuditDetailPage({
             <span className="normal-case">{host}</span>
             <span className="text-foreground/70">·</span>
             <span className="normal-case">{caseDate}</span>
-            <span className="ml-auto normal-case text-[var(--redline)]">·&nbsp;{caseStatus}</span>
+            <span
+              className={`ml-auto normal-case ${caseStatus === "No findings" || caseStatus === "All clear" ? "text-foreground/70" : "text-[var(--redline)]"}`}
+            >
+              ·&nbsp;{caseStatus}
+              {total > 0 ? ` · ${achieved}/${total} reached goal` : null}
+            </span>
           </div>
           <div className="sheet -mt-px flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
             <div className="min-w-0">
@@ -365,6 +370,22 @@ export default async function AuditDetailPage({
           unit={run.task_definition ? "profiles matched the check" : "personas reached their goal"}
           tone={successTone(achieved, total)}
         />
+        {run.task_definition ? null : (
+          <p className="max-w-2xl text-sm text-muted-foreground" data-testid="run-goal-note">
+            <span className="label-mono mr-2 text-foreground">No task set</span>
+            These personas tried their built-in goals (work out what the site offers, find what it costs or how to
+            start), not a flow you chose. Read a block as &ldquo;unclear to a stranger&rdquo;, not as a broken flow.
+            {run.project_id ? (
+              <>
+                {" "}
+                <Link href={`/projects/${run.project_id}#task-to-test`} className="text-link">
+                  Set a task
+                </Link>{" "}
+                and retest for a verdict on the flow you care about.
+              </>
+            ) : null}
+          </p>
+        )}
         {errorMessage && (
           <p className="text-sm text-destructive" role="alert">
             {errorMessage}

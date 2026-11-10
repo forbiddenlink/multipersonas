@@ -97,3 +97,24 @@ describe("AuditForm project picker (dashboard)", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Your plan includes 5 projects");
   });
 });
+
+describe("AuditForm goal notice", () => {
+  it("names the saved task of the project the run is saved to", () => {
+    const withTask = { ...acme, taskGoal: "Book a tank cleaning for next Saturday" };
+    render(<AuditForm userId="u" projects={[withTask]} projectLimit={5} />);
+    fireEvent.change(screen.getByLabelText("Website URL to audit"), { target: { value: "https://acme.test/" } });
+    expect(screen.getByTestId("audit-goal")).toHaveTextContent("Book a tank cleaning for next Saturday");
+  });
+
+  it("warns that built-in goals are used and links to the project's task form when none is saved", () => {
+    render(<AuditForm userId="u" projects={[acme]} projectLimit={5} />);
+    fireEvent.change(screen.getByLabelText("Website URL to audit"), { target: { value: "https://acme.test/" } });
+    expect(screen.getByTestId("audit-goal")).toHaveTextContent("No task set");
+    expect(screen.getByRole("link", { name: "Set a task" })).toHaveAttribute("href", "/projects/p-acme#task-to-test");
+  });
+
+  it("links to the task section on the project page itself", () => {
+    render(<AuditForm userId="u" projectId="p-acme" defaultUrl="https://acme.test/" />);
+    expect(screen.getByRole("link", { name: "Set a task" })).toHaveAttribute("href", "#task-to-test");
+  });
+});

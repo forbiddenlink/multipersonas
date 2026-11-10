@@ -10,13 +10,17 @@ function buildPersona(partial: Omit<Persona, "systemPrompt">): Persona {
 export const firstTimeVisitor: Persona = buildPersona({
   id: "first-time-visitor",
   name: "Sarah",
+  // Site-neutral on purpose. Without a saved task these are the goals a run tests,
+  // and a B2B-buyer brief ("marketing manager evaluating a product for her team")
+  // made Sarah "fail" any consumer site for not being business software
+  // (myaqualog.com run, 2026-10-20: "MISREAD ... expected a product for marketing teams").
   description:
-    "a 34-year-old marketing manager evaluating a product for her team",
+    "a 34-year-old first-time visitor who has never seen this site and wants to know if it is for her",
   kind: "ux",
   goals: [
-    "Understand what the product does within 60 seconds of landing",
-    "Find pricing information and compare plans",
-    "Determine if the product fits her team's needs without signing up",
+    "Understand what this site offers within 60 seconds of landing",
+    "Find what it costs, if it sells something, or how to get started if it does not",
+    "Decide whether it fits what she came for without signing up",
   ],
   frustrations: [
     "Technical jargon and acronyms she doesn't understand",

@@ -13,15 +13,16 @@ export interface ProjectListItem {
   description: string | null;
   created_at: string;
   updated_at: string;
+  /** Listed so the dashboard run form can say which goal a run will test. */
+  task_definition: Json | null;
 }
 
 export interface Project extends ProjectListItem {
-  task_definition: Json | null;
   user_id: string;
 }
 
-const LIST_COLUMNS = "id,name,url,description,created_at,updated_at";
-const DETAIL_COLUMNS = `${LIST_COLUMNS},user_id,task_definition`;
+const LIST_COLUMNS = "id,name,url,description,created_at,updated_at,task_definition";
+const DETAIL_COLUMNS = `${LIST_COLUMNS},user_id`;
 
 /**
  * List the caller's projects, newest first. RLS scopes rows to the caller, so no

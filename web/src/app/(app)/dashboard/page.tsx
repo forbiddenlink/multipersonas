@@ -9,6 +9,7 @@ import { FirstRunChecklist } from "@/components/forensic/first-run-checklist";
 import { ClaimGradeForm } from "@/components/claim-grade-form";
 import { firstRunSteps } from "@/lib/first-run-steps";
 import { listProjects } from "@/lib/projects";
+import { parseTaskDefinition } from "@engine/tasks/definition";
 import { createClient } from "@/lib/supabase/server";
 import { listAudits } from "@/lib/audits";
 import { getSessionPlan, planAllowsPersonas, projectLimitFor } from "@/lib/entitlements";
@@ -93,7 +94,18 @@ export default async function DashboardPage() {
         <section aria-labelledby="scan-heading" className="min-w-0">
           <ExhibitHead plain label="New scan" className="mb-4" headingId="scan-heading" />
           {canRunPersonas ? (
-            <AuditForm key={user?.id} userId={user?.id} submitLabel="Run audit" projects={projects} projectLimit={projectLimitFor(plan)} />
+            <AuditForm
+              key={user?.id}
+              userId={user?.id}
+              submitLabel="Run audit"
+              projects={projects.map((p) => ({
+                id: p.id,
+                name: p.name,
+                url: p.url,
+                taskGoal: parseTaskDefinition(p.task_definition)?.goal ?? null,
+              }))}
+              projectLimit={projectLimitFor(plan)}
+            />
           ) : (
             <div className="sheet flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
               <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">

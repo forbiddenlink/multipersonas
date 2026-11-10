@@ -3,14 +3,17 @@
 // label is a real <h2> that screen-reader users can reach by heading; only the rule is
 // decorative. Without a label it is a pure rule and is hidden from assistive tech.
 export function BoxDivider({
+  id,
   label,
   className = "",
 }: {
+  /** Anchor target, so other screens can link straight to this section. */
+  id?: string;
   label?: string;
   className?: string;
 }) {
   return (
-    <div className={`flex items-center gap-3 ${className}`} aria-hidden={label ? undefined : true}>
+    <div id={id} className={`flex items-center gap-3 ${className}`} aria-hidden={label ? undefined : true}>
       {label ? <h2 className="label-mono m-0 shrink-0 font-normal">{label}</h2> : null}
       <span className="h-px flex-1 bg-border" aria-hidden="true" />
     </div>

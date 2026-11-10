@@ -163,7 +163,7 @@ export default async function ProjectDetailPage({
       <BoxDivider label={canRunPersonas ? "new scan for this project" : "free grade"} className="my-5" />
 
       {canRunPersonas ? (
-        <AuditForm key={`${user?.id}:${JSON.stringify(savedTask)}`} userId={user?.id} projectId={project.id} defaultUrl={project.url} submitLabel={savedTask ? "Test saved task" : "Run audit"} />
+        <AuditForm key={`${user?.id}:${JSON.stringify(savedTask)}`} userId={user?.id} projectId={project.id} defaultUrl={project.url} taskGoal={savedTask?.goal ?? null} submitLabel={savedTask ? "Test saved task" : "Run audit"} />
       ) : (
         <div>
           <p className="text-sm text-muted-foreground">
@@ -297,7 +297,7 @@ export default async function ProjectDetailPage({
         </div>
         {canRunPersonas ? (
         <div className="min-w-0">
-      <BoxDivider label="task to test" className="my-5" />
+      <BoxDivider id="task-to-test" label="task to test" className="my-5 scroll-mt-6" />
       <form action={saveTask} className="sheet space-y-3 p-4">
         <div className="space-y-1.5">
           <Label htmlFor="task-goal">What should a visitor accomplish?</Label>

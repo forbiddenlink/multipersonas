@@ -24,7 +24,7 @@ afterEach(cleanup);
 it("gives a Solo dashboard form the project list and the plan's cap, so runs attach to a project", async () => {
   seen.plan = "pro";
   render(await DashboardPage());
-  expect(seen.props?.projects).toEqual([{ id: "p1", name: "Acme", url: "https://acme.test/" }]);
+  expect(seen.props?.projects).toEqual([{ id: "p1", name: "Acme", url: "https://acme.test/", taskGoal: null }]);
   expect(seen.props?.projectLimit).toBe(5);
 });
 

@@ -313,7 +313,7 @@ describe("free first-run copy (W3) stays honest", () => {
     expect(page).toMatch(/<PaidPanelsNote \/>/);
     // Issue work, the task form and the schedule form only render for plans that can use them.
     expect(page).toMatch(/\{canRunPersonas \? \(\s*<>\s*<BoxDivider label="issue work"/);
-    expect(page).toMatch(/\{canRunPersonas \? \(\s*<div className="min-w-0">\s*<BoxDivider label="task to test"/);
+    expect(page).toMatch(/\{canRunPersonas \? \(\s*<div className="min-w-0">\s*<BoxDivider id="task-to-test" label="task to test"/);
     expect(page).not.toMatch(/Assign owners on audit findings[\s\S]{0,40}Free/);
     const note = read("src/components/paid-panels-note.tsx");
     expect(note).toMatch(/On Solo and up/);

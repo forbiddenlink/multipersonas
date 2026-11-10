@@ -99,6 +99,7 @@ export function AuditForm({
   submitLabel,
   projects,
   projectLimit = null,
+  taskGoal = null,
 }: {
   /** Scopes cached jobs and results to the signed-in account. */
   userId?: string;
@@ -111,9 +112,11 @@ export function AuditForm({
   submitLabel?: string;
   /** The caller's projects. When given (and no `projectId`), the form shows a "Save to project"
    * picker so a run from the dashboard is attached to a project instead of floating free. */
-  projects?: Array<{ id: string; name: string; url: string }>;
+  projects?: Array<{ id: string; name: string; url: string; taskGoal?: string | null }>;
   /** The plan's project cap (null = unlimited). Decides whether "New project" is offered. */
   projectLimit?: number | null;
+  /** The saved task goal of `projectId`'s project, if any. */
+  taskGoal?: string | null;
 } = {}) {
   const router = useRouter();
   const resultsStorageKey = userId ? `${STORAGE_KEY}:${userId}` : STORAGE_KEY;
@@ -131,6 +134,14 @@ export function AuditForm({
   const matchedProject = projects ? findProjectForUrl(projects, url) : undefined;
   const autoChoice = matchedProject ? matchedProject.id : canCreateProject ? "new" : "none";
   const selectedProject = showProjectPicker ? (projectChoice ?? autoChoice) : null;
+  // What the personas will try. Without a saved task they fall back to their built-in
+  // goals, and a run reads as a verdict on the site's main flow when it is not one
+  // (2026-10-20 runs: every project had no task, so personas tested generic goals).
+  const pickedProject = selectedProject && selectedProject !== "new" && selectedProject !== "none"
+    ? projects?.find((p) => p.id === selectedProject)
+    : undefined;
+  const activeGoal = projectId ? taskGoal : (pickedProject?.taskGoal ?? null);
+  const setTaskHref = projectId ? "#task-to-test" : pickedProject ? `/projects/${pickedProject.id}#task-to-test` : null;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Distinct from `error`: a 402 from the audit route means hosted runs need a paid plan, which
@@ -385,6 +396,33 @@ export function AuditForm({
           {loading ? "Running…" : timedOut ? "In progress…" : (submitLabel ?? "Run free audit")}
         </Button>
       </form>
+
+      <div
+        className={`mt-4 rounded-sm border px-3 py-2.5 text-sm ${activeGoal ? "border-border" : "border-[var(--severity-moderate)]"}`}
+        data-testid="audit-goal"
+      >
+        {activeGoal ? (
+          <p className="m-0">
+            <span className="label-mono mr-2">Task</span>
+            {activeGoal}
+          </p>
+        ) : (
+          <p className="m-0 text-muted-foreground">
+            <span className="label-mono mr-2 text-foreground">No task set</span>
+            Personas will try their built-in goals: work out what the site offers and find what it costs or how to
+            start. That tells you whether the site is clear to a stranger, not whether someone can finish your main
+            flow.{" "}
+            {setTaskHref ? (
+              <Link href={setTaskHref} className="text-link">
+                Set a task
+              </Link>
+            ) : (
+              "Save a task on the project after this run"
+            )}{" "}
+            for a verdict about the flow you care about.
+          </p>
+        )}
+      </div>
 
       {/* Persona picker — outline chips, not soft pills */}
       <fieldset className="mt-4" disabled={loading || !!pendingJobId}>
