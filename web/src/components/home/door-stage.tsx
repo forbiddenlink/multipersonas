@@ -48,7 +48,8 @@ export function DoorStage() {
             </li>
             <li>
               <span>
-                {SAUCEDEMO_TRAIL.length} states sit behind it. A URL scanner loads only the first.
+                {SAUCE.states} states sit behind it ({SAUCEDEMO_TRAIL.length - 1} shown). A URL scanner
+                loads only the first.
               </span>
             </li>
             <li>
@@ -76,7 +77,7 @@ export function DoorStage() {
                     <span className="pa-foot-after">
                       Public page only.
                       <br />
-                      {SAUCEDEMO_TRAIL.length - 1} states not on this grade.
+                      {SAUCE.states} states not on this grade.
                     </span>
                   </div>
                 }
@@ -85,7 +86,7 @@ export function DoorStage() {
           </div>
 
           <div className="pa-doorway">
-            <ol className="pa-states" aria-label="States the crawl reached on saucedemo.com">
+            <ol className="pa-states" aria-label={`The entry page and ${SAUCEDEMO_TRAIL.length - 1} of the ${SAUCE.states} states the crawl reached on saucedemo.com`}>
               {SAUCEDEMO_TRAIL.map((s) => (
                 <li key={s.path} className="pa-state">
                   <span>

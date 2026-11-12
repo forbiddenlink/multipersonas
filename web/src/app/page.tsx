@@ -69,6 +69,16 @@ const SAUCE = PROBE_LEDGER.find((r) => r.host === "saucedemo.com")!;
 
 const BTN_LINK = "pa-btn";
 
+/** Allow a line break only after "." and "-" so a hostname never splits mid-word. */
+function breakHost(host: string) {
+  return host.split(/(?<=[.-])/).map((part, i) => (
+    <span key={i}>
+      {i > 0 ? <wbr /> : null}
+      {part}
+    </span>
+  ));
+}
+
 export default function Home() {
   const SOLO_OPEN = isSoloCheckoutOpen();
   const letter = publicScanLetter(SAUCE);
@@ -302,7 +312,7 @@ export default function Home() {
                 <table className="pa-log">
                   <caption className="sr-only">
                     Violations found by a public-page scan versus net-new violations found by a
-                    session crawl
+                    session crawl. States counts the states the crawl drove past the entry page.
                   </caption>
                   <thead>
                     <tr>
@@ -315,7 +325,7 @@ export default function Home() {
                   <tbody>
                     {PROBE_LEDGER.map((r) => (
                       <tr key={r.host}>
-                        <th scope="row">{r.host}</th>
+                        <th scope="row">{breakHost(r.host)}</th>
                         <td className="num">{r.publicScan}</td>
                         <td className="num">{r.states}</td>
                         <td className="num net" data-zero={r.netNew > 0 ? "0" : "1"}>

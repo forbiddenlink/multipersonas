@@ -721,7 +721,9 @@
 .pa-log th[scope="row"] {
   font-size: 0.8125rem;
   font-weight: 400;
-  overflow-wrap: anywhere;
+}
+@media (max-width: 479px) {
+  .pa-log th[scope="row"] { font-size: 0.75rem; }
 }
 .pa-log .num {
   text-align: right;
