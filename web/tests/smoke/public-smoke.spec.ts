@@ -84,6 +84,11 @@ for (const route of [...ROUTES, ...GUIDES]) {
 // page needs a stored scan, so this drives the same classes on a public page.
 test("print emulation hides site chrome and shows the graded-URL line", async ({ page }) => {
   await page.goto("/", { waitUntil: "load" });
+  // Wait for hydration: React rebuilds a DOM it did not render, wiping the injected class and line.
+  await page.waitForFunction(() => {
+    const el = document.querySelector("main");
+    return !!el && Object.keys(el).some((k) => k.startsWith("__reactFiber"));
+  });
   await page.evaluate(() => {
     // The page wrapper holds the header, main and footer as direct children.
     const root = document.querySelector("main")?.parentElement;
