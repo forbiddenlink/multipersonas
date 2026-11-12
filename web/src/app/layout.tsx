@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Atkinson_Hyperlegible_Mono, Atkinson_Hyperlegible_Next } from "next/font/google";
+import { Archivo, Atkinson_Hyperlegible_Mono, Atkinson_Hyperlegible_Next } from "next/font/google";
 import { PALETTE, PALETTE_DARK } from "@/lib/og-palette";
 import { PostHogProvider } from "@/components/posthog-provider";
 import "./globals.css";
@@ -25,6 +25,17 @@ const atkinsonMono = Atkinson_Hyperlegible_Mono({
   subsets: ["latin"],
   style: "normal",
   adjustFontFallback: false,
+});
+
+// Archivo: display only (home page headings and the placard letter). Its width axis runs from
+// condensed (62) to wide (125): wide for grade letters, condensed for headings. Self-hosted by
+// next/font, so the CSP's `font-src 'self'` still holds.
+const archivo = Archivo({
+  variable: "--font-display",
+  subsets: ["latin"],
+  axes: ["wdth"],
+  style: "normal",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -82,7 +93,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${atkinson.variable} ${atkinsonMono.variable} antialiased`}
+      className={`${atkinson.variable} ${atkinsonMono.variable} ${archivo.variable} antialiased`}
       suppressHydrationWarning
     >
       <body className="theme-transition min-h-dvh bg-background text-foreground font-sans">

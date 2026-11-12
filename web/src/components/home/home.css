@@ -1,0 +1,884 @@
+/* Personaudit home page: the inspected window (concept brief 2026-11-12).
+ * Everything here is scoped under .pa-home. Materials:
+ *   ink #0A0A0A, white #FFFFFF, blue #1D4ED8 (buttons and links), placard yellow #FFD60A
+ *   (the placard object only), door steel #1C2430, hairline #D4D4D4, muted #525252,
+ *   redline #B91C1C (severity token, data only).
+ * The signature section is plain CSS in its finished state. Scroll-driven animation is an
+ * enhancement switched on by html[data-door="scroll"], which an inline script sets only when
+ * the browser supports animation-timeline and the visitor has not asked for reduced motion.
+ * No JavaScript, reduced motion, or an unsupported browser all see the door open and every
+ * state listed.
+ */
+.pa-home {
+  --pa-ink: #0a0a0a;
+  --pa-yellow: #ffd60a;
+  --pa-steel: #1c2430;
+  --pa-hair: #d4d4d4;
+  --pa-muted: #525252;
+  --pa-blue: #1d4ed8;
+  --pa-red: #b91c1c;
+  --muted-foreground: var(--pa-muted);
+  background: #fff;
+  color: var(--pa-ink);
+}
+
+/* Display type: Archivo. Condensed for headings, wide for grade letters. */
+.pa-home .pa-h {
+  font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-stretch: 68%;
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.005em;
+  text-wrap: balance;
+}
+.pa-home .pa-wide {
+  font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-stretch: 125%;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.pa-home .pa-mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.pa-home .pa-kicker {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pa-muted);
+}
+
+/* Focus ring: blue on white and yellow, white on steel and ink. */
+.pa-home :focus-visible {
+  outline: 3px solid var(--pa-blue);
+  outline-offset: 3px;
+}
+.pa-home .pa-steel :focus-visible,
+.pa-home .pa-on-ink :focus-visible {
+  outline-color: #fff;
+}
+
+/* Buttons: blue only. */
+.pa-btn {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  background: var(--pa-blue);
+  padding: 0.5rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #fff;
+  text-decoration: none;
+  box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.2);
+  transition: background-color 150ms;
+}
+.pa-btn:hover {
+  background: #1a44bd;
+}
+.pa-btn-sm {
+  min-height: 2.75rem;
+  padding: 0.25rem 1rem;
+  font-size: 0.9375rem;
+}
+
+/* ---------------------------------------------------------------- nav */
+.pa-nav {
+  border-bottom: 1px solid var(--pa-hair);
+  background: #fff;
+}
+
+/* --------------------------------------------------------------- hero */
+.pa-window {
+  position: relative;
+  border: 4px solid var(--pa-ink);
+  background:
+    linear-gradient(112deg, transparent 0 46%, rgb(10 10 10 / 0.045) 46% 53%, transparent 53% 62%, rgb(10 10 10 / 0.03) 62% 66%, transparent 66%),
+    #fff;
+  padding: clamp(1rem, 2.4vw, 1.75rem) clamp(1rem, 2.4vw, 1.75rem) 0;
+}
+.pa-window::after {
+  /* the sill */
+  content: "";
+  display: block;
+  height: 14px;
+  margin: clamp(1rem, 2.4vw, 1.75rem) calc(-1 * clamp(1rem, 2.4vw, 1.75rem)) 0;
+  background: var(--pa-ink);
+}
+.pa-glass-text {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--pa-ink);
+  text-align: center;
+  padding-bottom: 0.9rem;
+}
+
+/* ------------------------------------------------------------ placard */
+.pa-placard {
+  position: relative;
+  background: var(--pa-yellow);
+  color: var(--pa-ink);
+  border: 4px solid var(--pa-ink);
+  box-shadow: inset 0 0 0 3px var(--pa-yellow), inset 0 0 0 5px var(--pa-ink);
+  padding: 1.1rem 1.25rem 1rem;
+  text-align: center;
+}
+.pa-placard::before {
+  /* hanging cord */
+  content: "";
+  position: absolute;
+  top: -1.1rem;
+  left: 50%;
+  width: 2px;
+  height: 1.1rem;
+  background: var(--pa-ink);
+}
+.pa-placard-head {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.pa-letter {
+  font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-stretch: 125%;
+  font-weight: 900;
+  font-size: clamp(7.5rem, 15vw, 13rem);
+  line-height: 0.82;
+  letter-spacing: -0.04em;
+  padding: 0.12em 0 0.06em;
+  display: block;
+}
+.pa-placard-foot {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.35;
+  border-top: 2px solid var(--pa-ink);
+  padding-top: 0.6rem;
+}
+.pa-slot {
+  /* the hero placard: the form is the slot */
+  text-align: left;
+  background: #fff;
+  border: 3px solid var(--pa-ink);
+  padding: 1rem;
+  margin-top: 0.85rem;
+}
+
+/* --------------------------------------------- signature move: static */
+.pa-track {
+  position: relative;
+  border-block: 1px solid var(--pa-hair);
+  background: #fff;
+}
+.pa-stage {
+  align-content: center;
+  display: grid;
+  gap: 2rem;
+  padding-block: clamp(2.5rem, 5vw, 4.5rem);
+  align-items: center;
+}
+@media (min-width: 900px) {
+  .pa-stage {
+    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+    gap: 3.5rem;
+  }
+}
+.pa-captions {
+  list-style: none;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.9rem;
+  counter-reset: pa-frame;
+}
+.pa-captions li {
+  counter-increment: pa-frame;
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: 0.6rem;
+  font-size: 1.0625rem;
+  line-height: 1.45;
+}
+.pa-captions li::before {
+  content: counter(pa-frame);
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--pa-ink);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.pa-wall {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border: 4px solid var(--pa-ink);
+  background: #fff;
+}
+@media (min-width: 640px) {
+  .pa-wall {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  }
+}
+.pa-wall-window {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.25rem 1.25rem 1.5rem;
+  background:
+    linear-gradient(112deg, transparent 0 46%, rgb(10 10 10 / 0.045) 46% 53%, transparent 53% 62%, rgb(10 10 10 / 0.03) 62% 66%, transparent 66%),
+    #fff;
+}
+.pa-wall-window .pa-placard {
+  width: min(100%, 17rem);
+}
+.pa-wall-window .pa-letter {
+  font-size: clamp(6.5rem, 12vw, 10.5rem);
+}
+
+.pa-doorway {
+  position: relative;
+  min-height: 25rem;
+  perspective: 1500px;
+  perspective-origin: 12% 50%;
+  background: var(--pa-steel);
+  border-top: 4px solid var(--pa-ink);
+  overflow: hidden;
+  color: #fff;
+}
+@media (min-width: 640px) {
+  .pa-doorway {
+    border-top: 0;
+    border-left: 4px solid var(--pa-ink);
+    min-height: 31rem;
+  }
+}
+.pa-states {
+  position: absolute;
+  inset: 0;
+  list-style: none;
+  margin: 0;
+  padding: 3.4rem 1rem 3.4rem 4.2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.55rem;
+}
+@media (min-width: 640px) {
+  .pa-states {
+    padding-left: 8rem;
+  }
+}
+.pa-state {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgb(255 255 255 / 0.28);
+  padding-bottom: 0.5rem;
+}
+.pa-state-label {
+  font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-stretch: 75%;
+  font-weight: 800;
+  font-size: 1.25rem;
+  line-height: 1.05;
+  display: block;
+}
+.pa-state-path {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  display: block;
+  color: #e4e8ee;
+  overflow-wrap: anywhere;
+}
+.pa-count {
+  display: inline-block;
+  min-width: 4.4rem;
+  background: #fff;
+  color: var(--pa-ink);
+  padding: 0.15rem 0.5rem;
+  text-align: center;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pa-count[data-hit="1"] {
+  color: var(--pa-red);
+}
+
+.pa-door {
+  position: absolute;
+  inset: 0 0 0 0;
+  transform-origin: 0 50%;
+  transform-style: preserve-3d;
+  /* finished state: open on its hinge (left edge), a slab seen nearly edge-on */
+  transform: rotateY(-80deg);
+  background: #fff;
+  border: 4px solid var(--pa-ink);
+  box-shadow: inset 0 0 0 10px #fff, inset 0 0 0 12px var(--pa-ink);
+  will-change: transform;
+}
+.pa-door::before {
+  /* porthole */
+  content: "";
+  position: absolute;
+  top: 12%;
+  left: 50%;
+  width: 38%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  border: 4px solid var(--pa-ink);
+  border-radius: 50%;
+  background: var(--pa-steel);
+  box-shadow: 0 0 0 6px #fff, 0 0 0 9px var(--pa-ink);
+}
+.pa-door::after {
+  /* push plate */
+  content: "";
+  position: absolute;
+  bottom: 22%;
+  left: 18%;
+  width: 24%;
+  height: 22%;
+  border: 3px solid var(--pa-ink);
+  background: repeating-linear-gradient(0deg, var(--pa-ink) 0 2px, #fff 2px 9px);
+}
+.pa-hinges {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 1.1rem;
+  z-index: 2;
+  pointer-events: none;
+}
+.pa-hinges i {
+  position: absolute;
+  left: 0;
+  width: 1.1rem;
+  height: 3.4rem;
+  background: var(--pa-ink);
+  border-radius: 0 2px 2px 0;
+}
+.pa-hinges i:nth-child(1) { top: 9%; }
+.pa-hinges i:nth-child(2) { top: 44%; }
+.pa-hinges i:nth-child(3) { bottom: 9%; }
+
+.pa-tally {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 3;
+  background: #fff;
+  color: var(--pa-ink);
+  border: 3px solid var(--pa-ink);
+  padding: 0.35rem 0.8rem 0.4rem;
+  text-align: center;
+  line-height: 1;
+}
+.pa-tally strong {
+  display: block;
+  font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-stretch: 125%;
+  font-weight: 900;
+  font-size: 2.25rem;
+  color: var(--pa-red);
+}
+.pa-tally span {
+  display: block;
+  margin-top: 0.2rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.pa-tag {
+  position: absolute;
+  left: 1rem;
+  bottom: 0.9rem;
+  z-index: 3;
+  background: #fff;
+  color: var(--pa-ink);
+  border: 3px solid var(--pa-ink);
+  padding: 0.35rem 0.8rem;
+  font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-stretch: 80%;
+  font-weight: 800;
+  font-size: 1.15rem;
+  transform: rotate(-2deg);
+}
+.pa-foot-before {
+  display: none;
+}
+.pa-foot-wrap {
+  display: grid;
+}
+.pa-foot-wrap > * {
+  grid-area: 1 / 1;
+}
+
+/* Phone: the door slides sideways instead of swinging; same frames. */
+@media (max-width: 639px) {
+  .pa-door {
+    transform: translateX(-104%);
+  }
+  .pa-hinges {
+    display: none;
+  }
+  .pa-states {
+    padding-left: 1rem;
+  }
+  .pa-tally strong {
+    font-size: 1.5rem;
+  }
+  .pa-stage {
+    gap: 0.9rem;
+  }
+  .pa-stage h2 {
+    font-size: 2rem;
+  }
+  .pa-captions {
+    margin-top: 0.6rem;
+  }
+  .pa-wall-window {
+    padding: 1.4rem 1rem 0.8rem;
+  }
+  .pa-wall-window .pa-placard {
+    width: min(100%, 16rem);
+    padding: 0.6rem 0.9rem 0.6rem;
+  }
+  .pa-wall-window .pa-letter {
+    font-size: 4.25rem;
+  }
+  .pa-wall-window .pa-placard-foot {
+    font-size: 0.75rem;
+    padding-top: 0.35rem;
+  }
+  .pa-doorway {
+    min-height: 0;
+  }
+  .pa-states {
+    position: relative;
+    padding: 0.6rem 0.9rem 4.6rem;
+    gap: 0.3rem;
+  }
+  .pa-state {
+    padding-bottom: 0.3rem;
+  }
+  .pa-state-label {
+    font-size: 1.05rem;
+  }
+  .pa-state-path {
+    font-size: 0.6875rem;
+  }
+  .pa-tally {
+    top: auto;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    padding: 0.2rem 0.5rem;
+  }
+  .pa-tag {
+    left: 0.5rem;
+    bottom: 0.7rem;
+    font-size: 1rem;
+  }
+  html[data-door="scroll"] .pa-captions {
+    min-height: 4.6rem;
+  }
+}
+
+/* ----------------------------- signature move: scroll-driven enhancement */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    html[data-door="scroll"] .pa-track {
+      view-timeline: --pa-door block;
+      height: 400svh;
+      border-block: 0;
+    }
+    html[data-door="scroll"] .pa-stage {
+      position: sticky;
+      top: 0;
+      height: 100svh;
+      min-height: 0;
+      padding-block: 1.25rem;
+      overflow: clip;
+    }
+    html[data-door="scroll"] .pa-stage > * {
+      min-width: 0;
+    }
+    html[data-door="scroll"] .pa-door,
+    html[data-door="scroll"] .pa-state,
+    html[data-door="scroll"] .pa-tally,
+    html[data-door="scroll"] .pa-tag,
+    html[data-door="scroll"] .pa-foot-before,
+    html[data-door="scroll"] .pa-foot-after,
+    html[data-door="scroll"] .pa-captions li {
+      animation-timeline: --pa-door;
+      animation-fill-mode: both;
+      animation-timing-function: linear;
+      animation-duration: 1ms;
+    }
+    /* The pinned stretch is cover 20% .. 80% of a 400svh track. p (0..1) maps to 20 + 60p. */
+    html[data-door="scroll"] .pa-door {
+      animation-name: pa-door-swing;
+      animation-range: cover 24.8% cover 38%;
+    }
+    html[data-door="scroll"] .pa-state {
+      animation-name: pa-state-in;
+    }
+    html[data-door="scroll"] .pa-state:nth-child(1) { animation-range: cover 38% cover 41.6%; }
+    html[data-door="scroll"] .pa-state:nth-child(2) { animation-range: cover 42.8% cover 46.4%; }
+    html[data-door="scroll"] .pa-state:nth-child(3) { animation-range: cover 47.6% cover 51.2%; }
+    html[data-door="scroll"] .pa-state:nth-child(4) { animation-range: cover 52.4% cover 56%; }
+    html[data-door="scroll"] .pa-state:nth-child(5) { animation-range: cover 57.2% cover 60.8%; }
+    html[data-door="scroll"] .pa-state:nth-child(6) { animation-range: cover 62% cover 65.6%; }
+    html[data-door="scroll"] .pa-tally {
+      animation-name: pa-tally-in;
+      animation-range: cover 67% cover 72%;
+    }
+    html[data-door="scroll"] .pa-tag {
+      animation-name: pa-tag-in;
+      animation-range: cover 72% cover 76%;
+    }
+    html[data-door="scroll"] .pa-foot-before {
+      animation-name: pa-fade-out;
+      animation-range: cover 70% cover 73%;
+    }
+    html[data-door="scroll"] .pa-foot-before {
+      display: block;
+    }
+    html[data-door="scroll"] .pa-foot-after {
+      animation-name: pa-fade-in;
+      animation-range: cover 70% cover 73%;
+    }
+    html[data-door="scroll"] .pa-captions {
+      display: block;
+      position: relative;
+      min-height: 7.5rem;
+    }
+    html[data-door="scroll"] .pa-captions li {
+      position: absolute;
+      inset: 0 0 auto 0;
+    }
+    html[data-door="scroll"] .pa-captions li:nth-child(1) { animation-name: pa-cap-1; animation-range: cover 20% cover 80%; }
+    html[data-door="scroll"] .pa-captions li:nth-child(2) { animation-name: pa-cap-2; animation-range: cover 20% cover 80%; }
+    html[data-door="scroll"] .pa-captions li:nth-child(3) { animation-name: pa-cap-3; animation-range: cover 20% cover 80%; }
+    html[data-door="scroll"] .pa-captions li:nth-child(4) { animation-name: pa-cap-4; animation-range: cover 20% cover 80%; }
+  }
+}
+@keyframes pa-door-swing {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(-80deg); }
+}
+@media (max-width: 639px) {
+  @keyframes pa-door-swing {
+    from { transform: translateX(0); }
+    to { transform: translateX(-104%); }
+  }
+}
+@keyframes pa-state-in {
+  from { opacity: 0; transform: translateX(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pa-tally-in {
+  from { opacity: 0; transform: scale(1.35); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pa-tag-in {
+  from { opacity: 0; transform: translateY(10px) rotate(-2deg); }
+  to { opacity: 1; transform: rotate(-2deg); }
+}
+@keyframes pa-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes pa-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+/* Caption n is visible while its frame is current. Ranges differ per caption, so each keeps
+   its own keyframes: 1 starts shown and leaves; 4 arrives and stays. */
+@keyframes pa-cap-1 { 0%, 3% { opacity: 1; } 7%, 100% { opacity: 0; } }
+@keyframes pa-cap-2 { 0%, 3% { opacity: 0; } 7%, 30% { opacity: 1; } 34%, 100% { opacity: 0; } }
+@keyframes pa-cap-3 { 0%, 30% { opacity: 0; } 34%, 76% { opacity: 1; } 80%, 100% { opacity: 0; } }
+@keyframes pa-cap-4 { 0%, 80% { opacity: 0; } 85%, 100% { opacity: 1; } }
+
+/* Exhibit tab on the steel band: white tab and rule, light serial. */
+.pa-steel .exhibit-head {
+  border-bottom-color: #fff;
+  margin-bottom: 2rem;
+}
+.pa-steel .exhibit-tab {
+  background: #fff;
+  color: var(--pa-ink);
+}
+.pa-steel .exhibit-serial {
+  color: #e4e8ee;
+}
+
+/* ---------------------------------------------------- behind the login */
+.pa-steel {
+  background: var(--pa-steel);
+  color: #fff;
+}
+.pa-steel .pa-kicker {
+  color: #e4e8ee;
+}
+.pa-trail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: pa-trail;
+}
+.pa-trail li {
+  counter-increment: pa-trail;
+  display: grid;
+  grid-template-columns: 2.4rem minmax(0, 1fr) auto;
+  gap: 0.25rem 1rem;
+  align-items: baseline;
+  border-top: 1px solid rgb(255 255 255 / 0.3);
+  padding: 0.9rem 0;
+}
+.pa-trail li:last-child {
+  border-bottom: 1px solid rgb(255 255 255 / 0.3);
+}
+.pa-trail li::before {
+  content: counter(pa-trail, decimal-leading-zero);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #e4e8ee;
+}
+.pa-trail .pa-why {
+  grid-column: 2 / -1;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: #e4e8ee;
+}
+
+/* --------------------------------------------------- probe ledger board */
+.pa-board {
+  position: relative;
+  background: #fff;
+  border: 3px solid var(--pa-ink);
+  padding: 1.25rem 1.25rem 1rem;
+}
+.pa-board::before,
+.pa-board::after {
+  /* the pins that post it */
+  content: "";
+  position: absolute;
+  top: 0.55rem;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: var(--pa-ink);
+}
+.pa-board::before { left: 0.7rem; }
+.pa-board::after { right: 0.7rem; }
+.pa-log {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+  text-align: left;
+}
+.pa-log th,
+.pa-log td {
+  padding: 0.7rem 0.5rem 0.7rem 0;
+  border-bottom: 1px solid var(--pa-hair);
+  vertical-align: baseline;
+}
+.pa-log thead th {
+  border-bottom: 3px solid var(--pa-ink);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pa-muted);
+}
+.pa-log td,
+.pa-log th[scope="row"] {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.pa-log th[scope="row"] {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+.pa-log .num {
+  text-align: right;
+  padding-right: 0.6rem;
+}
+.pa-log .net {
+  font-weight: 800;
+  color: var(--pa-red);
+}
+.pa-log .net[data-zero="1"] {
+  color: var(--pa-muted);
+  font-weight: 400;
+}
+
+/* ---------------------------------------------------------- wall sign */
+.pa-sign {
+  border: 4px solid var(--pa-ink);
+  background: #fff;
+  box-shadow: inset 0 0 0 6px #fff, inset 0 0 0 8px var(--pa-ink);
+  padding: 1.5rem 1.5rem 0.5rem;
+  list-style: none;
+  margin: 0;
+  counter-reset: pa-step;
+}
+@media (min-width: 640px) {
+  .pa-sign {
+    padding: 2rem 2.25rem 0.75rem;
+  }
+}
+.pa-sign li {
+  counter-increment: pa-step;
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  gap: 0.25rem 1rem;
+  padding: 1.1rem 0;
+  border-top: 2px solid var(--pa-ink);
+}
+.pa-sign li:first-child {
+  border-top: 0;
+}
+@media (min-width: 640px) {
+  .pa-sign li {
+    grid-template-columns: 5rem minmax(0, 1fr);
+  }
+}
+.pa-sign li::before {
+  content: counter(pa-step);
+  grid-row: 1 / span 3;
+  font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-stretch: 125%;
+  font-weight: 900;
+  font-size: clamp(2.75rem, 7vw, 4.5rem);
+  line-height: 0.85;
+}
+.pa-cmd {
+  display: block;
+  margin-top: 0.4rem;
+  overflow-wrap: anywhere;
+  border: 1px solid var(--pa-ink);
+  padding: 0.5rem 0.75rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  background: #fff;
+}
+
+/* ---------------------------------------------------------- clipboard */
+.pa-clipboard {
+  position: relative;
+  background: var(--pa-ink);
+  padding: 2.4rem 0.75rem 0.75rem;
+  border-radius: 6px;
+}
+.pa-clipboard::before {
+  content: "";
+  position: absolute;
+  top: 0.55rem;
+  left: 50%;
+  width: 7rem;
+  height: 1.5rem;
+  transform: translateX(-50%);
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: inset 0 0 0 3px var(--pa-ink), 0 0 0 2px #fff;
+}
+.pa-paper {
+  background: #fff;
+  padding: 1.25rem 1.25rem 0.5rem;
+  background-image: linear-gradient(var(--pa-hair) 1px, transparent 1px);
+  background-size: 100% 100%;
+}
+.pa-todo {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pa-todo li {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr);
+  gap: 0.25rem 0.9rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--pa-hair);
+}
+.pa-todo li::before {
+  content: "";
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.2rem;
+  border: 2px solid var(--pa-ink);
+  background:
+    linear-gradient(135deg, transparent 44%, var(--pa-ink) 44% 56%, transparent 56%) 0 0 / 100% 100% no-repeat;
+}
+
+/* ------------------------------------------------------ deadline signs */
+.pa-stamps {
+  display: grid;
+  gap: 1.5rem;
+}
+@media (min-width: 720px) {
+  .pa-stamps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.pa-stamp {
+  border: 4px solid var(--pa-ink);
+  box-shadow: inset 0 0 0 5px #fff, inset 0 0 0 7px var(--pa-ink);
+  padding: 1.6rem 1.5rem;
+  background: #fff;
+}
+.pa-stamp:nth-child(odd) { transform: rotate(-1.2deg); }
+.pa-stamp:nth-child(even) { transform: rotate(0.9deg); }
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .pa-stamp {
+      animation: pa-stamp-on both linear;
+      animation-timeline: view();
+      animation-range: entry 10% entry 70%;
+    }
+    .pa-log tbody tr {
+      animation: pa-row-in both linear;
+      animation-timeline: view();
+      animation-range: entry 0% entry 80%;
+    }
+  }
+}
+@keyframes pa-stamp-on {
+  from { opacity: 0; scale: 1.18; }
+  to { opacity: 1; scale: 1; }
+}
+@keyframes pa-row-in {
+  from { opacity: 0; translate: 0 14px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+/* ------------------------------------------------------------- close */
+.pa-close-sill {
+  height: 14px;
+  background: var(--pa-ink);
+}
