@@ -156,7 +156,7 @@ export default function Home() {
                 <dl className="mt-8 max-w-md space-y-5">
                   <div className="border-t-2 border-dashed border-[var(--redline)] pt-4">
                     <dt className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 font-semibold">
-                      Task success and persona notes <span className="redline-note uppercase tracking-[0.1em]">Opinion · AI</span>
+                      Task success and persona notes <span className="redline-note">AI opinion</span>
                     </dt>
                     <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">
                       What each persona reports about its own run. Labeled as AI opinion, never mixed
