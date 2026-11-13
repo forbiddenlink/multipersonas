@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Wordmark } from "@/components/forensic/wordmark";
 
 const FOOTER_LINK =
-  "inline-flex min-h-11 items-center rounded-sm py-1 text-sm sm:min-h-0 text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
+  "inline-flex min-h-11 items-center rounded-sm py-1 text-[0.9375rem] sm:min-h-0 text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
 
 const GROUPS: { title: string; links: { href: string; label: string; external?: boolean }[] }[] = [
   {
@@ -52,7 +52,7 @@ export function SiteFooter({
   className?: string;
 }) {
   return (
-    <footer className={`mt-auto border-t border-border bg-card ${className}`}>
+    <footer className={`mt-auto border-t border-[var(--hairline)] bg-card ${className}`}>
       <div className="frame py-14">
         {footnotes ? <div className="mb-12 border-b border-border pb-10">{footnotes}</div> : null}
         <div className="grid gap-12 md:grid-cols-[minmax(0,1.1fr)_minmax(0,2fr)]">
@@ -91,10 +91,7 @@ export function SiteFooter({
             Accessibility violations come from axe-core and are deterministic. Persona notes are
             written by AI, labeled as opinion, and should be checked by a person.
           </p>
-          <p className="shrink-0 font-mono sm:text-right">
-            <span className="bates block" aria-hidden="true">
-              PA-0426 · End of file
-            </span>
+          <p className="shrink-0 sm:text-right">
             Built by{" "}
             <a
               href="https://github.com/forbiddenlink"

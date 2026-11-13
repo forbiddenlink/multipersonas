@@ -20,7 +20,7 @@ const patienceLabels: Record<string, string> = {
 function Readout({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3 py-1.5">
-      <span className="font-mono text-[0.7rem] uppercase tracking-wide text-muted-foreground">
+      <span className="text-[13px] text-muted-foreground">
         {label}
       </span>
       <span className="font-mono text-xs tabular-nums text-card-foreground">{value}</span>

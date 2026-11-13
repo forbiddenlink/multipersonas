@@ -96,10 +96,10 @@ export function AppNav({
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 aria-current={isActive ? "page" : undefined}
-                className={`rounded-sm border-l-2 px-3 py-2 font-mono text-[13px] tracking-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
+                className={`block rounded-sm px-3 py-2.5 text-[0.9375rem] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
                   isActive
-                    ? "border-[var(--primary)] bg-muted text-foreground"
-                    : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "bg-primary font-bold text-primary-foreground"
+                    : "font-medium text-foreground hover:bg-muted"
                 }`}
               >
                 {item.label}
@@ -138,10 +138,10 @@ export function AppNav({
                 key={item.href}
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
-                className={`rounded-sm border-l-2 px-3 py-2 font-mono text-[13px] tracking-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
+                className={`block rounded-sm px-3 py-2.5 text-[0.9375rem] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
                   isActive
-                    ? "border-[var(--primary)] bg-muted text-foreground"
-                    : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "bg-primary font-bold text-primary-foreground"
+                    : "font-medium text-foreground hover:bg-muted"
                 }`}
               >
                 {item.label}

@@ -99,7 +99,7 @@ export function GradeVerdictStamp({
       >
         {grade}
       </span>
-      <span aria-hidden="true" className="text-[0.7rem] tracking-[0.14em]">
+      <span aria-hidden="true" className="text-[13px] tracking-[0.14em]">
         <span ref={scoreRef}>{score}</span> / 100
       </span>
     </div>

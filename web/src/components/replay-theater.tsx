@@ -48,7 +48,7 @@ function Monologue({ text }: { text: string }) {
           type="button"
           onClick={() => setExpanded((e) => !e)}
           aria-expanded={expanded}
-          className="mt-1 font-mono text-[11px] text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+          className="mt-1 font-mono text-[13px] text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
         >
           {expanded ? "show less" : "show more"}
         </button>
@@ -249,7 +249,7 @@ export function ReplayTheater({
       <div id={panelId} role="tabpanel" className="grid grid-cols-1 gap-0 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         {/* Frame viewport */}
         <div className="flex flex-col border-b border-border md:border-b-0 md:border-r">
-          <div className="flex items-center justify-between gap-2 px-4 py-2 font-mono text-[11px] text-muted-foreground">
+          <div className="flex items-center justify-between gap-2 px-4 py-2 font-mono text-[13px] text-muted-foreground">
             <span className="min-w-0 truncate">{location || "no location recorded"}</span>
             <span className="shrink-0 tabular-nums">
               frame {sIdx + 1} / {stepCount}
@@ -292,11 +292,11 @@ export function ReplayTheater({
         <div className="flex flex-col gap-4 p-4">
           <div>
             <div className="flex items-center justify-between gap-2">
-              <p className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+              <p className="text-[13px] text-muted-foreground">
                 {step.action}
                 {step.detail ? <span className="normal-case">: {step.detail}</span> : null}
               </p>
-              <span className="redline-note shrink-0 uppercase tracking-[0.1em]">Opinion · AI</span>
+              <span className="redline-note shrink-0">Opinion · AI</span>
             </div>
             {step.reasoning ? (
               // Keyed by frame so a long finish monologue re-collapses when you scrub away.
@@ -309,7 +309,7 @@ export function ReplayTheater({
           </div>
 
           {!taskCheck && <div>
-            <p className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+            <p className="text-[13px] text-muted-foreground">
               task effort
             </p>
             <div className="mt-1 flex items-center gap-2">
@@ -324,7 +324,7 @@ export function ReplayTheater({
 
           {findingsHere.length > 0 && (
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+              <p className="text-[13px] text-muted-foreground">
                 evidence captured here
               </p>
               <ul className="mt-1.5 space-y-1.5">
@@ -335,7 +335,7 @@ export function ReplayTheater({
                   </li>
                 ))}
                 {findingsHere.length > 3 && (
-                  <li className="font-mono text-[11px] text-muted-foreground">
+                  <li className="font-mono text-[13px] text-muted-foreground">
                     +{findingsHere.length - 3} more at this state
                   </li>
                 )}

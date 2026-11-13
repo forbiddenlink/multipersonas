@@ -113,7 +113,6 @@ export default function ForAgenciesPage() {
         <section className="border-b border-border">
           <div className="frame grid gap-12 py-14 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center lg:gap-16 lg:py-20">
             <div className="min-w-0">
-              <p className="label-mono">For agencies and freelance studios</p>
               <h1 className="display mt-5 text-[clamp(2.3rem,4.8vw,3.8rem)] leading-[1.03]">
                 Show every client <span className="mark-sweep">what to fix first.</span>
               </h1>
@@ -222,10 +221,10 @@ export default function ForAgenciesPage() {
                 </caption>
                 <thead>
                   <tr className="border-b-2 border-foreground">
-                    <th scope="col" className="py-2 pr-4 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">
+                    <th scope="col" className="py-2 pr-4 text-[13px] font-normal text-muted-foreground">
                       Client
                     </th>
-                    <th scope="col" className="py-2 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">
+                    <th scope="col" className="py-2 text-[13px] font-normal text-muted-foreground">
                       Last scan
                     </th>
                   </tr>
@@ -241,7 +240,7 @@ export default function ForAgenciesPage() {
                           {c.severity ? (
                             <SeverityChip severity={c.severity} />
                           ) : (
-                            <span className="font-mono text-xs text-muted-foreground">No violations</span>
+                            <span className="text-xs text-muted-foreground">No violations</span>
                           )}
                           <span className="text-xs text-muted-foreground">{c.note}</span>
                         </div>
@@ -275,7 +274,7 @@ export default function ForAgenciesPage() {
             <div className="sheet min-w-0 p-6 sm:p-8">
               <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
                 <p className="label-mono">Client report footer</p>
-                <span className="font-mono text-xs text-muted-foreground">sample</span>
+                <span className="text-xs text-muted-foreground">sample</span>
               </div>
               <p className="mt-4 font-serif text-[1.0625rem] leading-relaxed">
                 &ldquo;3 critical, 1 serious finding, cited to{" "}

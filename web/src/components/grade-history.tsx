@@ -39,16 +39,16 @@ export function GradeHistory({ grades }: { grades: ClaimedGrade[] }) {
         <caption className="sr-only">Saved grades by host, date, status, and letter grade</caption>
         <thead>
           <tr className="border-b-2 border-foreground">
-            <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+            <th scope="col" className="py-2 pr-4 text-[13px] font-normal text-muted-foreground">
               Host
             </th>
-            <th scope="col" className="hidden py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground sm:table-cell">
+            <th scope="col" className="hidden py-2 pr-4 text-[13px] font-normal text-muted-foreground sm:table-cell">
               Date
             </th>
-            <th scope="col" className="hidden py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground sm:table-cell">
+            <th scope="col" className="hidden py-2 pr-4 text-[13px] font-normal text-muted-foreground sm:table-cell">
               Status
             </th>
-            <th scope="col" className="py-2 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+            <th scope="col" className="py-2 text-right text-[13px] font-normal text-muted-foreground">
               Grade
             </th>
           </tr>

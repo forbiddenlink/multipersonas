@@ -358,14 +358,14 @@ export default function PricingPage() {
                 <caption className="sr-only">What each plan includes today, and what is still the roadmap</caption>
                 <thead>
                   <tr className="border-b-2 border-foreground">
-                    <th scope="col" className="py-2 pr-4 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">
+                    <th scope="col" className="py-2 pr-4 text-[13px] font-normal text-muted-foreground">
                       Capability
                     </th>
                     {TIERS.map((tier) => (
                       <th
                         key={tier.id}
                         scope="col"
-                        className="w-[5rem] px-1 py-2 text-center align-bottom font-mono text-xs font-normal uppercase tracking-[0.04em] text-muted-foreground sm:w-[18%] sm:px-2 sm:tracking-[0.08em]"
+                        className="w-[5rem] px-1 py-2 text-center align-bottom text-[13px] font-normal text-muted-foreground sm:w-[18%] sm:px-2"
                       >
                         {tier.name}
                         <span className="mt-0.5 block font-sans text-xs normal-case tracking-normal">
@@ -385,7 +385,7 @@ export default function PricingPage() {
                         ) : null}
                       </th>
                       {TIERS.map((tier) => (
-                        <td key={tier.id} className="px-1 py-3 text-center font-mono text-xs uppercase tracking-[0.04em] sm:px-2 sm:tracking-[0.08em]">
+                        <td key={tier.id} className="px-1 py-3 text-center text-[13px] sm:px-2">
                           <AvailabilityCell value={row.plans[tier.id]} />
                         </td>
                       ))}
@@ -417,8 +417,8 @@ export default function PricingPage() {
                 </caption>
                 <thead>
                   <tr className="border-b-2 border-foreground">
-                    <th scope="col" className="py-2 pr-4 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">Vendor</th>
-                    <th scope="col" className="py-2 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">Listed pricing</th>
+                    <th scope="col" className="py-2 pr-4 text-[13px] font-normal text-muted-foreground">Vendor</th>
+                    <th scope="col" className="py-2 text-[13px] font-normal text-muted-foreground">Listed pricing</th>
                   </tr>
                 </thead>
                 <tbody>

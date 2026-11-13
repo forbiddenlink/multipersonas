@@ -218,7 +218,12 @@ export function ReplayRecorder() {
                   aria-pressed={i === stateIdx}
                   onClick={() => setStateIdx(i)}
                 >
-                  <span className="pa-axe-name">{s.label}</span>
+                  <span className="pa-axe-name">
+                    <span className="pa-axe-glyph" aria-hidden="true">
+                      {s.findings > 0 ? "✗" : "✓"}
+                    </span>
+                    {s.label}
+                  </span>
                   <span className="pa-axe-count">
                     {s.findings} {s.findings === 1 ? "finding" : "findings"}
                   </span>

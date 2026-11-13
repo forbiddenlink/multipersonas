@@ -24,7 +24,7 @@ function PersonaCard({ card, auditId }: { card: PersonaOutcomeCard; auditId: str
           ) : null}
         </div>
         <span
-          className={`shrink-0 rounded-sm border bg-background px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wide ${BADGE_STYLE[card.badge]}`}
+          className={`shrink-0 rounded-sm border bg-background px-2 py-0.5 text-[13px] font-bold ${BADGE_STYLE[card.badge]}`}
         >
           {card.badge}
         </span>
@@ -32,7 +32,7 @@ function PersonaCard({ card, auditId }: { card: PersonaOutcomeCard; auditId: str
 
       {ev ? (
         <div className="border-b-2 border-foreground">
-          <p className="border-b-2 border-foreground px-3 py-1 font-mono text-xs font-bold uppercase tracking-[0.08em]">
+          <p className="border-b-2 border-foreground px-3 py-1 text-[13px] font-bold">
             {stuck ? "Where they got stuck" : "Where they finished"} · step {ev.step}
           </p>
           {ev.screenshotUrl ? (
@@ -61,7 +61,7 @@ function PersonaCard({ card, auditId }: { card: PersonaOutcomeCard; auditId: str
         {card.quotes.length > 0 ? (
           <ul className="space-y-2">
             {card.quotes.map((q) => (
-              <li key={q} className="border-l-2 border-foreground/40 pl-3 text-sm leading-snug">
+              <li key={q} className="rounded-sm bg-muted px-3 py-1.5 text-sm leading-snug">
                 <q>{q}</q>
               </li>
             ))}
@@ -110,15 +110,15 @@ export function PersonaFirstReport({
   return (
     <section aria-labelledby="persona-first-heading" className="space-y-6">
       <div className="space-y-1.5">
-        <p className="label-mono">Personas · AI opinion</p>
         <h2 id="persona-first-heading" className="display text-2xl leading-tight sm:text-3xl">
           {outcomes.headline}
         </h2>
+        <p className="redline-note">Personas · AI opinion</p>
         <ul className="mt-3 space-y-1 text-sm">
           {outcomes.cards.map((c) => (
             <li key={c.personaId} className="flex flex-wrap items-baseline gap-x-2">
               <span className="font-medium">{c.name}</span>
-              <span className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
+              <span className="text-[13px] text-muted-foreground">
                 {c.badge}
               </span>
             </li>

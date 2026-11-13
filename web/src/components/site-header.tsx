@@ -14,7 +14,7 @@ const NAV = [
 ] as const;
 
 const NAV_LINK =
-  "rounded-sm px-2.5 py-2 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
+  "rounded-sm px-2.5 py-2 text-[0.9375rem] font-medium text-foreground transition-colors duration-150 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]";
 
 /**
  * Marketing masthead. A thin file line above the nav names what the product is in
@@ -24,7 +24,7 @@ export function SiteHeader({ intent = "audit" }: { intent?: HeaderIntent } = {})
   const cta = headerCta(intent, intent === "waitlist" && isFoundingCheckoutOpen());
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/92 backdrop-blur-[6px] supports-[backdrop-filter]:bg-background/85">
+    <header className="sticky top-0 z-40 border-b border-[var(--hairline)] bg-background">
       <div className="frame flex min-h-16 flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2">
         <Link
           href="/"

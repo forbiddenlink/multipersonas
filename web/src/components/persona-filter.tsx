@@ -42,7 +42,7 @@ export function PersonaFilter({
             type="button"
             onClick={() => handleClick(cat)}
             aria-pressed={isActive}
-            className={`rounded-sm border px-2.5 py-1 font-mono text-xs uppercase tracking-wide transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
+            className={`rounded-sm border px-2.5 py-1 text-[13px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${
               isActive
                 ? "border-[var(--primary)] text-foreground"
                 : "border-border text-muted-foreground hover:border-foreground/25 hover:text-foreground"

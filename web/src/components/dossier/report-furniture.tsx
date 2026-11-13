@@ -8,7 +8,7 @@ const DOC_NUMBER = "PA-0426-SAMPLE";
 
 export function ReportRunningHeader({ host }: { host: string }) {
   return (
-    <div className="-mt-1 mb-6 flex items-baseline justify-between gap-4 border-b border-border pb-2 font-mono text-[11px] uppercase leading-4 tracking-[0.1em] text-muted-foreground">
+    <div className="-mt-1 mb-6 flex items-baseline justify-between gap-4 border-b border-border pb-2 text-[13px] leading-4 text-muted-foreground">
       <span>Doc {DOC_NUMBER}</span>
       <span className="truncate">{host}</span>
     </div>
@@ -17,7 +17,7 @@ export function ReportRunningHeader({ host }: { host: string }) {
 
 export function ReportFooter() {
   return (
-    <footer className="mt-8 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-t border-border pt-3 font-mono text-[11px] uppercase leading-4 tracking-[0.1em] text-muted-foreground">
+    <footer className="mt-8 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-t border-border pt-3 text-[13px] leading-4 text-muted-foreground">
       <span>Prepared by Personaudit</span>
       <span>Doc {DOC_NUMBER}</span>
     </footer>

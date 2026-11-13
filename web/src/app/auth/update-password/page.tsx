@@ -92,7 +92,6 @@ export default function UpdatePasswordPage() {
           <AuthCardTab route="update-password" />
           <div className="px-5 py-6">
             <div>
-              <p className="label-mono">Almost done</p>
               <h1 className="display mt-1.5 text-[1.9rem] leading-tight text-foreground">Set <span className="mark-sweep">a new password</span></h1>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 Choose a password you don&apos;t use anywhere else.

@@ -82,7 +82,7 @@ export function GradeCoverSheet({
         <Fact label="Engine" value={`axe-core ${AXE_DOCS_VERSION}`} />
       </dl>
       <p className="mt-4 font-mono text-xs leading-relaxed text-muted-foreground">
-        <span className="uppercase tracking-[0.08em]">Permalink</span>{" "}
+        <span className="">Permalink</span>{" "}
         <Link href={`/grade/${token}`} className="text-link break-all">
           /grade/{token}
         </Link>{" "}

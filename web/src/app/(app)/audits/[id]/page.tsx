@@ -284,7 +284,7 @@ export default async function AuditDetailPage({
     <div className="w-full max-w-5xl mx-auto space-y-10">
       {/* Header */}
       <div className="space-y-4">
-        <nav aria-label="Breadcrumb" className="font-mono text-xs text-muted-foreground">
+        <nav aria-label="Breadcrumb" className="text-xs text-muted-foreground">
           <ol className="flex flex-wrap items-center gap-1.5">
             <li>
               <Link
@@ -375,7 +375,6 @@ export default async function AuditDetailPage({
       <PersonaFirstReport outcomes={personaOutcomes} auditId={run.id} nameOf={personaName} />
 
       <div className="space-y-1.5 border-t-2 border-foreground pt-6">
-        <p className="label-mono">Scan evidence · deterministic</p>
         <h2 className="display text-2xl leading-tight">Accessibility scan</h2>
         <p className="max-w-2xl text-sm text-muted-foreground">
           Everything below comes from the axe-core scan, task checks and persona replay.
@@ -395,7 +394,6 @@ export default async function AuditDetailPage({
       {priorityFindings.length > 0 && (
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <p className="label-mono">Priority</p>
             <h2 className="display text-2xl leading-tight">Fix first</h2>
             <p className="max-w-2xl text-sm text-muted-foreground">
               Each score is out of 100. It starts from axe severity (critical 80,
@@ -433,7 +431,6 @@ export default async function AuditDetailPage({
         <div className="space-y-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="space-y-1.5">
-              <p className="label-mono">Axe-core verdicts · deterministic</p>
               <h2 className="display text-2xl leading-tight">Accessibility issues</h2>
               <p className="max-w-2xl text-sm text-muted-foreground">
                 Deterministic, cited to WCAG.
@@ -464,10 +461,10 @@ export default async function AuditDetailPage({
                 <caption className="sr-only">Axe findings grouped by rule, with issue and page counts</caption>
                 <thead>
                   <tr className="border-b-2 border-foreground">
-                    <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Rule</th>
-                    <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Severity</th>
-                    <th scope="col" className="py-2 pr-4 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Issues</th>
-                    <th scope="col" className="py-2 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Pages</th>
+                    <th scope="col" className="py-2 pr-4 text-[13px] font-normal text-muted-foreground">Rule</th>
+                    <th scope="col" className="py-2 pr-4 text-[13px] font-normal text-muted-foreground">Severity</th>
+                    <th scope="col" className="py-2 pr-4 text-right text-[13px] font-normal text-muted-foreground">Issues</th>
+                    <th scope="col" className="py-2 text-right text-[13px] font-normal text-muted-foreground">Pages</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -670,8 +667,8 @@ export default async function AuditDetailPage({
       {(journeys.length > 0 || byPersona.size > 0) && (
         <section aria-labelledby="ai-opinion-heading" className="space-y-8 border-t-2 border-foreground pt-6">
           <div className="space-y-1.5">
-            <span className="redline-note uppercase tracking-[0.1em]">Opinion · AI</span>
             <h2 id="ai-opinion-heading" className="display text-2xl leading-tight">AI persona opinion</h2>
+            <p className="redline-note">Opinion · AI</p>
             <p className="max-w-2xl text-sm text-muted-foreground">
               What AI browser personas did while trying to finish a task. This is usability
               opinion and task evidence, not an accessibility verdict. The axe-core findings
@@ -682,7 +679,6 @@ export default async function AuditDetailPage({
       {journeys.length > 0 && (
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <p className="label-mono">Evidence walk</p>
             <h3 className="display text-xl leading-tight">Replay</h3>
             <p className="max-w-2xl text-sm text-muted-foreground">
               What a persona saw, thought, and hit, step by step.

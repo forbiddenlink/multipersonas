@@ -48,7 +48,7 @@ function FocusBadge({ n, fault = false, beside = false }: { n: number; fault?: b
   const place = beside ? "top-1/2 -right-6 -translate-y-1/2" : "-top-2 -right-1";
   return (
     <span
-      className={`absolute ${place} z-10 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-background px-1 font-mono text-[11px] font-bold leading-none tabular-nums ${
+      className={`absolute ${place} z-10 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-background px-1 font-mono text-[13px] font-bold leading-none tabular-nums ${
         fault ? "bg-[var(--redline)] text-background" : "bg-foreground text-background"
       }`}
     >
@@ -69,7 +69,7 @@ function ExampleForm({ badges = false }: { badges?: boolean }) {
     const node = byId(id);
     return (
       <div key={id}>
-        <p className="text-[11px] font-bold leading-tight">{node.name}</p>
+        <p className="text-[13px] font-bold leading-tight">{node.name}</p>
         <div
           className={`relative mt-0.5 h-5 border-2 bg-background ${node.invalid ? "border-[var(--redline)]" : "border-foreground"} ${focused(id)}`}
         >
@@ -86,8 +86,8 @@ function ExampleForm({ badges = false }: { badges?: boolean }) {
       {field("last")}
       {field("postal")}
       <div className="flex items-center justify-between gap-1 border-2 border-[var(--redline)] px-1.5 py-1">
-        <span className="text-[11px] font-bold leading-tight text-[var(--redline)]">{byId("error").text}</span>
-        <span className="relative flex h-5 w-5 shrink-0 items-center justify-center border-2 border-dashed border-[var(--redline)] text-[11px] font-bold leading-none text-[var(--redline)]">
+        <span className="text-[13px] font-bold leading-tight text-[var(--redline)]">{byId("error").text}</span>
+        <span className="relative flex h-5 w-5 shrink-0 items-center justify-center border-2 border-dashed border-[var(--redline)] text-[13px] font-bold leading-none text-[var(--redline)]">
           ×{badge(EXAMPLE_FAULT_ID)}
         </span>
       </div>
@@ -109,10 +109,10 @@ function Outline() {
       {outlineLines().map((line) => (
         <li
           key={line.text}
-          className={`break-words ${line.fault ? "border-l-[3px] border-[var(--redline)] pl-1.5 font-bold text-[var(--redline)]" : "pl-[9px]"}`}
+          className={`break-words ${line.fault ? "bg-[color-mix(in_oklch,var(--redline)_12%,transparent)] px-1.5 font-bold text-[var(--redline)]" : "px-1.5"}`}
         >
           {line.text}
-          {line.fault ? <span className="block text-[11px] font-bold">no accessible name</span> : null}
+          {line.fault ? <span className="block text-[13px] font-bold">no accessible name</span> : null}
         </li>
       ))}
     </ul>
@@ -194,7 +194,7 @@ export function PersonaLineup({ className = "" }: { className?: string }) {
                   <p className="text-sm leading-snug">{persona.role}</p>
                   <p className="mt-0.5 font-mono text-xs leading-snug">{modalityLabel(id)}</p>
                 </div>
-                <p className="border-b-2 border-foreground px-3 py-1 font-mono text-xs font-bold uppercase tracking-[0.08em]">
+                <p className="border-b-2 border-foreground px-3 py-1 text-[13px] font-bold">
                   {view.label}
                 </p>
                 <div className="min-h-[17.5rem] flex-1 overflow-hidden bg-muted p-2" aria-hidden="true">
@@ -220,7 +220,7 @@ export function PersonaLineup({ className = "" }: { className?: string }) {
           {grade.grade}
         </span>
         <div className="space-y-3 px-5 pb-6 sm:py-6 sm:pl-0 sm:pr-8">
-          <p className="font-mono text-sm font-bold uppercase tracking-[0.08em]">Sample grade</p>
+          <p className="text-sm font-bold">Sample grade</p>
           <p className="max-w-xl text-2xl font-extrabold leading-snug sm:text-3xl">
             {cap
               ? `One critical failure caps the letter at ${cap.maxGrade}, however many other checks pass.`

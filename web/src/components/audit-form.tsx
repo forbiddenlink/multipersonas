@@ -380,7 +380,7 @@ export function AuditForm({
           type="submit"
           size="lg"
           disabled={loading || !!pendingJobId || !url}
-          className="h-11 shrink-0 px-6 font-mono text-xs uppercase tracking-wide"
+          className="h-11 shrink-0 px-6 text-[13px]"
         >
           {loading ? "Running…" : timedOut ? "In progress…" : (submitLabel ?? "Run free audit")}
         </Button>
@@ -388,7 +388,7 @@ export function AuditForm({
 
       {/* Persona picker — outline chips, not soft pills */}
       <fieldset className="mt-4" disabled={loading || !!pendingJobId}>
-        <legend className="mb-2 font-mono text-xs uppercase tracking-wide text-muted-foreground">
+        <legend className="mb-2 text-[13px] text-muted-foreground">
           Who tests your site{" "}
           <span className="normal-case tracking-normal">
             ({selected.size} selected, max {MAX_PERSONAS})
@@ -423,7 +423,7 @@ export function AuditForm({
 
       {showProjectPicker && selectedProject ? (
         <div className="mt-4">
-          <label htmlFor="audit-project" className="mb-2 block font-mono text-xs uppercase tracking-wide text-muted-foreground">
+          <label htmlFor="audit-project" className="mb-2 block text-[13px] text-muted-foreground">
             Save to project
           </label>
           <select

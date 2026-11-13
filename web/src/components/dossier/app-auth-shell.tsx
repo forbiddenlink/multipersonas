@@ -78,7 +78,7 @@ export function AuthShell({
               </li>
             ))}
           </ol>
-          <p className="mt-6 border-l-2 border-foreground pl-4 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-6 rounded-sm bg-muted px-4 py-3 text-sm leading-relaxed text-muted-foreground">
             Scans you run in the CLI never upload your login session. What we keep, and for how
             long, is in the{" "}
             <Link href="/privacy" className="text-link">

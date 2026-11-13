@@ -1,7 +1,7 @@
 import type { FindingsTrendRow } from "@/lib/findings-trend";
 import { SEVERITY, SEVERITY_ORDER } from "@/components/forensic/severity";
 
-const HEAD = "py-2 pr-4 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground";
+const HEAD = "py-2 pr-4 text-right text-[13px] font-normal text-muted-foreground";
 
 function formatChange(change: number | null): string {
   if (change === null) return "First run";
@@ -28,7 +28,7 @@ export function FindingsTrend({ rows }: { rows: FindingsTrendRow[] }) {
         <caption className="sr-only">Accessibility findings detected in each run, by severity, oldest first</caption>
         <thead>
           <tr className="border-b-2 border-foreground">
-            <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+            <th scope="col" className="py-2 pr-4 text-[13px] font-normal text-muted-foreground">
               Run date
             </th>
             {SEVERITY_ORDER.map((s) => (
@@ -39,7 +39,7 @@ export function FindingsTrend({ rows }: { rows: FindingsTrendRow[] }) {
             <th scope="col" className={HEAD}>
               Total
             </th>
-            <th scope="col" className="py-2 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+            <th scope="col" className="py-2 text-right text-[13px] font-normal text-muted-foreground">
               Change
             </th>
           </tr>

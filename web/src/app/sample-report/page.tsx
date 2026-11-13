@@ -135,11 +135,11 @@ export default function SampleReportPage() {
                 {SAUCEDEMO_TRAIL.map((s, i) => (
                   <li key={s.path} className="flex min-w-0 flex-col bg-card p-3">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                      <span className="font-mono text-[13px] tabular-nums text-muted-foreground">
                         {String(i + 1).padStart(2, "0")}
                       </span>
                       <span
-                        className={`truncate font-mono text-[11px] uppercase tracking-[0.08em] ${
+                        className={`truncate text-[13px] ${
                           s.publicUrl ? "text-muted-foreground" : "text-primary"
                         }`}
                       >
@@ -151,7 +151,7 @@ export default function SampleReportPage() {
                       {s.findings > 0 ? (
                         <SeverityChip severity="critical" />
                       ) : (
-                        <span className="font-mono text-xs text-muted-foreground">No violations</span>
+                        <span className="text-xs text-muted-foreground">No violations</span>
                       )}
                     </p>
                   </li>

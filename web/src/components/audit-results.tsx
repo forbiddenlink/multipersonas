@@ -111,7 +111,7 @@ export function AuditResults({
       </div>
 
       {results.personas.length > 0 && (
-        <p className="redline-note text-center uppercase tracking-[0.1em]">Opinion · AI</p>
+        <p className="redline-note text-center">Opinion · AI</p>
       )}
       <div className={`grid gap-4 ${compact ? "sm:grid-cols-1" : "sm:grid-cols-3 gap-6"}`}>
         {results.personas.map((persona) => (
@@ -180,7 +180,6 @@ export function AuditResults({
       {results.axeFindings.length > 0 && (
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <p className="label-mono">Axe-core verdicts</p>
             <h3 className="display text-2xl leading-tight">Accessibility issues</h3>
             <p className="max-w-2xl text-sm text-muted-foreground">
               Deterministic, cited to WCAG.
