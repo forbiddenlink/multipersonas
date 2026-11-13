@@ -63,9 +63,12 @@ export function FrameViewport({ index }: { index: number }) {
         </text>
         {/* Inspection pointer line and tag */}
         <line x1="256" y1="46" x2="256" y2="70" stroke="var(--redline)" strokeWidth="1.5" />
-        <rect x="180" y="70" width="130" height="22" rx="2" fill="var(--card)" stroke="var(--redline)" strokeWidth="1" />
-        <text x="186" y="84" fill="var(--redline)" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
-          ■ select-name: no accessible name
+        <rect x="180" y="70" width="130" height="32" rx="2" fill="var(--card)" stroke="var(--redline)" strokeWidth="1" />
+        <text x="186" y="83" fill="var(--redline)" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
+          ■ select-name:
+        </text>
+        <text x="186" y="95" fill="var(--redline)" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
+          no accessible name
         </text>
         {/* Product grid items */}
         <rect x="16" y="60" width="70" height="90" rx="2" fill="var(--card)" stroke="var(--border)" strokeWidth="1" />
@@ -102,9 +105,12 @@ export function FrameViewport({ index }: { index: number }) {
       <path d="M248 56 L258 66 M258 56 L248 66" stroke="var(--redline)" strokeWidth="2" />
       {/* Callout box */}
       <line x1="253" y1="72" x2="253" y2="92" stroke="var(--redline)" strokeWidth="1.5" />
-      <rect x="156" y="92" width="116" height="22" rx="2" fill="var(--card)" stroke="var(--redline)" strokeWidth="1" />
-      <text x="162" y="106" fill="var(--redline)" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
-        ■ button-name: announces only &quot;button&quot;
+      <rect x="144" y="92" width="128" height="32" rx="2" fill="var(--card)" stroke="var(--redline)" strokeWidth="1" />
+      <text x="150" y="105" fill="var(--redline)" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
+        ■ button-name:
+      </text>
+      <text x="150" y="117" fill="var(--redline)" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
+        announces only &quot;button&quot;
       </text>
       {/* Form inputs */}
       <rect x="52" y="82" width="90" height="14" rx="1" fill="var(--background)" stroke="var(--border)" strokeWidth="1" />
