@@ -20,18 +20,15 @@ export function FrameViewport({ index }: { index: number }) {
         {/* Browser URL Bar */}
         <rect x="0" y="0" width="320" height="24" fill="var(--muted)" opacity="0.4" />
         <rect x="12" y="5" width="196" height="14" rx="2" fill="var(--card)" />
-        <text x="20" y="15" fill="var(--muted-foreground)" fontSize="9" fontFamily="monospace">
-          saucedemo.com/login-error
+        <text x="20" y="17" fill="var(--muted-foreground)" fontSize="14" fontFamily="monospace">
+          saucedemo.com
         </text>
         {/* Login form box */}
         <rect x="70" y="44" width="180" height="136" rx="3" fill="var(--card)" stroke="var(--border)" strokeWidth="1" />
         {/* Redline alert banner */}
-        <rect x="82" y="54" width="156" height="32" rx="2" fill="var(--redline)" opacity="0.12" stroke="var(--redline)" strokeWidth="1.5" />
-        <text x="90" y="67" fill="var(--redline)" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
-          Epic sadface: Username and
-        </text>
-        <text x="90" y="79" fill="var(--redline)" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
-          password do not match
+        <rect x="82" y="54" width="156" height="26" rx="2" fill="var(--redline)" opacity="0.12" stroke="var(--redline)" strokeWidth="1.5" />
+        <text x="90" y="72" fill="var(--redline)" fontSize="14" fontWeight="bold" fontFamily="monospace">
+          Error: bad login
         </text>
         {/* Form fields */}
         <rect x="86" y="96" width="148" height="16" rx="2" fill="var(--background)" stroke="var(--border)" strokeWidth="1" />
@@ -48,27 +45,27 @@ export function FrameViewport({ index }: { index: number }) {
         <rect width="320" height="200" fill="var(--background)" />
         <rect x="0" y="0" width="320" height="24" fill="var(--muted)" opacity="0.4" />
         <rect x="12" y="5" width="196" height="14" rx="2" fill="var(--card)" />
-        <text x="20" y="15" fill="var(--muted-foreground)" fontSize="9" fontFamily="monospace">
-          saucedemo.com/inventory
+        <text x="20" y="17" fill="var(--muted-foreground)" fontSize="14" fontFamily="monospace">
+          saucedemo.com
         </text>
         {/* Nav header */}
         <rect x="0" y="24" width="320" height="24" fill="var(--card)" stroke="var(--border)" strokeWidth="1" />
-        <text x="16" y="40" fill="var(--foreground)" fontSize="11" fontWeight="bold" fontFamily="sans-serif">
+        <text x="16" y="42" fill="var(--foreground)" fontSize="14" fontWeight="bold" fontFamily="sans-serif">
           Swag Labs
         </text>
         {/* Redline bounding box around defective select */}
-        <rect x="206" y="28" width="100" height="16" rx="2" fill="var(--card)" stroke="var(--redline)" strokeWidth="2" strokeDasharray="3 2" />
-        <text x="212" y="40" fill="var(--redline)" fontSize="9" fontWeight="bold" fontFamily="monospace">
-          NAME (A TO Z) ▼
+        <rect x="216" y="27" width="90" height="19" rx="2" fill="var(--card)" stroke="var(--redline)" strokeWidth="2" strokeDasharray="3 2" />
+        <text x="222" y="41" fill="var(--redline)" fontSize="14" fontWeight="bold" fontFamily="monospace">
+          A TO Z ▼
         </text>
         {/* Inspection pointer line and tag */}
-        <line x1="256" y1="46" x2="256" y2="70" stroke="var(--redline)" strokeWidth="1.5" />
-        <rect x="180" y="70" width="130" height="32" rx="2" fill="var(--card)" stroke="var(--redline)" strokeWidth="1" />
-        <text x="186" y="83" fill="var(--redline)" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
-          ■ select-name:
+        <line x1="256" y1="46" x2="256" y2="68" stroke="var(--redline)" strokeWidth="1.5" />
+        <rect x="174" y="68" width="136" height="40" rx="2" fill="var(--card)" stroke="var(--redline)" strokeWidth="1" />
+        <text x="180" y="86" fill="var(--redline)" fontSize="14" fontWeight="bold" fontFamily="monospace">
+          ■ select-name
         </text>
-        <text x="186" y="95" fill="var(--redline)" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
-          no accessible name
+        <text x="180" y="102" fill="var(--redline)" fontSize="14" fontWeight="bold" fontFamily="monospace">
+          has no name
         </text>
         {/* Product grid items */}
         <rect x="16" y="60" width="70" height="90" rx="2" fill="var(--card)" stroke="var(--border)" strokeWidth="1" />
@@ -90,32 +87,32 @@ export function FrameViewport({ index }: { index: number }) {
       <rect width="320" height="200" fill="var(--background)" />
       <rect x="0" y="0" width="320" height="24" fill="var(--muted)" opacity="0.4" />
       <rect x="12" y="5" width="196" height="14" rx="2" fill="var(--card)" />
-      <text x="20" y="15" fill="var(--muted-foreground)" fontSize="9" fontFamily="monospace">
-        saucedemo.com/checkout-step-one
+      <text x="20" y="17" fill="var(--muted-foreground)" fontSize="14" fontFamily="monospace">
+        saucedemo.com
       </text>
       {/* Checkout Form */}
       <rect x="40" y="38" width="240" height="146" rx="3" fill="var(--card)" stroke="var(--border)" strokeWidth="1" />
       {/* Error alert banner */}
-      <rect x="52" y="48" width="216" height="26" rx="2" fill="var(--redline)" opacity="0.12" stroke="var(--redline)" strokeWidth="1" />
-      <text x="60" y="64" fill="var(--redline)" fontSize="9.5" fontWeight="bold" fontFamily="monospace">
-        Error: Postal Code is required
+      <rect x="52" y="46" width="216" height="28" rx="2" fill="var(--redline)" opacity="0.12" stroke="var(--redline)" strokeWidth="1" />
+      <text x="60" y="65" fill="var(--redline)" fontSize="14" fontWeight="bold" fontFamily="monospace">
+        Postal code required
       </text>
       {/* Defective dismiss button in redline target */}
       <rect x="244" y="52" width="18" height="18" rx="2" fill="var(--card)" stroke="var(--redline)" strokeWidth="2" strokeDasharray="3 2" />
       <path d="M248 56 L258 66 M258 56 L248 66" stroke="var(--redline)" strokeWidth="2" />
       {/* Callout box */}
       <line x1="253" y1="72" x2="253" y2="92" stroke="var(--redline)" strokeWidth="1.5" />
-      <rect x="144" y="92" width="128" height="32" rx="2" fill="var(--card)" stroke="var(--redline)" strokeWidth="1" />
-      <text x="150" y="105" fill="var(--redline)" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
-        ■ button-name:
+      <rect x="130" y="92" width="142" height="40" rx="2" fill="var(--card)" stroke="var(--redline)" strokeWidth="1" />
+      <text x="136" y="110" fill="var(--redline)" fontSize="14" fontWeight="bold" fontFamily="monospace">
+        ■ button-name
       </text>
-      <text x="150" y="117" fill="var(--redline)" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
-        announces only &quot;button&quot;
+      <text x="136" y="126" fill="var(--redline)" fontSize="14" fontWeight="bold" fontFamily="monospace">
+        reads &quot;button&quot;
       </text>
       {/* Form inputs */}
-      <rect x="52" y="82" width="90" height="14" rx="1" fill="var(--background)" stroke="var(--border)" strokeWidth="1" />
-      <rect x="52" y="102" width="90" height="14" rx="1" fill="var(--background)" stroke="var(--border)" strokeWidth="1" />
-      <rect x="52" y="122" width="90" height="14" rx="1" fill="var(--background)" stroke="var(--border)" strokeWidth="1" />
+      <rect x="52" y="82" width="70" height="14" rx="1" fill="var(--background)" stroke="var(--border)" strokeWidth="1" />
+      <rect x="52" y="102" width="70" height="14" rx="1" fill="var(--background)" stroke="var(--border)" strokeWidth="1" />
+      <rect x="52" y="122" width="70" height="14" rx="1" fill="var(--background)" stroke="var(--border)" strokeWidth="1" />
       <rect x="52" y="148" width="80" height="20" rx="1" fill="var(--border)" />
       <rect x="188" y="148" width="80" height="20" rx="1" fill="var(--primary)" />
     </svg>

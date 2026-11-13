@@ -217,7 +217,7 @@ export function GradeForm() {
               setUrl(e.target.value);
               if (error) setError(null);
             }}
-            placeholder="your-client.com"
+            placeholder="your-site.com"
             required
             disabled={loading}
             autoComplete="url"
