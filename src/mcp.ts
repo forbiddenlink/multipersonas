@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { registerAppTool, registerAppResource, RESOURCE_MIME_TYPE } from "@modelcontextprotocol/ext-apps/server";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { crawl } from "./crawler/crawl.js";
 import { evaluateGate, baselineFromFindings, type Baseline } from "./crawler/gate.js";
@@ -9,6 +10,8 @@ import { loadSuppressions } from "./crawler/suppressions.js";
 import { buildScanJson, type ScanJson } from "./report/json.js";
 import { resolveSessionFile } from "./auth/session.js";
 import { SEVERITIES, type Severity } from "./domain/vocab.js";
+import { loadExtAppsRuntime } from "./mcp-app/bundle.js";
+import { SCAN_VIEW_URI, scanResultsHtml } from "./mcp-app/scan-view.js";
 
 /**
  * MCP server: the deterministic scan and baseline gate, callable from a coding agent.
@@ -21,6 +24,10 @@ import { SEVERITIES, type Severity } from "./domain/vocab.js";
  * server (`personaudit mcp --allow-private`), never by a tool argument: the agent
  * reads page text, and injected text must not be able to point the browser at the
  * local network.
+ *
+ * `scan_site` is also an MCP App: hosts that support MCP Apps render its result in an
+ * inline panel (filters, per-defect detail, a button that asks the agent to fix one).
+ * Hosts without it get the same JSON as text, so nothing changes for them.
  */
 
 /** Defects returned per call. The rest are counted, not dropped silently. */
@@ -126,7 +133,8 @@ export function createServer(version: string, options: ServerOptions = {}): McpS
 
   const server = new McpServer({ name: "personaudit", version });
 
-  server.registerTool(
+  registerAppTool(
+    server,
     "scan_site",
     {
       title: "Scan a site for accessibility defects",
@@ -139,6 +147,7 @@ export function createServer(version: string, options: ServerOptions = {}): McpS
         failOn: z.enum(SEVERITIES).optional().describe("Evaluate the CI gate at this severity."),
       },
       annotations: { readOnlyHint: true, openWorldHint: true },
+      _meta: { ui: { resourceUri: SCAN_VIEW_URI } },
     },
     async (input) => {
       try {
@@ -159,7 +168,8 @@ export function createServer(version: string, options: ServerOptions = {}): McpS
           fixed: gate.fixed,
           suppressions: gate.suppressions,
         });
-        return text(toMcpResult(scan, input.failOn ? { failOn: input.failOn, passed: gate.passed, failing: gate.failing.length } : null));
+        const mcpResult = toMcpResult(scan, input.failOn ? { failOn: input.failOn, passed: gate.passed, failing: gate.failing.length } : null);
+        return { ...text(mcpResult), structuredContent: { ...mcpResult } };
       } catch (error) {
         return failure(error);
       }
@@ -190,6 +200,16 @@ export function createServer(version: string, options: ServerOptions = {}): McpS
         return failure(error);
       }
     },
+  );
+
+  registerAppResource(
+    server,
+    "Personaudit scan results",
+    SCAN_VIEW_URI,
+    { description: "Interactive panel for scan_site results." },
+    async () => ({
+      contents: [{ uri: SCAN_VIEW_URI, mimeType: RESOURCE_MIME_TYPE, text: scanResultsHtml(loadExtAppsRuntime()) }],
+    }),
   );
 
   return server;
