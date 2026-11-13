@@ -158,15 +158,35 @@ for (const route of ["/pricing", "/for-agencies", "/grade", "/docs", "/guides/wc
   });
 }
 
-// The home hero's signature: one example page seen by each persona, with the sample grade
-// under it, labelled as an example, plus the exhibit tabs further down the page.
-test("/ keeps the persona lineup and sample grade", async ({ page }) => {
+// The home hero's signature: a session replay of one stored persona run, with the axe-core
+// scan as a separate, labelled lane and the task result at the end. It is labelled as a
+// sample. The persona lineup and sample grade further down the page, and the exhibit tabs,
+// are unchanged.
+test("/ keeps the session replay, the axe lane and the persona lineup", async ({ page }) => {
   await page.goto("/", { waitUntil: "load" });
   await expect(page.locator("h1 .mark-sweep")).toHaveCount(0);
+  const replay = page.locator("#scan figure");
+  await expect(replay.getByText("Sample: stored run, not your site")).toBeVisible();
+  await expect(replay.getByText("Goal given to the persona")).toBeVisible();
+  await expect(replay.getByRole("heading", { name: /Lane 1/ })).toBeVisible();
+  await expect(replay.getByRole("heading", { name: /Lane 2/ })).toBeVisible();
+  await expect(replay.getByText("Task result")).toBeVisible();
+  await expect(replay.getByRole("list", { name: "Steps the persona narrated, in order" })).toBeVisible();
   await expect(page.getByText("Example page, sample grade")).toBeVisible();
   await expect(page.getByRole("listitem").filter({ hasText: "Keyboard traversal" })).toHaveCount(1);
   await expect(page.getByText("Sample grade: C")).toBeAttached();
   await expect(page.locator(".exhibit-tab").first()).toBeVisible();
+});
+
+// Picking a stored run swaps the goal and the task result; picking an axe state swaps the finding.
+test("/ replay: choosing a run and a scan state updates the readouts", async ({ page }) => {
+  await page.goto("/", { waitUntil: "load" });
+  const replay = page.locator("#scan figure");
+  await replay.getByRole("button", { name: /Buy an item/ }).click();
+  await expect(replay.getByText("Buy an item: go through checkout to the order-confirmation page.").first()).toBeVisible();
+  await expect(replay.locator(".pa-result")).toContainText("Achieved");
+  await replay.getByRole("button", { name: /Login error/ }).click();
+  await expect(replay.locator(".pa-axe-readout")).toContainText("button-name");
 });
 
 // The main action (grading a URL) is in the first screen of the home page on a phone.

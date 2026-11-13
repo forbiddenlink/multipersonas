@@ -13,6 +13,7 @@ import { SampleTaskSuccess } from "@/components/dossier/sample-task-success";
 import { SampleRunLedger, SampleStuckMoment } from "@/components/dossier/sample-run";
 import { DoorStage } from "@/components/home/door-stage";
 import { Placard } from "@/components/home/placard";
+import { ReplayRecorder } from "@/components/home/replay-recorder";
 import "@/components/home/home.css";
 import { PROBE_LEDGER, SAUCEDEMO_TRAIL } from "@/lib/probe-ledger";
 import { publicScanLetter } from "@/lib/home-placard";
@@ -100,45 +101,36 @@ export default function Home() {
       </header>
 
       <main id="main" className="exhibits flex-1">
-        {/* ── 2. Hero: the window. The grade form is the placard slot. ── */}
+        {/* ── 2. Hero: a session replay of a persona trying a goal, with the axe-core scan as its own lane. ── */}
         <section id="scan" aria-labelledby="hero-heading" className="scroll-mt-4">
-          <div className="frame break-words pt-6 pb-14 sm:pt-10 lg:pt-14 lg:pb-20">
-            <div className="grid gap-6 sm:gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-14">
+          <div className="frame break-words pt-6 sm:pt-10">
+            <div className="pa-hero-top">
               <div className="min-w-0">
-                <p className="pa-kicker">AI persona walkthroughs, for agencies and dev teams</p>
                 {/* LCP element: plain text, no animation. */}
-                <h1 id="hero-heading" className="pa-h mt-4 text-[clamp(2.75rem,8.4vw,6.6rem)]">
+                <h1 id="hero-heading" className="pa-hero-h">
                   See where a first-time visitor gets stuck on your site.
                 </h1>
-                <p className="mt-4 max-w-[34rem] text-lg leading-relaxed sm:mt-6 sm:text-xl">
+                <p className="mt-3 max-w-[40rem] text-base leading-relaxed sm:mt-4 sm:text-lg">
                   AI personas browse your site toward a goal, like finding pricing or checking
-                  out. When one stalls, you get the screenshot and what it said at that moment.
-                </p>
-                <p className="mt-3 max-w-[34rem] text-base leading-relaxed text-muted-foreground sm:mt-4">
-                  What personas are for: finding where a goal stalls. They do not find accessibility
-                  defects. That is axe-core&apos;s job, and it runs underneath every report.
+                  out. Below is one stored run you can scrub through, with the axe-core scan of
+                  the same site kept in its own lane.
                 </p>
               </div>
-
-              <div className="pa-window min-w-0">
-                <p className="pa-glass-text" aria-hidden="true">
-                  Graded from the outside
-                </p>
-                <div className="pa-placard">
-                  <p className="pa-placard-head">Your public pages</p>
-                  <div className="pa-slot">
-                    <GradeForm />
-                  </div>
-                  <p className="pa-placard-foot mt-3">
-                    A free accessibility check of your public pages from axe-core. No account.
-                  </p>
-                </div>
-                <p className="mt-5 text-base leading-relaxed text-muted-foreground">
+              <div className="pa-hero-form">
+                <GradeForm />
+                <p className="mt-3 text-base leading-relaxed text-muted-foreground">
                   Persona walkthroughs are on Solo and up.{" "}
                   <Link href="/pricing" className="text-link">See plans</Link>.
                 </p>
               </div>
             </div>
+          </div>
+          <div className="pa-rec-wrap mt-6 pb-14 sm:mt-8 lg:pb-20">
+            <ReplayRecorder />
+            <p className="mx-auto mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground">
+              What personas are for: finding where a goal stalls. They do not find accessibility
+              defects. That is axe-core&apos;s job, and it runs underneath every report.
+            </p>
           </div>
         </section>
 
