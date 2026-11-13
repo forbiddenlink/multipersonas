@@ -62,6 +62,23 @@ export function pickEvidenceStep(journey: OutcomeJourney): EvidenceStep | null {
   return { ...steps[preferredIndex]!, index: preferredIndex };
 }
 
+/**
+ * Indexes of the steps flagged as stuck points on a persona's track. Same rule as
+ * rankStuckPoints: a non-finish step at or above STUCK_FRUSTRATION, plus the evidence
+ * step when the persona did not reach the goal.
+ */
+export function stuckStepIndexes(journey: OutcomeJourney): Set<number> {
+  const out = new Set<number>();
+  journey.steps.forEach((s, i) => {
+    if (s.action !== "finish" && s.frustration >= STUCK_FRUSTRATION) out.add(i);
+  });
+  if (!journey.goalCompleted) {
+    const ev = pickEvidenceStep(journey);
+    if (ev) out.add(ev.index);
+  }
+  return out;
+}
+
 function cleanQuote(text: string | null | undefined): string {
   const flat = (text ?? "")
     .replace(/\s*[\u2014\u2013]\s*/g, ", ")

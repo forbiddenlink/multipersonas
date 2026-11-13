@@ -11,7 +11,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { PERSONA_DATA } from "@/lib/personas";
 import { personaLibrary, isBuiltinPersonaId } from "@engine/personas/library";
 import { buildPersonaOutcomes, describeDevice } from "@/lib/persona-outcomes";
-import { SessionRecorder, type RecorderAxeItem, type RecorderPersona } from "@/components/session-recorder";
+import { SessionRecorder } from "@/components/session-recorder";
+import { buildRecorderLanes } from "@/lib/recorder-lanes";
 import { StuckPoints } from "@/components/stuck-points";
 import { formatLocation } from "@/lib/format-location";
 import { formatShortDate } from "@/lib/format";
@@ -250,51 +251,17 @@ export default async function AuditDetailPage({
         : `${openWorkflowCount} open`;
 
   // Session recorder inputs: everything below is already loaded above, nothing new is queried.
-  const recorderPersonas: RecorderPersona[] = personaOutcomes.cards.map((c) => ({
-    personaId: c.personaId,
-    name: c.name,
-    role: c.role,
-    badge: c.badge,
-    journey: journeys.find((j) => j.personaId === c.personaId) ?? null,
-    notes: (byPersona.get(c.personaId) ?? []).map((f) => f.title),
-  }));
-  const AXE_LANE_MAX_PAGES = 6;
-  const axePageMap = new Map<string, RecorderAxeItem[]>();
-  let axeNotShown = 0;
-  for (const f of sortedAxeFindings) {
-    if (!f.page_url) {
-      axeNotShown += 1;
-      continue;
-    }
-    if (!axePageMap.has(f.page_url) && axePageMap.size >= AXE_LANE_MAX_PAGES) {
-      axeNotShown += 1;
-      continue;
-    }
-    const shown = displayFinding({
-      ruleId: f.rule_id,
-      title: f.title,
-      description: f.description,
-      recommendation: f.recommendation,
-    });
-    const list = axePageMap.get(f.page_url) ?? [];
-    list.push({
-      id: f.id,
-      severity: f.severity,
-      ruleId: shown.ruleId ?? null,
-      title: shown.title,
-      why: shown.why ?? null,
-      fix: shown.fix ?? null,
-      pageUrl: f.page_url,
-    });
-    axePageMap.set(f.page_url, list);
-  }
-  const axePages = [...axePageMap].map(([pageUrl, items]) => ({ pageUrl, items }));
-
-  const evidenceJourney = journeys.find((journey) => journey.personaId === personaParam);
-  const verificationIndex = evidenceJourney?.steps.findIndex((step) => step.action === "verify_task") ?? -1;
-  const initialStep = evidence === "task" && verificationIndex >= 0
-    ? verificationIndex
-    : Number.isFinite(Number(stepParam)) ? Number(stepParam) : 0;
+  const recorder = buildRecorderLanes({
+    cards: personaOutcomes.cards,
+    journeys,
+    notesByPersona: byPersona,
+    axeFindings: sortedAxeFindings,
+    personaParam,
+    stepParam,
+    evidence,
+  });
+  const verificationIndex =
+    journeys.find((journey) => journey.personaId === personaParam)?.steps.findIndex((step) => step.action === "verify_task") ?? -1;
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-10">
@@ -374,15 +341,15 @@ export default async function AuditDetailPage({
         )}
       </div>
 
-      {recorderPersonas.length > 0 || axePages.length > 0 ? (
+      {recorder.personas.length > 0 || recorder.axePages.length > 0 || recorder.axeNotShown > 0 ? (
         <div className="space-y-6">
           <SessionRecorder
-            personas={recorderPersonas}
+            personas={recorder.personas}
             headline={personaOutcomes.headline}
-            axePages={axePages}
-            axeNotShown={axeNotShown}
-            initialPersona={personaParam}
-            initialStep={initialStep}
+            axePages={recorder.axePages}
+            axeNotShown={recorder.axeNotShown}
+            initialPersona={recorder.initialPersona}
+            initialStep={recorder.initialStep}
             taskCheck={Boolean(run.task_definition)}
           />
           <p className="max-w-3xl text-sm text-muted-foreground">
@@ -444,8 +411,8 @@ export default async function AuditDetailPage({
                     {f.priorityReason}
                   </p>
                 </div>
-                <span className="font-mono text-sm tabular-nums">
-                  Priority <span className="text-lg font-semibold">{f.priorityScore}</span>
+                <span className="text-sm tabular-nums">
+                  Priority <span className="font-mono text-lg font-semibold">{f.priorityScore}</span>
                 </span>
               </li>
             ))}

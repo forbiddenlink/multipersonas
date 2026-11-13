@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { frustrationBand } from "@/lib/frustration";
 import { formatLocation } from "@/lib/format-location";
-import { isGiveUp, STUCK_FRUSTRATION, type OutcomeBadge } from "@/lib/persona-outcomes";
+import { isGiveUp, stuckStepIndexes, type OutcomeBadge } from "@/lib/persona-outcomes";
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { severityMeta } from "@/components/forensic/severity";
 import type { PersonaJourney } from "@/lib/journey";
@@ -12,6 +12,8 @@ export interface RecorderPersona {
   personaId: string;
   name: string;
   role: string;
+  /** Viewport, input and connection, from describeDevice(). Empty for custom personas. */
+  device: string;
   badge: OutcomeBadge;
   journey: PersonaJourney | null;
   /** Persona-authored finding titles, shown only when no step-by-step journey was recorded. */
@@ -43,7 +45,6 @@ export interface SessionRecorderProps {
 
 type Focus = { lane: "persona"; row: number } | { lane: "axe"; row: number };
 
-/** Index of the tick under a shared cursor, proportional through a track of `len` ticks. */
 /** Short row label: the path on the page's host, with the full location kept for the tooltip. */
 function pathLabel(pageUrl: string): string {
   try {
@@ -54,6 +55,7 @@ function pathLabel(pageUrl: string): string {
   }
 }
 
+/** Index of the tick under a shared cursor, proportional through a track of `len` ticks. */
 function tickAt(len: number, cursor: number, max: number): number {
   if (len <= 1 || max <= 0) return 0;
   return Math.min(len - 1, Math.max(0, Math.round((cursor / max) * (len - 1))));
@@ -128,17 +130,20 @@ export function SessionRecorder({
   const focusedStepIdx =
     focusedPersona?.journey ? tickAt(focusedPersona.journey.steps.length, cursor, max) : 0;
   useEffect(() => {
-    if (!focusedPersona?.journey) return;
     const params = new URLSearchParams(window.location.search);
-    params.set("persona", focusedPersona.personaId);
-    params.set("step", String(focusedStepIdx));
-    window.history.replaceState(null, "", `?${params.toString()}`);
+    if (focusedPersona?.journey) {
+      params.set("persona", focusedPersona.personaId);
+      params.set("step", String(focusedStepIdx));
+    } else if (params.has("persona") || params.has("step")) {
+      // Focus moved to the axe lane: a stale persona moment must not stay in the link.
+      params.delete("persona");
+      params.delete("step");
+    } else {
+      return;
+    }
+    const qs = params.toString();
+    window.history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
   }, [focusedPersona, focusedStepIdx]);
-
-  const stepBy = useCallback(
-    (d: number) => setCursor((c) => Math.min(max, Math.max(0, c + d))),
-    [max],
-  );
 
   const reachedBy = useCallback(
     (pageUrl: string) =>
@@ -167,6 +172,79 @@ export function SessionRecorder({
         ? `Finding ${tickAt(axePages[focus.row]!.items.length, cursor, max) + 1} of ${axePages[focus.row]!.items.length}`
         : "No recorded steps";
 
+  // Stuck flags come from the same rule as the Stuck points list (rankStuckPoints).
+  const stuckByPersona = useMemo(() => {
+    const m = new Map<string, Set<number>>();
+    for (const p of playable) m.set(p.personaId, stuckStepIndexes(p.journey!));
+    return m;
+  }, [playable]);
+
+  const focusedLen =
+    focus.lane === "persona"
+      ? (focusedPersona?.journey?.steps.length ?? 0)
+      : (axePages[focus.row]?.items.length ?? 0);
+  const focusedIdx = tickAt(focusedLen, cursor, max);
+
+  // One short, always-mounted live region. The slider announces itself through its own
+  // aria-valuetext, so only tick and prev/next moves write here.
+  const [announce, setAnnounce] = useState("");
+  const describeTick = (f: Focus, i: number): string => {
+    if (f.lane === "persona") {
+      const p = personas[f.row];
+      const steps = p?.journey?.steps ?? [];
+      const s = steps[i];
+      if (!p || !s) return "";
+      const mark = isGiveUp(s) ? ", gave up" : stuckByPersona.get(p.personaId)?.has(i) ? ", stuck point" : "";
+      return `${p.name}, step ${i + 1} of ${steps.length}${mark}, ${s.action}`;
+    }
+    const page = axePages[f.row];
+    const item = page?.items[i];
+    if (!page || !item) return "";
+    return `${severityMeta(item.severity).label}, ${item.ruleId ?? item.title}, finding ${i + 1} of ${page.items.length} on ${pathLabel(page.pageUrl)}`;
+  };
+
+  const select = (f: Focus, len: number, i: number) => {
+    setFocus(f);
+    setCursor(cursorFor(len, i, max));
+    setAnnounce(describeTick(f, i));
+  };
+
+  // Prev and next walk the focused track's own ticks, not the longest track's.
+  const stepBy = (d: number) => {
+    if (focusedLen <= 0) return;
+    select(focus, focusedLen, Math.min(focusedLen - 1, Math.max(0, focusedIdx + d)));
+  };
+
+  // Roving tabindex: one tab stop per track. Arrows, Home and End move within it.
+  const onTickKey = (e: KeyboardEvent<HTMLButtonElement>, f: Focus, len: number, i: number) => {
+    let n = i;
+    if (e.key === "ArrowRight") n = Math.min(len - 1, i + 1);
+    else if (e.key === "ArrowLeft") n = Math.max(0, i - 1);
+    else if (e.key === "Home") n = 0;
+    else if (e.key === "End") n = len - 1;
+    else return;
+    e.preventDefault();
+    select(f, len, n);
+    (e.currentTarget.parentElement?.children[n] as HTMLElement | undefined)?.focus();
+  };
+
+  const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
+  const copyMoment = useCallback(async () => {
+    // The URL carries ?persona&step (kept in sync above). The link still needs the owner's
+    // sign-in to open, so nothing private leaks.
+    setCopyError(null);
+    setCopied(false);
+    try {
+      if (!navigator.clipboard) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      setCopyError("Could not copy. Copy the link from your browser's address bar.");
+    }
+  }, []);
+
   const hasAnyTrack = playable.length > 0 || axePages.length > 0;
 
   return (
@@ -181,14 +259,19 @@ export function SessionRecorder({
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <h3 className="display text-xl leading-tight">Persona sessions</h3>
             <span className="text-[13px] font-semibold text-[var(--redline)]">AI opinion</span>
-            <span className="text-sm text-muted-foreground">{headline}</span>
+            {personas.length > 0 ? <span className="text-sm text-muted-foreground">{headline}</span> : null}
           </div>
         </div>
+        {personas.length === 0 ? (
+          <p className="px-3 pb-3 pt-2 text-sm text-muted-foreground sm:px-4">This run had no personas.</p>
+        ) : null}
         <ul className="divide-y divide-border px-3 pb-3 sm:px-4">
           {personas.map((p, row) => {
             const steps = p.journey?.steps ?? [];
             const sel = focus.lane === "persona" && focus.row === row;
             const idx = tickAt(steps.length, cursor, max);
+            const flags = stuckByPersona.get(p.personaId);
+            const f: Focus = { lane: "persona", row };
             return (
               <li
                 key={p.personaId}
@@ -200,6 +283,10 @@ export function SessionRecorder({
                   <p className="truncate text-sm font-medium" title={p.name}>
                     {p.name}
                   </p>
+                  {p.role ? <p className="break-words text-[13px] leading-snug text-muted-foreground">{p.role}</p> : null}
+                  {p.device ? (
+                    <p className="break-words font-mono text-[12px] leading-snug text-muted-foreground">{p.device}</p>
+                  ) : null}
                   <p>
                     <span
                       className={`inline-flex items-center gap-1 text-[13px] font-semibold ${
@@ -216,27 +303,23 @@ export function SessionRecorder({
                   </p>
                 </div>
                 {steps.length > 0 ? (
-                  <div
-                    role="group"
-                    aria-label={`${p.name} steps`}
-                    className="min-w-0 overflow-x-auto"
-                    tabIndex={-1}
-                  >
-                    <div className="flex gap-px" style={{ minWidth: `${steps.length * 20}px` }}>
+                  <div role="group" aria-label={`${p.name} steps`} className="min-w-0 overflow-x-auto">
+                    <div className="flex gap-px" style={{ minWidth: `${steps.length * 25}px` }}>
                       {steps.map((s, i) => {
                         const b = frustrationBand(s.frustration);
-                        const flag = (s.action !== "finish" && s.frustration >= STUCK_FRUSTRATION) || isGiveUp(s);
+                        const giveUp = isGiveUp(s);
+                        const flag = Boolean(flags?.has(i));
                         const active = sel && i === idx;
+                        const fill = Math.max(18, 18 + s.frustration * 0.82);
                         return (
                           <button
                             key={i}
                             type="button"
-                            onClick={() => {
-                              setFocus({ lane: "persona", row });
-                              setCursor(cursorFor(steps.length, i, max));
-                            }}
+                            tabIndex={i === idx ? 0 : -1}
+                            onClick={() => select(f, steps.length, i)}
+                            onKeyDown={(e) => onTickKey(e, f, steps.length, i)}
                             aria-current={active ? "step" : undefined}
-                            aria-label={`${p.name}, step ${i + 1}${flag ? ", stuck point" : ""}, ${b.label}`}
+                            aria-label={`${p.name}, step ${i + 1}${giveUp ? ", gave up" : flag ? ", stuck point" : ""}${taskCheck ? "" : `, ${b.label}`}`}
                             title={taskCheck ? `step ${i + 1}: ${s.action}` : `step ${i + 1}: ${b.label} (${s.frustration})`}
                             className={`flex min-w-0 flex-1 flex-col items-stretch ${TICK_FOCUS}`}
                           >
@@ -245,15 +328,19 @@ export function SessionRecorder({
                             </span>
                             <span
                               aria-hidden="true"
-                              className={`relative block h-7 overflow-hidden rounded-[2px] border border-border bg-muted ${
+                              className={`relative block h-8 overflow-hidden rounded-[2px] border border-foreground/45 bg-background ${
                                 active ? "outline-2 outline-offset-1 outline-[var(--foreground)]" : ""
                               }`}
                             >
                               <span
                                 className="absolute inset-x-0 bottom-0 block"
                                 style={{
-                                  height: taskCheck ? "100%" : `${Math.max(s.frustration, 8)}%`,
-                                  backgroundColor: taskCheck ? "var(--muted-foreground)" : b.token,
+                                  height: taskCheck ? "100%" : `${fill}%`,
+                                  backgroundColor: taskCheck
+                                    ? "color-mix(in oklch, var(--foreground) 35%, transparent)"
+                                    : b.band === "calm"
+                                      ? "color-mix(in oklch, var(--foreground) 45%, transparent)"
+                                      : b.token,
                                 }}
                               />
                             </span>
@@ -278,7 +365,7 @@ export function SessionRecorder({
           <div className="border-t border-border">
             <div className="px-3 pt-3 sm:px-4">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <h3 className="display text-xl leading-tight">Accessibility scan (axe-core)</h3>
+                <h3 className="display text-xl leading-tight">axe-core findings by page</h3>
                 <span className="text-[13px] font-semibold">Deterministic</span>
                 <span className="text-sm text-muted-foreground">
                   Ticks are findings, coloured and shaped by impact.
@@ -290,6 +377,7 @@ export function SessionRecorder({
                 const sel = focus.lane === "axe" && focus.row === row;
                 const idx = tickAt(page.items.length, cursor, max);
                 const crit = page.items.filter((f) => f.severity === "critical").length;
+                const f: Focus = { lane: "axe", row };
                 return (
                   <li
                     key={page.pageUrl}
@@ -306,23 +394,23 @@ export function SessionRecorder({
                         {crit > 0 ? `, ${crit} critical` : ""}
                       </p>
                     </div>
-                    <div role="group" aria-label={`Findings on ${formatLocation(page.pageUrl) ?? page.pageUrl}`} className="min-w-0 overflow-x-auto" tabIndex={-1}>
-                      <div className="flex gap-px" style={{ minWidth: `${page.items.length * 20}px` }}>
-                        {page.items.map((f, i) => {
-                          const meta = severityMeta(f.severity);
+                    <div role="group" aria-label={`Findings on ${formatLocation(page.pageUrl) ?? page.pageUrl}`} className="min-w-0 overflow-x-auto">
+                      <div className="flex gap-px" style={{ minWidth: `${page.items.length * 25}px` }}>
+                        {page.items.map((item, i) => {
+                          const meta = severityMeta(item.severity);
                           const active = sel && i === idx;
+                          const big = meta.glyph === "■" || meta.glyph === "●";
                           return (
                             <button
-                              key={f.id}
+                              key={item.id}
                               type="button"
-                              onClick={() => {
-                                setFocus({ lane: "axe", row });
-                                setCursor(cursorFor(page.items.length, i, max));
-                              }}
+                              tabIndex={i === idx ? 0 : -1}
+                              onClick={() => select(f, page.items.length, i)}
+                              onKeyDown={(e) => onTickKey(e, f, page.items.length, i)}
                               aria-current={active ? "step" : undefined}
-                              aria-label={`${meta.label}, ${f.ruleId ?? f.title}`}
-                              title={`${meta.label}: ${f.ruleId ?? f.title}`}
-                              className={`flex h-9 min-w-0 flex-1 items-center justify-center rounded-[2px] border text-[13px] leading-none ${TICK_FOCUS} ${
+                              aria-label={`${meta.label}, ${item.ruleId ?? item.title}`}
+                              title={`${meta.label}: ${item.ruleId ?? item.title}`}
+                              className={`flex h-9 min-w-0 flex-1 items-center justify-center rounded-[2px] border leading-none ${TICK_FOCUS} ${
                                 active ? "outline-2 outline-offset-1 outline-[var(--foreground)]" : ""
                               }`}
                               style={{
@@ -331,7 +419,9 @@ export function SessionRecorder({
                                 backgroundColor: `color-mix(in oklch, ${meta.token} 12%, transparent)`,
                               }}
                             >
-                              <span aria-hidden="true">{meta.glyph}</span>
+                              <span aria-hidden="true" className={big ? "text-[22px]" : "text-[14px]"}>
+                                {meta.glyph}
+                              </span>
                             </button>
                           );
                         })}
@@ -341,22 +431,27 @@ export function SessionRecorder({
                 );
               })}
             </ul>
-            {axeNotShown > 0 ? (
-              <p className="px-3 pb-3 text-[13px] text-muted-foreground sm:px-4">
-                {axeNotShown} more {axeNotShown === 1 ? "finding is" : "findings are"} in the issues table below.
-              </p>
-            ) : null}
           </div>
         ) : null}
+        {axePages.length === 0 && axeNotShown > 0 ? (
+          <p className="border-t border-border px-3 pt-3 text-[13px] text-muted-foreground sm:px-4">
+            axe-core recorded no findings with a page location.
+          </p>
+        ) : null}
+        {axeNotShown > 0 ? (
+          <p className="px-3 pb-3 pt-1 text-[13px] text-muted-foreground sm:px-4">
+            {axeNotShown} more {axeNotShown === 1 ? "finding is" : "findings are"} in the issues table below.
+          </p>
+        ) : null}
 
-        {/* Single scrubber */}
+        {/* Single scrubber: steps the focused track, not the longest one. */}
         {hasAnyTrack ? (
           <div className="flex items-center gap-2 border-t border-border bg-muted/40 px-3 py-2.5 sm:gap-3 sm:px-4">
             <button
               type="button"
               onClick={() => stepBy(-1)}
               aria-label="Previous step"
-              disabled={cursor <= 0}
+              disabled={focusedIdx <= 0}
               className={`h-9 w-9 shrink-0 rounded-sm border border-border text-base disabled:opacity-40 ${TICK_FOCUS}`}
             >
               <span aria-hidden="true">‹</span>
@@ -364,29 +459,45 @@ export function SessionRecorder({
             <input
               type="range"
               min={0}
-              max={max}
+              max={Math.max(0, focusedLen - 1)}
               step={1}
-              value={cursor}
-              onChange={(e) => setCursor(Number(e.target.value))}
-              aria-label="Scrub both lanes"
+              value={focusedIdx}
+              onChange={(e) => setCursor(cursorFor(focusedLen, Number(e.target.value), max))}
+              aria-label="Scrub the selected track"
               aria-valuetext={readout}
-              disabled={max === 0}
+              disabled={focusedLen <= 1}
               className="h-9 min-w-0 flex-1 accent-[var(--foreground)]"
             />
             <button
               type="button"
               onClick={() => stepBy(1)}
               aria-label="Next step"
-              disabled={cursor >= max}
+              disabled={focusedIdx >= focusedLen - 1}
               className={`h-9 w-9 shrink-0 rounded-sm border border-border text-base disabled:opacity-40 ${TICK_FOCUS}`}
             >
               <span aria-hidden="true">›</span>
             </button>
-            <span className="hidden shrink-0 text-[13px] tabular-nums text-muted-foreground sm:inline" aria-live="polite">
-              {readout}
-            </span>
+            <span className="hidden shrink-0 text-[13px] tabular-nums text-muted-foreground sm:inline">{readout}</span>
+            {focusedPersona?.journey ? (
+              <button
+                type="button"
+                onClick={copyMoment}
+                aria-label="Copy a link to this moment"
+                className={`ml-auto h-9 shrink-0 rounded-sm border border-border px-3 text-[13px] text-muted-foreground hover:text-foreground ${TICK_FOCUS}`}
+              >
+                {copied ? "Copied" : "Copy link"}
+              </button>
+            ) : null}
           </div>
         ) : null}
+        {copyError ? (
+          <p role="alert" className="px-3 py-2 text-sm text-destructive sm:px-4">
+            {copyError}
+          </p>
+        ) : null}
+        <p className="sr-only" aria-live="polite" aria-atomic="true" data-testid="recorder-live">
+          {announce}
+        </p>
       </div>
 
       {/* Detail at the cursor */}
@@ -421,6 +532,7 @@ export function SessionRecorder({
                 <p className="text-sm text-muted-foreground">
                   <span className="font-medium text-foreground">{focusedPersona.name}</span>
                   {`, step ${focusedStepIdx + 1}: ${focusedStep.action}`}
+                  {isGiveUp(focusedStep) ? " (gave up)" : ""}
                   {focusedStep.detail ? <span className="break-words">{`, ${focusedStep.detail}`}</span> : null}
                 </p>
                 {focusedStep.reasoning ? (
@@ -440,7 +552,7 @@ export function SessionRecorder({
                     <span style={{ color: frustrationBand(focusedStep.frustration).token }}>
                       {frustrationBand(focusedStep.frustration).label}
                     </span>
-                    {focusedStep.action !== "finish" && focusedStep.frustration >= STUCK_FRUSTRATION ? (
+                    {!isGiveUp(focusedStep) && stuckByPersona.get(focusedPersona.personaId)?.has(focusedStepIdx) ? (
                       <span className="text-[var(--severity-critical)]"> (stuck point)</span>
                     ) : null}
                   </p>
