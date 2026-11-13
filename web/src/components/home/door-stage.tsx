@@ -54,8 +54,8 @@ export function DoorStage() {
             </li>
             <li>
               <span>
-                {consistent ? `${behind} net-new issues` : "New issues"}, found only behind the login.
-                The public scan missed these.
+                {consistent ? `${behind} net-new issues` : "New issues"} in states the public scan never
+                loads (CLI scan with a saved session).
               </span>
             </li>
           </ol>
