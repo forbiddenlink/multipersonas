@@ -60,7 +60,7 @@ export function ClaimGrades() {
 
   return (
     <div role="status" aria-live="polite">
-      {message ? <p className="mb-4 border-l-2 border-primary pl-3 text-sm">{message}</p> : null}
+      {message ? <p className="mb-4 rounded-sm border border-primary bg-accent px-3 py-2 text-sm">{message}</p> : null}
     </div>
   );
 }

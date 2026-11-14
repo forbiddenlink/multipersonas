@@ -215,7 +215,6 @@ export function SignupForm({ githubEnabled }: { githubEnabled: boolean }) {
         <AuthCardTab route="create-account" />
         <div className="px-5 py-6">
           <div>
-            <p className="label-mono">Free to start</p>
             <h1 className="display mt-1.5 text-[1.9rem] leading-tight text-foreground">Create <span className="mark-sweep">your account</span></h1>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Save your free grades and track one site over time. No card needed.
@@ -319,7 +318,7 @@ export function SignupForm({ githubEnabled }: { githubEnabled: boolean }) {
             <>
               <div className="flex items-center gap-3">
                 <Separator className="flex-1" />
-                <span className="font-mono text-xs text-muted-foreground">or</span>
+                <span className="text-xs text-muted-foreground">or</span>
                 <Separator className="flex-1" />
               </div>
               <GitHubAuthButton onClick={handleGitHubSignup} loading={loading} label="Sign up with GitHub" />

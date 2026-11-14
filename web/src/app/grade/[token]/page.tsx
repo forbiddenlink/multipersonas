@@ -139,7 +139,7 @@ export default async function GradeResultPage({
 
                 {scan.status === "failed" && (
                   <div className="border-t-2 border-dashed border-[var(--redline)] pt-5">
-                    <h2 className="redline-note uppercase tracking-[0.1em]">Grade failed</h2>
+                    <h2 className="redline-note">Grade failed</h2>
                     <p className="mt-2 leading-relaxed text-muted-foreground">
                       {scan.error || "Something went wrong while scanning this URL."}
                     </p>

@@ -25,7 +25,7 @@ export function ContentCallout({
   }
   return (
     <div className={styles.calloutRedline}>
-      <p className="redline-note uppercase tracking-[0.1em]">{label ?? "Note"}</p>
+      <p className="redline-note">{label ?? "Note"}</p>
       <div className="mt-1.5 text-[0.9375rem] leading-relaxed text-muted-foreground">{children}</div>
     </div>
   );

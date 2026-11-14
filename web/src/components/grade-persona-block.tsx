@@ -53,7 +53,7 @@ export function GradePersonaBlock({ persona }: { persona: LoadedGradePersona }) 
                 loading="lazy"
               />
               {view.pageUrl && (
-                <figcaption className="font-mono text-xs text-muted-foreground">
+                <figcaption className="text-xs text-muted-foreground">
                   Where it stopped: {displayPath(view.pageUrl)}
                 </figcaption>
               )}
@@ -64,7 +64,7 @@ export function GradePersonaBlock({ persona }: { persona: LoadedGradePersona }) 
             <ul className="space-y-2">
               {view.quotes.map((q) => (
                 <li key={q}>
-                  <blockquote className="border-l-2 border-foreground pl-3 text-sm italic leading-relaxed">
+                  <blockquote className="rounded-sm bg-muted px-3 py-2 text-sm leading-relaxed">
                     {q}
                   </blockquote>
                 </li>

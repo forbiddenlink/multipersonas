@@ -49,14 +49,12 @@
   font-size: 1rem;
   font-weight: 600;
   margin: 0 0 0.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
   color: #374151;
 }
 
 .disclaimer {
   background: #f9fafb;
-  border-left: 3px solid #6b7280;
+  border: 1px solid #9ca3af;
   padding: 0.75rem 1rem;
   color: #374151;
   font-size: 0.8125rem;
@@ -97,10 +95,7 @@
 }
 
 .countLabel {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-size: 0.8125rem;
   color: #6b7280;
 }
 
@@ -260,10 +255,8 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 0.625rem;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
-  text-transform: uppercase;
 }
 
 /* Scope block: what was checked, with what, and the limit of automated checks. */
@@ -279,10 +272,7 @@
 }
 
 .scopeList dt {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-size: 0.8125rem;
   color: #6b7280;
   padding-top: 0.15rem;
 }
@@ -365,10 +355,7 @@
     content: attr(data-label);
     display: block;
     margin-bottom: 0.125rem;
-    font-family: var(--font-mono);
-    font-size: 0.6875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    font-size: 0.8125rem;
     color: #6b7280;
   }
   /* The common, unremarkable row: one compact line, no label grid. */

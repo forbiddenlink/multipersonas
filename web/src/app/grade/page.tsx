@@ -38,10 +38,10 @@ export default function GradePage() {
       <main id="main" className="exhibits flex-1">
         <section className="border-b border-border">
           <div className="frame-narrow py-12 sm:py-16">
-            <ExhibitHead label="Free · public pages · no signup" />
-            <h1 className="display mt-8 text-[clamp(2.2rem,5vw,3.5rem)] leading-[1.05]">
+            <h1 className="display text-[clamp(2.2rem,5vw,3.5rem)] leading-[1.05]">
               Grade any public site <span className="mark-sweep">in one pass.</span>
             </h1>
+            <p className="mt-3 font-bold">Free, public pages only, no signup.</p>
             <p className="mt-5 max-w-[36rem] text-lg leading-relaxed text-muted-foreground">
               Enter a web address. We check up to 10 public pages on the site and hand back a letter
               grade, what to fix first, and the evidence behind each finding. The grade comes from

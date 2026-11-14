@@ -58,7 +58,7 @@ export function GradePoll({
   if (stale) {
     return (
       <div role="status" className="font-mono text-sm">
-        <p className="redline-note uppercase tracking-[0.1em]">Taking longer than expected</p>
+        <p className="redline-note">Taking longer than expected</p>
         <p className="mt-2 leading-relaxed text-muted-foreground">
           The scan may still finish, or{" "}
           <Link href={`/grade/${token}`} className="text-link">

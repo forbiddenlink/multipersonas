@@ -97,7 +97,7 @@ export default async function WaitlistPage() {
               {Object.entries(bands).map(([band, n]) => (
                 <span
                   key={band}
-                  className="rounded-sm border border-border bg-card px-2.5 py-1 font-mono text-xs text-muted-foreground"
+                  className="rounded-sm border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground"
                 >
                   {band === "–" ? "no scale given" : `${band} sites`}:{" "}
                   <span className="font-medium text-foreground tabular-nums">{n}</span>
@@ -111,7 +111,7 @@ export default async function WaitlistPage() {
               {Object.entries(authNeedBands).map(([band, n]) => (
                 <span
                   key={band}
-                  className="rounded-sm border border-border bg-card px-2.5 py-1 font-mono text-xs text-muted-foreground"
+                  className="rounded-sm border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground"
                 >
                   auth: {band}:{" "}
                   <span className="font-medium text-foreground tabular-nums">{n}</span>
@@ -120,7 +120,7 @@ export default async function WaitlistPage() {
               {Object.entries(scanPrefBands).map(([band, n]) => (
                 <span
                   key={`pref-${band}`}
-                  className="rounded-sm border border-border bg-card px-2.5 py-1 font-mono text-xs text-muted-foreground"
+                  className="rounded-sm border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground"
                 >
                   prefer: {band}:{" "}
                   <span className="font-medium text-foreground tabular-nums">{n}</span>
@@ -132,7 +132,7 @@ export default async function WaitlistPage() {
           {Object.keys(sourceBands).length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
               {Object.entries(sourceBands).map(([source, n]) => (
-                <span key={source} className="rounded-sm border border-border bg-card px-2.5 py-1 font-mono text-xs text-muted-foreground">
+                <span key={source} className="rounded-sm border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground">
                   source: {source}: <span className="font-medium text-foreground tabular-nums">{n}</span>
                 </span>
               ))}
@@ -144,7 +144,7 @@ export default async function WaitlistPage() {
               {Object.entries(campaignBands).map(([campaign, n]) => (
                 <span
                   key={campaign}
-                  className="rounded-sm border border-border bg-card px-2.5 py-1 font-mono text-xs text-muted-foreground"
+                  className="rounded-sm border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground"
                 >
                   campaign: {campaign}: <span className="font-medium text-foreground tabular-nums">{n}</span>
                 </span>
@@ -157,7 +157,7 @@ export default async function WaitlistPage() {
               {Object.entries(followUpBands).map(([status, n]) => (
                 <span
                   key={status}
-                  className="rounded-sm border border-border bg-card px-2.5 py-1 font-mono text-xs text-muted-foreground"
+                  className="rounded-sm border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground"
                 >
                   {status}: <span className="font-medium text-foreground tabular-nums">{n}</span>
                 </span>
@@ -172,7 +172,7 @@ export default async function WaitlistPage() {
       className="mt-6 overflow-x-auto rounded-sm border border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
     >
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-border bg-card font-mono text-xs uppercase tracking-wide text-muted-foreground">
+              <thead className="border-b border-border bg-card text-[13px] text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2 font-medium">Email</th>
                   <th className="px-4 py-2 font-medium">Scale</th>

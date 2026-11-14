@@ -85,8 +85,6 @@ export default async function Image({
               border: `1px solid ${BORDER}`,
               fontSize: "13px",
               color: MUTED,
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
             }}
           >
             Case file · accessibility grade
@@ -156,7 +154,7 @@ export default async function Image({
             }}
           >
             <span style={{ fontSize: "68px", fontWeight: 700, color, lineHeight: 1 }}>{grade}</span>
-            <span style={{ fontSize: "12px", color, letterSpacing: "0.1em" }}>VERDICT</span>
+            <span style={{ fontSize: "14px", color }}>Verdict</span>
           </div>
           )}
         </div>

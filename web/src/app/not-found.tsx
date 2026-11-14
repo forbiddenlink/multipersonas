@@ -20,7 +20,6 @@ export default function NotFound() {
           <span>Case not found</span>
         </div>
         <div className="sheet margin-rule relative -mt-px pb-8 pl-12 pr-6 pt-7 sm:pl-14 sm:pr-8">
-          <p className="label-mono">404</p>
           <h1 className="display mt-3 text-[clamp(1.6rem,3.6vw,2.1rem)] leading-[1.1]">
             <span className="mark-sweep">No file</span> under that number.
           </h1>

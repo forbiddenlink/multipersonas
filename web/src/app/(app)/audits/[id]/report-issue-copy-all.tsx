@@ -52,7 +52,7 @@ export function ReportIssueCopyAll({
         {state === "copied" ? "Copied" : ""}
       </span>
       {state === "error" ? (
-        <span role="alert" className="font-mono text-[11px] text-[var(--redline)]">
+        <span role="alert" className="font-mono text-[13px] text-[var(--redline)]">
           ■ Could not copy. Copy each finding individually instead.
         </span>
       ) : null}

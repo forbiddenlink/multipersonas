@@ -40,7 +40,7 @@ export function GradeBadgeEmbed({ token, host }: { token: string; host: string }
     <section className="border-t border-border pt-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="label-mono">Embed scorecard badge</h2>
-        <span className="font-mono text-[11px] text-muted-foreground">SVG · cached up to 24 hours</span>
+        <span className="text-[13px] text-muted-foreground">SVG · cached up to 24 hours</span>
       </div>
 
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
@@ -53,7 +53,7 @@ export function GradeBadgeEmbed({ token, host }: { token: string; host: string }
 
       {/* Live Badge Preview */}
       <div className="mt-4 flex items-center gap-4 rounded-sm border border-border bg-background px-4 py-3">
-        <span className="font-mono text-xs text-muted-foreground">Preview:</span>
+        <span className="text-xs text-muted-foreground">Preview:</span>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={`/api/grade/${token}/badge`}
@@ -76,7 +76,7 @@ export function GradeBadgeEmbed({ token, host }: { token: string; host: string }
             <button
               type="button"
               onClick={() => copy(mdSnippet, "md")}
-              className="inline-flex min-h-11 items-center px-2 font-mono text-[11px] text-foreground underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              className="inline-flex min-h-11 items-center px-2 font-mono text-[13px] text-foreground underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               {copiedFormat === "md" ? "✓ Copied" : "Copy Markdown"}
             </button>
@@ -92,7 +92,7 @@ export function GradeBadgeEmbed({ token, host }: { token: string; host: string }
             <button
               type="button"
               onClick={() => copy(htmlSnippet, "html")}
-              className="inline-flex min-h-11 items-center px-2 font-mono text-[11px] text-foreground underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
+              className="inline-flex min-h-11 items-center px-2 font-mono text-[13px] text-foreground underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]"
             >
               {copiedFormat === "html" ? "✓ Copied" : "Copy HTML"}
             </button>

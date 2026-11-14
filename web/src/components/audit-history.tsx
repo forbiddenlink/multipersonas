@@ -49,16 +49,16 @@ export function AuditHistory({
         <caption className="sr-only">Recent audit runs by host, date, and persona task success</caption>
         <thead>
           <tr className="border-b-2 border-foreground">
-            <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+            <th scope="col" className="py-2 pr-4 text-[13px] font-normal text-muted-foreground">
               Host
             </th>
-            <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+            <th scope="col" className="py-2 pr-4 text-[13px] font-normal text-muted-foreground">
               Date
             </th>
-            <th scope="col" className="hidden py-2 pr-4 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground sm:table-cell">
+            <th scope="col" className="hidden py-2 pr-4 text-right text-[13px] font-normal text-muted-foreground sm:table-cell">
               Personas
             </th>
-            <th scope="col" className="py-2 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+            <th scope="col" className="py-2 text-right text-[13px] font-normal text-muted-foreground">
               Task success
             </th>
           </tr>

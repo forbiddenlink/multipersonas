@@ -17,7 +17,6 @@ const PRIMARY = PALETTE_DARK.primary;
 const REDLINE = PALETTE_DARK.redline;
 const SANS = "ui-sans-serif, system-ui, -apple-system, sans-serif";
 const SERIF = "ui-serif, Georgia, serif";
-const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace";
 
 export default function GlobalError({
   error,
@@ -44,10 +43,8 @@ export default function GlobalError({
                 borderBottom: 0,
                 borderRadius: "0.1875rem 0.1875rem 0 0",
                 backgroundColor: CARD,
-                fontFamily: MONO,
-                fontSize: "0.6875rem",
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
+                fontSize: "0.8125rem",
+                fontWeight: 700,
                 color: MUTED,
               }}
             >
@@ -64,10 +61,7 @@ export default function GlobalError({
             >
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.75rem" }}>
                 <div>
-                  <p style={{ margin: 0, fontFamily: MONO, fontSize: "0.6875rem", letterSpacing: "0.08em", textTransform: "uppercase", color: MUTED }}>
-                    Something broke
-                  </p>
-                  <h1 style={{ margin: "0.5rem 0 0", fontFamily: SERIF, fontWeight: 500, letterSpacing: "-0.02em", fontSize: "1.6rem", lineHeight: 1.1 }}>
+                                    <h1 style={{ margin: "0.5rem 0 0", fontFamily: SERIF, fontWeight: 500, letterSpacing: "-0.02em", fontSize: "1.6rem", lineHeight: 1.1 }}>
                     This page didn&apos;t load.
                   </h1>
                 </div>
@@ -81,12 +75,8 @@ export default function GlobalError({
                     border: `2px solid ${REDLINE}`,
                     borderRadius: "2px",
                     color: REDLINE,
-                    fontFamily: MONO,
-                    fontWeight: 600,
-                    fontSize: "0.6rem",
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                    transform: "rotate(-4deg)",
+                    fontWeight: 700,
+                    fontSize: "0.8125rem",
                   }}
                 >
                   Unreadable

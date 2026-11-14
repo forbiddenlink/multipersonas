@@ -20,11 +20,12 @@
 .prose h2 {
   margin-top: 2.6em;
   margin-bottom: 0.6em;
-  font-family: var(--font-serif), ui-serif, Georgia, serif;
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  font-size: clamp(1.4rem, 2.6vw, 1.75rem);
-  line-height: 1.2;
+  font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-stretch: 75%;
+  font-weight: 800;
+  letter-spacing: 0;
+  font-size: clamp(1.75rem, 3.4vw, 2.25rem);
+  line-height: 1.08;
   color: var(--foreground);
   scroll-margin-top: 6rem;
   text-wrap: balance;
@@ -37,43 +38,16 @@
  * ink tab on a 2px rule and a Bates-style serial, numbered by the same CSS counter
  * the page header started (ContentArticle sets the scope). */
 .prose h2:not(:global(.sr-only)) {
-  counter-increment: exhibit;
   position: relative;
-  margin-top: 4.6em;
-  padding-top: 1.15rem;
+  margin-top: 3.4em;
+  padding-top: 0.9rem;
   border-top: 2px solid var(--foreground);
 }
 .prose h2:not(:global(.sr-only)):first-child {
-  margin-top: 1.6em;
+  margin-top: 1.2em;
 }
-.prose h2:not(:global(.sr-only))::before {
-  content: "Exhibit " counter(exhibit, upper-alpha);
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform: translateY(-100%);
-  padding: 0.3rem 0.8rem 0.35rem;
-  border-radius: var(--radius) var(--radius) 0 0;
-  background: var(--foreground);
-  color: var(--background);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  line-height: 1rem;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-.prose h2:not(:global(.sr-only))::after {
-  content: "PA-0426-" counter(exhibit, decimal-leading-zero);
-  position: absolute;
-  top: 0;
-  right: 0;
-  transform: translateY(-130%);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.6875rem;
-  letter-spacing: 0.12em;
-  color: var(--muted-foreground);
-}
+/* Home-page type: a section opens on an ink rule, in the display face. The old
+ * exhibit-tab pseudo elements (a small uppercase label above every heading) are gone. */
 
 .prose h3 {
   margin-top: 2.1em;
@@ -147,11 +121,8 @@
   text-align: left;
   border-bottom: 2px solid var(--foreground);
   padding: 0.55em 0.75em 0.55em 0;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.6875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 400;
+  font-size: 0.8125rem;
+  font-weight: 700;
   color: var(--muted-foreground);
   white-space: nowrap;
 }
@@ -162,9 +133,10 @@
 }
 
 .prose blockquote {
-  border-left: 2px solid var(--border);
-  padding-left: 1em;
-  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+  background: var(--muted);
+  padding: 0.75em 1em;
+  color: var(--foreground);
   font-style: normal;
 }
 
@@ -185,12 +157,13 @@
  * ------------------------------------------------------------------------- */
 .calloutRedline {
   position: relative;
-  padding-left: 1.375rem;
-  border-left: 2px solid color-mix(in oklch, var(--redline) 55%, transparent);
+  padding: 0.9rem 1.1rem;
+  border: 1px solid color-mix(in oklch, var(--redline) 55%, transparent);
+  background: color-mix(in oklch, var(--redline) 7%, transparent);
 }
 
 .calloutHighlight {
-  border-left: 3px solid var(--highlight);
+  border: 1px solid color-mix(in oklch, var(--foreground) 18%, transparent);
   background: color-mix(in oklch, var(--highlight) 22%, transparent);
   border-radius: var(--radius);
   padding: 0.9rem 1.1rem;
@@ -240,10 +213,8 @@
   left: 0.875rem;
   padding: 0 0.4rem;
   background: var(--background);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.75rem;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+  font-size: 0.8125rem;
+  font-weight: 700;
   color: var(--muted-foreground);
   /* Leave room for the copy button on the same edge. */
   max-width: calc(100% - 6rem);
@@ -286,10 +257,8 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--card);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  font-size: 0.8125rem;
+  font-weight: 600;
   color: var(--muted-foreground);
   cursor: pointer;
   transition:

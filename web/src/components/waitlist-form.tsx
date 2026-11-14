@@ -176,7 +176,7 @@ export function WaitlistForm({ variant = "waitlist" }: { variant?: "waitlist" | 
       <div>
         <label
           htmlFor={emailId}
-          className="block font-mono text-xs uppercase tracking-wide text-muted-foreground"
+          className="block text-[13px] text-muted-foreground"
         >
           Work email
         </label>
@@ -196,7 +196,7 @@ export function WaitlistForm({ variant = "waitlist" }: { variant?: "waitlist" | 
       <div>
         <label
           htmlFor={sitesId}
-          className="block font-mono text-xs uppercase tracking-wide text-muted-foreground"
+          className="block text-[13px] text-muted-foreground"
         >
           Scale{" "}
           <span className="normal-case font-sans text-muted-foreground">
@@ -223,7 +223,7 @@ export function WaitlistForm({ variant = "waitlist" }: { variant?: "waitlist" | 
         </summary>
         <div className="mt-5 space-y-5">
           <div>
-            <label htmlFor={authNeedId} className="block font-mono text-xs uppercase tracking-wide text-muted-foreground">
+            <label htmlFor={authNeedId} className="block text-[13px] text-muted-foreground">
               Sites behind a login <span className="normal-case font-sans">(a no is as useful as a yes)</span>
             </label>
             <select id={authNeedId} name="authNeed" defaultValue="" className="mt-2 w-full rounded-sm border border-input bg-card px-4 hover:border-foreground/70 py-3 text-base md:text-sm outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
@@ -231,7 +231,7 @@ export function WaitlistForm({ variant = "waitlist" }: { variant?: "waitlist" | 
             </select>
           </div>
           <div>
-            <label htmlFor={scanPrefId} className="block font-mono text-xs uppercase tracking-wide text-muted-foreground">
+            <label htmlFor={scanPrefId} className="block text-[13px] text-muted-foreground">
               Scan preference <span className="normal-case font-sans">(optional)</span>
             </label>
             <select id={scanPrefId} name="scanPref" defaultValue="" className="mt-2 w-full rounded-sm border border-input bg-card px-4 hover:border-foreground/70 py-3 text-base md:text-sm outline-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]">
@@ -239,7 +239,7 @@ export function WaitlistForm({ variant = "waitlist" }: { variant?: "waitlist" | 
             </select>
           </div>
           <div>
-            <label htmlFor={noteId} className="block font-mono text-xs uppercase tracking-wide text-muted-foreground">
+            <label htmlFor={noteId} className="block text-[13px] text-muted-foreground">
               Anything else <span className="normal-case font-sans">(optional)</span>
             </label>
             <textarea id={noteId} name="note" rows={2} maxLength={400} placeholder="e.g. mostly checkout and account dashboards" className="mt-2 w-full resize-y rounded-sm border border-input bg-card px-4 hover:border-foreground/70 py-3 text-base md:text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)]" />

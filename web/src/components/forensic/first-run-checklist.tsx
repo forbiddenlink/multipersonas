@@ -13,7 +13,6 @@ export function FirstRunChecklist({ steps }: { steps: FirstRunStep[] }) {
   const nextIndex = steps.findIndex((s) => !s.done);
   return (
     <div className="sheet px-6 py-6 sm:px-8">
-      <p className="label-mono">Free first run</p>
       <h2 className="display mt-2 text-xl leading-snug text-card-foreground">
         Grade, save, re-grade
       </h2>

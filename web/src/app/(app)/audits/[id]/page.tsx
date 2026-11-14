@@ -11,18 +11,18 @@ import { buttonVariants } from "@/components/ui/button";
 import { PERSONA_DATA } from "@/lib/personas";
 import { personaLibrary, isBuiltinPersonaId } from "@engine/personas/library";
 import { buildPersonaOutcomes, describeDevice } from "@/lib/persona-outcomes";
-import { PersonaFirstReport } from "@/components/persona-first-report";
+import { SessionRecorder } from "@/components/session-recorder";
+import { buildRecorderLanes } from "@/lib/recorder-lanes";
+import { StuckPoints } from "@/components/stuck-points";
 import { formatLocation } from "@/lib/format-location";
 import { formatShortDate } from "@/lib/format";
 import { SeverityChip } from "@/components/forensic/severity-chip";
-import { Meter } from "@/components/forensic/meter";
 import { EmptyPrompt } from "@/components/forensic/empty-prompt";
 import { SEVERITY_ORDER, type Severity } from "@/components/forensic/severity";
 import { loadJourney } from "@/lib/journey";
 import { groupFindingsByRule } from "@/lib/audit-rules";
 import { displayFinding } from "@/lib/finding-display";
 import { groupPriority } from "@/lib/priority-groups";
-import { ReplayTheater, type ReplayFinding } from "@/components/replay-theater";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -41,17 +41,6 @@ import type { IssueFindingInput } from "./report-issue-markdown";
 export const metadata: Metadata = {
   title: "Audit details",
 };
-
-// Task-success is a fraction of real-shaped users, not a compliance verdict — this
-// borrows the same red/amber/green ramp the Meter component's `tone` prop uses for the
-// same non-axe metric, not the SeverityChip vocabulary (that's axe-only).
-function successTone(achieved: number, total: number): "minor" | "moderate" | "critical" | "muted" {
-  if (total === 0) return "muted";
-  const pct = achieved / total;
-  if (pct >= 0.8) return "minor";
-  if (pct >= 0.5) return "moderate";
-  return "critical";
-}
 
 // Unknown/legacy severities sort last rather than first — mirrors lib/report.ts.
 function severityRank(value: string): number {
@@ -185,19 +174,6 @@ export default async function AuditDetailPage({
   // journey capture, and anon runs, simply have none — the section then hides).
   const journeys = await loadJourney(supabase, run.id);
 
-  // axe verdicts keyed by the exact state they were seen on, so the replay can surface
-  // "evidence captured here" at the matching frame.
-  const findingsByUrl: Record<string, ReplayFinding[]> = {};
-  for (const f of axeFindings) {
-    if (!f.page_url) continue;
-    (findingsByUrl[f.page_url] ??= []).push({ severity: f.severity, title: f.title });
-  }
-
-  const personaMeta: Record<string, { name: string; role: string }> = {};
-  for (const j of journeys) {
-    const meta = PERSONA_DATA[j.personaId as keyof typeof PERSONA_DATA];
-    personaMeta[j.personaId] = { name: meta?.name ?? j.personaId, role: meta?.role ?? "" };
-  }
   const personaName = (id: string) => PERSONA_DATA[id as keyof typeof PERSONA_DATA]?.name ?? id;
   const personaOutcomes = buildPersonaOutcomes({
     personaIds: run.persona_ids ?? [],
@@ -274,17 +250,24 @@ export default async function AuditDetailPage({
         ? "No findings"
         : `${openWorkflowCount} open`;
 
-  const evidenceJourney = journeys.find((journey) => journey.personaId === personaParam);
-  const verificationIndex = evidenceJourney?.steps.findIndex((step) => step.action === "verify_task") ?? -1;
-  const initialStep = evidence === "task" && verificationIndex >= 0
-    ? verificationIndex
-    : Number.isFinite(Number(stepParam)) ? Number(stepParam) : 0;
+  // Session recorder inputs: everything below is already loaded above, nothing new is queried.
+  const recorder = buildRecorderLanes({
+    cards: personaOutcomes.cards,
+    journeys,
+    notesByPersona: byPersona,
+    axeFindings: sortedAxeFindings,
+    personaParam,
+    stepParam,
+    evidence,
+  });
+  const verificationIndex =
+    journeys.find((journey) => journey.personaId === personaParam)?.steps.findIndex((step) => step.action === "verify_task") ?? -1;
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-10">
+    <div className="mx-auto w-full max-w-6xl space-y-10">
       {/* Header */}
       <div className="space-y-4">
-        <nav aria-label="Breadcrumb" className="font-mono text-xs text-muted-foreground">
+        <nav aria-label="Breadcrumb" className="text-xs text-muted-foreground">
           <ol className="flex flex-wrap items-center gap-1.5">
             <li>
               <Link
@@ -317,54 +300,40 @@ export default async function AuditDetailPage({
             </li>
           </ol>
         </nav>
-        <div>
-          <div className="file-tab">
-            <span>Case {run.id.slice(0, 8)}</span>
-            <span className="text-foreground/70">·</span>
-            <span className="normal-case">{host}</span>
-            <span className="text-foreground/70">·</span>
-            <span className="normal-case">{caseDate}</span>
-            <span className="ml-auto normal-case text-[var(--redline)]">·&nbsp;{caseStatus}</span>
-          </div>
-          <div className="sheet -mt-px flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
-            <div className="min-w-0">
-              <h1 className="display text-xl leading-tight sm:text-2xl">
-                <span className="break-all">{run.url}</span>
-              </h1>
-              {axeFindings.length > 0 ? (
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  {SEVERITY_ORDER.filter((sev) => severityCounts[sev] > 0).map((sev) => (
-                    <span key={sev} className="inline-flex items-center gap-1.5">
-                      <SeverityChip severity={sev} />
-                      <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                        {severityCounts[sev]}
-                      </span>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 space-y-2">
+            <h1 className="display text-2xl leading-tight sm:text-3xl">
+              <span className="break-all">{run.url}</span>
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {host} · run {run.id.slice(0, 8)} · {caseDate} ·{" "}
+              <span className="font-medium text-foreground">{caseStatus}</span>
+            </p>
+            {axeFindings.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {SEVERITY_ORDER.filter((sev) => severityCounts[sev] > 0).map((sev) => (
+                  <span key={sev} className="inline-flex items-center gap-1.5">
+                    <SeverityChip severity={sev} />
+                    <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                      {severityCounts[sev]}
                     </span>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-            <div className="flex shrink-0 flex-col items-start gap-3 sm:items-end">
-              <Link
-                href={`/audits/${run.id}/report`}
-                className={buttonVariants({ variant: "outline", size: "lg" })}
-              >
-                Export accessibility report
-              </Link>
-              {canRetest ? (
-                <RetestButton url={run.url} personaIds={run.persona_ids ?? []} projectId={run.project_id} />
-              ) : null}
-            </div>
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <div className="flex shrink-0 flex-col items-start gap-3 sm:items-end">
+            <Link
+              href={`/audits/${run.id}/report`}
+              className={buttonVariants({ variant: "outline", size: "lg" })}
+            >
+              Export accessibility report
+            </Link>
+            {canRetest ? (
+              <RetestButton url={run.url} personaIds={run.persona_ids ?? []} projectId={run.project_id} />
+            ) : null}
           </div>
         </div>
-        <Meter
-          className="w-full max-w-xs"
-          value={achieved}
-          total={total}
-          label={run.task_definition ? "expected text observed" : "task success"}
-          unit={run.task_definition ? "profiles matched the check" : "personas reached their goal"}
-          tone={successTone(achieved, total)}
-        />
         {errorMessage && (
           <p className="text-sm text-destructive" role="alert">
             {errorMessage}
@@ -372,31 +341,48 @@ export default async function AuditDetailPage({
         )}
       </div>
 
-      <PersonaFirstReport outcomes={personaOutcomes} auditId={run.id} nameOf={personaName} />
+      {recorder.personas.length > 0 || recorder.axePages.length > 0 || recorder.axeNotShown > 0 ? (
+        <div className="space-y-6">
+          <SessionRecorder
+            personas={recorder.personas}
+            headline={personaOutcomes.headline}
+            axePages={recorder.axePages}
+            axeNotShown={recorder.axeNotShown}
+            initialPersona={recorder.initialPersona}
+            initialStep={recorder.initialStep}
+            taskCheck={Boolean(run.task_definition)}
+          />
+          <p className="max-w-3xl text-sm text-muted-foreground">
+            Persona output is usability opinion from AI personas browsing toward a goal. It is not
+            an accessibility verdict, and no persona simulates a person with a disability. The
+            axe-core lane is the deterministic accessibility record.
+          </p>
+          <StuckPoints points={personaOutcomes.stuckPoints} nameOf={personaName} />
+        </div>
+      ) : null}
 
-      <div className="space-y-1.5 border-t-2 border-foreground pt-6">
-        <p className="label-mono">Scan evidence · deterministic</p>
-        <h2 className="display text-2xl leading-tight">Accessibility scan</h2>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Everything below comes from the axe-core scan, task checks and persona replay.
-        </p>
-      </div>
-
-      <ScanCoveragePanel coverage={scanCoverage} />
-      {axeFindings.length === 0 && !hasCompleteScanCoverage(scanCoverage) && (
-        <ReportIssueCopyAll findings={[]} scanCoverage={scanCoverage} />
-      )}
       <TaskEvidencePanel task={run.task_definition} outcomes={run.task_outcomes} runId={run.id} />
       {evidence === "task" && verificationIndex < 0 ? (
         <p role="status" className="text-sm text-muted-foreground">The verification frame is unavailable. The saved text-check result is shown above.</p>
       ) : null}
 
+      <section aria-labelledby="scan-heading" className="space-y-10 border-t-2 border-foreground pt-6">
+        <div className="space-y-1.5">
+          <h2 id="scan-heading" className="display text-2xl leading-tight">Accessibility scan (axe-core)</h2>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Deterministic findings from axe-core, cited to WCAG.
+          </p>
+        </div>
+        <ScanCoveragePanel coverage={scanCoverage} />
+        {axeFindings.length === 0 && !hasCompleteScanCoverage(scanCoverage) && (
+          <ReportIssueCopyAll findings={[]} scanCoverage={scanCoverage} />
+        )}
+
       {/* Fix first — what to remediate before the full evidence wall. */}
       {priorityFindings.length > 0 && (
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <p className="label-mono">Priority</p>
-            <h2 className="display text-2xl leading-tight">Fix first</h2>
+            <h3 className="display text-xl leading-tight">Fix first</h3>
             <p className="max-w-2xl text-sm text-muted-foreground">
               Each score is out of 100. It starts from axe severity (critical 80,
               serious 60, moderate 35, minor 15), adds 15 for each persona blocked at an affected page
@@ -404,27 +390,33 @@ export default async function AuditDetailPage({
               by rule show the highest score in the group.
             </p>
           </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            {priorityFindings.map((f) => (
-              <div key={f.key} className="sheet p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <SeverityChip severity={f.severity as Severity} />
-                  <span className="font-mono text-sm tabular-nums">
-                    Priority <span className="text-lg font-semibold">{f.priorityScore}</span>
-                  </span>
-                </div>
-                <p className="mt-3 text-sm font-medium">
-                  {displayFinding({ ruleId: f.ruleId, title: f.title, description: null, recommendation: null }).title}
-                </p>
-                {f.pages > 0 ? (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {f.issues} {f.issues === 1 ? "issue" : "issues"} on {f.pages} {f.pages === 1 ? "page or state" : "pages or states"}
+          <ol className="divide-y divide-border border-y border-border">
+            {priorityFindings.map((f, n) => (
+              <li
+                key={f.key}
+                className="grid grid-cols-[1.5rem_minmax(0,1fr)_auto] items-baseline gap-x-3 gap-y-1 px-1 py-3"
+              >
+                <span className="font-mono text-sm font-bold tabular-nums">{n + 1}</span>
+                <div className="min-w-0 space-y-1">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <SeverityChip severity={f.severity as Severity} />
+                    <span className="text-sm font-medium">
+                      {displayFinding({ ruleId: f.ruleId, title: f.title, description: null, recommendation: null }).title}
+                    </span>
+                  </div>
+                  <p className="text-[13px] text-muted-foreground">
+                    {f.pages > 0
+                      ? `${f.issues} ${f.issues === 1 ? "issue" : "issues"} on ${f.pages} ${f.pages === 1 ? "page or state" : "pages or states"}. `
+                      : ""}
+                    {f.priorityReason}
                   </p>
-                ) : null}
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{f.priorityReason}</p>
-              </div>
+                </div>
+                <span className="text-sm tabular-nums">
+                  Priority <span className="font-mono text-lg font-semibold">{f.priorityScore}</span>
+                </span>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
       )}
 
@@ -433,26 +425,25 @@ export default async function AuditDetailPage({
         <div className="space-y-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="space-y-1.5">
-              <p className="label-mono">Axe-core verdicts · deterministic</p>
-              <h2 className="display text-2xl leading-tight">Accessibility issues</h2>
+              <h3 className="display text-xl leading-tight">Accessibility issues</h3>
               <p className="max-w-2xl text-sm text-muted-foreground">
                 Deterministic, cited to WCAG.
               </p>
             </div>
             <ReportIssueCopyAll findings={openAxeFindings.map(toIssueFinding)} scanCoverage={scanCoverage} />
           </div>
-          <div className="sheet grid grid-cols-2 divide-x divide-y divide-border overflow-hidden sm:grid-cols-4 sm:divide-y-0">
-            <div className="p-3">
-              <p className="label-mono">open work</p>
-              <p className="mt-1 font-mono text-2xl font-semibold tabular-nums">{openWorkflowCount}</p>
+          <dl className="grid grid-cols-2 divide-x divide-y divide-border border-y border-border sm:grid-cols-4 sm:divide-y-0">
+            <div className="px-3 py-2.5">
+              <dt className="text-[13px] text-muted-foreground">Open work</dt>
+              <dd className="font-mono text-2xl font-semibold tabular-nums">{openWorkflowCount}</dd>
             </div>
             {FINDING_STATUSES.slice(1, 4).map((status) => (
-              <div key={status} className="p-3">
-                <p className="label-mono">{FINDING_STATUS_LABELS[status]}</p>
-                <p className="mt-1 font-mono text-2xl font-semibold tabular-nums">{workflowCounts[status]}</p>
+              <div key={status} className="px-3 py-2.5">
+                <dt className="text-[13px] text-muted-foreground">{FINDING_STATUS_LABELS[status]}</dt>
+                <dd className="font-mono text-2xl font-semibold tabular-nums">{workflowCounts[status]}</dd>
               </div>
             ))}
-          </div>
+          </dl>
           {ruleGroups.length > 0 && (
             <div
               tabIndex={0}
@@ -464,10 +455,10 @@ export default async function AuditDetailPage({
                 <caption className="sr-only">Axe findings grouped by rule, with issue and page counts</caption>
                 <thead>
                   <tr className="border-b-2 border-foreground">
-                    <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Rule</th>
-                    <th scope="col" className="py-2 pr-4 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Severity</th>
-                    <th scope="col" className="py-2 pr-4 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Issues</th>
-                    <th scope="col" className="py-2 text-right font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">Pages</th>
+                    <th scope="col" className="py-2 pr-4 text-[13px] font-normal text-muted-foreground">Rule</th>
+                    <th scope="col" className="py-2 pr-4 text-[13px] font-normal text-muted-foreground">Severity</th>
+                    <th scope="col" className="py-2 pr-4 text-right text-[13px] font-normal text-muted-foreground">Issues</th>
+                    <th scope="col" className="py-2 text-right text-[13px] font-normal text-muted-foreground">Pages</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -526,16 +517,16 @@ export default async function AuditDetailPage({
               Apply
             </button>
           </form>
-          <div className="sheet overflow-hidden">
-            <div className="flex items-center gap-2 border-b border-border px-4 py-2.5 label-mono">
-              <span>Showing</span>
-              <span className="ml-auto rounded-sm border border-border px-1.5 py-0.5 font-mono text-xs tabular-nums normal-case text-muted-foreground">
-                {filteredAxeFindings.length} / {axeFindings.length}
+          <div className="border-t-2 border-foreground">
+            <p className="flex items-center gap-2 border-b border-border py-2 text-sm">
+              <span className="font-semibold">Showing</span>
+              <span className="font-mono text-[13px] tabular-nums text-muted-foreground">
+                {filteredAxeFindings.length} of {axeFindings.length}
               </span>
-            </div>
-            <div className="divide-y divide-border">
+            </p>
+            <div className="divide-y divide-border border-b border-border">
               {filteredAxeFindings.length === 0 && (
-                <div className="px-4 py-6 text-sm text-muted-foreground sm:px-5">
+                <div className="py-6 text-sm text-muted-foreground">
                   No issues match those filters.
                 </div>
               )}
@@ -547,7 +538,7 @@ export default async function AuditDetailPage({
                   recommendation: f.recommendation,
                 });
                 return (
-                <div key={f.id} className="px-4 py-4 sm:px-5">
+                <div key={f.id} className="py-4">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                     <SeverityChip severity={f.severity} />
                     <span className="text-sm font-medium text-card-foreground">
@@ -556,7 +547,8 @@ export default async function AuditDetailPage({
                     {shown.ruleId ? (
                       <code className="font-mono text-xs text-muted-foreground">{shown.ruleId}</code>
                     ) : null}
-                    <span className="rounded-sm border border-border px-2 py-0.5 label-mono">
+                    <span className="text-[13px] font-semibold text-muted-foreground">
+                      <span aria-hidden="true">{(f.status ?? "open") === "open" ? "○ " : "● "}</span>
                       {FINDING_STATUS_LABELS[f.status as keyof typeof FINDING_STATUS_LABELS] ??
                         "Open"}
                     </span>
@@ -590,7 +582,7 @@ export default async function AuditDetailPage({
                   )}
                   <ReportIssueCopy finding={toIssueFinding(f)} className="mt-3" />
                   <details className="mt-3 group/details">
-                    <summary className="label-mono flex w-fit list-none cursor-pointer select-none items-center gap-1.5 rounded-sm border border-border px-2 py-1 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] [&::-webkit-details-marker]:hidden">
+                    <summary className="flex w-fit list-none text-[13px] font-semibold cursor-pointer select-none items-center gap-1.5 rounded-sm border border-border px-2 py-1 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] [&::-webkit-details-marker]:hidden">
                       <span aria-hidden="true" className="inline-block transition-transform group-open/details:rotate-90">▸</span>
                       Update status
                     </summary>
@@ -666,103 +658,46 @@ export default async function AuditDetailPage({
       )}
 
 
-      {/* AI opinion: everything from persona runs. Kept after, and apart from, the axe verdicts. */}
-      {(journeys.length > 0 || byPersona.size > 0) && (
-        <section aria-labelledby="ai-opinion-heading" className="space-y-8 border-t-2 border-foreground pt-6">
+      </section>
+
+      {/* AI opinion: persona notes. Kept after, and apart from, the axe verdicts. */}
+      {byPersona.size > 0 && (
+        <section aria-labelledby="ai-opinion-heading" className="space-y-4 border-t-2 border-foreground pt-6">
           <div className="space-y-1.5">
-            <span className="redline-note uppercase tracking-[0.1em]">Opinion · AI</span>
             <h2 id="ai-opinion-heading" className="display text-2xl leading-tight">AI persona opinion</h2>
             <p className="max-w-2xl text-sm text-muted-foreground">
-              What AI browser personas did while trying to finish a task. This is usability
-              opinion and task evidence, not an accessibility verdict. The axe-core findings
-              above are the deterministic record.
+              <span className="font-semibold text-[var(--redline)]">AI opinion.</span> Usability notes
+              from AI browser personas trying to finish a task. They are never an accessibility
+              finding, and never mixed into the axe results above.
             </p>
           </div>
-      {/* Persona Replay Theater — the scrubbable walk a real user took */}
-      {journeys.length > 0 && (
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <p className="label-mono">Evidence walk</p>
-            <h3 className="display text-xl leading-tight">Replay</h3>
-            <p className="max-w-2xl text-sm text-muted-foreground">
-              What a persona saw, thought, and hit, step by step.
-            </p>
-          </div>
-          <ReplayTheater
-            journeys={journeys}
-            personaMeta={personaMeta}
-            findingsByUrl={findingsByUrl}
-            initialPersona={personaParam}
-            initialStep={initialStep}
-            taskCheck={Boolean(run.task_definition)}
-          />
-        </div>
-      )}
-
-      {/* Persona findings */}
-      {byPersona.size > 0 && (
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-                        <h3 className="display text-xl leading-tight">Persona findings</h3>
-            <p className="max-w-2xl text-sm text-muted-foreground">
-              Usability notes from AI browser personas trying to finish a real task. They are
-              opinion, never an accessibility finding, and never mixed into the axe results above.
-            </p>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-3">
-            {[...byPersona.entries()].map(([personaId, list]) => {
-              const meta = PERSONA_DATA[personaId as keyof typeof PERSONA_DATA];
-              return (
-                <div
-                  key={personaId}
-                  className="sheet space-y-3 p-4"
-                >
-                  <div>
-                    <p className="text-sm font-medium">{meta?.name ?? personaId}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {meta?.role ?? ""}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    {list.map((f) => (
-                      <div
-                        key={f.id}
-                        className="space-y-1.5 rounded-sm border border-border p-3"
-                      >
-                        <div className="flex flex-wrap items-center gap-2">
-                          {/* Opinion tier — never SeverityChip (axe severity vocab). */}
-                          <span className="inline-flex items-center rounded-sm border border-border px-2 py-0.5 label-mono">
-                            AI observation
-                          </span>
-                          <span className="text-xs font-medium truncate">
-                            {f.title}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {f.description}
+          <div className="divide-y divide-border border-y border-border">
+            {[...byPersona.entries()].map(([personaId, list]) => (
+              <div key={personaId} className="grid gap-x-6 gap-y-2 py-3 sm:grid-cols-[11rem_minmax(0,1fr)]">
+                <p className="text-sm font-medium">{personaName(personaId)}</p>
+                <ul className="min-w-0 space-y-3">
+                  {list.map((f) => (
+                    <li key={f.id} className="space-y-0.5">
+                      <p className="text-sm font-medium">{f.title}</p>
+                      <p className="text-sm text-muted-foreground line-clamp-3">{f.description}</p>
+                      {formatLocation(f.page_url) && (
+                        <p className="break-all font-mono text-[13px] text-muted-foreground">
+                          found at {formatLocation(f.page_url)}
                         </p>
-                        {formatLocation(f.page_url) && (
-                          <p className="font-mono text-xs text-muted-foreground">
-                            found at {formatLocation(f.page_url)}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
-        </div>
-      )}
-
-      </section>
+        </section>
       )}
 
       {findings.length === 0 && (
         <EmptyPrompt
           prompt="no findings recorded for this audit"
-          hint={hasCompleteScanCoverage(scanCoverage) ? "No violations were recorded in the states checked." : "Scan coverage is incomplete or unknown. Review the coverage evidence above."}
+          hint={hasCompleteScanCoverage(scanCoverage) ? "No violations were recorded in the states checked." : "Scan coverage is incomplete or unknown. Review the scan coverage notes in the scan section."}
         />
       )}
     </div>

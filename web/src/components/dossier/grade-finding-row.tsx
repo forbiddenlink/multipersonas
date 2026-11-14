@@ -42,7 +42,7 @@ export function GradeFindingRow({
   return (
     <li id={domId ?? `finding-${ruleId}`} className="scroll-mt-6 border-b border-border py-5">
       <div className="flex flex-wrap items-center gap-2">
-        {fixFirst ? <span className="redline-note uppercase tracking-[0.1em]">Fix first</span> : null}
+        {fixFirst ? <span className="redline-note">Fix first</span> : null}
         <SeverityChip severity={severity} />
         <span className="font-mono text-xs text-muted-foreground">{ruleId}</span>
         {/* axe's own tags win over the remediation map: a rule axe files as best-practice
@@ -56,7 +56,7 @@ export function GradeFindingRow({
             ))}
           </span>
         ) : !wcagAA ? (
-          <span className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+          <span className="text-[13px] text-muted-foreground">
             best-practice
           </span>
         ) : null}
@@ -84,14 +84,14 @@ export function GradeFindingRow({
               ? `Where: ${examples.length} of ${nodes} elements`
               : `Where: ${examples.length} element${examples.length === 1 ? "" : "s"}`}
           </summary>
-          <ul className="mt-2 space-y-3 border-l-2 border-border pl-3">
+          <ul className="mt-2 space-y-3 rounded-sm bg-muted px-3 py-2">
             {examples.map((ex, i) => (
               <li key={`${ex.url}-${ex.target}-${i}`} className="min-w-0 text-xs">
                 <p className="text-muted-foreground">
                   on <span className="font-mono">{displayPath(ex.url)}</span>
                 </p>
                 <p className="mt-1 font-mono break-all">{ex.target}</p>
-                <pre className="mt-1 whitespace-pre-wrap break-all rounded-sm bg-muted px-2 py-1.5 font-mono text-[11px] leading-relaxed">
+                <pre className="mt-1 whitespace-pre-wrap break-all rounded-sm bg-muted px-2 py-1.5 font-mono text-[13px] leading-relaxed">
                   <code>{ex.html}</code>
                 </pre>
               </li>
@@ -111,7 +111,7 @@ export function GradeFindingRow({
         </a>
       </p>
       {location ? (
-        <p className="mt-1.5 font-mono text-[11px] text-muted-foreground">found at {location}</p>
+        <p className="mt-1.5 font-mono text-[13px] text-muted-foreground">found at {location}</p>
       ) : null}
     </li>
   );

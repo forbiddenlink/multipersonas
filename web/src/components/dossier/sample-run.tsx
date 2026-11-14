@@ -42,7 +42,7 @@ export function SampleStuckMoment({ className = "" }: { className?: string }) {
         </p>
       </div>
 
-      <blockquote className="m-4 mt-4 border-l-[3px] border-foreground pl-4 sm:mx-5">
+      <blockquote className="m-4 mt-4 rounded-sm bg-muted px-4 py-3 sm:mx-5">
         <p className="text-xl font-extrabold leading-snug">&ldquo;{frame.thought}&rdquo;</p>
         <footer className="mt-2 text-sm text-muted-foreground">
           {persona.name}, step {frame.step} of {SAMPLE_REPLAY_FRAMES.length}. AI opinion, labeled as such.
@@ -69,9 +69,9 @@ export function SampleRunLedger({ className = "" }: { className?: string }) {
         </caption>
         <thead>
           <tr className="border-b-2 border-foreground">
-            <th scope="col" className="py-2 pr-4 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">Persona</th>
-            <th scope="col" className="py-2 pr-4 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">Result</th>
-            <th scope="col" className="py-2 font-mono text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">In their words</th>
+            <th scope="col" className="py-2 pr-4 text-[13px] font-normal text-muted-foreground">Persona</th>
+            <th scope="col" className="py-2 pr-4 text-[13px] font-normal text-muted-foreground">Result</th>
+            <th scope="col" className="py-2 text-[13px] font-normal text-muted-foreground">In their words</th>
           </tr>
         </thead>
         <tbody>
@@ -85,7 +85,7 @@ export function SampleRunLedger({ className = "" }: { className?: string }) {
                   <span className="block text-xs text-muted-foreground">{persona.role}</span>
                 </th>
                 <td className="py-3 pr-4">
-                  <span className={`font-mono text-xs font-bold uppercase tracking-[0.06em] ${isStuck ? "text-[var(--redline)]" : ""}`}>
+                  <span className={`text-[13px] font-bold ${isStuck ? "text-[var(--redline)]" : ""}`}>
                     <span aria-hidden="true">{isStuck ? "✕ " : "✓ "}</span>
                     {isStuck ? "Stuck" : "Reached it"}
                   </span>

@@ -112,7 +112,6 @@ export function LoginForm({ githubEnabled }: { githubEnabled: boolean }) {
         <AuthCardTab route="sign-in" />
         <div className="px-5 py-6">
           <div>
-            <p className="label-mono">Welcome back</p>
             <h1 className="display mt-1.5 text-[1.9rem] leading-tight text-foreground"><span className="mark-sweep">Sign in</span></h1>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Open your audit history and resume from where you left off.
@@ -176,7 +175,7 @@ export function LoginForm({ githubEnabled }: { githubEnabled: boolean }) {
             <>
               <div className="flex items-center gap-3">
                 <Separator className="flex-1" />
-                <span className="font-mono text-xs text-muted-foreground">or</span>
+                <span className="text-xs text-muted-foreground">or</span>
                 <Separator className="flex-1" />
               </div>
               <GitHubAuthButton onClick={handleGitHubLogin} loading={loading} label="Sign in with GitHub" />

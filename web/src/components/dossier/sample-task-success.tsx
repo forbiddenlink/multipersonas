@@ -139,9 +139,9 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
       <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border bg-card p-4 sm:px-6">
         <div className="flex flex-wrap items-baseline gap-x-2">
           <p className="label-mono">Persona replay · {SAMPLE_TARGET.host}</p>
-          <span className="font-mono text-xs text-muted-foreground">· step {index + 1} of {SAMPLE_REPLAY_FRAMES.length}</span>
+          <span className="text-xs text-muted-foreground">· step {index + 1} of {SAMPLE_REPLAY_FRAMES.length}</span>
         </div>
-        <span className="redline-note uppercase tracking-[0.1em]">Opinion · AI</span>
+        <span className="redline-note">Opinion · AI</span>
       </div>
 
       {/* Split Interactive Viewport & Narration Panel */}
@@ -165,7 +165,7 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
             <div>
               <div className="flex items-center justify-between gap-2">
                 <span className="label-mono">State: {frame.state}</span>
-                <span className="font-mono text-xs uppercase tracking-wide text-muted-foreground">
+                <span className="text-[13px] text-muted-foreground">
                   Action: {frame.action}
                 </span>
               </div>
@@ -177,7 +177,7 @@ export function SampleTaskSuccess({ className = "" }: { className?: string }) {
             {/* Task effort gauge */}
             <div className="border-t border-border pt-3">
               <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-muted-foreground uppercase tracking-wider text-xs">
+                <span className="text-muted-foreground text-[13px]">
                   Task effort
                 </span>
                 <span className="font-bold tabular-nums" style={{ color: band.token }}>

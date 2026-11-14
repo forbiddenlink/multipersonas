@@ -26,13 +26,12 @@ export default function Error({
         <div className="sheet margin-rule relative -mt-px pb-8 pl-12 pr-6 pt-7 sm:pl-14 sm:pr-8">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="label-mono">Something broke</p>
               <h1 className="display mt-2 text-[clamp(1.5rem,3.2vw,1.9rem)] leading-[1.1]">
                 This page didn&apos;t load.
               </h1>
             </div>
             <span
-              className="stamp shrink-0 text-[0.6rem]"
+              className="stamp shrink-0 text-[13px]"
               aria-label="Verdict: unreadable"
             >
               Unreadable

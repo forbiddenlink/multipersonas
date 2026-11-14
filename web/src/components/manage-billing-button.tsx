@@ -38,7 +38,7 @@ export function ManageBillingButton() {
         type="button"
         onClick={() => void openBilling()}
         disabled={loading}
-        className="inline-flex items-center justify-center rounded-sm border border-border px-4 py-2 font-mono text-xs uppercase tracking-wide transition-colors hover:border-foreground/20 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] disabled:opacity-50"
+        className="inline-flex items-center justify-center rounded-sm border border-border px-4 py-2 text-[13px] transition-colors hover:border-foreground/20 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] disabled:opacity-50"
       >
         {loading ? "Opening billing…" : "Manage billing"}
       </button>

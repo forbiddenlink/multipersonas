@@ -50,7 +50,7 @@ export function RunDiff({
           >
             {diff.newDefects.length}
           </p>
-          <p className="mt-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+          <p className="mt-0.5 text-[13px] text-muted-foreground">
             new
           </p>
         </div>
@@ -66,7 +66,7 @@ export function RunDiff({
           >
             {diff.comparisonComplete ? diff.cleared.length : "Not verified"}
           </p>
-          <p className="mt-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+          <p className="mt-0.5 text-[13px] text-muted-foreground">
             fixed
           </p>
         </div>
@@ -74,7 +74,7 @@ export function RunDiff({
           <p className="font-mono text-xl tabular-nums font-medium text-foreground">
             {diff.unchangedCount}
           </p>
-          <p className="mt-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+          <p className="mt-0.5 text-[13px] text-muted-foreground">
             still open
           </p>
         </div>
@@ -158,7 +158,7 @@ export function RunDiff({
       )}
 
       {diff.identityPartial ? (
-        <p className="border-t border-border px-4 py-2.5 text-[11px] leading-relaxed text-muted-foreground">
+        <p className="border-t border-border px-4 py-2.5 text-[13px] leading-relaxed text-muted-foreground">
           Some stored findings lack element selectors (older runs). Re-scan to
           lock identity to the CLI gate key.
         </p>

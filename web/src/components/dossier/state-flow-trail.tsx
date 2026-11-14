@@ -213,7 +213,7 @@ export function StateFlowTrail() {
             >
               {/* Top classification banner */}
               <div
-                className={`flex items-center justify-between border-b px-3 py-1.5 font-mono text-xs uppercase tracking-[0.08em] ${
+                className={`flex items-center justify-between border-b px-3 py-1.5 text-[13px] ${
                   s.publicUrl
                     ? "border-border bg-muted/40 text-muted-foreground"
                     : "border-border bg-[color-mix(in_oklch,var(--primary)_8%,transparent)] text-primary font-medium"
