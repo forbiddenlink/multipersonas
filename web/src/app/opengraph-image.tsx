@@ -62,15 +62,11 @@ export default async function OGImage() {
             width: "380px",
             backgroundColor: SHEET,
             border: `1px solid ${RULE}`,
-            borderLeft: `2px solid ${REDLINE}`,
             padding: "36px 32px",
             transform: "rotate(1.5deg)",
           }}
         >
-          <div style={{ fontSize: "15px", fontFamily: "Plex Mono, monospace", color: MUTED, letterSpacing: "0.1em" }}>
-            CASE PA-0426 · SAUCEDEMO.COM
-          </div>
-          <div style={{ marginTop: "16px", fontSize: "30px", lineHeight: 1.15, borderBottom: `3px solid ${INK}`, paddingBottom: "18px" }}>
+          <div style={{ fontSize: "30px", lineHeight: 1.15, borderBottom: `3px solid ${INK}`, paddingBottom: "18px" }}>
             The public page passed. The flow behind it didn&apos;t.
           </div>
           <div style={{ display: "flex", marginTop: "22px", fontSize: "20px", lineHeight: 1.45 }}>
@@ -91,12 +87,12 @@ export default async function OGImage() {
               fontFamily: "Plex Mono, monospace",
               fontWeight: 700,
               fontSize: "28px",
-              letterSpacing: "0.08em",
+              letterSpacing: "0.02em",
               transform: "rotate(-5deg)",
             }}
           >
-            3 CRITICAL
-            <span style={{ fontSize: "13px", letterSpacing: "0.14em" }}>0 ON PUBLIC PAGE</span>
+            3 critical
+            <span style={{ fontSize: "14px", letterSpacing: "0.02em" }}>0 on public page</span>
           </div>
         </div>
       </div>
