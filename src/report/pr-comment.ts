@@ -52,6 +52,8 @@ export function buildCommentBody(scan: ScanJson, gateOutcome?: string): string {
   }
   lines.push(
     `<sub>${scan.states.scanned.length} states scanned with axe-core ${scan.axeCoreVersion}. Automated checks find only some accessibility barriers.</sub>`,
+    "",
+    "<sub>Run it yourself with `npx personaudit scan <your-url>`. More at [personaudit.com](https://personaudit.com).</sub>",
   );
   return lines.join("\n");
 }

@@ -44,6 +44,14 @@ describe("buildCommentBody", () => {
     expect(body).toContain("`x\\\\\\|y`");
   });
 
+  it("ends with a one-line pointer to the site and the install command for reviewers who never used it", () => {
+    const body = buildCommentBody(scan([f("a", "1", "serious")]), "success");
+    const last = body.split("\n").at(-1) ?? "";
+    expect(last).toContain("https://personaudit.com");
+    expect(last).toContain("npx personaudit scan");
+    expect(last).not.toContain("—");
+  });
+
   it("never claims compliance and uses no em dashes", () => {
     const body = buildCommentBody(scan([f("a", "1", "serious")]), "success");
     expect(body).not.toMatch(/complian/i);
