@@ -19,6 +19,8 @@ npx personaudit scan https://your-site.com
 
 `mpersonas` still works as an alias for `personaudit`.
 
+Requires Node 20 or newer (`engines` in `package.json`) and Chromium (`npx playwright install chromium`). Live site: https://personaudit.com.
+
 ## Usage
 
 ### Scan a site
@@ -87,6 +89,8 @@ npx personaudit run https://app.example.com --session session.json --count 4
 npx personaudit generate https://app.example.com --session session.json --count 4 --save
 npx personaudit list
 ```
+
+`personaudit create` (optionally `--from-json <path>`) and `personaudit delete` manage custom personas; run `npx personaudit --help` for every command and flag.
 
 `run` reports task success (how many personas achieved their goal), usability observations, and the same axe defects `scan` produces. Personas live in `./mpersonas/` in your repo (the directory name predates the rename), so they are diffable and reviewable. Set the model with `PERSONAUDIT_MODEL` (`MULTIPERSONAS_MODEL` still works as a fallback).
 
