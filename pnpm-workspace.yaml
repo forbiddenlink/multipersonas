@@ -23,3 +23,8 @@ ignoredBuiltDependencies:
 minimumReleaseAgeExclude:
   # Renovate security update: zod@4.6.6
   - zod@4.6.6
+
+# picomatch ReDoS, no patched release as of 2026-11-18; dev tooling only. Remove once picomatch > 4.0.7 ships.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-fc5q-39xc-vjpf
