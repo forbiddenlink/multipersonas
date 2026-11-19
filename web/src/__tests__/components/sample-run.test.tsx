@@ -44,9 +44,11 @@ describe("persona-first copy keeps the product's hard lines", () => {
 
   it("leads the home page with the stuck-moment question", () => {
     const home = read("src/app/page.tsx");
-    expect(home).toMatch(/See where a first-time visitor gets stuck on your site\./);
-    expect(home).toMatch(/<SampleStuckMoment/);
+    expect(home).toMatch(/See where a first[\-\u2011]time visitor gets stuck on your site\./);
+    expect(home).not.toMatch(/<SampleStuckMoment|<SampleRunLedger/);
     expect(home).toMatch(/They do not find accessibility\s+defects/);
+    expect(home).toMatch(/18 of 20/);
+    expect(home).toMatch(/makeitfable\.com/);
   });
 
   it("links the task-success evidence", () => {

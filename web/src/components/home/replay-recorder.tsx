@@ -63,7 +63,6 @@ export function ReplayRecorder() {
   return (
     <figure className="pa-rec" aria-labelledby="rec-title">
       <figcaption className="pa-rec-bar">
-        <span className="pa-rec-dot" aria-hidden="true" />
         <span id="rec-title" className="pa-rec-title">
           Persona replay
         </span>
@@ -90,44 +89,6 @@ export function ReplayRecorder() {
           </h2>
 
           <div className="pa-rec-split">
-            <div className="pa-runs-col">
-              <ul className="pa-runs" aria-label="Stored persona runs">
-                {REPLAY_RUNS.map((r) => {
-                  const ok = r.verdict === "achieved";
-                  return (
-                    <li key={r.id}>
-                      <button
-                        type="button"
-                        className="pa-run"
-                        aria-pressed={r.id === runId}
-                        onClick={() => pick(r.id)}
-                      >
-                        <span className="pa-run-mark" data-ok={ok ? "1" : "0"} aria-hidden="true">
-                          {ok ? "✓" : "✗"}
-                        </span>
-                        <span className="pa-run-goal">{r.goal}</span>
-                        <span className="pa-run-verdict" data-ok={ok ? "1" : "0"}>
-                          {ok ? "Achieved" : "Blocked"}
-                        </span>
-                        <span className="pa-run-steps">
-                          <span className="pa-run-bar" aria-hidden="true">
-                            <span style={{ width: `${(r.steps / REPLAY_STEP_BUDGET) * 100}%` }} />
-                          </span>
-                          <span className="pa-mono">
-                            {r.steps}/{REPLAY_STEP_BUDGET} steps
-                          </span>
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-              <p className="pa-rec-fine">
-                {matched} of {total} verdicts matched the known answer. This is one stored sample run against saucedemo, not a general accuracy figure. The one miss, sorting by
-                price, ran all {REPLAY_STEP_BUDGET} steps without finishing.
-              </p>
-            </div>
-
             <div className="pa-viewer">
               {/* Scrubber: the steps the persona narrated, in order. */}
               <ol className="pa-scrub" aria-label="Steps the persona narrated, in order">
@@ -193,6 +154,41 @@ export function ReplayRecorder() {
                 The stored run keeps each persona&apos;s step count and written summary, not a
                 recording or a page capture per step. These steps are the ones the persona
                 described, quoted as written.
+              </p>
+            </div>
+
+            <div className="pa-runs-col">
+              <ul className="pa-runs" aria-label="Stored persona runs">
+                {REPLAY_RUNS.map((r) => {
+                  const ok = r.verdict === "achieved";
+                  return (
+                    <li key={r.id}>
+                      <button
+                        type="button"
+                        className="pa-run"
+                        aria-pressed={r.id === runId}
+                        onClick={() => pick(r.id)}
+                      >
+                        <span className="pa-run-mark" data-ok={ok ? "1" : "0"} aria-hidden="true">
+                          {ok ? "✓" : "✗"}
+                        </span>
+                        <span className="pa-run-goal">{r.goal}</span>
+                        <span className="pa-run-steps">
+                          <span className="pa-mono">
+                            {r.steps}/{REPLAY_STEP_BUDGET}
+                          </span>
+                        </span>
+                        <span className="pa-run-verdict" data-ok={ok ? "1" : "0"}>
+                          {ok ? "Achieved" : "Blocked"}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="pa-rec-fine">
+                {matched} of {total} verdicts matched the known answer. This is one stored sample run against saucedemo, not a general accuracy figure. The one miss, sorting by
+                price, ran all {REPLAY_STEP_BUDGET} steps without finishing.
               </p>
             </div>
           </div>
