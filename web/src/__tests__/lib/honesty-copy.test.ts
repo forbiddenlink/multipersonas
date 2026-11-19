@@ -196,10 +196,18 @@ describe("grade result page: fix-first and coverage copy stays honest", () => {
     expect(src).toMatch(/CLI/);
   });
 
-  it("puts the coverage line and Fix these first on the result page", () => {
+  it("puts the coverage line and Fix these first on the result page, ahead of the full list", () => {
     const src = read("src/app/grade/[token]/page.tsx");
-    expect(src).toMatch(/<GradeCoverageNote needsReview=\{report\.needsReview\} \/>/);
-    expect(src).toMatch(/<GradeFixFirst /);
+    const cover = src.indexOf("<GradeCoverSheet");
+    const note = src.indexOf("<GradeCoverageNote");
+    const coverage = src.indexOf("<GradeCoverage report");
+    const fix = src.indexOf("<GradeFixFirst");
+    const findings = src.indexOf('id="findings"');
+    expect(cover).toBeGreaterThan(-1);
+    expect(note).toBeGreaterThan(cover);
+    expect(coverage).toBeGreaterThan(note);
+    expect(fix).toBeGreaterThan(coverage);
+    expect(findings).toBeGreaterThan(fix);
   });
 });
 

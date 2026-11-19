@@ -21,7 +21,7 @@ export function GradeFixFirst({
   if (items.length === 0) return null;
 
   return (
-    <section aria-labelledby="fix-first-heading">
+    <section id="fix-first" aria-labelledby="fix-first-heading">
       <h2 id="fix-first-heading" className="label-mono">
         Fix these first
       </h2>

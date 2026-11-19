@@ -6,7 +6,7 @@ import type { GradeReport } from "@engine/grader/score";
  */
 export function GradeCoverage({ report }: { report: GradeReport }) {
   return (
-    <section aria-label="Scan coverage" className="margin-rule border-t border-border pl-8 pt-5 sm:pl-10">
+    <section id="coverage" aria-label="Scan coverage" className="margin-rule border-t border-border pl-8 pt-5 sm:pl-10">
       <h2 className="redline-note">What this grade doesn&apos;t cover</h2>
       {report.coverage ? (
         <p className="mt-2 text-[0.9375rem] leading-relaxed">
