@@ -3,9 +3,10 @@ import { SAMPLE_REPLAY_FRAMES, SAMPLE_RUN, sampleRunTally } from "@/lib/sample-e
 import { FrameViewport } from "@/components/dossier/sample-task-success";
 
 /**
- * The home hero's visual: one goal, five personas, a verdict, and the stuck moment with the
- * persona's own words. Everything here is a labelled example (see `SAMPLE_RUN`). The
- * screenshot is a drawing of one SauceDemo probe state, not a captured image, and the
+ * A labelled example of one goal and five personas, with the stuck persona's own words.
+ * The homepage no longer mounts this; the hero replay is the stored run. Everything here
+ * is a labelled example (see `SAMPLE_RUN`). The screenshot is a drawing of one SauceDemo
+ * probe state, not a captured image, and the
  * caption says so. Nothing here is an accessibility verdict: the stuck persona reports what
  * confused it, in its own words, and axe-core's findings live elsewhere.
  */

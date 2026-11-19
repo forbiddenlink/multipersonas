@@ -5,17 +5,14 @@ import { SiteFooter } from "@/components/site-footer";
 import { Wordmark } from "@/components/forensic/wordmark";
 import { GradeForm } from "@/components/grade-form";
 import { PersonaLineup } from "@/components/dossier/persona-lineup";
-import { SeverityChip } from "@/components/forensic/severity-chip";
 import { FocusGradeLink } from "@/components/focus-grade-link";
 import { ExhibitHead } from "@/components/dossier/exhibit-head";
-import { ResponsiveDisclosure } from "@/components/dossier/responsive-disclosure";
-import { SampleTaskSuccess } from "@/components/dossier/sample-task-success";
-import { SampleRunLedger, SampleStuckMoment } from "@/components/dossier/sample-run";
 import { DoorStage } from "@/components/home/door-stage";
+import { MobileNav } from "@/components/mobile-nav";
 import { Placard } from "@/components/home/placard";
 import { ReplayRecorder } from "@/components/home/replay-recorder";
 import "@/components/home/home.css";
-import { PROBE_LEDGER, SAUCEDEMO_TRAIL } from "@/lib/probe-ledger";
+import { PROBE_LEDGER } from "@/lib/probe-ledger";
 import { publicScanLetter } from "@/lib/home-placard";
 import { PLANS } from "@/lib/plans";
 import { isSoloCheckoutOpen } from "@/lib/founding-checkout";
@@ -70,6 +67,19 @@ const SAUCE = PROBE_LEDGER.find((r) => r.host === "saucedemo.com")!;
 
 const BTN_LINK = "pa-btn";
 
+// Same destinations as the marketing header. The home stays on paper in either theme
+// (report-paper-surface), so it does not carry the theme toggle: a control that
+// restyles nothing on this page would look broken. Sign-in on a phone lives in the menu.
+const HOME_NAV = [
+  { href: "/for-agencies", label: "Agencies" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/docs", label: "CLI docs" },
+  { href: "/guides", label: "Guides" },
+] as const;
+
+const NAV_LINK =
+  "min-h-11 items-center rounded-sm px-2.5 py-2 text-[0.9375rem] font-medium text-foreground hover:text-primary";
+
 /** Allow a line break only after "." and "-" so a hostname never splits mid-word. */
 function breakHost(host: string) {
   return host.split(/(?<=[.-])/).map((part, i) => (
@@ -85,17 +95,25 @@ export default function Home() {
   const letter = publicScanLetter(SAUCE);
   return (
     <div className="pa-home report-paper-surface flex min-h-dvh flex-col pb-[env(safe-area-inset-bottom)]">
-      {/* ── 1. Nav: wordmark and the one button. ── */}
+      {/* ── 1. Nav: same destinations as the rest of the site, one filled button. ── */}
       <header className="pa-nav">
-        <div className="frame flex min-h-16 items-center justify-between gap-4 py-2">
+        <div className="frame flex min-h-16 flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2">
           <Link href="/" className="rounded-sm text-foreground">
             <Wordmark className="text-lg" />
           </Link>
-          <div className="flex items-center gap-2 sm:gap-4">
-            <Link href="/auth/login" className="text-link hidden min-h-11 items-center sm:inline-flex">
+          <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
+            {HOME_NAV.map((item) => (
+              <Link key={item.href} href={item.href} className={`${NAV_LINK} inline-flex`}>
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link href="/auth/login" className={`${NAV_LINK} hidden md:inline-flex`}>
               Sign in
             </Link>
             <FocusGradeLink className={`${BTN_LINK} pa-btn-sm`}>Grade my site</FocusGradeLink>
+            <MobileNav items={HOME_NAV} showSignIn />
           </div>
         </div>
       </header>
@@ -108,7 +126,7 @@ export default function Home() {
               <div className="min-w-0">
                 {/* LCP element: plain text, no animation. */}
                 <h1 id="hero-heading" className="pa-hero-h">
-                  See where a first-time visitor gets stuck on your site.
+                  See where a first‑time visitor gets stuck on your site.
                 </h1>
                 <p className="mt-3 max-w-[40rem] text-base leading-relaxed sm:mt-4 sm:text-lg">
                   AI personas browse your site toward a goal, like finding pricing or checking
@@ -137,60 +155,15 @@ export default function Home() {
         {/* ── 3. Signature move: the placard and the kitchen door. ── */}
         <DoorStage />
 
-        {/* ── 4. Persona runs: results with exhibit tabs. ── */}
+        {/* ── 4. Trust: the next question after the hero quote. The lineup shows who looks, not another replay. ── */}
         <section id="runs" aria-labelledby="persona-heading" className="section-y scroll-mt-20">
           <div className="frame">
             <ExhibitHead label="Persona runs · Solo and up" />
-            <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
-              <div className="min-w-0">
-                <h2 id="persona-heading" className="pa-h text-[clamp(2.4rem,4.6vw,3.6rem)]">
-                  Who got through, and where the rest stalled.
-                </h2>
-                <p className="mt-5 max-w-md leading-relaxed text-muted-foreground">
-                  You pick a goal, like finding the pricing page or buying as a guest. Each persona
-                  browses your real site toward it and reports whether it got there. For every one
-                  that stalls you get the screenshot at the stuck step and the persona&apos;s own
-                  words. Clients don&apos;t act on a rule ID. They act on &ldquo;a first-time
-                  visitor never found pricing.&rdquo;
-                </p>
-                <dl className="mt-8 max-w-md space-y-5">
-                  <div className="border-t-2 border-dashed border-[var(--redline)] pt-4">
-                    <dt className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 font-semibold">
-                      Task success and persona notes <span className="redline-note">AI opinion</span>
-                    </dt>
-                    <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                      What each persona reports about its own run. Labeled as AI opinion, never mixed
-                      into the findings. A persona is an AI agent, not a stand-in for a real
-                      customer, and not for a person with a disability. For real people, test with
-                      them through{" "}
-                      <a href="https://makeitfable.com/" target="_blank" rel="noopener noreferrer" className="text-link">Fable</a>.
-                    </dd>
-                  </div>
-                  <div className="border-t-2 border-foreground pt-4">
-                    <dt className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 font-semibold">
-                      Findings <SeverityChip severity="critical" ruleId="4.1.2" />
-                    </dt>
-                    <dd className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                      From axe-core. Run it twice, get the same answer. Cited to WCAG. The only
-                      thing that goes into the evidence report.
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-              <div className="min-w-0 space-y-8">
-                <SampleStuckMoment />
-                <SampleRunLedger />
-                <ResponsiveDisclosure summary="Open the sample replay: saucedemo.com, 3 steps" className="min-w-0">
-                  <SampleTaskSuccess />
-                </ResponsiveDisclosure>
-              </div>
-            </div>
-
-            <div className="mt-12 grid gap-4 border-t-2 border-foreground pt-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
-              <h3 className="pa-h text-[clamp(1.8rem,3vw,2.4rem)]">
+            <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
+              <h2 id="persona-heading" className="pa-h text-[clamp(2.4rem,4.6vw,3.6rem)]">
                 Can an AI persona&apos;s verdict be trusted?
-              </h3>
-              <div className="min-w-0 space-y-3 leading-relaxed">
+              </h2>
+              <div className="min-w-0 space-y-4 leading-relaxed">
                 <p>
                   We checked before building on it. On two sites with known answers, personas
                   never reported success on a goal that was impossible (0 of 10), and matched the
@@ -212,26 +185,23 @@ export default function Home() {
                   </a>
                   .
                 </p>
+                <p className="text-sm text-muted-foreground">
+                  A persona is an AI agent, not a stand-in for a real customer, and not for a
+                  person with a disability. The notes are AI opinion and stay out of the findings.
+                  For real people, test with them through{" "}
+                  <a href="https://makeitfable.com/" target="_blank" rel="noopener noreferrer" className="text-link">Fable</a>.
+                </p>
               </div>
             </div>
 
-            <div className="mt-14">
-              <p className="max-w-3xl text-[1.0625rem] leading-relaxed text-muted-foreground">
-                Under every run is a scan that gives the same answer twice. Pages are checked with{" "}
-                <span className="font-bold text-foreground">axe-core</span>, a widely used
-                open-source accessibility engine that Google Lighthouse also uses, against WCAG 2.2
-                A and AA, the web accessibility standard that laws and RFPs commonly point to.
-                Automated checks find part of the problems; a person still has to review the rest.
+            <PersonaLineup className="mt-14 lg:mt-16" />
+            <div className="mt-8 max-w-[34rem]">
+              <p className="text-base leading-relaxed text-muted-foreground">
+                Want to see a finished report first?{" "}
+                <Link href="/sample-report" className="text-link">Read a sample client report</Link>.
+                {SOLO_OPEN ? ` Grading is free. The hosted workspace starts at $${PLANS.solo.monthlyUsd} a month.` : null}
               </p>
-              <PersonaLineup className="mt-8 lg:mt-10" />
-              <div className="mt-8 max-w-[34rem]">
-                <p className="text-base leading-relaxed text-muted-foreground">
-                  Want to see a finished report first?{" "}
-                  <Link href="/sample-report" className="text-link">Read a sample client report</Link>.
-                  {SOLO_OPEN ? ` Grading is free. The hosted workspace starts at $${PLANS.solo.monthlyUsd} a month.` : null}
-                </p>
-                <LatestUpdate className="mt-4" />
-              </div>
+              <LatestUpdate className="mt-4" />
             </div>
           </div>
         </section>
@@ -243,7 +213,7 @@ export default function Home() {
             <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
               <div className="min-w-0">
                 <h2 id="behind-heading" className="pa-h text-[clamp(2.4rem,4.6vw,3.8rem)]">
-                  Scan the signed-in states. Fail only on what is new.
+                  Scan the signed‑in states. Fail only on what is new.
                 </h2>
                 <p className="mt-6 max-w-xl text-[1.0625rem] leading-relaxed">
                   A one-URL scan sees one page; your users see the whole flow. The free CLI logs in on
@@ -257,19 +227,17 @@ export default function Home() {
                   pages only.
                 </p>
               </div>
-              <ol className="pa-trail min-w-0" aria-label="States the crawl reached on the SauceDemo test store">
-                {SAUCEDEMO_TRAIL.map((s) => (
-                  <li key={s.path}>
-                    <span className="pa-state-label">
-                      {s.label}{" "}
-                      <span className="pa-mono text-sm font-normal text-[#e4e8ee]">{s.path}</span>
-                    </span>
-                    <span className="pa-count" data-hit={s.findings > 0 ? "1" : "0"}>
-                      {s.findings} {s.findings === 1 ? "issue" : "issues"}
-                    </span>
-                    <span className="pa-why">{s.why}</span>
-                  </li>
-                ))}
+              <ol className="pa-trail min-w-0" aria-label="What the CI gate does with a baseline">
+                <li>
+                  <span className="pa-state-label">Already there</span>
+                  <span className="pa-count" data-hit="0">baseline</span>
+                  <span className="pa-why">Saved once. The gate leaves it alone.</span>
+                </li>
+                <li>
+                  <span className="pa-state-label">Ships in this pull request</span>
+                  <span className="pa-count" data-hit="1">fails</span>
+                  <span className="pa-why">A defect that was not in the baseline breaks the build.</span>
+                </li>
               </ol>
             </div>
           </div>

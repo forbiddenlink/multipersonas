@@ -26,12 +26,18 @@ export default async function DashboardPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const [audits, plan, grades, projects] = await Promise.all([
+  const [audits, plan, gradeList, projects] = await Promise.all([
     listAudits(supabase, 20),
     getSessionPlan(supabase, user?.id ?? null),
-    user ? listGraderScansForUser(user.id) : Promise.resolve([]),
+    user
+      ? listGraderScansForUser(user.id).then(
+          (rows) => ({ rows, unavailable: false }),
+          () => ({ rows: [], unavailable: true }),
+        )
+      : Promise.resolve({ rows: [], unavailable: false }),
     listProjects(supabase),
   ]);
+  const grades = gradeList.rows;
   const canRunPersonas = planAllowsPersonas(plan);
 
   // Severity roll-up across recent runs — axe verdicts only (never persona opinion).
@@ -142,6 +148,9 @@ export default async function DashboardPage() {
       <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <section aria-labelledby="grades-heading" className="min-w-0">
           <ExhibitHead plain label="Saved grades" className="mb-4" headingId="grades-heading" />
+          {gradeList.unavailable ? (
+            <p className="mb-4 text-sm text-muted-foreground">Saved grades could not be loaded.</p>
+          ) : null}
           <GradeHistory grades={grades} />
           <div className="mt-6">
             <ClaimGradeForm />

@@ -110,7 +110,15 @@ export default async function ProjectDetailPage({
   const schedule = canRunPersonas ? await getProjectSchedule(supabase, project.id) : null;
   // The free grade is the hosted scan every plan can run. Show the owner's grades of this
   // site here so a Free project is not a dead end that sends results somewhere else.
-  const siteGrades = user ? gradesForSite(await listGraderScansForUser(user.id), project.url) : [];
+  let siteGrades: Awaited<ReturnType<typeof listGraderScansForUser>> = [];
+  let gradesUnavailable = false;
+  if (user) {
+    try {
+      siteGrades = gradesForSite(await listGraderScansForUser(user.id), project.url);
+    } catch {
+      gradesUnavailable = true;
+    }
+  }
   // Free accounts see the top fixes from the latest finished grade of this site. A read
   // failure only drops the list: the grades table above still links every result.
   const latestFinishedGrade = siteGrades.find((g) => g.status === "completed") ?? null;
@@ -180,6 +188,9 @@ export default async function ProjectDetailPage({
         </div>
       )}
 
+      {gradesUnavailable ? (
+        <p className="mt-6 text-sm text-muted-foreground">Saved grades of this site could not be loaded.</p>
+      ) : null}
       {siteGrades.length > 0 ? (
         <section aria-labelledby="site-grades-heading" className="mt-6">
           <h2 id="site-grades-heading" className="label-mono mb-3">

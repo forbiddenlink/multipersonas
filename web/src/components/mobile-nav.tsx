@@ -71,7 +71,7 @@ export function MobileNav({
       </summary>
       <nav
         aria-label="Mobile"
-        className="sheet absolute right-0 top-[calc(100%+0.5rem)] z-50 flex w-56 flex-col p-2"
+        className="sheet absolute right-0 top-[calc(100%+0.5rem)] z-50 flex w-56 max-w-[calc(100vw-1.5rem)] flex-col p-2"
       >
         {items.map((l) => (
           <Link key={l.href} href={l.href} onClick={close} className={`${LINK} py-2.5`}>

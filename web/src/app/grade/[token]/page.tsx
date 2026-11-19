@@ -94,7 +94,7 @@ export default async function GradeResultPage({
       <SiteHeader intent="grade" />
 
       <main id="main" className="flex-1">
-        <div className="frame py-14 sm:py-20">
+        <div className="frame pb-14 pt-8 sm:pb-20 sm:pt-10">
           <div className="mx-auto max-w-4xl">
             <p className="grade-print-meta font-mono text-sm">
               Graded {scan.entry_url} on {gradedOn(scan.created_at)}
@@ -206,33 +206,47 @@ function GradeReportView({
 
   return (
     <div className="space-y-10">
-      {/* Cover sheet: the letter, what it means, and when and where it was measured. */}
-      <header className="space-y-6 border-y-2 border-foreground py-6">
+      {/* The letter, then the limit, then the first fix. The full list comes after. */}
+      <header className="space-y-5 border-y-2 border-foreground py-6">
         <GradeCoverSheet report={report} host={host} createdAt={createdAt} token={token} />
-        <div className="grade-print-hide space-y-5 border-t border-border pt-5">
-          <GradeShare token={token} host={host} grade={report.grade} />
-          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Fixed something? Grade the same URL again. This link keeps showing this result, so the
-            new grade gets its own link. Free grades are limited to {RATE_LIMITS.grade.max} every{" "}
-            {retestMinutes} minutes.
-          </p>
-          <nav aria-label="After this grade" className="flex flex-wrap gap-x-5">
-            <Link href={regradePath(entryUrl)} className="text-link inline-flex min-h-11 items-center text-sm">
-              Re-grade this site
-            </Link>
-            <Link href="/grade" className="text-link inline-flex min-h-11 items-center text-sm">
-              Grade another site
-            </Link>
-          </nav>
-        </div>
+        <GradeCoverageNote needsReview={report.needsReview} />
       </header>
 
+      <GradeCoverage report={report} />
+
+      <GradeFixFirst rules={report.rules} pagesScanned={report.pagesScanned} />
+
+      <div className="grade-print-hide space-y-5">
+        <GradeShare token={token} host={host} grade={report.grade} />
+        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          Fixed something? Grade the same URL again. This link keeps showing this result, so the
+          new grade gets its own link. Free grades are limited to {RATE_LIMITS.grade.max} every{" "}
+          {retestMinutes} minutes.
+        </p>
+        <nav aria-label="After this grade" className="flex flex-wrap gap-x-5">
+          <Link href={regradePath(entryUrl)} className="text-link inline-flex min-h-11 items-center text-sm">
+            Re-grade this site
+          </Link>
+          <Link href="/grade" className="text-link inline-flex min-h-11 items-center text-sm">
+            Grade another site
+          </Link>
+        </nav>
+      </div>
+
       <nav aria-label="On this sheet" className="grade-print-hide -mt-4 flex flex-wrap gap-x-5 font-mono text-sm">
+        {fixFirstIds.size > 0 ? (
+          <a href="#fix-first" className="text-link inline-flex min-h-11 items-center">
+            Fix these first
+          </a>
+        ) : null}
         <a href="#findings" className="text-link inline-flex min-h-11 items-center">
           Findings
         </a>
         <a href="#pages" className="text-link inline-flex min-h-11 items-center">
           Pages
+        </a>
+        <a href="#coverage" className="text-link inline-flex min-h-11 items-center">
+          Coverage
         </a>
         <a href="#method" className="text-link inline-flex min-h-11 items-center">
           Method
@@ -243,9 +257,6 @@ function GradeReportView({
         <h2 id="findings-heading" className="display text-2xl sm:text-3xl">
           Findings
         </h2>
-
-        {/* The short answer to "what do I do first", before the full list. */}
-        <GradeFixFirst rules={report.rules} pagesScanned={report.pagesScanned} />
 
         {/* Named rules: the traceable table behind the composite. Older stored reports
             may omit this (pre-rules field); skip gracefully. */}
@@ -321,9 +332,6 @@ function GradeReportView({
           Method
         </h2>
         <GradeMethodDisclosure report={report} />
-        <GradeCoverageNote needsReview={report.needsReview} />
-        {/* The honesty note: what this grade does NOT cover. */}
-        <GradeCoverage report={report} />
         <p className="text-sm">
           <Link href="/method" className="text-link inline-flex min-h-11 items-center">
             Read the full method

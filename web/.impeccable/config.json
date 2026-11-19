@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "src/components/home/home.css"
+        ],
+        "createdAt": "2026-11-19T20:37:36.837Z",
+        "reason": "Concept brief 2026-11-12: the only side-tab hit is the kitchen door jamb, a 4px ink edge on the steel doorway, not a card accent."
+      }
+    ]
+  }
+}

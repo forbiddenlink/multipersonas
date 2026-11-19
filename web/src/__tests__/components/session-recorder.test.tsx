@@ -175,6 +175,48 @@ it("says so with zero personas, and explains an empty axe lane", () => {
   expect(screen.getByText("This run had no personas.")).toBeInTheDocument();
   expect(screen.getByText("axe-core recorded no findings with a page location.")).toBeInTheDocument();
   expect(screen.getByText(/3 more findings are in the issues table below/)).toBeInTheDocument();
+  expect(screen.queryByText("No findings on the pages this run reached.")).not.toBeInTheDocument();
+  expect(screen.queryByText(/Ticks are findings/)).not.toBeInTheDocument();
+});
+
+it("states a clean axe lane when the scan reached pages and found nothing", () => {
+  render(<SessionRecorder personas={personas} headline="h" axePages={[]} axeNotShown={0} taskCheck={false} />);
+  expect(screen.getByText("No findings on the pages this run reached.")).toBeInTheDocument();
+  expect(screen.queryByText(/Ticks are findings/)).not.toBeInTheDocument();
+});
+
+it("sets a finding title as the quote when the step stored no narration", () => {
+  const finding = {
+    personaId: "a",
+    goalCompleted: false,
+    steps: [{ ...step(0, "report_finding", 40, "https://x.test/pricing"), detail: "AI Tank Advisor is unexplained jargon" }],
+  };
+  render(
+    <SessionRecorder
+      personas={[{ personaId: "a", name: "Ann", role: "", device: "", badge: "blocked", journey: finding, notes: [] }]}
+      headline="h" axePages={[]} axeNotShown={0} taskCheck={false}
+    />,
+  );
+  const detail = screen.getByRole("region", { name: "At the cursor" });
+  expect(detail.textContent?.match(/AI Tank Advisor is unexplained jargon/g)).toHaveLength(1);
+  expect(detail.textContent).toMatch(/step 1: report_finding/);
+  expect(screen.queryByText("No narration was recorded for this step.")).not.toBeInTheDocument();
+});
+
+it("leaves a short caption on the action line", () => {
+  const one = {
+    personaId: "a",
+    goalCompleted: true,
+    steps: [{ ...step(0, "finish", 0, "https://x.test/"), detail: "finished" }],
+  };
+  render(
+    <SessionRecorder
+      personas={[{ personaId: "a", name: "Ann", role: "", device: "", badge: "reached", journey: one, notes: [] }]}
+      headline="h" axePages={[]} axeNotShown={0} taskCheck={false}
+    />,
+  );
+  expect(screen.getByRole("region", { name: "At the cursor" }).textContent).toMatch(/step 1: finish, finished/);
+  expect(screen.getByText("No narration was recorded for this step.")).toBeInTheDocument();
 });
 
 it("shows the not-shown note even when lane B has rows", () => {

@@ -7,6 +7,7 @@ import { isGiveUp, stuckStepIndexes, type OutcomeBadge } from "@/lib/persona-out
 import { SeverityChip } from "@/components/forensic/severity-chip";
 import { severityMeta } from "@/components/forensic/severity";
 import type { PersonaJourney } from "@/lib/journey";
+import "./session-recorder.css";
 
 export interface RecorderPersona {
   personaId: string;
@@ -49,7 +50,7 @@ type Focus = { lane: "persona"; row: number } | { lane: "axe"; row: number };
 function pathLabel(pageUrl: string): string {
   try {
     const u = new URL(pageUrl);
-    return `${u.pathname}${u.search}` || "/";
+    return `${u.pathname}${u.search}${u.hash}` || "/";
   } catch {
     return formatLocation(pageUrl) ?? pageUrl;
   }
@@ -69,12 +70,60 @@ function cursorFor(len: number, i: number, max: number): number {
 
 const CLAMP_CHARS = 280;
 
+/** The line worth setting in the large quote. Reasoning wins. A finding title or a
+ * long caption stands in when the model stored no narration. Short tool captions stay
+ * on the action line. */
+function spokenLine(step: { action: string; detail: string | null; reasoning: string | null }): string | null {
+  const reasoning = step.reasoning?.trim();
+  if (reasoning) return reasoning;
+  const detail = step.detail?.trim();
+  if (!detail) return null;
+  if (step.action === "report_finding" && detail !== "finding reported") return detail;
+  if (detail.length >= 48) return detail;
+  return null;
+}
+
+function StepCopy({
+  step,
+  name,
+  index,
+  gaveUp,
+}: {
+  step: { action: string; detail: string | null; reasoning: string | null };
+  name: string;
+  index: number;
+  gaveUp: boolean;
+}) {
+  const quote = spokenLine(step);
+  const caption = step.detail && quote !== step.detail.trim() ? step.detail : null;
+  return (
+    <>
+      <p className="text-sm text-muted-foreground">
+        <span className="font-medium text-foreground">{name}</span>
+        {`, step ${index + 1}: ${step.action}`}
+        {gaveUp ? " (gave up)" : ""}
+        {caption ? <span className="break-words">{`, ${caption}`}</span> : null}
+      </p>
+      {quote ? (
+        <div>
+          {step.reasoning?.trim() ? (
+            <p className="text-[13px] font-semibold text-[var(--redline)]">AI opinion</p>
+          ) : null}
+          <Monologue text={quote} />
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">No narration was recorded for this step.</p>
+      )}
+    </>
+  );
+}
+
 function Monologue({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
   const long = text.length > CLAMP_CHARS;
   return (
     <div>
-      <p className={`font-serif text-base italic leading-relaxed ${long && !open ? "line-clamp-5" : ""}`}>
+      <p className={`audit-said ${long && !open ? "line-clamp-5" : ""}`}>
         &ldquo;{text}&rdquo;
       </p>
       {long ? (
@@ -152,12 +201,6 @@ export function SessionRecorder({
         .map((p) => p.name),
     [playable],
   );
-
-  const axeByUrl = useMemo(() => {
-    const m = new Map<string, RecorderAxeItem[]>();
-    for (const page of axePages) m.set(page.pageUrl, page.items);
-    return m;
-  }, [axePages]);
 
   const focusedAxe =
     focus.lane === "axe" && axePages[focus.row]
@@ -248,16 +291,18 @@ export function SessionRecorder({
   const hasAnyTrack = playable.length > 0 || axePages.length > 0;
 
   return (
-    <section aria-labelledby="recorder-heading" className="space-y-4">
+    <section aria-labelledby="recorder-heading" className="audit-rec space-y-4">
       <h2 id="recorder-heading" className="sr-only">
         Session recording
       </h2>
 
-      <div className="border-y-2 border-foreground">
-        {/* Lane A */}
+      <div className="audit-rec-grid">
+        {/* Lane 1: the persona's own steps. axe findings stay in lane 2. */}
+        <div className="audit-lane">
         <div className="px-3 pt-3 sm:px-4">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <h3 className="display text-xl leading-tight">Persona sessions</h3>
+            <span className="text-[13px] font-semibold text-[var(--redline)]">Lane 1</span>
             <span className="text-[13px] font-semibold text-[var(--redline)]">AI opinion</span>
             {personas.length > 0 ? <span className="text-sm text-muted-foreground">{headline}</span> : null}
           </div>
@@ -359,19 +404,28 @@ export function SessionRecorder({
             );
           })}
         </ul>
+        </div>
 
-        {/* Lane B */}
-        {axePages.length > 0 ? (
-          <div className="border-t border-border">
+        {/* Lane 2: axe-core, a separate instrument from the persona's opinion. */}
+        <div className="audit-lane">
             <div className="px-3 pt-3 sm:px-4">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <h3 className="display text-xl leading-tight">axe-core findings by page</h3>
+                <span className="text-[13px] font-semibold">Lane 2</span>
                 <span className="text-[13px] font-semibold">Deterministic</span>
-                <span className="text-sm text-muted-foreground">
-                  Ticks are findings, coloured and shaped by impact.
-                </span>
+                {axePages.length > 0 ? (
+                  <span className="text-sm text-muted-foreground">
+                    Ticks are findings, coloured and shaped by impact.
+                  </span>
+                ) : axeNotShown === 0 ? (
+                  <span className="text-sm text-muted-foreground">
+                    No findings on the pages this run reached.
+                  </span>
+                ) : null}
               </div>
             </div>
+        {axePages.length > 0 ? (
+          <div>
             <ul className="divide-y divide-border px-3 pb-3 sm:px-4">
               {axePages.map((page, row) => {
                 const sel = focus.lane === "axe" && focus.row === row;
@@ -443,6 +497,8 @@ export function SessionRecorder({
             {axeNotShown} more {axeNotShown === 1 ? "finding is" : "findings are"} in the issues table below.
           </p>
         ) : null}
+        </div>
+      </div>
 
         {/* Single scrubber: steps the focused track, not the longest one. */}
         {hasAnyTrack ? (
@@ -498,7 +554,6 @@ export function SessionRecorder({
         <p className="sr-only" aria-live="polite" aria-atomic="true" data-testid="recorder-live">
           {announce}
         </p>
-      </div>
 
       {/* Detail at the cursor */}
       {hasAnyTrack ? (
@@ -529,20 +584,13 @@ export function SessionRecorder({
                 </div>
               </div>
               <div className="min-w-0 space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground">{focusedPersona.name}</span>
-                  {`, step ${focusedStepIdx + 1}: ${focusedStep.action}`}
-                  {isGiveUp(focusedStep) ? " (gave up)" : ""}
-                  {focusedStep.detail ? <span className="break-words">{`, ${focusedStep.detail}`}</span> : null}
-                </p>
-                {focusedStep.reasoning ? (
-                  <div>
-                    <p className="text-[13px] font-semibold text-[var(--redline)]">AI opinion</p>
-                    <Monologue key={`${focusedPersona.personaId}-${focusedStepIdx}`} text={focusedStep.reasoning} />
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No narration was recorded for this step.</p>
-                )}
+                <StepCopy
+                  key={`${focusedPersona.personaId}-${focusedStepIdx}`}
+                  step={focusedStep}
+                  name={focusedPersona.name}
+                  index={focusedStepIdx}
+                  gaveUp={isGiveUp(focusedStep)}
+                />
                 {!taskCheck ? (
                   <p className="text-sm">
                     <span className="text-muted-foreground">Task effort </span>
@@ -557,26 +605,6 @@ export function SessionRecorder({
                     ) : null}
                   </p>
                 ) : null}
-                {(() => {
-                  const here = (focusedStep.pageUrl && axeByUrl.get(focusedStep.pageUrl)) || [];
-                  if (here.length === 0) return null;
-                  return (
-                    <div>
-                      <p className="text-[13px] text-muted-foreground">axe-core findings on this page</p>
-                      <ul className="mt-1 space-y-1">
-                        {here.slice(0, 3).map((f) => (
-                          <li key={f.id} className="flex min-w-0 items-center gap-2">
-                            <SeverityChip severity={f.severity} />
-                            <span className="min-w-0 truncate text-sm">{f.title}</span>
-                          </li>
-                        ))}
-                        {here.length > 3 ? (
-                          <li className="text-[13px] text-muted-foreground">+{here.length - 3} more on this page</li>
-                        ) : null}
-                      </ul>
-                    </div>
-                  );
-                })()}
               </div>
             </div>
           ) : focusedAxe ? (

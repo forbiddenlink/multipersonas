@@ -54,11 +54,11 @@ export function buildRecorderLanes(input: {
   const pageMap = new Map<string, RecorderAxeItem[]>();
   let axeNotShown = 0;
   for (const f of axeFindings) {
-    if (!f.page_url) {
-      axeNotShown += 1;
-      continue;
-    }
-    if (!pageMap.has(f.page_url) && pageMap.size >= AXE_LANE_MAX_PAGES) {
+    // axe stores every state a rule was seen on as one comma-joined page_url.
+    const locations = f.page_url
+      ? [...new Set(f.page_url.split(", ").map((part) => part.trim()).filter(Boolean))]
+      : [];
+    if (locations.length === 0) {
       axeNotShown += 1;
       continue;
     }
@@ -68,17 +68,23 @@ export function buildRecorderLanes(input: {
       description: f.description,
       recommendation: f.recommendation,
     });
-    const list = pageMap.get(f.page_url) ?? [];
-    list.push({
-      id: f.id,
-      severity: f.severity,
-      ruleId: shown.ruleId ?? null,
-      title: shown.title,
-      why: shown.why ?? null,
-      fix: shown.fix ?? null,
-      pageUrl: f.page_url,
-    });
-    pageMap.set(f.page_url, list);
+    let placed = 0;
+    for (const url of locations) {
+      if (!pageMap.has(url) && pageMap.size >= AXE_LANE_MAX_PAGES) continue;
+      const list = pageMap.get(url) ?? [];
+      list.push({
+        id: f.id,
+        severity: f.severity,
+        ruleId: shown.ruleId ?? null,
+        title: shown.title,
+        why: shown.why ?? null,
+        fix: shown.fix ?? null,
+        pageUrl: url,
+      });
+      pageMap.set(url, list);
+      placed += 1;
+    }
+    if (placed === 0) axeNotShown += 1;
   }
   const axePages = [...pageMap].map(([pageUrl, items]) => ({ pageUrl, items }));
 

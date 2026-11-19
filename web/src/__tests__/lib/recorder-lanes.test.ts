@@ -41,6 +41,23 @@ it("caps the lane at six pages and counts the rest, plus findings with no page, 
   expect(r.axeNotShown).toBe(3);
 });
 
+it("splits a comma-joined seen-on list into one row per page", () => {
+  const r = lanes({
+    axeFindings: [finding(
+      "multi",
+      "https://x.test/pricing, https://x.test/enterprise, https://x.test/enterprise#pricing",
+    )],
+  });
+  expect(r.axePages.map((page) => page.pageUrl)).toEqual([
+    "https://x.test/pricing",
+    "https://x.test/enterprise",
+    "https://x.test/enterprise#pricing",
+  ]);
+  expect(r.axePages.every((page) => page.items.length === 1)).toBe(true);
+  expect(r.axePages[0]!.items[0]!.pageUrl).toBe("https://x.test/pricing");
+  expect(r.axeNotShown).toBe(0);
+});
+
 it("handles zero personas", () => {
   const r = lanes({ axeFindings: [finding("1", "https://x.test/")] }, []);
   expect(r.personas).toEqual([]);
